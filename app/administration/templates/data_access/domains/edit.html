@@ -1,60 +1,77 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ domain.name }} — Domain{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'domain_index' %}">Domains</a></li>
 <li><a href="{% url 'domain_detail' domain.pk %}">{{ domain.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'domain_detail' domain.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to domain</span>
-  </a>
-</div>
 
-<h1 class="title">Edit {{ domain.name }}</h1>
-
-{% if can_edit_metadata %}
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Details</p>
-  </header>
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="update_metadata">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="dom-edit-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="dom-edit-name" name="name" value="{{ domain.name }}" required>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">layers</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ domain.name }}</h1>
+        <p class="page-subtitle">Data domain — slug <code>{{ domain.slug }}</code></p>
       </div>
-      <button class="button is-medium is-link" type="submit">Save details</button>
-    </form>
-  </div>
-</div>
-{% endif %}
-
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Linked organizations</p>
-  </header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="dom-orgs" left_title="Available organizations" right_title="Linked to this domain" left_help="Pick organizations to link." right_help="Pick organizations to unlink." action_add="add_organizations" action_remove="remove_organizations" field_name="organization_ids" list_kind="organization" left_items=organizations_available right_items=organizations_assigned %}
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'domain_detail' domain.pk %}" class="button is-small is-light" title="Back to domain">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to domain</span>
+      </a>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">User assignments (direct access)</p>
-  </header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Direct domain assignments. The user can also gain this domain through a domain template — those are managed on the user's edit page.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="dom-users" left_title="Available users" right_title="Users with access" left_help="Pick users to grant." right_help="Pick users to revoke." action_add="add_users" action_remove="remove_users" field_name="user_ids" list_kind="user" left_items=users_available right_items=users_assigned %}
+<div class="body-grid full-width">
+
+  {% if can_edit_metadata %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_metadata">
+        <div class="field">
+          <label class="label is-small" for="dom-edit-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="dom-edit-name" name="name" value="{{ domain.name }}" required>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save details</span>
+        </button>
+      </form>
+    </div>
   </div>
+  {% endif %}
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Linked organizations</div></div>
+    <div class="pc-body">
+      {% include "data_access/domains/_organizations_dlb_only.html" %}
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>User assignments (direct access)</div></div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Direct domain assignments. The user can also gain this domain through a domain template — those are managed on the user's edit page.</p>
+      {% include "data_access/domains/_users_dlb_only.html" %}
+    </div>
+  </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

@@ -4,40 +4,42 @@
 
 {% block sidebar %}
   <p class="sidebar-section-label">Inventory</p>
-  <a href="#" class="sidebar-link">Stock Levels</a>
-  <a href="#" class="sidebar-link">Locations</a>
-  <a href="#" class="sidebar-link">Part Numbers</a>
-  <a href="#" class="sidebar-link">Transfers</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Stock Levels</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span> Locations</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Part Numbers</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> Transfers</a>
 
   <div class="sidebar-divider"></div>
 
   <p class="sidebar-section-label">Demand Management</p>
-  <a href="#" class="sidebar-link is-active">Part Demands</a>
-  <a href="#" class="sidebar-link">Approval Queue</a>
-  <a href="#" class="sidebar-link">Open Orders</a>
-  <a href="#" class="sidebar-link">Received Today</a>
+  <a href="#" class="sidebar-link is-active"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span> Part Demands</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span> Approval Queue</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span> Open Orders</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">call_received</span></span> Received Today</a>
 
   <div class="sidebar-divider"></div>
 
   <p class="sidebar-section-label">Reference</p>
-  <a href="#" class="sidebar-link">Suppliers</a>
-  <a href="#" class="sidebar-link">Catalog</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Suppliers</a>
+  <a href="#" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">menu_book</span></span> Catalog</a>
 {% endblock %}
 
 {% block content %}
-  <!-- ── Page header (full width) ── -->
-  <div class="page-header">
-    <div class="page-header-title-wrap">
-      <div class="page-header-icon">📋</div>
-      <div>
-        <h1 class="page-title">Part Demands</h1>
-        <p class="page-subtitle">View and manage part demands across all types</p>
+  <!-- ── Page hero (wraps title + actions + quick details) ── -->
+  <div class="page-hero" style="flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 0;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 2.4rem; height: 2.4rem; display: flex; align-items: center; justify-content: center; color: var(--bulma-link); font-size: 1.5rem;">📋</div>
+        <div>
+          <h1 class="page-title" style="margin-bottom: 0;">Part Demands</h1>
+          <p class="page-subtitle">View and manage part demands across all types</p>
+        </div>
       </div>
     </div>
-    <div class="page-header-actions">
+    <div class="page-hero-actions">
       <a href="{% url 'kitchen_sink' %}" class="button is-small is-light">← Kitchen Sink</a>
       <a href="#" class="button is-small is-light">← Back to Inventory Portal</a>
-      <button class="button is-small is-warning">⊕ Create New Demand</button>
+      <button class="button is-warning">⊕ Create New Demand</button>
     </div>
   </div>
 

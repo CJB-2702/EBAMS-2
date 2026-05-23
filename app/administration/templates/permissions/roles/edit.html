@@ -1,104 +1,133 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ role.name }} — Role{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'role_index' %}">Roles</a></li>
 <li><a href="{% url 'role_detail' role.slug %}">{{ role.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'role_detail' role.slug %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to role</span>
-  </a>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ role.name }}</h1>
+        <p class="page-subtitle">
+          Role — slug <code>{{ role.slug }}</code>
+          {% if role.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'role_detail' role.slug %}" class="button is-small is-light" title="Back to role">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to role</span>
+      </a>
+    </div>
+  </div>
 </div>
 
-<h1 class="title">Edit {{ role.name }}</h1>
+<div class="body-grid full-width">
 
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Details</p></header>
-  <div class="card-content">
-    <form method="post" class="mb-4">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="update_metadata">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="role-edit-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="role-edit-name" name="name" value="{{ role.name }}" required>
-        </div>
-      </div>
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="role-edit-description">Description</label>
-        <div class="control">
-          <textarea class="textarea" id="role-edit-description" name="description" rows="2">{{ role.description }}</textarea>
-        </div>
-      </div>
-      <button class="button is-medium is-link" type="submit">Save details</button>
-    </form>
-
-    <form method="post" class="mb-4">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="set_active">
-      {% if role.is_active %}
-      <input type="hidden" name="is_active" value="0">
-      <button class="button is-medium is-warning is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">visibility_off</span></span>
-        <span>Deactivate role</span>
-      </button>
-      {% else %}
-      <input type="hidden" name="is_active" value="1">
-      <button class="button is-medium is-success is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-        <span>Activate role</span>
-      </button>
-      {% endif %}
-    </form>
-
-    {% if not has_child_roles %}
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="set_parent_role">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="role-edit-parent">Parent role</label>
-        <div class="control">
-          <div class="select">
-            <select id="role-edit-parent" name="parent_role_id">
-              <option value="">— None (base role) —</option>
-              {% for p in parent_role_options %}
-              <option value="{{ p.pk }}" {% if role.parent_role and p.pk == role.parent_role.pk %}selected{% endif %}>{{ p.name }}</option>
-              {% endfor %}
-            </select>
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_metadata">
+        <div class="field">
+          <label class="label is-small" for="role-edit-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="role-edit-name" name="name" value="{{ role.name }}" required>
           </div>
         </div>
-      </div>
-      <button class="button is-medium is-link" type="submit">Save parent</button>
-    </form>
-    {% else %}
-    <p class="is-size-7 has-text-grey-dark mt-3">
-      <em>Parent role is locked: this role has child roles, so changing its parent would create deeper-than-one-level inheritance.</em>
-    </p>
-    {% endif %}
-  </div>
-</div>
+        <div class="field">
+          <label class="label is-small" for="role-edit-description">Description</label>
+          <div class="control">
+            <textarea class="textarea is-small" id="role-edit-description" name="description" rows="2">{{ role.description }}</textarea>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save details</span>
+        </button>
+      </form>
 
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Permission groups</p></header>
-  <div class="card-content">
-    {% if role.parent_role %}
-    <p class="is-size-7 has-text-grey mb-3">This role inherits its parent's permission groups automatically. Add only the groups that this role adds <em>on top of</em> the parent (rule: no overlap).</p>
-    {% endif %}
-    {% include "shared_components/_dual_listbox.html" with section_id="role-pg" left_title="Available permission groups" right_title="In this role" left_help="Pick groups to add." right_help="Pick groups to remove." action_add="add_permission_groups" action_remove="remove_permission_groups" field_name="permission_group_ids" list_kind="permission_group" left_items=permission_groups_available right_items=permission_groups_assigned %}
-  </div>
-</div>
+      <form method="post" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_active">
+        {% if role.is_active %}
+        <input type="hidden" name="is_active" value="0">
+        <button class="button is-small is-warning is-light" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">visibility_off</span></span>
+          <span>Deactivate role</span>
+        </button>
+        {% else %}
+        <input type="hidden" name="is_active" value="1">
+        <button class="button is-small is-success is-light" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+          <span>Activate role</span>
+        </button>
+        {% endif %}
+      </form>
 
-<div class="card">
-  <header class="card-header"><p class="card-header-title">Assignees</p></header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Direct user assignment uses the default <strong>primary</strong> relationship type. To set a different relationship or add notes, use the user-portal edit page.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="role-users" left_title="Available users" right_title="Assigned users" left_help="Pick users to add." right_help="Pick users to remove." action_add="add_users" action_remove="remove_users" field_name="user_ids" list_kind="user" left_items=users_available right_items=users_assigned %}
+      {% if not has_child_roles %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_parent_role">
+        <div class="field">
+          <label class="label is-small" for="role-edit-parent">Parent role</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select id="role-edit-parent" name="parent_role_id">
+                <option value="">— None (base role) —</option>
+                {% for p in parent_role_options %}
+                <option value="{{ p.pk }}" {% if role.parent_role and p.pk == role.parent_role.pk %}selected{% endif %}>{{ p.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save parent</span>
+        </button>
+      </form>
+      {% else %}
+      <p class="is-size-7 has-text-grey-dark mt-3">
+        <em>Parent role is locked: this role has child roles, so changing its parent would create deeper-than-one-level inheritance.</em>
+      </p>
+      {% endif %}
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups</div></div>
+    <div class="pc-body">
+      {% if role.parent_role %}
+      <p class="is-size-7 has-text-grey mb-3">This role inherits its parent's permission groups automatically. Add only the groups that this role adds <em>on top of</em> the parent (rule: no overlap).</p>
+      {% endif %}
+      {% include "permissions/roles/_permission_groups_dlb_only.html" %}
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Assignees</div></div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Direct user assignment uses the default <strong>primary</strong> relationship type. To set a different relationship or add notes, use the user-portal edit page.</p>
+      {% include "permissions/roles/_users_dlb_only.html" %}
+    </div>
+  </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

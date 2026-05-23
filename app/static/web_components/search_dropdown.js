@@ -1,7 +1,8 @@
-/**
- * Bulma-styled search field with a dropdown of <li> results (light DOM / slot).
- * HTMX loads fragments into the host element; use format=htmx-search-results on the collection URL.
- */
+// DELIBERATE ANTI PATTERN: THIS WEBCOMPONENT MANUALLY ADDS BULMA COMPONENETS AND UI ELEMENTS
+// THIS IS DONE SO THAT IT CAN BE USED AS A DROP IN REPLACEMENT FOR BULMA SEARCH DROPDOWNS
+// THIS IS AN EXCPTION BECAUSE ITS INTERACTION IS SO UNIFORM AND SIMPLE ITS EASIER
+// TO JUST ADD THE STYLES
+
 class SearchDropdown extends HTMLElement {
   static formAssociated = true;
 

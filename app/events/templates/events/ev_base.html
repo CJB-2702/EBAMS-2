@@ -5,112 +5,220 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Events{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/bulma.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}">
-  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   <style>
-    .ev-sidebar {
-      position: sticky;
-      top: 0;
-      height: 100vh;
-      overflow-y: auto;
-      background-color: var(--bulma-scheme-main-bis);
-      border-right: 1px solid var(--bulma-border);
-    }
-    .ev-sidebar .menu-label {
-      font-size: 0.65rem;
-      color: var(--bulma-text-weak);
-    }
-    .ev-sidebar .menu-list a {
-      font-size: 0.82rem;
-      padding: 0.2em 0.5em;
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bulma-scheme-main-bis);
       color: var(--bulma-text);
+      font-family: var(--bulma-family-sans-serif);
+      font-size: 0.875rem;
     }
-    .ev-sidebar .menu-list a:hover,
-    .ev-sidebar .menu-list a.is-active {
-      background-color: var(--bulma-background);
+    a { color: inherit; text-decoration: none; }
+
+    /* ── App shell ── */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      transition: grid-template-columns 0.18s ease;
+    }
+    .app-shell:has(collapsable-side-bar[collapsed]) {
+      grid-template-columns: 40px 1fr;
+    }
+    collapsable-side-bar { min-width: 0; }
+
+    /* ── Sidebar ── */
+    .sidebar-section-label {
+      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--bulma-text-weak);
+      padding: 0.6rem 1rem 0.3rem;
+      font-weight: 600;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 1rem 0.3rem 1rem;
+      font-size: 0.8rem;
+      color: var(--bulma-text);
+      border-left: 3px solid transparent;
+    }
+    .sidebar-link:hover {
+      background: var(--bulma-background);
       color: var(--bulma-text-strong);
     }
+    .sidebar-link.is-active {
+      border-left-color: var(--bulma-primary);
+      color: var(--bulma-link);
+      background: var(--bulma-background);
+      font-weight: 600;
+    }
+    .sidebar-divider {
+      height: 1px; background: var(--bulma-border-weak); margin: 0.75rem 1rem;
+    }
+
+    /* ── Scroll area ── */
+    .app-scrollarea {
+      overflow-y: auto;
+      background: var(--bulma-scheme-main-bis);
+    }
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* ── Page hero ── */
+    .page-hero {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      border-left: 4px solid var(--bulma-primary);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .page-hero .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+    }
+    .page-hero .page-header-title-wrap {
+      display: flex; align-items: center; gap: 0.65rem;
+    }
+    .page-hero .page-header-icon {
+      width: 2.4rem; height: 2.4rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .page-hero .page-title {
+      font-size: 1.4rem; font-weight: 700; color: var(--bulma-text-strong); margin: 0; line-height: 1.1;
+    }
+    .page-hero .page-subtitle {
+      font-size: 0.82rem; color: var(--bulma-text-weak); margin-top: 0.2rem;
+    }
+    .page-hero .page-header-actions {
+      display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start;
+    }
+    .page-hero .page-header-actions .button {
+      font-size: 0.85rem;
+      padding: 0.4em 0.75em;
+      height: auto;
+    }
+
+    /* ── Body grid ── */
+    .body-grid {
+      display: grid;
+      gap: 1.25rem;
+      align-items: start;
+    }
+    .body-grid.has-rail { grid-template-columns: 3fr 1fr; }
+    .body-grid.full-width { grid-template-columns: 1fr; }
+    .body-rail { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* ── Card pattern (pc = "page card") ── */
+    .pc {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      margin-bottom: 1rem;
+    }
+    .pc-header {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--bulma-border-weak);
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .pc-header-title {
+      display: flex; align-items: center; gap: 0.45rem;
+    }
+    .pc-header-title .icon {
+      color: var(--bulma-text-weak); font-size: 1rem;
+    }
+    .pc-body {
+      padding: 1rem;
+    }
+    .pc-body.is-flush {
+      padding: 0;
+    }
+
+    /* Sharp corners */
+    .button { border-radius: 0; }
+    .tag    { border-radius: 0; }
+    .input, .select select, .textarea { border-radius: 0; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--bulma-border); }
+
+    {% block extra_css %}{% endblock %}
   </style>
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<script>
-  document.body.addEventListener('htmx:configRequest', function(event) {
-    event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
-  });
-</script>
+<!-- ─── TOP NAV ─── -->
+{% include "shared/topnav.html" with current_app_group="Events" %}
 
-<section class="hero is-dark">
-  <div class="hero-body py-4">
-    <div class="container is-fluid">
-      <div class="is-flex is-justify-content-space-between is-align-items-center">
-        <div>
-          <p class="title is-5 mb-1">
-            <a href="{% url 'event_index' %}" class="has-text-white">Events</a>
-          </p>
-          <p class="subtitle is-7 has-text-grey-light">{% block subtitle %}Event management{% endblock %}</p>
-        </div>
-        <div class="is-flex is-align-items-center">
-          <p class="is-size-7 has-text-grey-light mr-4">
-            Welcome, <strong class="has-text-white">{{ request.user.username }}</strong>
-          </p>
-          <form method="post" action="{% url 'logout' %}" class="is-inline-block">
-            {% csrf_token %}
-            <button class="button is-medium is-light" type="submit" aria-label="Log out">
-              <span class="icon"><span class="material-icons" aria-hidden="true">logout</span></span>
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<!-- ─── SHELL ─── -->
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav
+      hx-boost="true"
+      hx-target="#ev-main-content"
+      hx-select="#ev-main-content"
+      hx-push-url="true"
+    >
+      <p class="sidebar-section-label">Home</p>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Events Dashboard</a>
 
-<section class="section py-4">
-  <div class="container is-fluid">
-    <div class="columns" style="margin: 0;">
+      <div class="sidebar-divider"></div>
 
-      <aside class="column is-3-tablet is-2-desktop ev-sidebar" style="padding: 0;">
-        <nav
-          class="menu p-4"
-          hx-boost="true"
-          hx-target="#ev-main-content"
-          hx-select="#ev-main-content"
-          hx-push-url="true"
-        >
-          <p class="menu-label mt-2">Events</p>
-          <ul class="menu-list">
-            <li><a href="{% url 'event_index' %}">All Events</a></li>
-            <li><a href="{% url 'event_create' %}">New Event</a></li>
-          </ul>
+      <p class="sidebar-section-label">Events</p>
+      <a href="{% url 'event_index' %}" class="sidebar-link {% block sidebar_events_active %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
+      <a href="{% url 'event_create' %}" class="sidebar-link {% block sidebar_create_active %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
 
-          <p class="menu-label">Other Portals</p>
-          <ul class="menu-list">
-            <li><a href="{% url 'administration_index' %}">Administration</a></li>
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="ev-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'event_index' %}">Events</a></li>
+            {% block breadcrumb %}{% endblock %}
           </ul>
         </nav>
-      </aside>
-
-      <main id="ev-main-content" class="column" style="padding: 1.5rem;">
 
         {% if messages %}
-        <div class="mb-4">
           {% for message in messages %}
-          <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light py-2 px-4">
-            {{ message }}
-          </div>
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
           {% endfor %}
-        </div>
         {% endif %}
 
         {% block content %}{% endblock %}
       </main>
-
     </div>
   </div>
-</section>
+</div>
 
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
 </body>
 </html>

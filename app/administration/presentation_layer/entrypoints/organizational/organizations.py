@@ -301,6 +301,100 @@ def organization_edit(request: HttpRequest, organization_id: int) -> HttpRespons
 
 
 @require_http_methods(["POST"])
+def organization_move_domains(request: HttpRequest, organization_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    organization = get_object_or_404(Organization, pk=organization_id)
+    ids = _parse_id_list(request.POST, "domain_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one domain.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for did in ids:
+                if direction == "add":
+                    OrganizationDomain.objects.get_or_create(
+                        organization=organization,
+                        domain_id=did,
+                        defaults={"created_by": actor, "updated_by": actor},
+                    )
+                else:
+                    OrganizationDomain.objects.filter(
+                        organization=organization, domain_id=did
+                    ).delete()
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    assigned_ids = list(
+        OrganizationDomain.objects.filter(organization=organization).values_list("domain_id", flat=True)
+    )
+    domains_assigned = list(Domain.objects.filter(pk__in=assigned_ids).order_by("name"))
+    domains_available = list(Domain.objects.exclude(pk__in=assigned_ids).order_by("name"))
+
+    msg = "Domains linked." if direction == "add" else "Domains removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "organizational/organizations/_domains_dlb_only.html", {
+        "organization": organization,
+        "domains_available": domains_available,
+        "domains_assigned": domains_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def organization_move_users(request: HttpRequest, organization_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    organization = get_object_or_404(Organization, pk=organization_id)
+    ids = _parse_id_list(request.POST, "user_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one user.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for uid in ids:
+                if direction == "add":
+                    DataOwnershipContext(uid).enable_or_assign_organization(
+                        actor=actor, organization_id=organization.pk,
+                    )
+                else:
+                    row = UserOrganization.objects.get(user_id=uid, organization_id=organization.pk)
+                    DataOwnershipContext(uid).disable_organization_assignment(
+                        actor=actor, user_organization_id=row.pk,
+                    )
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    user_assignments = list(
+        UserOrganization.objects.filter(organization=organization, is_active=True)
+        .select_related("user")
+        .order_by("user__username"),
+    )
+    users_assigned = [ua.user for ua in user_assignments]
+    assigned_user_ids = {ua.user_id for ua in user_assignments}
+    users_available = list(list_users_ordered().exclude(pk__in=assigned_user_ids))
+
+    msg = "Users assigned." if direction == "add" else "Users removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "organizational/organizations/_users_dlb_only.html", {
+        "organization": organization,
+        "users_available": users_available,
+        "users_assigned": users_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def organization_delete(request: HttpRequest, organization_id: int) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

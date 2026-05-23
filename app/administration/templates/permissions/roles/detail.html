@@ -5,111 +5,117 @@
 <li class="is-active"><a href="#" aria-current="page">{{ role.name }}</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ role.name }}</h1>
-    <p class="subtitle is-6 has-text-grey">
-      Role — slug <code>{{ role.slug }}</code>
-      {% if role.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
-      {% if role.parent_role %} · specializes <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a>{% endif %}
-    </p>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">{{ role.name }}</h1>
+        <p class="page-subtitle">
+          Role — slug <code>{{ role.slug }}</code>
+          {% if role.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+          {% if role.parent_role %} · specializes <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'role_index' %}" class="button is-small is-light" title="Back to roles list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Roles</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'role_edit' role.slug %}" class="button is-small is-warning" title="Edit role">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'role_delete' role.slug %}" onsubmit="return confirm('Delete this role? Child roles will cascade-delete and all users lose this role.');" style="display:inline-block;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" title="Delete role">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
-  {% if can_edit %}
-  <div class="buttons">
-    <a class="button is-link is-medium" href="{% url 'role_edit' role.slug %}">
-      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-      <span>Edit</span>
-    </a>
-    <form method="post" action="{% url 'role_delete' role.slug %}" onsubmit="return confirm('Delete this role? Child roles will cascade-delete and all users lose this role.');" class="is-inline-block">
-      {% csrf_token %}
-      <button class="button is-medium is-danger is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-        <span>Delete</span>
-      </button>
-    </form>
+</div>
+
+<div class="body-grid full-width">
+
+  {% if role.description %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
+    <div class="pc-body">{{ role.description|linebreaks }}</div>
   </div>
   {% endif %}
-</div>
 
-{% if role.description %}
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Description</p></header>
-  <div class="card-content">{{ role.description|linebreaks }}</div>
-</div>
-{% endif %}
-
-{% if role.parent_role %}
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Inherited from <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a> ({{ parent_groups|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if parent_groups %}
-    <ul>
-      {% for g in parent_groups %}
-      <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">Parent role has no permission groups.</p>
-    {% endif %}
-  </div>
-</div>
-{% endif %}
-
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Permission groups defined directly on this role ({{ permission_groups|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if permission_groups %}
-    <ul>
-      {% for g in permission_groups %}
-      <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No permission groups defined directly on this role.</p>
-    {% endif %}
-  </div>
-</div>
-
-{% if child_roles %}
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Specialized roles ({{ child_roles|length }})</p>
-  </header>
-  <div class="card-content">
-    <ul>
-      {% for c in child_roles %}
-      <li><a href="{% url 'role_detail' c.slug %}">{{ c.name }}</a></li>
-      {% endfor %}
-    </ul>
-  </div>
-</div>
-{% endif %}
-
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Currently assigned to ({{ assignees|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if assignees %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>User</th><th>Relationship</th><th>Notes</th></tr></thead>
-      <tbody>
-        {% for a in assignees %}
-        <tr>
-          <td><a href="{% url 'user_detail' a.user_id %}">{{ a.user.username }}</a></td>
-          <td>{{ a.get_relationship_type_display }}</td>
-          <td>{{ a.notes|default:"—"|truncatechars:80 }}</td>
-        </tr>
+  {% if role.parent_role %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Inherited from <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a> ({{ parent_groups|length }})</div></div>
+    <div class="pc-body">
+      {% if parent_groups %}
+      <ul class="is-size-7">
+        {% for g in parent_groups %}
+        <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No assignees yet.</p>
-    {% endif %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">Parent role has no permission groups.</p>
+      {% endif %}
+    </div>
   </div>
+  {% endif %}
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups defined directly on this role ({{ permission_groups|length }})</div></div>
+    <div class="pc-body">
+      {% if permission_groups %}
+      <ul class="is-size-7">
+        {% for g in permission_groups %}
+        <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No permission groups defined directly on this role.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if child_roles %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">workspaces</span></span>Specialized roles ({{ child_roles|length }})</div></div>
+    <div class="pc-body">
+      <ul class="is-size-7">
+        {% for c in child_roles %}
+        <li><a href="{% url 'role_detail' c.slug %}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
+    <div class="pc-body is-flush">
+      {% if assignees %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>User</th><th>Relationship</th><th>Notes</th></tr></thead>
+        <tbody>
+          {% for a in assignees %}
+          <tr>
+            <td><a href="{% url 'user_detail' a.user_id %}">{{ a.user.username }}</a></td>
+            <td>{{ a.get_relationship_type_display }}</td>
+            <td>{{ a.notes|default:"—"|truncatechars:80 }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No assignees yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

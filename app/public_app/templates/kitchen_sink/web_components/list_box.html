@@ -1,0 +1,154 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}list-box{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/list_box.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">list</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;list-box&gt;</h1>
+        <p class="page-subtitle">Light-DOM wrapper around select-multiple with integrated filter and actions.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+    
+    <!-- Live Demo -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Live Demo</div>
+      </div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column is-7">
+            <list-box id="demo-list-box" label="Manage Permissions" description="Choose permissions to grant.">
+              <input slot="search" type="search" class="input is-small" placeholder="Local Filter...">
+              <select slot="options" multiple>
+                <option value="perm_read">Read Permission</option>
+                <option value="perm_write">Write Permission</option>
+                <option value="perm_delete">Delete Permission</option>
+                <option value="perm_admin">Admin Access</option>
+              </select>
+            </list-box>
+          </div>
+          <div class="column is-5">
+            <h4 class="title is-6 mb-2">API Interaction</h4>
+            <div class="buttons mb-3">
+              <button type="button" class="button is-small is-primary is-light" id="btn-select-all">selectAll()</button>
+              <button type="button" class="button is-small is-light" id="btn-clear">clear()</button>
+            </div>
+            <p class="is-size-7 mb-2">
+              <strong>Selected Values:</strong>
+            </p>
+            <div id="selection-display" class="ks-note" style="display:block; min-height: 2.2rem; width: 100%;">
+              []
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const lb = document.getElementById('demo-list-box');
+        const display = document.getElementById('selection-display');
+        
+        lb.addEventListener('list-box-change', (e) => {
+          display.textContent = JSON.stringify(e.detail.values);
+        });
+
+        document.getElementById('btn-select-all').addEventListener('click', () => {
+          lb.selectAll();
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+          lb.clear();
+        });
+      });
+    </script>
+
+    <!-- API & Documentation -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">API & Properties</div>
+      </div>
+      <div class="pc-body content is-size-7">
+        <h4 class="title is-6">HTML Attributes</h4>
+        <ul>
+          <li><code>label</code> (string) - optional <code>&lt;h4&gt;</code> heading text displayed above the list.</li>
+          <li><code>description</code> (string) - optional helper subtitle text displayed below the label.</li>
+          <li><code>height</code> (string) - option list height (CSS unit). Defaults to <code>12rem</code>.</li>
+        </ul>
+
+        <h4 class="title is-6">Slots</h4>
+        <ul>
+          <li><code>search</code> - optional input used to filter options locally.</li>
+          <li><code>options</code> (required) - target <code>&lt;select multiple&gt;</code>.</li>
+          <li><code>action</code> - optional bottom action button. Defaults to a "Select all visible" button.</li>
+        </ul>
+
+        <h4 class="title is-6">Public Methods</h4>
+        <ul>
+          <li><code>el.select</code> - returns underlying select element.</li>
+          <li><code>el.items()</code> - returns array of all option values.</li>
+          <li><code>el.selected()</code> - returns array of selected option values.</li>
+          <li><code>el.selectAll()</code> - selects all visible options.</li>
+          <li><code>el.clear()</code> - deselects all options.</li>
+        </ul>
+
+        <h4 class="title is-6">Custom Events</h4>
+        <ul>
+          <li><code>list-box-change</code> - fired when option selection state changes. Contain <code>values</code> and <code>labels</code>.</li>
+          <li><code>list-box-scroll-end</code> - fired when list option container is scrolled to the bottom (useful for infinite scroll pagination).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Code Snippet -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Template Code</div>
+      </div>
+      <div class="pc-body">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;list-box id="avail" label="Available groups"&gt;
+  &lt;input slot="search" type="search" class="input is-small" placeholder="Filter..."&gt;
+  &lt;select slot="options" multiple&gt;
+    &lt;option value="1"&gt;Group One&lt;/option&gt;
+    &lt;option value="2"&gt;Group Two&lt;/option&gt;
+  &lt;/select&gt;
+&lt;/list-box&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

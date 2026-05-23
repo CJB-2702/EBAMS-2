@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_not_required
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 
 _PERMISSIONS = [
@@ -73,3 +73,24 @@ def kitchen_sink_sidebar_behavior_example(request: HttpRequest) -> HttpResponse:
 @login_not_required
 def kitchen_sink_topbar_popovers(request: HttpRequest) -> HttpResponse:
     return render(request, "kitchen_sink/structural_examples/top_bar_behavior/popovers.html")
+
+
+@login_not_required
+def kitchen_sink_wc_index(request: HttpRequest) -> HttpResponse:
+    return render(request, "kitchen_sink/web_components/index.html")
+
+
+@login_not_required
+def kitchen_sink_wc_detail(request: HttpRequest, component_name: str) -> HttpResponse:
+    valid_components = {
+        "collapsable-side-bar",
+        "dual-listbox",
+        "image-carousel",
+        "list-box",
+        "search-dropdown",
+        "toast-alert",
+    }
+    if component_name not in valid_components:
+        raise Http404("Web Component not found")
+    template_name = f"kitchen_sink/web_components/{component_name.replace('-', '_')}.html"
+    return render(request, template_name, {"current_component": component_name})

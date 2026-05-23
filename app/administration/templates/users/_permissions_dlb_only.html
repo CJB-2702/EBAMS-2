@@ -1,0 +1,36 @@
+<dual-list-box id="up-perms-dlb">
+  <list-box slot="left" id="up-perms-avail" label="Available permissions"
+            data-perm-check-url="{% url 'check_direct_permissions_against_group' target_user.pk %}">
+    <select slot="options" multiple>
+      {% for item in permissions_available %}
+      <option value="{{ item.pk }}">{{ item.content_type.app_label }} | {{ item.content_type.model }} | {{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+  <div slot="controls">
+    <button type="button" class="button is-small"
+            hx-post="{% url 'user_move_permissions' target_user.pk %}"
+            hx-vals="js:{permission_ids: listBox('up-perms-avail').selected(), direction: 'add'}"
+            hx-target="#up-perms-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Add selected permissions">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+    </button>
+    <button type="button" class="button is-small"
+            hx-post="{% url 'user_move_permissions' target_user.pk %}"
+            hx-vals="js:{permission_ids: listBox('up-perms-held').selected(), direction: 'remove'}"
+            hx-target="#up-perms-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Remove selected permissions">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+    </button>
+  </div>
+  <list-box slot="right" id="up-perms-held" label="Direct permissions">
+    <select slot="options" multiple>
+      {% for item in permissions_assigned %}
+      <option value="{{ item.pk }}">{{ item.content_type.app_label }} | {{ item.content_type.model }} | {{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+</dual-list-box>
+<div id="up-perms-inherit-panel" class="mt-3"></div>

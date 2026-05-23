@@ -335,6 +335,86 @@ def role_edit(request: HttpRequest, role_slug: str) -> HttpResponse:
 
 
 @require_http_methods(["POST"])
+def role_move_permission_groups(request: HttpRequest, role_slug: str) -> HttpResponse:
+    denied = _require_admin(request)
+    if denied is not None:
+        return denied
+
+    role = get_object_or_404(Role.objects.select_related("parent_role"), slug=role_slug)
+    ids = _parse_id_list(request.POST, "permission_group_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one permission group.", status=400)
+
+    try:
+        ctx = RoleContext(role.pk)
+        with transaction.atomic():
+            for gid in ids:
+                if direction == "add":
+                    ctx.add_permission_group(actor=request.user, group_id=gid)
+                else:
+                    ctx.remove_permission_group(actor=request.user, group_id=gid)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    own_group_ids = list(RoleItem.objects.filter(role=role).values_list("permission_group_id", flat=True))
+    permission_groups_assigned = list(Group.objects.filter(pk__in=own_group_ids).order_by("name"))
+    permission_groups_available = list(Group.objects.exclude(pk__in=own_group_ids).order_by("name"))
+
+    msg = "Permission groups added." if direction == "add" else "Permission groups removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "permissions/roles/_permission_groups_dlb_only.html", {
+        "role": role,
+        "permission_groups_available": permission_groups_available,
+        "permission_groups_assigned": permission_groups_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def role_move_users(request: HttpRequest, role_slug: str) -> HttpResponse:
+    denied = _require_admin(request)
+    if denied is not None:
+        return denied
+
+    role = get_object_or_404(Role, slug=role_slug)
+    ids = _parse_id_list(request.POST, "user_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one user.", status=400)
+
+    try:
+        with transaction.atomic():
+            for uid in ids:
+                if direction == "add":
+                    UserRoleAssignmentContext(uid).assign_role(actor=request.user, role_id=role.pk)
+                else:
+                    UserRoleAssignmentContext(uid).remove_role(actor=request.user, role_id=role.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    user_assignments = list(
+        UserRole.objects.filter(role=role, is_active=True)
+        .select_related("user")
+        .order_by("user__username"),
+    )
+    users_assigned = [ua.user for ua in user_assignments]
+    assigned_user_ids = {ua.user_id for ua in user_assignments}
+    users_available = list(list_users_ordered().exclude(pk__in=assigned_user_ids))
+
+    msg = "Users assigned to role." if direction == "add" else "Users removed from role."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "permissions/roles/_users_dlb_only.html", {
+        "role": role,
+        "users_available": users_available,
+        "users_assigned": users_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def role_delete(request: HttpRequest, role_slug: str) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

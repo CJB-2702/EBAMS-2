@@ -1,0 +1,269 @@
+/**
+ * <dual-listbox-alt> — light-DOM dual listbox component
+ *
+ * Why no innerHTML replacement:
+ *   The original dual-listbox calls this.innerHTML = … in connectedCallback,
+ *   which fires mid-parse and can disrupt sibling component initialisation
+ *   (e.g. tabbed-content-alt reading its panel list). This version appends
+ *   UI elements without touching existing children, so source data stays in
+ *   the DOM and no unexpected DOM mutations propagate upward.
+ *
+ * Required CSS (add once, either globally or per-page):
+ *   dual-listbox-alt                    { display: block; }
+ *   dual-listbox-alt > [data-slot]      { display: none;  }
+ *
+ * Usage:
+ *
+ *   <dual-listbox-alt
+ *     left-label="Available items"
+ *     right-label="Selected items"
+ *     data-action-add="assign_items"
+ *     data-action-remove="remove_items"
+ *     data-field-name="item_ids">
+ *
+ *     <ul data-slot="left">
+ *       <li value="1">Item One</li>
+ *       <li value="2">Item Two</li>
+ *     </ul>
+ *
+ *     <ul data-slot="right">
+ *       <li value="3">Item Three</li>
+ *     </ul>
+ *
+ *   </dual-listbox-alt>
+ *
+ * Events dispatched (bubble):
+ *   dual-listbox-add    { detail: { values: string[], labels: string[] } }
+ *   dual-listbox-remove { detail: { values: string[], labels: string[] } }
+ *
+ * JS API:
+ *   element.setTab(value) is not applicable here; use the event listeners above.
+ *
+ * Active tab resolution: N/A — this is a stateless component.
+ */
+class DualListboxAlt extends HTMLElement {
+  connectedCallback() {
+    if (this._ready) return;
+    this._tryInit();
+    if (!this._ready) {
+      // Children not yet parsed (programmatic creation). Wait for them.
+      this._observer = new MutationObserver(() => this._tryInit());
+      this._observer.observe(this, { childList: true });
+    }
+  }
+
+  disconnectedCallback() {
+    this._observer?.disconnect();
+  }
+
+  _tryInit() {
+    const leftSlot  = this.querySelector('[data-slot="left"]');
+    const rightSlot = this.querySelector('[data-slot="right"]');
+    if (!leftSlot || !rightSlot) return;
+
+    this._observer?.disconnect();
+    this._ready = true;
+
+    this._leftLabel  = this.getAttribute('left-label')  || 'Available';
+    this._rightLabel = this.getAttribute('right-label') || 'Selected';
+
+    // Unique suffix so multiple instances on the same page never share IDs.
+    const uid = Math.random().toString(36).slice(2, 9);
+    this._uid = uid;
+
+    const leftItems  = this._readItems(leftSlot);
+    const rightItems = this._readItems(rightSlot);
+
+    // Append UI alongside (not instead of) the source slot elements.
+    const ui = this._buildUI(uid);
+    this.appendChild(ui);
+
+    this._fillSelect(this.querySelector(`#dlb-l-${uid}`), leftItems);
+    this._fillSelect(this.querySelector(`#dlb-r-${uid}`), rightItems);
+    this._updateRightCount();
+    this._bind();
+  }
+
+  // ── private ──────────────────────────────────────────────────────────────
+
+  _readItems(slotEl) {
+    return [...slotEl.querySelectorAll('li')].map(li => ({
+      value: li.getAttribute('value') ?? li.textContent.trim(),
+      label: li.textContent.trim(),
+    }));
+  }
+
+  _fillSelect(select, items) {
+    items.forEach(({ value, label }) => select.appendChild(new Option(label, value)));
+  }
+
+  _buildUI(uid) {
+    const ll = this._escAttr(this._leftLabel);
+    const rl = this._escAttr(this._rightLabel);
+    const selectStyle = [
+      'width:100%',
+      'height:12rem',
+      'border:1px solid var(--bulma-border)',
+      'padding:0.25rem',
+      'background:var(--bulma-scheme-main)',
+      'color:var(--bulma-text)',
+      'font-size:0.875rem',
+      'outline:none',
+    ].join(';');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'dlb-alt-ui';
+    wrapper.innerHTML = `
+<div class="columns is-variable is-3 is-align-items-center">
+
+  <!-- Left column: available items -->
+  <div class="column">
+    <h4 class="title is-6 mb-1">${this._escHTML(this._leftLabel)}</h4>
+    <p class="is-size-7 has-text-grey mb-2">
+      Select one or more items, then press the arrow to move them.
+    </p>
+    <div class="field mb-1">
+      <input type="search" id="dlb-fl-${uid}" class="input is-small"
+        placeholder="Filter" autocomplete="off" aria-label="Filter ${ll}">
+    </div>
+    <div style="display:flex;flex-direction:column;">
+      <select id="dlb-l-${uid}" multiple aria-label="${ll}"
+        style="${selectStyle}"></select>
+      <button type="button" id="dlb-sall-l-${uid}"
+        class="button is-small is-fullwidth" style="border-top:none;"
+        title="Select all visible items for addition">
+        Select all for addition
+      </button>
+    </div>
+  </div>
+
+  <!-- Centre: move arrows -->
+  <div class="column is-narrow"
+    style="display:flex;flex-direction:column;gap:0.5rem;align-items:center;">
+    <button type="button" id="dlb-add-${uid}" class="button is-small"
+      title="Move selected to ${rl}"
+      aria-label="Add selected items to ${rl}">
+      <span class="icon">
+        <span class="material-icons" aria-hidden="true">arrow_forward</span>
+      </span>
+    </button>
+    <button type="button" id="dlb-rem-${uid}" class="button is-small"
+      title="Move selected back to ${ll}"
+      aria-label="Remove selected items back to ${ll}">
+      <span class="icon">
+        <span class="material-icons" aria-hidden="true">arrow_back</span>
+      </span>
+    </button>
+  </div>
+
+  <!-- Right column: selected items -->
+  <div class="column">
+    <h4 class="title is-6 mb-1" id="dlb-rtitle-${uid}">
+      ${this._escHTML(this._rightLabel)} (0)
+    </h4>
+    <p class="is-size-7 has-text-grey mb-2">
+      Select one or more items, then press the arrow to remove them.
+    </p>
+    <div class="field mb-1">
+      <input type="search" id="dlb-fr-${uid}" class="input is-small"
+        placeholder="Filter" autocomplete="off" aria-label="Filter ${rl}">
+    </div>
+    <div style="display:flex;flex-direction:column;">
+      <select id="dlb-r-${uid}" multiple aria-label="${rl}"
+        style="${selectStyle}"></select>
+      <button type="button" id="dlb-sall-r-${uid}"
+        class="button is-small is-fullwidth" style="border-top:none;"
+        title="Select all visible items for removal">
+        Select all for removal
+      </button>
+    </div>
+  </div>
+
+</div>`;
+    return wrapper;
+  }
+
+  _bind() {
+    const uid    = this._uid;
+    const lSel   = this.querySelector(`#dlb-l-${uid}`);
+    const rSel   = this.querySelector(`#dlb-r-${uid}`);
+    const fLeft  = this.querySelector(`#dlb-fl-${uid}`);
+    const fRight = this.querySelector(`#dlb-fr-${uid}`);
+
+    fLeft.addEventListener('input',  () => this._applyFilter(lSel, fLeft.value));
+    fRight.addEventListener('input', () => this._applyFilter(rSel, fRight.value));
+
+    this.querySelector(`#dlb-add-${uid}`)
+      .addEventListener('click', () => this._move(lSel, rSel, 'add'));
+    this.querySelector(`#dlb-rem-${uid}`)
+      .addEventListener('click', () => this._move(rSel, lSel, 'remove'));
+
+    this.querySelector(`#dlb-sall-l-${uid}`)
+      .addEventListener('click', () => this._selectAllVisible(lSel));
+    this.querySelector(`#dlb-sall-r-${uid}`)
+      .addEventListener('click', () => this._selectAllVisible(rSel));
+  }
+
+  _applyFilter(select, query) {
+    const q = query.trim().toLowerCase();
+    [...select.options].forEach(opt => {
+      opt.hidden = q ? !opt.text.toLowerCase().includes(q) : false;
+    });
+  }
+
+  _selectAllVisible(select) {
+    [...select.options].filter(o => !o.hidden).forEach(o => (o.selected = true));
+  }
+
+  _move(fromSel, toSel, action) {
+    const selected = [...fromSel.selectedOptions];
+    if (!selected.length) return;
+
+    const moved = selected.map(o => ({ value: o.value, label: o.text }));
+    selected.forEach(opt => {
+      fromSel.removeChild(opt);
+      opt.selected = false;
+      opt.hidden   = false;
+      this._insertSorted(toSel, opt);
+    });
+
+    this._updateRightCount();
+
+    this.dispatchEvent(new CustomEvent(`dual-listbox-${action}`, {
+      bubbles: true,
+      detail: {
+        values: moved.map(i => i.value),
+        labels: moved.map(i => i.label),
+      },
+    }));
+  }
+
+  _insertSorted(select, opt) {
+    const after = [...select.options].find(o => o.value > opt.value);
+    after ? select.insertBefore(opt, after) : select.appendChild(opt);
+  }
+
+  _updateRightCount() {
+    const uid     = this._uid;
+    const rSel    = this.querySelector(`#dlb-r-${uid}`);
+    const titleEl = this.querySelector(`#dlb-rtitle-${uid}`);
+    if (titleEl && rSel) {
+      titleEl.textContent = `${this._rightLabel} (${rSel.options.length})`;
+    }
+  }
+
+  _escHTML(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  _escAttr(str) {
+    return String(str).replace(/"/g, '&quot;');
+  }
+}
+
+if (!customElements.get('dual-listbox-alt')) {
+  customElements.define('dual-listbox-alt', DualListboxAlt);
+}

@@ -3,97 +3,122 @@
 {% block breadcrumb %}
 <li class="is-active"><a href="#" aria-current="page">Dashboard</a></li>
 {% endblock %}
+{% block extra_css %}
+  .portal-hub-hero { text-align: center; padding: 1.5rem 1rem 1rem; }
+  .portal-hub-hero .hero-icon { font-size: 2.5rem; color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
+  .portal-hub-hero h1 { font-size: 1.85rem; font-weight: 700; color: var(--bulma-text-strong); }
+  .portal-hub-hero p { color: var(--bulma-text-weak); margin-top: 0.25rem; }
+
+  .portal-role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .portal-role-card {
+    background: var(--bulma-scheme-main);
+    border: 1px solid var(--bulma-border-weak);
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .portal-role-card .role-icon {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+    color: var(--bulma-link);
+  }
+  .portal-role-card h3 {
+    font-size: 1rem; font-weight: 700;
+    color: var(--bulma-text-strong);
+  }
+  .portal-role-card p {
+    color: var(--bulma-text-weak);
+    font-size: 0.82rem;
+  }
+  .portal-role-card .buttons { margin-top: auto; }
+{% endblock %}
 {% block content %}
-<h1 class="title is-4">Site administration</h1>
-<p class="mb-5 has-text-grey">Pick an area below. Permissions ("what you can do") and data access ("what you can see") are independent systems.</p>
 
-<div class="columns is-multiline">
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">User Management</p>
-      </header>
-      <div class="card-content">
-        <p class="is-size-7 has-text-grey mb-3">Search, view, and edit user identities, role assignments, and data scope.</p>
-        <a class="button is-link is-light is-medium" href="{% url 'user_index' %}">
-          <span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>
-          <span>Users</span>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">Organizational Assignments</p>
-      </header>
-      <div class="card-content">
-        <p class="is-size-7 has-text-grey mb-3">Divisions and organizations are <strong>informational</strong> — they do not grant access. Used for navigation and audit warnings.</p>
-        <div class="buttons">
-          <a class="button is-link is-light is-medium" href="{% url 'organization_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>
-            <span>Organizations</span>
-          </a>
-          <a class="button is-link is-light is-medium" href="{% url 'division_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span>
-            <span>Divisions</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">Permissions System (capability gate)</p>
-      </header>
-      <div class="card-content">
-        <p class="is-size-7 has-text-grey mb-3">Controls <em>what actions</em> a user can perform. Permission groups bundle Django permissions; roles bundle permission groups.</p>
-        <div class="buttons">
-          <a class="button is-link is-light is-medium" href="{% url 'permission_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>
-            <span>Permissions</span>
-          </a>
-          <a class="button is-link is-light is-medium" href="{% url 'permission_group_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>
-            <span>Permission Groups</span>
-          </a>
-          <a class="button is-link is-light is-medium" href="{% url 'role_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
-            <span>Roles</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">Data Access (scope gate)</p>
-      </header>
-      <div class="card-content">
-        <p class="is-size-7 has-text-grey mb-3">Controls <em>which rows</em> a user can see. Every scoped row carries a single Domain; templates bundle domains for bulk assignment.</p>
-        <div class="buttons">
-          <a class="button is-link is-light is-medium" href="{% url 'domain_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>
-            <span>Domains</span>
-          </a>
-          <a class="button is-link is-light is-medium" href="{% url 'domain_template_index' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span>
-            <span>Domain Templates</span>
-          </a>
-          <a class="button is-link is-light is-medium" href="{% url 'domain_organizations_portal' %}">
-            <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
-            <span>Domain ↔ Organization Links</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
+<!-- ── Hub hero ── -->
+<div class="portal-hub-hero">
+  <div class="hero-icon"><span class="material-icons" aria-hidden="true" style="font-size:2.5rem;">settings</span></div>
+  <h1>Site administration</h1>
+  <p>Permissions ("what you can do") and data access ("what you can see") are independent systems.</p>
 </div>
 
-<p class="mt-5 has-text-grey is-size-7">Grant actions require membership in the <code>generic_manager</code> or <code>generic_admin</code> group, or superuser status.</p>
+<!-- ── Role cards ── -->
+<div class="portal-role-grid">
+
+  <div class="portal-role-card">
+    <div class="role-icon"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">people</span></div>
+    <h3>User Management</h3>
+    <p>Search, view, and edit user identities, role assignments, and data scope.</p>
+    <div class="buttons">
+      <a class="button is-info is-light" href="{% url 'user_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>
+        <span>Users</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="portal-role-card">
+    <div class="role-icon"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">business</span></div>
+    <h3>Organizational Assignments</h3>
+    <p>Divisions and organizations are <strong>informational</strong> — they do not grant access. Used for navigation and audit warnings.</p>
+    <div class="buttons">
+      <a class="button is-info is-light" href="{% url 'organization_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>
+        <span>Organizations</span>
+      </a>
+      <a class="button is-info is-light" href="{% url 'division_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span>
+        <span>Divisions</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="portal-role-card">
+    <div class="role-icon"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">vpn_key</span></div>
+    <h3>Permissions System (capability gate)</h3>
+    <p>Controls <em>what actions</em> a user can perform. Permission groups bundle Django permissions; roles bundle permission groups.</p>
+    <div class="buttons">
+      <a class="button is-info is-light" href="{% url 'permission_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>
+        <span>Permissions</span>
+      </a>
+      <a class="button is-info is-light" href="{% url 'permission_group_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>
+        <span>Permission Groups</span>
+      </a>
+      <a class="button is-info is-light" href="{% url 'role_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+        <span>Roles</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="portal-role-card">
+    <div class="role-icon"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">layers</span></div>
+    <h3>Data Access (scope gate)</h3>
+    <p>Controls <em>which rows</em> a user can see. Every scoped row carries a single Domain; templates bundle domains for bulk assignment.</p>
+    <div class="buttons">
+      <a class="button is-info is-light" href="{% url 'domain_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>
+        <span>Domains</span>
+      </a>
+      <a class="button is-info is-light" href="{% url 'domain_template_index' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span>
+        <span>Domain Templates</span>
+      </a>
+      <a class="button is-info is-light" href="{% url 'domain_organizations_portal' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+        <span>Domain ↔ Organization Links</span>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<p class="has-text-grey is-size-7">Grant actions require membership in the <code>generic_manager</code> or <code>generic_admin</code> group, or superuser status.</p>
 {% endblock %}

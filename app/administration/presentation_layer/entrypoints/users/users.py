@@ -58,6 +58,13 @@ CHECK_DIRECT_PERMS_GROUP_NOTICE = (
     "assigned groups, refer to the below list before committing"
 )
 
+TAB_PARTIAL_MAP = {
+    "information": "users/_edit_information.html",
+    "permissions": "users/_edit_permissions.html",
+    "data-access": "users/_edit_data_access.html",
+}
+DEFAULT_TAB_VIEW = "information"
+
 
 def _parse_id_list(post, key: str) -> list[int]:
     out: list[int] = []
@@ -484,30 +491,349 @@ def _render_user_edit(
 
     pwd_form = password_form if password_form is not None else SetPasswordForm(user=target)
 
-    return render(
-        request,
-        "users/edit.html",
-        {
-            "target_user": target,
-            "perm_struct": perm_struct,
-            "ownership": ownership,
-            "domain_rows": domain_rows,
-            "role_assignments": role_assignments,
-            "roles_assigned_for_listbox": roles_assigned_for_listbox,
-            "roles_available": roles_available,
-            "available_domain_templates": available_domain_templates,
-            "current_domain_template_assignment": current_domain_template_assignment,
-            "password_form": pwd_form,
-            "groups_available": groups_available,
-            "groups_assigned": groups_assigned,
-            "permissions_available": permissions_available,
-            "permissions_assigned": permissions_assigned,
-            "divisions_available": divisions_available,
-            "divisions_assigned": divisions_assigned,
-            "organizations_available": organizations_available,
-            "organizations_assigned": organizations_assigned,
-            "domains_available": domains_available,
-            "domains_assigned": domains_assigned,
-            "inherited_permission_ids": inherited_permission_ids,
-        },
+    requested_view = request.GET.get("view", DEFAULT_TAB_VIEW)
+    active_view = requested_view if requested_view in TAB_PARTIAL_MAP else DEFAULT_TAB_VIEW
+    tab_partial = TAB_PARTIAL_MAP[active_view]
+
+    context = {
+        "target_user": target,
+        "perm_struct": perm_struct,
+        "ownership": ownership,
+        "domain_rows": domain_rows,
+        "role_assignments": role_assignments,
+        "roles_assigned_for_listbox": roles_assigned_for_listbox,
+        "roles_available": roles_available,
+        "available_domain_templates": available_domain_templates,
+        "current_domain_template_assignment": current_domain_template_assignment,
+        "password_form": pwd_form,
+        "groups_available": groups_available,
+        "groups_assigned": groups_assigned,
+        "permissions_available": permissions_available,
+        "permissions_assigned": permissions_assigned,
+        "divisions_available": divisions_available,
+        "divisions_assigned": divisions_assigned,
+        "organizations_available": organizations_available,
+        "organizations_assigned": organizations_assigned,
+        "domains_available": domains_available,
+        "domains_assigned": domains_assigned,
+        "inherited_permission_ids": inherited_permission_ids,
+        "active_view": active_view,
+        "tab_partial": tab_partial,
+    }
+
+    # HTMX tab clicks ask for just the partial; full reloads get the whole page.
+    if request.headers.get("HX-Request") == "true" and "view" in request.GET:
+        return render(request, tab_partial, context)
+    return render(request, "users/edit.html", context)
+
+
+def _render_move_response(
+    request: HttpRequest,
+    target_user,
+    dlb_id: str,
+    left_id: str,
+    right_id: str,
+    template_name: str,
+    message_text: str,
+    message_type: str = "success",
+):
+    """
+    Render a dual-list-box fragment + alert notification for an HTMX response.
+    Used by move endpoints (move-roles, move-groups, etc).
+    """
+    # Reconstruct the context just for the dlb component.
+    # This is fetch-heavy but keeps the handlers small.
+    ctx = _render_user_edit(request, target_user, password_form=None)
+    ctx_dict = ctx.context if hasattr(ctx, 'context') else ctx
+
+    html = f'''
+<div class="notification is-{message_type} is-light dlb-alert" data-dismiss="3000">
+  {message_text}
+  <button class="delete" aria-label="Dismiss"></button>
+</div>
+
+{{% include "{template_name}" %}}
+'''
+    # Render just the template fragment inline.
+    from django.template.loader import render_to_string
+    fragment = render_to_string(template_name, ctx_dict)
+    return HttpResponse(fragment)
+
+
+@require_http_methods(["POST"])
+def user_move_roles(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "role_ids")
+    direction = request.POST.get("direction", "add")  # "add" or "remove"
+
+    if not ids:
+        return HttpResponse("Select at least one role.", status=400)
+
+    try:
+        ctx = UserRoleAssignmentContext(user_id)
+        with transaction.atomic():
+            for rid in ids:
+                if direction == "add":
+                    ctx.assign_role(actor=request.user, role_id=rid)
+                else:
+                    ctx.remove_role(actor=request.user, role_id=rid)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    # Return fragment.
+    perm_struct = load_user_django_permissions_struct(target.pk)
+    ownership = load_user_data_ownership_struct(target.pk)
+
+    role_assignments = list(
+        UserRole.objects.filter(user=target, is_active=True)
+        .select_related("role", "role__parent_role")
+        .order_by("role__name"),
     )
+    assigned_role_ids = {ra.role_id for ra in role_assignments}
+    roles_available = list(
+        Role.objects.filter(is_active=True).exclude(pk__in=assigned_role_ids).order_by("name"),
+    )
+    roles_assigned_for_listbox = [ra.role for ra in role_assignments]
+
+    context = {
+        "target_user": target,
+        "perm_struct": perm_struct,
+        "ownership": ownership,
+        "role_assignments": role_assignments,
+        "roles_assigned_for_listbox": roles_assigned_for_listbox,
+        "roles_available": roles_available,
+    }
+
+    msg = "Roles updated." if direction == "add" else "Roles removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_roles_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def user_move_groups(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "group_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one group.", status=400)
+
+    try:
+        ctx = DjangoPermissionsContext(user_id)
+        with transaction.atomic():
+            for gid in ids:
+                if direction == "add":
+                    ctx.add_group(actor=request.user, group_id=gid)
+                else:
+                    ctx.remove_group(actor=request.user, group_id=gid)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    assigned_group_ids = list(target.groups.values_list("pk", flat=True))
+    groups_available = list(Group.objects.exclude(pk__in=assigned_group_ids).order_by("name"))
+    groups_assigned = list(target.groups.order_by("name"))
+
+    context = {
+        "target_user": target,
+        "groups_available": groups_available,
+        "groups_assigned": groups_assigned,
+    }
+
+    msg = "Groups updated." if direction == "add" else "Groups removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_groups_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def user_move_permissions(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "permission_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one permission.", status=400)
+
+    try:
+        ctx = DjangoPermissionsContext(user_id)
+        with transaction.atomic():
+            for pid in ids:
+                if direction == "add":
+                    ctx.add_direct_permission(actor=request.user, permission_id=pid)
+                else:
+                    ctx.remove_direct_permission(actor=request.user, permission_id=pid)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    direct_ids = list(target.user_permissions.values_list("pk", flat=True))
+    permissions_available = list(
+        Permission.objects.select_related("content_type")
+        .exclude(pk__in=direct_ids)
+        .order_by("content_type__app_label", "content_type__model", "codename"),
+    )
+    permissions_assigned = list(
+        target.user_permissions.select_related("content_type").order_by(
+            "content_type__app_label",
+            "content_type__model",
+            "codename",
+        ),
+    )
+
+    context = {
+        "target_user": target,
+        "permissions_available": permissions_available,
+        "permissions_assigned": permissions_assigned,
+    }
+
+    msg = "Permissions updated." if direction == "add" else "Permissions removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_permissions_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def user_move_divisions(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "division_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one division.", status=400)
+
+    try:
+        ctx = DataOwnershipContext(user_id)
+        with transaction.atomic():
+            for did in ids:
+                if direction == "add":
+                    ctx.enable_or_assign_division(actor=request.user, division_id=did)
+                else:
+                    row = UserDivision.objects.get(user_id=user_id, division_id=did)
+                    ctx.disable_division_assignment(actor=request.user, user_division_id=row.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    ownership = load_user_data_ownership_struct(target.pk)
+    assigned_division_ids = [d.pk for d in ownership.divisions]
+    divisions_available = list(
+        Division.objects.exclude(pk__in=assigned_division_ids).order_by("name"),
+    )
+    divisions_assigned = ownership.divisions
+
+    context = {
+        "target_user": target,
+        "divisions_available": divisions_available,
+        "divisions_assigned": divisions_assigned,
+    }
+
+    msg = "Divisions updated." if direction == "add" else "Divisions removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_divisions_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def user_move_organizations(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "organization_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one organization.", status=400)
+
+    try:
+        ctx = DataOwnershipContext(user_id)
+        with transaction.atomic():
+            for oid in ids:
+                if direction == "add":
+                    ctx.enable_or_assign_organization(actor=request.user, organization_id=oid)
+                else:
+                    row = UserOrganization.objects.get(user_id=user_id, organization_id=oid)
+                    ctx.disable_organization_assignment(
+                        actor=request.user,
+                        user_organization_id=row.pk,
+                    )
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    ownership = load_user_data_ownership_struct(target.pk)
+    assigned_org_ids = [o.pk for o in ownership.organizations]
+    organizations_available = list(
+        Organization.objects.exclude(pk__in=assigned_org_ids).order_by("name"),
+    )
+    organizations_assigned = ownership.organizations
+
+    context = {
+        "target_user": target,
+        "organizations_available": organizations_available,
+        "organizations_assigned": organizations_assigned,
+    }
+
+    msg = "Organizations updated." if direction == "add" else "Organizations removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_organizations_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def user_move_domains(request: HttpRequest, user_id: int) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden()
+
+    target = get_object_or_404(User, pk=user_id)
+    ids = _parse_id_list(request.POST, "domain_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one domain.", status=400)
+
+    try:
+        ctx = DataOwnershipContext(user_id)
+        with transaction.atomic():
+            for did in ids:
+                if direction == "add":
+                    ctx.enable_or_assign_domain(actor=request.user, domain_id=did)
+                else:
+                    row = UserDomain.objects.get(user_id=user_id, domain_id=did)
+                    ctx.disable_domain_assignment(actor=request.user, user_domain_id=row.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    ownership = load_user_data_ownership_struct(target.pk)
+    assigned_domain_ids = [d.pk for d in ownership.domains]
+    domains_available = list(
+        Domain.objects.exclude(pk__in=assigned_domain_ids).order_by("name"),
+    )
+    domains_assigned = ownership.domains
+
+    context = {
+        "target_user": target,
+        "domains_available": domains_available,
+        "domains_assigned": domains_assigned,
+    }
+
+    msg = "Domains updated." if direction == "add" else "Domains removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "users/_domains_dlb_only.html", context).content.decode('utf-8')
+
+    return HttpResponse(alert_html + dlb_html)

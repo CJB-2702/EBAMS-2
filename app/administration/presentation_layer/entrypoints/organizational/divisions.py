@@ -250,6 +250,88 @@ def division_edit(request: HttpRequest, division_id: int) -> HttpResponse:
 
 
 @require_http_methods(["POST"])
+def division_move_organizations(request: HttpRequest, division_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    division = get_object_or_404(Division, pk=division_id)
+    ids = _parse_id_list(request.POST, "organization_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one organization.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for oid in ids:
+                if direction == "add":
+                    link_organization_to_division(actor=actor, organization_id=oid, division_id=division.pk)
+                else:
+                    unlink_organization_from_division(actor=actor, organization_id=oid, division_id=division.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    organizations_assigned = list(division.organizations.order_by("name"))
+    assigned_org_ids = {o.pk for o in organizations_assigned}
+    organizations_available = list(Organization.objects.exclude(pk__in=assigned_org_ids).order_by("name"))
+
+    msg = "Organizations linked." if direction == "add" else "Organizations removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "organizational/divisions/_organizations_dlb_only.html", {
+        "division": division,
+        "organizations_available": organizations_available,
+        "organizations_assigned": organizations_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def division_move_users(request: HttpRequest, division_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    division = get_object_or_404(Division, pk=division_id)
+    ids = _parse_id_list(request.POST, "user_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one user.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for uid in ids:
+                if direction == "add":
+                    DataOwnershipContext(uid).enable_or_assign_division(actor=actor, division_id=division.pk)
+                else:
+                    row = UserDivision.objects.get(user_id=uid, division_id=division.pk)
+                    DataOwnershipContext(uid).disable_division_assignment(actor=actor, user_division_id=row.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    user_assignments = list(
+        UserDivision.objects.filter(division=division, is_active=True)
+        .select_related("user")
+        .order_by("user__username"),
+    )
+    users_assigned = [ua.user for ua in user_assignments]
+    assigned_user_ids = {ua.user_id for ua in user_assignments}
+    users_available = list(list_users_ordered().exclude(pk__in=assigned_user_ids))
+
+    msg = "Users assigned." if direction == "add" else "Users removed."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "organizational/divisions/_users_dlb_only.html", {
+        "division": division,
+        "users_available": users_available,
+        "users_assigned": users_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def division_delete(request: HttpRequest, division_id: int) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

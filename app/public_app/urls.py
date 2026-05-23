@@ -17,6 +17,8 @@ from app.public_app.presentation_layer.entrypoints.kitchen_sink import (
     kitchen_sink_search_page_example,
     kitchen_sink_sidebar_behavior_example,
     kitchen_sink_topbar_popovers,
+    kitchen_sink_wc_detail,
+    kitchen_sink_wc_index,
     kitchen_sink_work_portal_example,
 )
 from app.public_app.presentation_layer.entrypoints.logout import PublicLogoutView
@@ -43,4 +45,6 @@ urlpatterns = [
     path("kitchen-sink/index-example", kitchen_sink_index_example, name="kitchen_sink_index_example"),
     path("kitchen-sink/sidebar-behavior", kitchen_sink_sidebar_behavior_example, name="kitchen_sink_sidebar_behavior_example"),
     path("kitchen-sink/top-bar-behavior/popovers.html", kitchen_sink_topbar_popovers, name="kitchen_sink_topbar_popovers"),
+    path("kitchen-sink/web-components/", kitchen_sink_wc_index, name="kitchen_sink_wc_index"),
+    path("kitchen-sink/<slug:component_name>/", kitchen_sink_wc_detail, name="kitchen_sink_wc_detail"),
 ]

@@ -5,8 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Structural Example{% endblock %} — Kitchen Sink</title>
-  <link rel="stylesheet" href="{% static 'css/bulma.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   <style>
@@ -205,8 +208,8 @@
       font-weight: 600;
     }
     .sidebar-link {
-      display: block;
-      padding: 0.3rem 1rem 0.3rem 1.25rem;
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 1rem 0.3rem 1rem;
       font-size: 0.8rem;
       color: var(--bulma-text);
       border-left: 3px solid transparent;
@@ -376,6 +379,7 @@
 
     {% block extra_css %}{% endblock %}
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
@@ -388,95 +392,114 @@
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-events" command="toggle-popover">
-          <span class="portal-tab-icon">↯</span> Events <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">event</span></span> Events <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-events" popover="auto" class="portal-dropdown">
           <p class="portal-dropdown-label">Events</p>
           <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">↯</span> All Events</a>
-            <a href="#" class="portal-sublink"><span class="icon">⚒</span> Maintenance Events</a>
-            <a href="#" class="portal-sublink"><span class="icon">✔</span> Inspection Events</a>
-            <a href="#" class="portal-sublink"><span class="icon">⚖</span> Calibration</a>
-            <a href="#" class="portal-sublink"><span class="icon">▣</span> Event Templates</a>
-            <a href="#" class="portal-sublink"><span class="icon">⊞</span> Reports</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Maintenance Events</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span> Inspection Events</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">scale</span></span> Calibration</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span> Event Templates</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assessment</span></span> Reports</a>
           </div>
         </div>
       </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-administration" command="toggle-popover">
-          <span class="portal-tab-icon">⚙</span> Administration <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-administration" popover="auto" class="portal-dropdown">
-          <p class="portal-dropdown-label">Administration</p>
-          <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">👤</span> Users</a>
-            <a href="#" class="portal-sublink"><span class="icon">🔑</span> Roles</a>
-            <a href="#" class="portal-sublink"><span class="icon">⊡</span> Domain Templates</a>
-            <a href="#" class="portal-sublink"><span class="icon">◈</span> Domains</a>
-            <a href="#" class="portal-sublink"><span class="icon">📋</span> Audit Log</a>
-            <a href="#" class="portal-sublink"><span class="icon">🔒</span> Password Policy</a>
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">User Management</p>
+              <div class="portal-dropdown-inner">
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span> Users</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Permissions System</p>
+              <div class="portal-dropdown-inner">
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Roles</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Data Access</p>
+              <div class="portal-dropdown-inner">
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span> Domains</a>
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span> Domain Templates</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">System Administration</p>
+              <div class="portal-dropdown-inner">
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span> Audit Log</a>
+                <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span> Password Policy</a>
+              </div>
+            </div>
           </div>
         </div>
       </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-assets" command="toggle-popover">
-          <span class="portal-tab-icon">◈</span> Assets <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">web_asset</span></span> Assets <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-assets" popover="auto" class="portal-dropdown">
           <p class="portal-dropdown-label">Assets</p>
           <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">◈</span> All Assets</a>
-            <a href="#" class="portal-sublink"><span class="icon">▦</span> Asset Groups</a>
-            <a href="#" class="portal-sublink"><span class="icon">⊞</span> Categories</a>
-            <a href="#" class="portal-sublink"><span class="icon">⇅</span> Import/Export</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">web_asset</span></span> All Assets</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_module</span></span> Asset Groups</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Categories</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">swap_vert</span></span> Import/Export</a>
           </div>
         </div>
       </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-maintenance" command="toggle-popover">
-          <span class="portal-tab-icon">⚒</span> Maintenance <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">build</span></span> Maintenance <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-maintenance" popover="auto" class="portal-dropdown">
           <p class="portal-dropdown-label">Maintenance</p>
           <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">⚒</span> Work Orders</a>
-            <a href="#" class="portal-sublink"><span class="icon">📅</span> Scheduled</a>
-            <a href="#" class="portal-sublink"><span class="icon">📋</span> Procedures</a>
-            <a href="#" class="portal-sublink"><span class="icon">⬡</span> Parts Requests</a>
-            <a href="#" class="portal-sublink"><span class="icon">👷</span> Technicians</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Work Orders</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">calendar_today</span></span> Scheduled</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span> Procedures</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_basket</span></span> Parts Requests</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span> Technicians</a>
           </div>
         </div>
       </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-inventory" command="toggle-popover">
-          <span class="portal-tab-icon">▦</span> Inventory <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Inventory <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-inventory" popover="auto" class="portal-dropdown">
           <p class="portal-dropdown-label">Inventory</p>
           <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">▦</span> Stock Levels</a>
-            <a href="#" class="portal-sublink"><span class="icon">📍</span> Locations</a>
-            <a href="#" class="portal-sublink"><span class="icon">⊡</span> Part Numbers</a>
-            <a href="#" class="portal-sublink"><span class="icon">⇄</span> Transfers</a>
-            <a href="#" class="portal-sublink"><span class="icon">⊟</span> Part Demands</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Stock Levels</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">location_on</span></span> Locations</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">label</span></span> Part Numbers</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> Transfers</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_basket</span></span> Part Demands</a>
           </div>
         </div>
       </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-core" command="toggle-popover">
-          <span class="portal-tab-icon">⬡</span> Core <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">hub</span></span> Core <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-core" popover="auto" class="portal-dropdown">
           <p class="portal-dropdown-label">Core</p>
           <div class="portal-dropdown-inner">
-            <a href="#" class="portal-sublink"><span class="icon">⬡</span> Org Chart</a>
-            <a href="#" class="portal-sublink"><span class="icon">◈</span> Divisions</a>
-            <a href="#" class="portal-sublink"><span class="icon">ℹ</span> System Info</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span> Org Chart</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span> Divisions</a>
+            <a href="#" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span> System Info</a>
           </div>
         </div>
       </li>

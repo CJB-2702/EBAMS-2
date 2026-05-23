@@ -1,0 +1,226 @@
+/* Last-mile color overrides — applied after custom_bulma.css.
+   Keep this file color-only; structural/layout rules go in custom_css.css. */
+
+/* ── Depth utility classes ────────────────────────────────────────────────────
+   Light mode: layers alternate white / gray-10, with gray-20 at depth-3.
+   Dark mode:  layers step lighter by one Carbon stop per level.
+   Use !important so these override component backgrounds (e.g. .pc) regardless
+   of which stylesheet block declares them. */
+
+/* Light mode (default) */
+.depth-0 {
+  background-color: var(--gray-10) !important;
+}
+
+.depth-1 {
+  background-color: var(--white) !important;
+}
+
+.depth-2 {
+  background-color: var(--gray-10) !important;
+}
+
+.depth-3 {
+  background-color: var(--gray-20) !important;
+}
+
+.depth-4 {
+  background-color: var(--gray-10) !important;
+}
+
+/* Input surfaces default to gray-10 in light mode */
+.select select,
+.input,
+.textarea {
+  background-color: var(--gray-10);
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    .depth-0 {
+      background-color: var(--gray-90) !important;
+    }
+
+    .depth-1 {
+      background-color: var(--gray-100) !important;
+    }
+
+    .depth-2 {
+      background-color: var(--gray-90) !important;
+    }
+
+    .depth-3 {
+      background-color: var(--gray-80) !important;
+    }
+
+    .select select,
+    .input,
+    .textarea {
+      background-color: var(--gray-100) !important;
+    }
+  }
+}
+
+:root[data-theme="dark"] {
+  .depth-0 {
+    background-color: var(--gray-90) !important;
+  }
+
+  .depth-1 {
+    background-color: var(--gray-100) !important;
+  }
+
+  .depth-2 {
+    background-color: var(--gray-90) !important;
+  }
+
+  .depth-3 {
+    background-color: var(--gray-80) !important;
+  }
+
+  .select select,
+  .input,
+  .textarea {
+    background-color: var(--gray-90) !important;
+  }
+}
+
+/* ── Breadcrumb separators: use theme-aware text color ────────────────────────
+   Bulma hardcodes breadcrumb separators, making them invisible in light mode.
+   Use default text color for both light and dark themes. */
+.breadcrumb li::before {
+  color: black;
+  /*var(--bulma-text);*/
+}
+
+/* ── Dark mode: `.notification.is-<color>.is-light` ─────────────────────────
+   Bulma hardcodes `--bulma-notification-background-l: 90%` for every soft
+   notification variant (literal, not a CSS var), so the background stays
+   light-mode-bright in dark mode. Repoint each variant at the theme-aware
+   `--bulma-<color>-light-l` (which our dark theme sets to the Carbon `-80`
+   swatch) and use `-light-invert-l` for legible text.
+   Buttons / tags / messages already use scheme-aware vars — no fix needed. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    .notification.is-primary.is-light {
+      --bulma-notification-background-l: var(--bulma-primary-light-l);
+      --bulma-notification-color-l: var(--bulma-primary-light-invert-l);
+    }
+
+    .notification.is-link.is-light {
+      --bulma-notification-background-l: var(--bulma-link-light-l);
+      --bulma-notification-color-l: var(--bulma-link-light-invert-l);
+    }
+
+    .notification.is-info.is-light {
+      --bulma-notification-background-l: var(--bulma-info-light-l);
+      --bulma-notification-color-l: var(--bulma-info-light-invert-l);
+    }
+
+    .notification.is-success.is-light {
+      --bulma-notification-background-l: var(--bulma-success-light-l);
+      --bulma-notification-color-l: var(--bulma-success-light-invert-l);
+    }
+
+    .notification.is-warning.is-light {
+      --bulma-notification-background-l: var(--bulma-warning-light-l);
+      --bulma-notification-color-l: var(--bulma-warning-light-invert-l);
+    }
+
+    .notification.is-danger.is-light {
+      --bulma-notification-background-l: var(--bulma-danger-light-l);
+      --bulma-notification-color-l: var(--bulma-danger-light-invert-l);
+    }
+  }
+}
+
+/* Same override for explicit data-theme="dark" (manual toggle path). */
+:root[data-theme="dark"] {
+  .notification.is-primary.is-light {
+    --bulma-notification-background-l: var(--bulma-primary-light-l);
+    --bulma-notification-color-l: var(--bulma-primary-light-invert-l);
+  }
+
+  .notification.is-link.is-light {
+    --bulma-notification-background-l: var(--bulma-link-light-l);
+    --bulma-notification-color-l: var(--bulma-link-light-invert-l);
+  }
+
+  .notification.is-info.is-light {
+    --bulma-notification-background-l: var(--bulma-info-light-l);
+    --bulma-notification-color-l: var(--bulma-info-light-invert-l);
+  }
+
+  .notification.is-success.is-light {
+    --bulma-notification-background-l: var(--bulma-success-light-l);
+    --bulma-notification-color-l: var(--bulma-success-light-invert-l);
+  }
+
+  .notification.is-warning.is-light {
+    --bulma-notification-background-l: var(--bulma-warning-light-l);
+    --bulma-notification-color-l: var(--bulma-warning-light-invert-l);
+  }
+
+  .notification.is-danger.is-light {
+    --bulma-notification-background-l: var(--bulma-danger-light-l);
+    --bulma-notification-color-l: var(--bulma-danger-light-invert-l);
+  }
+}
+
+/* ── Dark mode: bare `.notification.is-light` (no color modifier) ───────────
+   `<div class="notification is-light">` should read as a neutral secondary
+   surface in dark mode, not the bulma-default near-white card. Repoint it to
+   the scheme's gray-90 surface with normal body text.
+   `:not(.is-<color>)` guards keep this from hijacking is-primary.is-light /
+   is-link.is-light / etc., which are themed above. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .notification.is-light:not(.is-primary):not(.is-link):not(.is-info):not(.is-success):not(.is-warning):not(.is-danger):not(.is-dark):not(.is-black):not(.is-white) {
+    --bulma-notification-h: var(--bulma-scheme-h);
+    --bulma-notification-s: var(--bulma-scheme-s);
+    --bulma-notification-background-l: var(--bulma-scheme-main-bis-l);
+    --bulma-notification-color-l: var(--bulma-text-l);
+  }
+}
+
+:root[data-theme="dark"] .notification.is-light:not(.is-primary):not(.is-link):not(.is-info):not(.is-success):not(.is-warning):not(.is-danger):not(.is-dark):not(.is-black):not(.is-white) {
+  --bulma-notification-h: var(--bulma-scheme-h);
+  --bulma-notification-s: var(--bulma-scheme-s);
+  --bulma-notification-background-l: var(--bulma-scheme-main-bis-l);
+  --bulma-notification-color-l: var(--bulma-text-l);
+}
+
+/* ── Dark mode: warning yellow background needs black text for contrast ─────
+   Yellow-30 is a bright, light swatch in both themes. In dark mode Bulma
+   would otherwise paint text on warning surfaces with the dark-theme default
+   (near-white), which collapses contrast to ~1.2:1. Force gray-100 on any
+   warning background. `is-warning is-light` (the soft tint) stays as-is —
+   its background is already dark in dark mode and its text variant works. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Bulma reads this when painting text on `.is-warning` solid surfaces. */
+    --bulma-warning-invert-l: 8.6%;
+    /* gray-100 #161616 */
+  }
+
+  :root:not([data-theme="light"]) .button.is-warning:not(.is-light),
+  :root:not([data-theme="light"]) .tag.is-warning:not(.is-light),
+  :root:not([data-theme="light"]) .notification.is-warning:not(.is-light),
+  :root:not([data-theme="light"]) .message.is-warning .message-header,
+  :root:not([data-theme="light"]) .has-background-warning {
+    color: #161616;
+  }
+}
+
+/* Same override for explicit data-theme="dark" (manual toggle path). */
+:root[data-theme="dark"] {
+  --bulma-warning-invert-l: 8.6%;
+}
+
+:root[data-theme="dark"] .button.is-warning:not(.is-light),
+:root[data-theme="dark"] .tag.is-warning:not(.is-light),
+:root[data-theme="dark"] .notification.is-warning:not(.is-light),
+:root[data-theme="dark"] .message.is-warning .message-header,
+:root[data-theme="dark"] .has-background-warning {
+  color: #161616;
+}

@@ -4,49 +4,63 @@
 <li><a href="{% url 'user_index' %}">Users</a></li>
 <li class="is-active"><a href="#" aria-current="page">{{ target_user.username }}</a></li>
 {% endblock %}
+{% block extra_css %}
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem 1.5rem;
+  }
+  .detail-label { font-size: 0.72rem; color: var(--bulma-text-weak); font-weight: 600; margin-bottom: 0.15rem; }
+  .detail-value { font-size: 0.88rem; color: var(--bulma-text-strong); }
+{% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ target_user.username }}</h1>
-    <p class="subtitle is-6 has-text-grey">
-      {% if target_user.first_name or target_user.last_name %}{{ target_user.first_name }} {{ target_user.last_name }} · {% endif %}
-      {{ target_user.email|default:"no email" }}
-      {% if target_user.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
-      {% if target_user.is_staff %}<span class="tag is-info is-light ml-1">Staff</span>{% endif %}
-      {% if target_user.is_superuser %}<span class="tag is-warning ml-1">Superuser</span>{% endif %}
-    </p>
-  </div>
-  {% if show_edit_link %}
-  <a class="button is-link is-medium" href="{% url 'user_edit' target_user.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-    <span>Edit</span>
-  </a>
-  {% endif %}
-</div>
 
-<div class="columns is-multiline">
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header"><p class="card-header-title">Identity</p></header>
-      <div class="card-content">
-        <p class="is-size-7"><strong>Last login:</strong> {% if target_user.last_login %}{{ target_user.last_login }}{% else %}Never{% endif %}</p>
-        <p class="is-size-7"><strong>Date joined:</strong> {{ target_user.date_joined }}</p>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">person</span></div>
+      <div>
+        <h1 class="page-title">{{ target_user.username }}</h1>
+        <p class="page-subtitle">
+          {% if target_user.first_name or target_user.last_name %}{{ target_user.first_name }} {{ target_user.last_name }} · {% endif %}
+          {{ target_user.email|default:"no email" }}
+          {% if target_user.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+          {% if target_user.is_staff %}<span class="tag is-info is-light ml-1">Staff</span>{% endif %}
+          {% if target_user.is_superuser %}<span class="tag is-warning ml-1">Superuser</span>{% endif %}
+        </p>
       </div>
     </div>
+    <div class="page-header-actions">
+      <a href="{% url 'user_index' %}" class="button is-small is-light" title="Back to users list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Users</span>
+      </a>
+      {% if show_edit_link %}
+      <a href="{% url 'user_edit' target_user.pk %}" class="button is-small is-warning" title="Edit user">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      {% endif %}
+    </div>
   </div>
+</div>
 
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header"><p class="card-header-title">Roles ({{ role_assignments|length }})</p></header>
-      <div class="card-content">
+<div class="body-grid has-rail">
+
+  <!-- Main column -->
+  <div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Roles ({{ role_assignments|length }})</div></div>
+      <div class="pc-body">
         {% if role_assignments %}
-        <ul>
+        <ul class="is-size-7">
           {% for ra in role_assignments %}
-          <li>
-            <a href="{% url 'role_detail' ra.role.slug %}">{{ ra.role.name }}</a>
-            <span class="tag is-light is-size-7 ml-2">{{ ra.get_relationship_type_display }}</span>
-            {% if ra.role.parent_role %}<span class="is-size-7 has-text-grey">— specializes {{ ra.role.parent_role.name }}</span>{% endif %}
-            {% if ra.notes %}<p class="is-size-7 has-text-grey-dark mt-1">{{ ra.notes|truncatechars:120 }}</p>{% endif %}
+          <li class="mb-2">
+            <a href="{% url 'role_detail' ra.role.slug %}"><strong>{{ ra.role.name }}</strong></a>
+            <span class="tag is-light ml-2">{{ ra.get_relationship_type_display }}</span>
+            {% if ra.role.parent_role %}<span class="has-text-grey"> — specializes {{ ra.role.parent_role.name }}</span>{% endif %}
+            {% if ra.notes %}<p class="has-text-grey-dark mt-1">{{ ra.notes|truncatechars:120 }}</p>{% endif %}
           </li>
           {% endfor %}
         </ul>
@@ -55,25 +69,21 @@
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header"><p class="card-header-title">Permission groups (effective)</p></header>
-      <div class="card-content">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups (effective)</div></div>
+      <div class="pc-body">
         {% if perm_struct.group_names %}
-        <ul>{% for n in perm_struct.group_names %}<li>{{ n }}</li>{% endfor %}</ul>
+        <ul class="is-size-7">{% for n in perm_struct.group_names %}<li>{{ n }}</li>{% endfor %}</ul>
         {% else %}
         <p class="has-text-grey is-size-7 mb-0">No group memberships.</p>
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <div class="column is-6">
-    <div class="card">
-      <header class="card-header"><p class="card-header-title">Direct permissions ({{ perm_struct.direct_permission_keys|length }})</p></header>
-      <div class="card-content">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Direct permissions ({{ perm_struct.direct_permission_keys|length }})</div></div>
+      <div class="pc-body">
         {% if perm_struct.direct_permission_keys %}
         <ul class="is-size-7">{% for k in perm_struct.direct_permission_keys %}<li><code>{{ k }}</code></li>{% endfor %}</ul>
         {% else %}
@@ -81,12 +91,10 @@
         {% endif %}
       </div>
     </div>
-  </div>
 
-  <div class="column is-12">
-    <div class="card">
-      <header class="card-header"><p class="card-header-title">Data access</p></header>
-      <div class="card-content">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data access</div></div>
+      <div class="pc-body">
 
         <h3 class="title is-6 mb-2">Domain template</h3>
         {% if domain_template_assignment %}
@@ -107,9 +115,9 @@
           <li>
             <a href="{% url 'domain_detail' row.domain.pk %}">{{ row.domain.name }}</a>
             {% if row.warning.severity == "red" %}
-            <span class="tag is-danger is-light ml-1" title="{{ row.warning.label }}">⚠ red</span>
+            <span class="tag is-danger is-light ml-1" title="{{ row.warning.label }}">red</span>
             {% elif row.warning.severity == "yellow" %}
-            <span class="tag is-warning is-light ml-1" title="{{ row.warning.label }}">⚠ yellow</span>
+            <span class="tag is-warning is-light ml-1" title="{{ row.warning.label }}">yellow</span>
             {% endif %}
           </li>
           {% endfor %}
@@ -137,6 +145,40 @@
         {% endif %}
       </div>
     </div>
+
+  </div>
+
+  <!-- Right rail -->
+  <div class="body-rail">
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="pc-body is-size-7">
+        <div class="mb-2"><strong>Username:</strong> {{ target_user.username }}</div>
+        <div class="mb-2"><strong>Email:</strong> {{ target_user.email|default:"—" }}</div>
+        <div class="mb-2"><strong>Last login:</strong> {% if target_user.last_login %}{{ target_user.last_login }}{% else %}Never{% endif %}</div>
+        <div><strong>Date joined:</strong> {{ target_user.date_joined }}</div>
+      </div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified_user</span></span>Status</div></div>
+      <div class="pc-body is-size-7">
+        <div class="mb-2">
+          <strong>Active:</strong>
+          {% if target_user.is_active %}<span class="tag is-success is-light">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}
+        </div>
+        <div class="mb-2">
+          <strong>Staff:</strong>
+          {% if target_user.is_staff %}<span class="tag is-info is-light">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}
+        </div>
+        <div>
+          <strong>Superuser:</strong>
+          {% if target_user.is_superuser %}<span class="tag is-warning">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 {% endblock %}

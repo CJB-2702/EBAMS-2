@@ -4,84 +4,108 @@
 <li class="is-active"><a href="#" aria-current="page">Domain ↔ Organization Links</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">Domain ↔ Organization links</h1>
-<p class="subtitle is-6 has-text-grey">
-  Many-to-many association between data domains and organizations. A domain can sit under multiple organizations
-  (overlap is intentional). The link is informational — it shapes navigation and the user-portal warning system.
-</p>
 
-{% if can_edit %}
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Add a new link</p>
-  </header>
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="link">
-      <div class="columns">
-        <div class="column is-5">
-          <div class="field">
-            <label class="label is-size-7 mb-1" for="dol-domain">Domain</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select id="dol-domain" name="domain_id" required>
-                  <option value="">— Select a domain —</option>
-                  {% for d in domains %}
-                  <option value="{{ d.pk }}">{{ d.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="column is-5">
-          <div class="field">
-            <label class="label is-size-7 mb-1" for="dol-org">Organization</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select id="dol-org" name="organization_id" required>
-                  <option value="">— Select an organization —</option>
-                  {% for o in organizations %}
-                  <option value="{{ o.pk }}">{{ o.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="column is-2 is-flex is-align-items-flex-end">
-          <button class="button is-medium is-link is-fullwidth" type="submit">
-            <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
-            <span>Link</span>
-          </button>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">link</span></div>
+      <div>
+        <h1 class="page-title">Domain ↔ Organization links</h1>
+        <p class="page-subtitle">
+          Many-to-many association between data domains and organizations. A domain can sit under multiple organizations
+          (overlap is intentional). Informational — shapes navigation and the user-portal warning system.
+        </p>
       </div>
-    </form>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
+    </div>
   </div>
 </div>
-{% endif %}
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Existing links</p>
-  </header>
-  <div class="card-content">
-    <form method="get" class="mb-4">
-      <div class="field has-addons">
-        <div class="control is-expanded">
-          <input class="input" type="search" name="q" value="{{ q }}" placeholder="Filter by domain or organization name" autocomplete="off">
+<div class="body-grid full-width">
+
+  {% if can_edit %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_link</span></span>Add a new link</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="link">
+        <div class="columns">
+          <div class="column is-5">
+            <div class="field">
+              <label class="label is-small" for="dol-domain">Domain</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select id="dol-domain" name="domain_id" required>
+                    <option value="">— Select a domain —</option>
+                    {% for d in domains %}
+                    <option value="{{ d.pk }}">{{ d.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-5">
+            <div class="field">
+              <label class="label is-small" for="dol-org">Organization</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select id="dol-org" name="organization_id" required>
+                    <option value="">— Select an organization —</option>
+                    {% for o in organizations %}
+                    <option value="{{ o.pk }}">{{ o.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <button class="button is-small is-link is-fullwidth" type="submit" title="Link domain to organization">
+              <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+              <span>Link</span>
+            </button>
+          </div>
         </div>
-        <div class="control"><button type="submit" class="button is-medium is-link is-light">
-          <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-          <span>Filter</span>
-        </button></div>
-        {% if q %}<div class="control"><a class="button is-light is-medium" href="{% url 'domain_organizations_portal' %}">Clear</a></div>{% endif %}
-      </div>
-    </form>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-8">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Filter by domain or organization name" autocomplete="off">
+          </div>
+        </div>
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'domain_organizations_portal' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Existing links ({{ links|length }})</div></div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Organization</th>
@@ -95,16 +119,15 @@
           <tr>
             <td><a href="{% url 'organization_detail' link.organization.pk %}">{{ link.organization.name }}</a></td>
             <td><a href="{% url 'domain_detail' link.domain.pk %}">{{ link.domain.name }}</a></td>
-            <td class="is-size-7 has-text-grey">{{ link.created_at|date:"Y-m-d" }}</td>
+            <td class="has-text-grey">{{ link.created_at|date:"Y-m-d" }}</td>
             {% if can_edit %}
             <td class="has-text-right">
-              <form method="post" onsubmit="return confirm('Remove this link?');" class="is-inline-block">
+              <form method="post" onsubmit="return confirm('Remove this link?');" style="display:inline-block;">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="unlink">
                 <input type="hidden" name="link_id" value="{{ link.pk }}">
-                <button class="button is-medium is-danger is-light" type="submit">
+                <button class="button is-small is-danger is-light" type="submit" title="Remove link">
                   <span class="icon"><span class="material-icons" aria-hidden="true">link_off</span></span>
-                  <span>Unlink</span>
                 </button>
               </form>
             </td>
@@ -117,5 +140,6 @@
       </table>
     </div>
   </div>
+
 </div>
 {% endblock %}

@@ -1,0 +1,52 @@
+{# Toast Alert Component Examples #}
+
+{# 1. Success alert (auto-dismiss in 3s) #}
+<toast-alert type="success" dismiss-delay="3000">
+  Operation completed successfully.
+</toast-alert>
+
+{# 2. Error alert (auto-dismiss in 4s) #}
+<toast-alert type="danger" dismiss-delay="4000">
+  An error occurred. Please try again.
+</toast-alert>
+
+{# 3. Warning alert (no auto-dismiss) #}
+<toast-alert type="warning" dismiss-delay="0">
+  This action cannot be undone.
+</toast-alert>
+
+{# 4. Info alert (auto-dismiss in 3s) #}
+<toast-alert type="info" dismiss-delay="3000">
+  Your changes are being saved.
+</toast-alert>
+
+{# 5. In HTMX responses (Django template) #}
+<toast-alert type="success" dismiss-delay="3000">
+  {{ message_text }}
+</toast-alert>
+<div id="content-to-update">
+  ...
+</div>
+
+{# 6. Dynamic JavaScript creation #}
+<script>
+  function showToast(message, type = 'info', delayMs = 3000) {
+    const alert = document.createElement('toast-alert');
+    alert.setAttribute('type', type);
+    alert.setAttribute('dismiss-delay', delayMs);
+    alert.textContent = message;
+    document.body.appendChild(alert);
+  }
+
+  // Usage:
+  showToast('Settings saved!', 'success', 3000);
+  showToast('Network error', 'danger', 4000);
+  showToast('Check this out', 'info', 5000);
+</script>
+
+{# 7. Listening for dismiss event (optional) #}
+<script>
+  document.addEventListener('toast-alert-dismiss', (e) => {
+    console.log('Alert dismissed:', e.detail);
+  });
+</script>

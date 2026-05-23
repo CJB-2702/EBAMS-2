@@ -4,59 +4,85 @@
 <li class="is-active"><a href="#" aria-current="page">Roles</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">Roles</h1>
-    <p class="subtitle is-6 has-text-grey">Job profiles. Each role bundles permission groups and tells a "who is this user" story.</p>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">Roles</h1>
+        <p class="page-subtitle">Job profiles. Each role bundles permission groups and tells a "who is this user" story.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'role_create' %}" class="button is-small is-link" title="Create a new role">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>New Role</span>
+      </a>
+      {% endif %}
+    </div>
   </div>
-  {% if can_edit %}
-  <a class="button is-link is-medium" href="{% url 'role_create' %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
-    <span>New Role</span>
-  </a>
-  {% endif %}
 </div>
 
-<form method="get" class="mb-4">
-  <div class="field has-addons">
-    <div class="control is-expanded">
-      <input class="input" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
-    </div>
-    <div class="control"><button type="submit" class="button is-medium is-link is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-      <span>Filter</span>
-    </button></div>
-    {% if q %}<div class="control"><a class="button is-light is-medium" href="{% url 'role_index' %}">Clear</a></div>{% endif %}
-  </div>
-</form>
+<div class="body-grid full-width">
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Base roles ({{ base_roles|length }})</p>
-  </header>
-  <div class="card-content">
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
+          </div>
+        </div>
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'role_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Base roles -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Base roles ({{ base_roles|length }})</div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Name</th>
             <th>Status</th>
             <th class="has-text-right">Permission groups</th>
             <th class="has-text-right">Assignees</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for r in base_roles %}
           <tr>
-            <td>{{ r.name }}</td>
+            <td><strong>{{ r.name }}</strong></td>
             <td>{% if r.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
             <td class="has-text-right">{{ r.item_count }}</td>
             <td class="has-text-right">{{ r.user_count }}</td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'role_detail' r.slug %}">
+              <a class="button is-small is-info is-light" href="{% url 'role_detail' r.slug %}" title="View role details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -67,16 +93,15 @@
       </table>
     </div>
   </div>
-</div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Specialized roles ({{ specialized_roles|length }})</p>
-  </header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Specialized roles inherit their parent's permission groups and add new ones on top.</p>
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+  <!-- Specialized roles -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">workspaces</span></span>Specialized roles ({{ specialized_roles|length }})</div>
+      <span class="has-text-grey is-size-7">Inherit parent role's permission groups</span>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Name</th>
@@ -84,21 +109,20 @@
             <th>Status</th>
             <th class="has-text-right">Permission groups</th>
             <th class="has-text-right">Assignees</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for r in specialized_roles %}
           <tr>
-            <td>{{ r.name }}</td>
+            <td><strong>{{ r.name }}</strong></td>
             <td>{% if r.parent_role %}<a href="{% url 'role_detail' r.parent_role.slug %}">{{ r.parent_role.name }}</a>{% else %}—{% endif %}</td>
             <td>{% if r.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
             <td class="has-text-right">{{ r.item_count }}</td>
             <td class="has-text-right">{{ r.user_count }}</td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'role_detail' r.slug %}">
+              <a class="button is-small is-info is-light" href="{% url 'role_detail' r.slug %}" title="View role details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -109,5 +133,6 @@
       </table>
     </div>
   </div>
+
 </div>
 {% endblock %}

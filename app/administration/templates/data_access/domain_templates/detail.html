@@ -5,75 +5,85 @@
 <li class="is-active"><a href="#" aria-current="page">{{ template.name }}</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ template.name }}</h1>
-    <p class="subtitle is-6 has-text-grey">
-      Domain template — slug <code>{{ template.slug }}</code>
-      {% if template.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
-    </p>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">view_list</span></div>
+      <div>
+        <h1 class="page-title">{{ template.name }}</h1>
+        <p class="page-subtitle">
+          Domain template — slug <code>{{ template.slug }}</code>
+          {% if template.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'domain_template_index' %}" class="button is-small is-light" title="Back to templates list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Templates</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'domain_template_edit' template.slug %}" class="button is-small is-warning" title="Edit template">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'domain_template_delete' template.slug %}" onsubmit="return confirm('Delete this template? Existing user-domain assignments are kept.');" style="display:inline-block;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" title="Delete template">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
-  {% if can_edit %}
-  <div class="buttons">
-    <a class="button is-link is-medium" href="{% url 'domain_template_edit' template.slug %}">
-      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-      <span>Edit</span>
-    </a>
-    <form method="post" action="{% url 'domain_template_delete' template.slug %}" onsubmit="return confirm('Delete this template? Existing user-domain assignments are kept.');" class="is-inline-block">
-      {% csrf_token %}
-      <button class="button is-medium is-danger is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-        <span>Delete</span>
-      </button>
-    </form>
+</div>
+
+<div class="body-grid full-width">
+
+  {% if template.description %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
+    <div class="pc-body">{{ template.description|linebreaks }}</div>
   </div>
   {% endif %}
-</div>
 
-{% if template.description %}
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Description</p></header>
-  <div class="card-content">{{ template.description|linebreaks }}</div>
-</div>
-{% endif %}
-
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Domains in this template ({{ domains|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if domains %}
-    <ul>
-      {% for d in domains %}
-      <li><a href="{% url 'domain_detail' d.pk %}">{{ d.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No domains in this template.</p>
-    {% endif %}
-  </div>
-</div>
-
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Currently assigned to ({{ assignees|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if assignees %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>User</th><th>Email</th></tr></thead>
-      <tbody>
-        {% for a in assignees %}
-        <tr>
-          <td><a href="{% url 'user_detail' a.user_id %}">{{ a.user.username }}</a></td>
-          <td>{{ a.user.email|default:"—" }}</td>
-        </tr>
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template ({{ domains|length }})</div></div>
+    <div class="pc-body">
+      {% if domains %}
+      <ul class="is-size-7">
+        {% for d in domains %}
+        <li><a href="{% url 'domain_detail' d.pk %}">{{ d.name }}</a></li>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No users currently hold this template.</p>
-    {% endif %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No domains in this template.</p>
+      {% endif %}
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
+    <div class="pc-body is-flush">
+      {% if assignees %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>User</th><th>Email</th></tr></thead>
+        <tbody>
+          {% for a in assignees %}
+          <tr>
+            <td><a href="{% url 'user_detail' a.user_id %}">{{ a.user.username }}</a></td>
+            <td>{{ a.user.email|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No users currently hold this template.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

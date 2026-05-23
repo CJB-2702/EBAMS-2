@@ -1,86 +1,100 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ organization.name }} — Organization{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'organization_index' %}">Organizations</a></li>
 <li><a href="{% url 'organization_detail' organization.pk %}">{{ organization.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'organization_detail' organization.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to organization</span>
-  </a>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">business</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ organization.name }}</h1>
+        <p class="page-subtitle">Organization — slug <code>{{ organization.slug }}</code></p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'organization_detail' organization.pk %}" class="button is-small is-light" title="Back to organization">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to organization</span>
+      </a>
+    </div>
+  </div>
 </div>
 
-<h1 class="title">Edit {{ organization.name }}</h1>
+<div class="body-grid full-width">
 
-{% if can_edit_metadata %}
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Details</p>
-  </header>
-  <div class="card-content">
-    <form method="post" class="mb-4">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="update_metadata">
-      <div class="field has-addons">
-        <div class="control is-expanded">
-          <input class="input" type="text" id="org-edit-name" name="name" value="{{ organization.name }}" required>
-        </div>
-        <div class="control">
-          <button class="button is-medium is-link" type="submit">
-            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
-            <span>Save</span>
-          </button>
-        </div>
-      </div>
-    </form>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="set_division">
-      <div class="field has-addons">
-        <div class="control is-expanded">
-          <div class="select is-fullwidth">
-            <select id="org-edit-division" name="division_id">
-              <option value="">— None —</option>
-              {% for d in divisions %}
-              <option value="{{ d.pk }}" {% if current_division and d.pk == current_division.pk %}selected{% endif %}>{{ d.name }}</option>
-              {% endfor %}
-            </select>
+  {% if can_edit_metadata %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_metadata">
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input class="input is-small" type="text" id="org-edit-name" name="name" value="{{ organization.name }}" required>
+          </div>
+          <div class="control">
+            <button class="button is-small is-link" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+              <span>Save</span>
+            </button>
           </div>
         </div>
-        <div class="control">
-          <button class="button is-medium is-link" type="submit">
-            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
-            <span>Save</span>
-          </button>
+      </form>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_division">
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <div class="select is-small is-fullwidth">
+              <select id="org-edit-division" name="division_id">
+                <option value="">— None —</option>
+                {% for d in divisions %}
+                <option value="{{ d.pk }}" {% if current_division and d.pk == current_division.pk %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="control">
+            <button class="button is-small is-link" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+              <span>Save</span>
+            </button>
+          </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Linked data domains</p>
-  </header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="org-domains" left_title="Available domains" right_title="Linked to this organization" left_help="Pick domains to link." right_help="Pick domains to unlink." action_add="add_domains" action_remove="remove_domains" field_name="domain_ids" list_kind="domain" left_items=domains_available right_items=domains_assigned %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Linked data domains</div></div>
+    <div class="pc-body">
+      {% include "organizational/organizations/_domains_dlb_only.html" %}
+    </div>
   </div>
-</div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">User assignments</p>
-  </header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Informational — does not grant data access.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="org-users" left_title="Available users" right_title="Assigned users" left_help="Pick users to assign." right_help="Pick users to unassign." action_add="add_users" action_remove="remove_users" field_name="user_ids" list_kind="user" left_items=users_available right_items=users_assigned %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>User assignments</div></div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Informational — does not grant data access.</p>
+      {% include "organizational/organizations/_users_dlb_only.html" %}
+    </div>
   </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

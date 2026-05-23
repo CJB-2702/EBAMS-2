@@ -220,6 +220,50 @@ def domain_template_edit(request: HttpRequest, template_slug: str) -> HttpRespon
 
 
 @require_http_methods(["POST"])
+def domain_template_move_domains(request: HttpRequest, template_slug: str) -> HttpResponse:
+    denied = _require_admin(request)
+    if denied is not None:
+        return denied
+
+    template = get_object_or_404(DomainTemplate, slug=template_slug)
+    ids = _parse_id_list(request.POST, "domain_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one domain.", status=400)
+
+    try:
+        assert_actor_may_edit_domain_templates(request.user)
+        ctx = DomainTemplateContext(template.pk)
+        with transaction.atomic():
+            for did in ids:
+                if direction == "add":
+                    ctx.add_domain(actor=request.user, domain_id=did)
+                else:
+                    ctx.remove_domain(actor=request.user, domain_id=did)
+    except (DomainAccessDenied, ObjectDoesNotExist, ValueError) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    items_assigned = (
+        DomainTemplateItem.objects.filter(template=template, is_active=True)
+        .select_related("domain")
+        .order_by("domain__name")
+    )
+    domains_assigned = [item.domain for item in items_assigned]
+    assigned_domain_ids = {d.pk for d in domains_assigned}
+    domains_available = list(Domain.objects.exclude(pk__in=assigned_domain_ids).order_by("name"))
+
+    msg = "Domains added to template." if direction == "add" else "Domains removed from template."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "data_access/domain_templates/_domains_dlb_only.html", {
+        "template": template,
+        "domains_available": domains_available,
+        "domains_assigned": domains_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def domain_template_delete(request: HttpRequest, template_slug: str) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

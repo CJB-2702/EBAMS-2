@@ -4,56 +4,87 @@
 <li class="is-active"><a href="#" aria-current="page">Organizations</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">Organizations</h1>
-    <p class="subtitle is-6 has-text-grey">Operational unit within a division. Informational — does not grant access.</p>
+
+<!-- ── Page hero ── -->
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">business</span></div>
+      <div>
+        <h1 class="page-title">Organizations</h1>
+        <p class="page-subtitle">Operational unit within a division. Informational — does not grant access.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'organization_create' %}" class="button is-small is-link" title="Create a new organization">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>New Organization</span>
+      </a>
+      {% endif %}
+    </div>
   </div>
-  {% if can_edit %}
-  <a class="button is-link is-medium" href="{% url 'organization_create' %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
-    <span>New Organization</span>
-  </a>
-  {% endif %}
 </div>
 
-<form method="get" class="mb-4">
-  <div class="field has-addons">
-    <div class="control is-expanded">
-      <input class="input" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
-    </div>
-    <div class="control"><button type="submit" class="button is-medium is-link is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-      <span>Filter</span>
-    </button></div>
-    {% if q %}<div class="control"><a class="button is-light is-medium" href="{% url 'organization_index' %}">Clear</a></div>{% endif %}
-  </div>
-</form>
+<div class="body-grid full-width">
 
-<div class="card">
-  <div class="card-content">
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+  <!-- Filters card -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
+          </div>
+        </div>
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'organization_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results card -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Organizations ({{ organizations|length }})</div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Name</th>
             <th>Division</th>
             <th>Slug</th>
             <th class="has-text-right">Domains</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for org in organizations %}
           <tr>
-            <td>{{ org.name }}</td>
+            <td><strong>{{ org.name }}</strong></td>
             <td>{% if org.division %}<a href="{% url 'division_detail' org.division.pk %}">{{ org.division.name }}</a>{% else %}<span class="has-text-grey">—</span>{% endif %}</td>
             <td><code>{{ org.slug }}</code></td>
             <td class="has-text-right">{{ org.domain_count }}</td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'organization_detail' org.pk %}">
+              <a class="button is-small is-info is-light" href="{% url 'organization_detail' org.pk %}" title="View organization details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -64,5 +95,6 @@
       </table>
     </div>
   </div>
+
 </div>
 {% endblock %}

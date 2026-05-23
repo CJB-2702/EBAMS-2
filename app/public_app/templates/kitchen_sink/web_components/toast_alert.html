@@ -1,0 +1,134 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}toast-alert{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/toast_alert.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">notification_important</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;toast-alert&gt;</h1>
+        <p class="page-subtitle">Dismissible, overlay toast notification container with auto-dismiss.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+    
+    <!-- Live Demo -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Live Demo</div>
+      </div>
+      <div class="pc-body">
+        <p class="is-size-7 mb-4">Click the buttons below to trigger toast notifications in real-time:</p>
+        <div class="buttons">
+          <button type="button" class="button is-success" onclick="triggerToast('success', 'Operation completed successfully.')">Success Toast</button>
+          <button type="button" class="button is-danger" onclick="triggerToast('danger', 'An error occurred during save.')">Danger Toast</button>
+          <button type="button" class="button is-warning" onclick="triggerToast('warning', 'Warning: Database connection is slow.')">Warning Toast</button>
+          <button type="button" class="button is-info" onclick="triggerToast('info', 'New update is available.')">Info Toast</button>
+        </div>
+        <hr>
+        <div class="has-text-centered">
+          <p class="is-size-7">
+            Event Log: <span id="event-log" class="ks-note">No event yet</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Script -->
+    <script>
+      function triggerToast(type, msg) {
+        const toast = document.createElement('toast-alert');
+        toast.setAttribute('type', type);
+        toast.setAttribute('dismiss-delay', '3000');
+        toast.textContent = msg;
+        // The component automatically moves itself to document.body, so appending here works:
+        document.body.appendChild(toast);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const log = document.getElementById('event-log');
+        document.body.addEventListener('toast-alert-dismiss', (e) => {
+          log.textContent = `toast-alert-dismiss from type="${e.target.getAttribute('type')}"`;
+        });
+      });
+    </script>
+
+    <!-- API & Documentation -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">API & Properties</div>
+      </div>
+      <div class="pc-body content is-size-7">
+        <h4 class="title is-6">HTML Attributes</h4>
+        <ul>
+          <li><code>type</code> (string) - notification category. Maps to Bulma status classes. Options: <code>success</code>, <code>danger</code>, <code>warning</code>, <code>info</code>. Defaults to <code>info</code>.</li>
+          <li><code>dismiss-delay</code> (integer) - delay in milliseconds before the toast auto-dismisses. Defaults to <code>3000</code>. Set to <code>0</code> to disable auto-dismiss.</li>
+        </ul>
+
+        <h4 class="title is-6">Public Methods</h4>
+        <ul>
+          <li><code>el.dismiss()</code> - immediately slide out and remove the alert from the DOM.</li>
+        </ul>
+
+        <h4 class="title is-6">Custom Events</h4>
+        <ul>
+          <li><code>toast-alert-dismiss</code> - bubbles up when the alert is dismissed (manually or automatically).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Code Snippet -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Template Code</div>
+      </div>
+      <div class="pc-body">
+        <h4 class="title is-6">Standard HTML Integration</h4>
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;toast-alert type="success" dismiss-delay="3000"&gt;
+  Asset has been updated successfully.
+&lt;/toast-alert&gt;</code></pre>
+        
+        <h4 class="title is-6 mt-4">HTMX OOB Swap Response</h4>
+        <p class="is-size-7 mb-2">Because the component automatically moves itself to <code>document.body</code>, you can return a toast element inside any HTMX response snippet to trigger a toast overlay:</p>
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;!-- Returned from POST /assets/edit --&gt;
+&lt;toast-alert type="success"&gt;
+  Permissions updated.
+&lt;/toast-alert&gt;
+&lt;div id="asset-form-fields"&gt;
+  ... updated fields ...
+&lt;/div&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

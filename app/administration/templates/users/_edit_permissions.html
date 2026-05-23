@@ -1,0 +1,93 @@
+<div>
+
+  <!-- Roles -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+        Roles (capability gate)
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Roles bundle permission groups. Use this list to assign or remove a role; relationship type and notes can be edited per-row below.</p>
+      {% include "users/_roles_dlb_only.html" %}
+
+      {% if role_assignments %}
+      <h4 class="title is-6 mt-4 mb-3">Per-role relationship + notes</h4>
+      {% for ra in role_assignments %}
+      <div class="box">
+        <p class="mb-2"><strong><a href="{% url 'role_detail' ra.role.slug %}">{{ ra.role.name }}</a></strong></p>
+        <div class="columns">
+          <div class="column is-4">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_role_relationship">
+              <input type="hidden" name="role_id" value="{{ ra.role.pk }}">
+              <div class="field has-addons">
+                <div class="control">
+                  <div class="select is-small">
+                    <select name="relationship_type">
+                      <option value="primary" {% if ra.relationship_type == "primary" %}selected{% endif %}>Primary</option>
+                      <option value="specialty" {% if ra.relationship_type == "specialty" %}selected{% endif %}>Specialty</option>
+                      <option value="side_job" {% if ra.relationship_type == "side_job" %}selected{% endif %}>Side job</option>
+                      <option value="for_fun" {% if ra.relationship_type == "for_fun" %}selected{% endif %}>For learning</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="control">
+                  <button class="button is-small is-link is-light" type="submit">Set</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="column is-8">
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_role_notes">
+              <input type="hidden" name="role_id" value="{{ ra.role.pk }}">
+              <div class="field has-addons">
+                <div class="control is-expanded">
+                  <input class="input is-small" type="text" name="notes" value="{{ ra.notes }}" placeholder="Why does this user hold this role?">
+                </div>
+                <div class="control">
+                  <button class="button is-small is-link is-light" type="submit">Save notes</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Direct permission group membership -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>
+        Direct permission group membership
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Adds the user to a Django <code>auth.Group</code> directly, bypassing the role system. Prefer roles unless there is a specific reason.</p>
+      {% include "users/_groups_dlb_only.html" %}
+    </div>
+  </div>
+
+  <!-- Direct permissions -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>
+        Direct permissions
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Permissions already covered by an assigned permission group are shown with a grey row in the available list.</p>
+      {% include "users/_permissions_dlb_only.html" %}
+    </div>
+  </div>
+
+</div>

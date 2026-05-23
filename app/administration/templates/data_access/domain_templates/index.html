@@ -4,56 +4,84 @@
 <li class="is-active"><a href="#" aria-current="page">Domain templates</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">Domain templates</h1>
-    <p class="subtitle is-6 has-text-grey">Reusable bundles of domains for bulk user assignment.</p>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">view_list</span></div>
+      <div>
+        <h1 class="page-title">Domain templates</h1>
+        <p class="page-subtitle">Reusable bundles of domains for bulk user assignment.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'domain_template_create' %}" class="button is-small is-link" title="Create a new template">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>New Template</span>
+      </a>
+      {% endif %}
+    </div>
   </div>
-  {% if can_edit %}
-  <a class="button is-link is-medium" href="{% url 'domain_template_create' %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
-    <span>New Template</span>
-  </a>
-  {% endif %}
 </div>
 
-<form method="get" class="mb-4">
-  <div class="field has-addons">
-    <div class="control is-expanded">
-      <input class="input" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
-    </div>
-    <div class="control"><button type="submit" class="button is-medium is-link is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-      <span>Filter</span>
-    </button></div>
-    {% if q %}<div class="control"><a class="button is-light is-medium" href="{% url 'domain_template_index' %}">Clear</a></div>{% endif %}
-  </div>
-</form>
+<div class="body-grid full-width">
 
-<div class="card">
-  <div class="card-content">
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Filter by name" autocomplete="off">
+          </div>
+        </div>
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'domain_template_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Domain templates ({{ templates|length }})</div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Name</th>
             <th>Status</th>
             <th class="has-text-right">Domains</th>
             <th class="has-text-right">Assignees</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for t in templates %}
           <tr>
-            <td>{{ t.name }}</td>
+            <td><strong>{{ t.name }}</strong></td>
             <td>{% if t.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
             <td class="has-text-right">{{ t.active_item_count }}</td>
             <td class="has-text-right">{{ t.assignee_count }}</td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'domain_template_detail' t.slug %}">
+              <a class="button is-small is-info is-light" href="{% url 'domain_template_detail' t.slug %}" title="View template details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -64,5 +92,6 @@
       </table>
     </div>
   </div>
+
 </div>
 {% endblock %}

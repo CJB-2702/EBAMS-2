@@ -1,67 +1,93 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ template.name }} — Domain template{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'domain_template_index' %}">Domain templates</a></li>
 <li><a href="{% url 'domain_template_detail' template.slug %}">{{ template.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'domain_template_detail' template.slug %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to template</span>
-  </a>
-</div>
 
-<h1 class="title">Edit {{ template.name }}</h1>
-
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Details</p></header>
-  <div class="card-content">
-    <form method="post" class="mb-4">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="update_metadata">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="dt-edit-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="dt-edit-name" name="name" value="{{ template.name }}" required>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">view_list</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ template.name }}</h1>
+        <p class="page-subtitle">
+          Domain template — slug <code>{{ template.slug }}</code>
+          {% if template.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+        </p>
       </div>
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="dt-edit-description">Description</label>
-        <div class="control">
-          <textarea class="textarea" id="dt-edit-description" name="description" rows="2">{{ template.description }}</textarea>
-        </div>
-      </div>
-      <button class="button is-medium is-link" type="submit">Save details</button>
-    </form>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="set_active">
-      {% if template.is_active %}
-      <input type="hidden" name="is_active" value="0">
-      <button class="button is-medium is-warning is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">visibility_off</span></span>
-        <span>Deactivate template</span>
-      </button>
-      {% else %}
-      <input type="hidden" name="is_active" value="1">
-      <button class="button is-medium is-success is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-        <span>Activate template</span>
-      </button>
-      {% endif %}
-    </form>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'domain_template_detail' template.slug %}" class="button is-small is-light" title="Back to template">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to template</span>
+      </a>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header"><p class="card-header-title">Domains in this template</p></header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="dt-domains" left_title="Available domains" right_title="In this template" left_help="Pick domains to add to the template." right_help="Pick domains to soft-remove (audit-preserving)." action_add="add_domains" action_remove="remove_domains" field_name="domain_ids" list_kind="domain" left_items=domains_available right_items=domains_assigned %}
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_metadata">
+        <div class="field">
+          <label class="label is-small" for="dt-edit-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="dt-edit-name" name="name" value="{{ template.name }}" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small" for="dt-edit-description">Description</label>
+          <div class="control">
+            <textarea class="textarea is-small" id="dt-edit-description" name="description" rows="2">{{ template.description }}</textarea>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save details</span>
+        </button>
+      </form>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_active">
+        {% if template.is_active %}
+        <input type="hidden" name="is_active" value="0">
+        <button class="button is-small is-warning is-light" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">visibility_off</span></span>
+          <span>Deactivate template</span>
+        </button>
+        {% else %}
+        <input type="hidden" name="is_active" value="1">
+        <button class="button is-small is-success is-light" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+          <span>Activate template</span>
+        </button>
+        {% endif %}
+      </form>
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template</div></div>
+    <div class="pc-body">
+      {% include "data_access/domain_templates/_domains_dlb_only.html" %}
+    </div>
+  </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

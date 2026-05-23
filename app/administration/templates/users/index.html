@@ -4,83 +4,118 @@
 <li class="is-active"><a href="#" aria-current="page">Users</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">Users</h1>
-<p class="subtitle is-6 has-text-grey">Search, view, and edit user identity, role assignments, and data scope.</p>
 
-<form method="get" class="mb-4">
-  <div class="columns is-variable is-2">
-    <div class="column is-5">
-      <div class="field has-addons">
-        <div class="control is-expanded">
-          <input class="input" type="search" name="q" value="{{ query }}" placeholder="Filter by username" autocomplete="off">
-        </div>
-        <div class="control">
-          <button type="submit" class="button is-medium is-link is-light" title="Search">
-            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-          </button>
-        </div>
+<!-- ── Page hero ── -->
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">people</span></div>
+      <div>
+        <h1 class="page-title">Users</h1>
+        <p class="page-subtitle">Search, view, and edit user identity, role assignments, and data scope.</p>
       </div>
     </div>
-    <div class="column is-3">
-      <div class="field">
-        <div class="control">
-          <div class="select is-fullwidth">
-            <select name="active">
-              <option value="all" {% if active_filter == "all" %}selected{% endif %}>All accounts</option>
-              <option value="yes" {% if active_filter == "yes" %}selected{% endif %}>Active only</option>
-              <option value="no" {% if active_filter == "no" %}selected{% endif %}>Inactive only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="column is-3">
-      <div class="field">
-        <div class="control">
-          <div class="select is-fullwidth">
-            <select name="staff">
-              <option value="all" {% if staff_filter == "all" %}selected{% endif %}>All</option>
-              <option value="yes" {% if staff_filter == "yes" %}selected{% endif %}>Staff only</option>
-              <option value="no" {% if staff_filter == "no" %}selected{% endif %}>Non-staff only</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="column is-1">
-      <button type="submit" class="button is-medium is-link is-light is-fullwidth">
-        <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-        <span>Filter</span>
-      </button>
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
     </div>
   </div>
-</form>
+</div>
 
-<div class="card">
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">{{ total_count }} user{{ total_count|pluralize }} match the current filter.</p>
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable">
+<!-- ── Body: full width (no rail on search pages) ── -->
+<div class="body-grid full-width">
+
+  <!-- Filters card -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-5">
+            <label class="label is-small">Username</label>
+            <input class="input is-small" type="search" name="q" value="{{ query }}" placeholder="Filter by username" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Account Status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="active">
+                <option value="all" {% if active_filter == "all" %}selected{% endif %}>All accounts</option>
+                <option value="yes" {% if active_filter == "yes" %}selected{% endif %}>Active only</option>
+                <option value="no" {% if active_filter == "no" %}selected{% endif %}>Inactive only</option>
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Staff</label>
+            <div class="select is-small is-fullwidth">
+              <select name="staff">
+                <option value="all" {% if staff_filter == "all" %}selected{% endif %}>All</option>
+                <option value="yes" {% if staff_filter == "yes" %}selected{% endif %}>Staff only</option>
+                <option value="no" {% if staff_filter == "no" %}selected{% endif %}>Non-staff only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'user_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results card -->
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Users ({{ total_count }})</div>
+      <div>
+        <span class="has-text-grey is-size-7">{{ total_count }} match{{ total_count|pluralize:"es" }} the current filter</span>
+      </div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>Username</th>
             <th>Email</th>
             <th>Active</th>
             <th>Staff</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for u in users %}
           <tr>
-            <td>{{ u.username }}</td>
+            <td><strong>{{ u.username }}</strong></td>
             <td>{{ u.email|default:"—" }}</td>
-            <td>{% if u.is_active %}<span class="tag is-success is-light">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}</td>
-            <td>{% if u.is_staff %}<span class="tag is-info is-light">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}</td>
+            <td>
+              {% if u.is_active %}
+                <span class="tag is-success is-light">yes</span>
+              {% else %}
+                <span class="tag is-light">no</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_staff %}
+                <span class="tag is-info is-light">yes</span>
+              {% else %}
+                <span class="tag is-light">no</span>
+              {% endif %}
+            </td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'user_detail' u.pk %}">
+              <a class="button is-small is-info is-light" href="{% url 'user_detail' u.pk %}" title="View user details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -92,20 +127,38 @@
     </div>
 
     {% if max_page > 1 %}
-    <nav class="pagination" role="navigation" aria-label="pagination">
-      {% if page > 1 %}
-      <a class="pagination-previous" href="?q={{ query }}&active={{ active_filter }}&staff={{ staff_filter }}&page={{ page|add:'-1' }}">Previous</a>
-      {% else %}
-      <span class="pagination-previous is-disabled">Previous</span>
-      {% endif %}
-      {% if page < max_page %}
-      <a class="pagination-next" href="?q={{ query }}&active={{ active_filter }}&staff={{ staff_filter }}&page={{ page|add:'1' }}">Next</a>
-      {% else %}
-      <span class="pagination-next is-disabled">Next</span>
-      {% endif %}
-      <p class="pagination-list has-text-grey is-size-7">Page {{ page }} of {{ max_page }}</p>
-    </nav>
+    <div class="pc-body" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--bulma-border-weak);">
+      <span class="has-text-grey is-size-7">Page {{ page }} of {{ max_page }} · {{ total_count }} result{{ total_count|pluralize }}</span>
+      <nav class="pagination is-small" role="navigation" aria-label="pagination">
+        {% if page > 1 %}
+          <a class="pagination-previous" href="?q={{ query }}&active={{ active_filter }}&staff={{ staff_filter }}&page={{ page|add:'-1' }}">
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+            <span>Prev</span>
+          </a>
+        {% else %}
+          <a class="pagination-previous" disabled>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+            <span>Prev</span>
+          </a>
+        {% endif %}
+        {% if page < max_page %}
+          <a class="pagination-next" href="?q={{ query }}&active={{ active_filter }}&staff={{ staff_filter }}&page={{ page|add:'1' }}">
+            <span>Next</span>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+          </a>
+        {% else %}
+          <a class="pagination-next" disabled>
+            <span>Next</span>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+          </a>
+        {% endif %}
+        <ul class="pagination-list">
+          <li><a class="pagination-link is-current">{{ page }}</a></li>
+        </ul>
+      </nav>
+    </div>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

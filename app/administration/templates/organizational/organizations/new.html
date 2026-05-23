@@ -5,37 +5,59 @@
 <li class="is-active"><a href="#" aria-current="page">New</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">Create a new organization</h1>
-<p class="subtitle is-6 has-text-grey">Slug is generated automatically. Division can be set now or later.</p>
 
-<div class="card">
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <div class="field">
-        <label class="label" for="org-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="org-name" name="name" value="{{ name|default:'' }}" required autofocus>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_business</span></div>
+      <div>
+        <h1 class="page-title">Create a new organization</h1>
+        <p class="page-subtitle">Slug is generated automatically. Division can be set now or later.</p>
       </div>
-      <div class="field">
-        <label class="label" for="org-division">Division (optional)</label>
-        <div class="control">
-          <div class="select">
-            <select id="org-division" name="division_id">
-              <option value="">— None —</option>
-              {% for d in divisions %}
-              <option value="{{ d.pk }}">{{ d.name }}</option>
-              {% endfor %}
-            </select>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'organization_index' %}" class="button is-small is-light" title="Back to organizations list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Organizations</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label is-small" for="org-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="org-name" name="name" value="{{ name|default:'' }}" required autofocus>
           </div>
         </div>
-      </div>
-      <div class="field is-grouped">
-        <div class="control"><button class="button is-medium is-link" type="submit">Create organization</button></div>
-        <div class="control"><a class="button is-light is-medium" href="{% url 'organization_index' %}">Cancel</a></div>
-      </div>
-    </form>
+        <div class="field">
+          <label class="label is-small" for="org-division">Division (optional)</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select id="org-division" name="division_id">
+                <option value="">— None —</option>
+                {% for d in divisions %}
+                <option value="{{ d.pk }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="buttons mt-3">
+          <button class="button is-small is-link" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+            <span>Create organization</span>
+          </button>
+          <a class="button is-small is-light" href="{% url 'organization_index' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -1,58 +1,75 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ division.name }} — Division{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'division_index' %}">Divisions</a></li>
 <li><a href="{% url 'division_detail' division.pk %}">{{ division.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'division_detail' division.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to division</span>
-  </a>
-</div>
 
-<h1 class="title">Edit {{ division.name }}</h1>
-
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Details</p>
-  </header>
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="update_metadata">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="div-edit-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="div-edit-name" name="name" value="{{ division.name }}" required>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">domain</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ division.name }}</h1>
+        <p class="page-subtitle">Division — slug <code>{{ division.slug }}</code></p>
       </div>
-      <button class="button is-medium is-link" type="submit">Save details</button>
-    </form>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'division_detail' division.pk %}" class="button is-small is-light" title="Back to division">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to division</span>
+      </a>
+    </div>
   </div>
 </div>
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Linked organizations</p>
-  </header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="div-orgs" left_title="Available organizations" right_title="Linked to this division" left_help="Pick organizations to link." right_help="Pick organizations to unlink." action_add="add_organizations" action_remove="remove_organizations" field_name="organization_ids" list_kind="organization" left_items=organizations_available right_items=organizations_assigned %}
-  </div>
-</div>
+<div class="body-grid full-width">
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">User assignments</p>
-  </header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Informational — does not grant data access. Used by the user-portal warning system.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="div-users" left_title="Available users" right_title="Assigned users" left_help="Pick users to assign." right_help="Pick users to unassign." action_add="add_users" action_remove="remove_users" field_name="user_ids" list_kind="user" left_items=users_available right_items=users_assigned %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_metadata">
+        <div class="field">
+          <label class="label is-small" for="div-edit-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="div-edit-name" name="name" value="{{ division.name }}" required>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save details</span>
+        </button>
+      </form>
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Linked organizations</div></div>
+    <div class="pc-body">
+      {% include "organizational/divisions/_organizations_dlb_only.html" %}
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>User assignments</div></div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Informational — does not grant data access. Used by the user-portal warning system.</p>
+      {% include "organizational/divisions/_users_dlb_only.html" %}
+    </div>
+  </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

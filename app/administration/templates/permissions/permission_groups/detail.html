@@ -5,73 +5,83 @@
 <li class="is-active"><a href="#" aria-current="page">{{ group.name }}</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ group.name }}</h1>
-    <p class="subtitle is-6 has-text-grey">Permission group (Django <code>auth.Group</code>)</p>
-  </div>
-  {% if can_edit %}
-  <div class="buttons">
-    <a class="button is-link is-medium" href="{% url 'permission_group_edit' group.pk %}">
-      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-      <span>Edit</span>
-    </a>
-    <form method="post" action="{% url 'permission_group_delete' group.pk %}" onsubmit="return confirm('Delete this permission group? Users lose its permissions, and any roles referencing it lose the link.');" class="is-inline-block">
-      {% csrf_token %}
-      <button class="button is-medium is-danger is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-        <span>Delete</span>
-      </button>
-    </form>
-  </div>
-  {% endif %}
-</div>
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Permissions in this group ({{ permissions|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if permissions %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>App</th><th>Model</th><th>Codename</th><th>Label</th></tr></thead>
-      <tbody>
-        {% for p in permissions %}
-        <tr>
-          <td>{{ p.content_type.app_label }}</td>
-          <td>{{ p.content_type.model }}</td>
-          <td><code>{{ p.codename }}</code></td>
-          <td><a href="{% url 'permission_detail' p.pk %}">{{ p.name }}</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No permissions in this group.</p>
-    {% endif %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">group_work</span></div>
+      <div>
+        <h1 class="page-title">{{ group.name }}</h1>
+        <p class="page-subtitle">Permission group (Django <code>auth.Group</code>)</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'permission_group_index' %}" class="button is-small is-light" title="Back to permission groups list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Permission Groups</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'permission_group_edit' group.pk %}" class="button is-small is-warning" title="Edit permission group">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'permission_group_delete' group.pk %}" onsubmit="return confirm('Delete this permission group? Users lose its permissions, and any roles referencing it lose the link.');" style="display:inline-block;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" title="Delete permission group">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Members ({{ members|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if members %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>User</th><th>Email</th></tr></thead>
-      <tbody>
-        {% for u in members %}
-        <tr>
-          <td><a href="{% url 'user_detail' u.pk %}">{{ u.username }}</a></td>
-          <td>{{ u.email|default:"—" }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No members.</p>
-    {% endif %}
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions in this group ({{ permissions|length }})</div></div>
+    <div class="pc-body is-flush">
+      {% if permissions %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>App</th><th>Model</th><th>Codename</th><th>Label</th></tr></thead>
+        <tbody>
+          {% for p in permissions %}
+          <tr>
+            <td>{{ p.content_type.app_label }}</td>
+            <td>{{ p.content_type.model }}</td>
+            <td><code>{{ p.codename }}</code></td>
+            <td><a href="{% url 'permission_detail' p.pk %}">{{ p.name }}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No permissions in this group.</p></div>
+      {% endif %}
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members ({{ members|length }})</div></div>
+    <div class="pc-body is-flush">
+      {% if members %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>User</th><th>Email</th></tr></thead>
+        <tbody>
+          {% for u in members %}
+          <tr>
+            <td><a href="{% url 'user_detail' u.pk %}">{{ u.username }}</a></td>
+            <td>{{ u.email|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No members.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

@@ -234,6 +234,96 @@ def permission_group_edit(request: HttpRequest, group_id: int) -> HttpResponse:
 
 
 @require_http_methods(["POST"])
+def permission_group_move_permissions(request: HttpRequest, group_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    group = get_object_or_404(Group.objects.prefetch_related("permissions__content_type"), pk=group_id)
+    ids = _parse_id_list(request.POST, "permission_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one permission.", status=400)
+
+    try:
+        perms = list(Permission.objects.select_related("content_type").filter(pk__in=ids))
+        if direction == "add":
+            assert_actor_may_add_permissions(request.user, permissions_to_add=perms)
+            with transaction.atomic():
+                group.permissions.add(*perms)
+        else:
+            assert_actor_may_remove_permissions(request.user, permissions_to_remove=perms)
+            with transaction.atomic():
+                group.permissions.remove(*perms)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    group.refresh_from_db()
+    permissions_assigned = list(
+        group.permissions.select_related("content_type").order_by(
+            "content_type__app_label", "content_type__model", "codename",
+        ),
+    )
+    assigned_perm_ids = {p.pk for p in permissions_assigned}
+    permissions_available = list(
+        Permission.objects.select_related("content_type")
+        .exclude(pk__in=assigned_perm_ids)
+        .order_by("content_type__app_label", "content_type__model", "codename"),
+    )
+
+    msg = "Permissions added to group." if direction == "add" else "Permissions removed from group."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "permissions/permission_groups/_permissions_dlb_only.html", {
+        "group": group,
+        "permissions_available": permissions_available,
+        "permissions_assigned": permissions_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def permission_group_move_users(request: HttpRequest, group_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    group = get_object_or_404(Group, pk=group_id)
+    ids = _parse_id_list(request.POST, "user_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one user.", status=400)
+
+    try:
+        with transaction.atomic():
+            for uid in ids:
+                target = User.objects.get(pk=uid)
+                assert_can_manage_target(request.user, target)
+                if direction == "add":
+                    assert_actor_may_add_groups(request.user, groups_to_add=[group])
+                    target.groups.add(group)
+                else:
+                    assert_actor_may_remove_groups(request.user, groups_to_remove=[group])
+                    target.groups.remove(group)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    members = list(User.objects.filter(groups=group).order_by("username").distinct())
+    member_ids = {m.pk for m in members}
+    users_available = list(list_users_ordered().exclude(pk__in=member_ids))
+
+    msg = "Users added to group." if direction == "add" else "Users removed from group."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "permissions/permission_groups/_users_dlb_only.html", {
+        "group": group,
+        "users_available": users_available,
+        "users_assigned": members,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def permission_group_delete(request: HttpRequest, group_id: int) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

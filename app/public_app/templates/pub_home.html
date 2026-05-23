@@ -1,81 +1,322 @@
-{% extends "pub_base.html" %}
-{% block title %}Home{% endblock %}
-{% block content %}
-<h1 class="title is-4">Welcome</h1>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EBAMS{% if user.is_authenticated %} — Home{% endif %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  {% if user.is_authenticated %}
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  {% endif %}
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bulma-scheme-main-bis);
+      color: var(--bulma-text);
+      font-family: var(--bulma-family-sans-serif);
+      font-size: 0.875rem;
+    }
+    a { color: inherit; text-decoration: none; }
 
-<p class="content is-size-6 has-text-grey-dark mb-4">
-  <strong>Note:</strong> This is the public homepage. Sign in below to access the administration portal
-  from your account menu after you land.
-</p>
+    /* ── App shell ── */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      transition: grid-template-columns 0.18s ease;
+    }
+    .app-shell:has(collapsable-side-bar[collapsed]) {
+      grid-template-columns: 40px 1fr;
+    }
+    collapsable-side-bar { min-width: 0; }
 
+    /* ── Sidebar ── */
+    .sidebar-section-label {
+      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--bulma-text-weak);
+      padding: 0.6rem 1rem 0.3rem;
+      font-weight: 600;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 1rem 0.3rem 1rem;
+      font-size: 0.8rem;
+      color: var(--bulma-text);
+      border-left: 3px solid transparent;
+    }
+    .sidebar-link:hover {
+      background: var(--bulma-background);
+      color: var(--bulma-text-strong);
+    }
+    .sidebar-link.is-active {
+      border-left-color: var(--bulma-primary);
+      color: var(--bulma-link);
+      background: var(--bulma-background);
+      font-weight: 600;
+    }
+    .sidebar-divider {
+      height: 1px; background: var(--bulma-border-weak); margin: 0.75rem 1rem;
+    }
+
+    /* ── Scroll area ── */
+    .app-scrollarea {
+      overflow-y: auto;
+      background: var(--bulma-scheme-main-bis);
+    }
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+    }
+
+    /* ── Page hero ── */
+    .page-hero {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      border-left: 4px solid var(--bulma-primary);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .page-hero .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+    }
+    .page-hero .page-header-title-wrap {
+      display: flex; align-items: center; gap: 0.65rem;
+    }
+    .page-hero .page-title {
+      font-size: 1.4rem; font-weight: 700; color: var(--bulma-text-strong); margin: 0; line-height: 1.1;
+    }
+    .page-hero .page-subtitle {
+      font-size: 0.82rem; color: var(--bulma-text-weak); margin-top: 0.2rem;
+    }
+
+    /* ── App card grid ── */
+    .app-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .app-card {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .app-card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.25rem;
+      color: var(--bulma-link);
+    }
+    .app-card h3 {
+      font-size: 1rem; font-weight: 700;
+      color: var(--bulma-text-strong);
+      margin: 0;
+    }
+    .app-card p {
+      color: var(--bulma-text-weak);
+      font-size: 0.82rem;
+      flex: 1;
+      margin: 0;
+    }
+    .app-card-links {
+      display: flex; flex-wrap: wrap; gap: 0.4rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Sharp corners */
+    .button { border-radius: 0; }
+    .tag    { border-radius: 0; }
+    .input, .select select, .textarea { border-radius: 0; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--bulma-border); }
+
+    /* ── Login layout ── */
+    .login-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .login-card {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      border-top: 4px solid var(--bulma-primary);
+      padding: 2rem 2.25rem;
+      width: 100%;
+      max-width: 420px;
+    }
+    .login-card h1 {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--bulma-text-strong);
+      margin-bottom: 0.25rem;
+    }
+    .login-card .login-sub {
+      font-size: 0.82rem; color: var(--bulma-text-weak);
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── TOP NAV ─── -->
+{% include "shared/topnav.html" with current_app_group="" %}
+
+<!-- ─── AUTHENTICATED SHELL ─── -->
 {% if user.is_authenticated %}
-<p class="mb-4">Signed in as <strong>{{ user.username }}</strong>.</p>
-<div class="buttons mb-5">
-  <a class="button is-link is-medium" href="{% url 'administration_index' %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>
-    <span>Administration portal</span>
-  </a>
-  <a class="button is-medium is-info" href="{% url 'event_index' %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>
-    <span>Events portal</span>
-  </a>
-</div>
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav>
+      <p class="sidebar-section-label">Home</p>
+      <a href="{% url 'public_home' %}" class="sidebar-link is-active"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
 
-<h2 class="subtitle is-6">Leave a note</h2>
-<p class="is-size-7 has-text-grey mb-3">Stored in your session for this browser only (not saved to the database).</p>
-<form method="post" action="{% url 'public_home' %}">
-  {% csrf_token %}
-  <input type="hidden" name="action" value="save_note">
-  <div class="field">
-    <div class="control">
-      <textarea class="textarea" name="note" rows="5" placeholder="Type a short note…">{{ session_note }}</textarea>
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Applications</p>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
+
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Dev</p>
+      <a href="{% url 'kitchen_sink' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">science</span></span> Kitchen Sink</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="home-main-content">
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light mb-4">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="page-hero">
+          <div class="page-header">
+            <div class="page-header-title-wrap">
+              <div style="font-size:2rem; margin-right:0.25rem;">⬡</div>
+              <div>
+                <h1 class="page-title">Welcome, {{ user.username }}</h1>
+                <p class="page-subtitle">Select an application below to get started.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="app-card-grid">
+
+          <div class="app-card">
+            <div class="app-card-icon">↯</div>
+            <h3>Events</h3>
+            <p>Track and manage events across your domains — maintenance, inspections, calibrations, and more. Attach comments, files, and assign priorities.</p>
+            <div class="app-card-links">
+              <a href="{% url 'event_index' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+                <span>All Events</span>
+              </a>
+              <a href="{% url 'event_create' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+                <span>New Event</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="app-card">
+            <div class="app-card-icon">⚙</div>
+            <h3>Administration</h3>
+            <p>Manage users, organizations, roles, permissions, and data domain access. Control <em>who can act</em> and <em>which rows they can see</em> across the system.</p>
+            <div class="app-card-links">
+              <a href="{% url 'administration_index' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>
+                <span>Admin Portal</span>
+              </a>
+              <a href="{% url 'user_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>
+                <span>Users</span>
+              </a>
+              <a href="{% url 'role_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+                <span>Roles</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
     </div>
   </div>
-  <button type="submit" class="button is-medium is-primary">
-    <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
-    <span>Save note</span>
-  </button>
-</form>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
 
 {% else %}
+<!-- ─── UNAUTHENTICATED LOGIN ─── -->
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>Sign in</h1>
+    <p class="login-sub">Enter your credentials to access EBAMS.</p>
 
-<h2 class="subtitle is-6">Sign in</h2>
-
-<div class="mb-4">
-  <a href="{% url 'oidc_authentication_init' %}" class="button is-link is-fullwidth">
-    <span class="icon"><span class="material-icons" aria-hidden="true">account_circle</span></span>
-    <span>Sign in with Microsoft</span>
-  </a>
-</div>
-
-<div class="box py-3 px-3 mb-4">
-  <p class="is-size-7 has-text-centered has-text-grey">Or use username and password</p>
-</div>
-
-<form method="post" action="{% url 'public_home' %}">
-  {% csrf_token %}
-  <input type="hidden" name="action" value="login">
-  {% if form.non_field_errors %}
-    <div class="notification is-danger is-light">{{ form.non_field_errors }}</div>
-  {% endif %}
-  <div class="field">
-    <label class="label" for="id_username">Username</label>
-    <div class="control">
-      {{ form.username }}
+    <div class="mb-4">
+      <a href="{% url 'oidc_authentication_init' %}" class="button is-link is-fullwidth">
+        <span class="icon"><span class="material-icons" aria-hidden="true">account_circle</span></span>
+        <span>Sign in with Microsoft</span>
+      </a>
     </div>
-    {% if form.username.errors %}<p class="help is-danger">{{ form.username.errors }}</p>{% endif %}
-  </div>
-  <div class="field">
-    <label class="label" for="id_password">Password</label>
-    <div class="control">
-      {{ form.password }}
+
+    <div style="text-align:center; font-size:0.78rem; color:var(--bulma-text-weak); margin-bottom:1rem;">
+      or use username and password
     </div>
-    {% if form.password.errors %}<p class="help is-danger">{{ form.password.errors }}</p>{% endif %}
+
+    <form method="post" action="{% url 'public_home' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="login">
+      {% if form.non_field_errors %}
+        <div class="notification is-danger is-light mb-3" style="padding:0.6rem 0.85rem;">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="field">
+        <label class="label is-small" for="id_username">Username</label>
+        <div class="control">
+          {{ form.username }}
+        </div>
+        {% if form.username.errors %}<p class="help is-danger">{{ form.username.errors }}</p>{% endif %}
+      </div>
+      <div class="field">
+        <label class="label is-small" for="id_password">Password</label>
+        <div class="control">
+          {{ form.password }}
+        </div>
+        {% if form.password.errors %}<p class="help is-danger">{{ form.password.errors }}</p>{% endif %}
+      </div>
+      <div class="field mt-4">
+        <button type="submit" class="button is-link is-fullwidth">
+          <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+          <span>Sign in</span>
+        </button>
+      </div>
+    </form>
   </div>
-  <button type="submit" class="button is-medium is-link">
-    <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
-    <span>Sign in</span>
-  </button>
-</form>
+</div>
 {% endif %}
-{% endblock %}
+
+</body>
+</html>

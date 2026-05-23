@@ -5,44 +5,66 @@
 <li class="is-active"><a href="#" aria-current="page">New</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">Create a new role</h1>
-<p class="subtitle is-6 has-text-grey">Add permission groups and assign users on the edit page.</p>
 
-<div class="card">
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <div class="field">
-        <label class="label" for="role-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="role-name" name="name" value="{{ name|default:'' }}" required autofocus placeholder="e.g. Technician">
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">Create a new role</h1>
+        <p class="page-subtitle">Add permission groups and assign users on the edit page.</p>
       </div>
-      <div class="field">
-        <label class="label" for="role-description">Description</label>
-        <div class="control">
-          <textarea class="textarea" id="role-description" name="description" rows="2">{{ description|default:'' }}</textarea>
-        </div>
-      </div>
-      <div class="field">
-        <label class="label" for="role-parent">Parent role (optional — single-layer inheritance only)</label>
-        <div class="control">
-          <div class="select">
-            <select id="role-parent" name="parent_role_id">
-              <option value="">— None (this is a base role) —</option>
-              {% for p in parent_options %}
-              <option value="{{ p.pk }}" {% if parent_role_id == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
-              {% endfor %}
-            </select>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'role_index' %}" class="button is-small is-light" title="Back to roles list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Roles</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label is-small" for="role-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="role-name" name="name" value="{{ name|default:'' }}" required autofocus placeholder="e.g. Technician">
           </div>
         </div>
-        <p class="help">A specialized role cannot itself be a parent.</p>
-      </div>
-      <div class="field is-grouped">
-        <div class="control"><button class="button is-medium is-link" type="submit">Create role</button></div>
-        <div class="control"><a class="button is-light is-medium" href="{% url 'role_index' %}">Cancel</a></div>
-      </div>
-    </form>
+        <div class="field">
+          <label class="label is-small" for="role-description">Description</label>
+          <div class="control">
+            <textarea class="textarea is-small" id="role-description" name="description" rows="2">{{ description|default:'' }}</textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small" for="role-parent">Parent role (optional — single-layer inheritance only)</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select id="role-parent" name="parent_role_id">
+                <option value="">— None (this is a base role) —</option>
+                {% for p in parent_options %}
+                <option value="{{ p.pk }}" {% if parent_role_id == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <p class="help">A specialized role cannot itself be a parent.</p>
+        </div>
+        <div class="buttons mt-3">
+          <button class="button is-small is-link" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+            <span>Create role</span>
+          </button>
+          <a class="button is-small is-light" href="{% url 'role_index' %}">Cancel</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}

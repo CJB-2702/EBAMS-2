@@ -1,0 +1,72 @@
+<nav class="app-topnav" role="navigation" aria-label="Primary" {% if current_app_group %}current-application-group="{{ current_app_group }}" data-current-application-group="{{ current_app_group }}"{% endif %}>
+  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS</a>
+
+  {% if request.user.is_authenticated or user.is_authenticated %}
+  <div class="tabs app-portals" role="tablist">
+    <ul>
+      <li role="tab" data-group="Events">
+        <button class="portal-tab-btn" commandfor="portal-events" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">event</span></span> Events <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-events" popover="auto" class="portal-dropdown">
+          <p class="portal-dropdown-label">Events</p>
+          <div class="portal-dropdown-inner">
+            <a href="{% url 'event_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
+            <a href="{% url 'event_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Administration">
+        <button class="portal-tab-btn" commandfor="portal-administration" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-administration" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">User Management</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'user_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span> Users</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Organizational Assignments</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'organization_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Organizations</a>
+                <a href="{% url 'division_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span> Divisions</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Permissions System</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'permission_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span> Permissions</a>
+                <a href="{% url 'permission_group_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span> Permission Groups</a>
+                <a href="{% url 'role_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Roles</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Data Access</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'domain_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span> Domains</a>
+                <a href="{% url 'domain_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span> Domain Templates</a>
+                <a href="{% url 'domain_organizations_portal' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">link</span></span> Domain ↔ Organization Links</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="app-topnav-right">
+    <button class="app-user-btn" type="button">
+      <div class="app-user-avatar">{% if request.user.is_authenticated %}{{ request.user.username|slice:":2"|upper }}{% elif user.is_authenticated %}{{ user.username|slice:":2"|upper }}{% endif %}</div>
+      <span>{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}{{ user.username }}{% endif %}</span>
+    </button>
+    <form method="post" action="{% url 'public_logout' %}" style="display:flex; height:100%;">
+      {% csrf_token %}
+      <button class="app-logout-btn" type="submit" aria-label="Sign out" title="Sign out">⎋ Sign out</button>
+    </form>
+  </div>
+  {% endif %}
+</nav>

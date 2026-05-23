@@ -1,18 +1,30 @@
 {% extends "events/ev_base.html" %}
 
 {% block title %}Edit — {{ event.title }}{% endblock %}
-{% block subtitle %}Edit event{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'event_detail' hash=event_hash %}">{{ event.title }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb is-size-7 mb-3" aria-label="breadcrumbs">
-  <ul>
-    <li><a href="{% url 'event_index' %}">Events</a></li>
-    <li><a href="{% url 'event_detail' hash=event_hash %}">{{ event.title }}</a></li>
-    <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
-  </ul>
-</nav>
 
-<h1 class="title is-5 mb-4">Edit Event</h1>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+      <div>
+        <h1 class="page-title">Edit Event</h1>
+        <p class="page-subtitle">{{ event.title }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'event_detail' hash=event_hash %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back</span>
+      </a>
+    </div>
+  </div>
+</div>
 
 {% if errors %}
 <div class="notification is-danger is-light mb-4">
@@ -20,13 +32,16 @@
 </div>
 {% endif %}
 
-<form method="post" style="max-width: 640px;">
+<form method="post" style="max-width: 720px;">
   {% csrf_token %}
-  <div class="card">
-    <div class="card-content">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>Event Details</div>
+    </div>
+    <div class="pc-body">
 
       <div class="field">
-        <label class="label">Title <span class="has-text-danger">*</span></label>
+        <label class="label is-small">Title <span class="has-text-danger">*</span></label>
         <div class="control">
           <input class="input is-family-monospace" type="text" name="title"
             value="{{ event.title }}" required>
@@ -34,7 +49,7 @@
       </div>
 
       <div class="field">
-        <label class="label">Description</label>
+        <label class="label is-small">Description</label>
         <div class="control">
           <textarea class="textarea" name="description" rows="3">{{ event.description }}</textarea>
         </div>
@@ -43,7 +58,7 @@
       <div class="columns">
         <div class="column">
           <div class="field">
-            <label class="label">Event Type</label>
+            <label class="label is-small">Event Type</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="event_type">
@@ -57,7 +72,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Status</label>
+            <label class="label is-small">Status</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="status">
@@ -71,7 +86,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Priority</label>
+            <label class="label is-small">Priority</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="priority">
@@ -89,7 +104,7 @@
       <div class="columns">
         <div class="column">
           <div class="field">
-            <label class="label">Event Start</label>
+            <label class="label is-small">Event Start</label>
             <div class="control">
               <input class="input is-family-monospace" type="datetime-local" name="event_start"
                 value="{{ event.event_start|date:'Y-m-d\TH:i'|default:'' }}">
@@ -98,7 +113,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Event End</label>
+            <label class="label is-small">Event End</label>
             <div class="control">
               <input class="input is-family-monospace" type="datetime-local" name="event_end"
                 value="{{ event.event_end|date:'Y-m-d\TH:i'|default:'' }}">
@@ -109,14 +124,14 @@
 
     </div>
 
-    <footer class="card-footer custom-card-footer">
-      <div class="card-footer-secondaries">
-        <a href="{% url 'event_detail' hash=event_hash %}" class="button is-medium is-light">
+    <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--bulma-border-weak); display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; gap:0.5rem;">
+        <a href="{% url 'event_detail' hash=event_hash %}" class="button is-small is-light">
           <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
           <span>Cancel</span>
         </a>
         {% if can_delete %}
-        <button type="submit" class="button is-medium is-danger is-light"
+        <button type="submit" class="button is-small is-danger is-light"
           formaction="{% url 'event_soft_delete' hash=event_hash %}"
           onclick="return confirm('Delete this event?');">
           <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
@@ -124,11 +139,11 @@
         </button>
         {% endif %}
       </div>
-      <button class="button is-medium is-primary card-footer-primary" type="submit">
+      <button class="button is-small is-primary" type="submit">
         <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
         <span>Save Changes</span>
       </button>
-    </footer>
+    </div>
 
   </div>
 </form>

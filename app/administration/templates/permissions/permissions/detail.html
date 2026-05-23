@@ -5,26 +5,42 @@
 <li class="is-active"><a href="#" aria-current="page">{{ permission.codename }}</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">{{ permission.name }}</h1>
-<p class="subtitle is-6 has-text-grey">
-  <code>{{ permission.content_type.app_label }}.{{ permission.codename }}</code>
-  on model <code>{{ permission.content_type.model }}</code>
-</p>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Permission groups granting this permission ({{ groups|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if groups %}
-    <ul>
-      {% for g in groups %}
-      <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No permission groups currently grant this permission.</p>
-    {% endif %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">vpn_key</span></div>
+      <div>
+        <h1 class="page-title">{{ permission.name }}</h1>
+        <p class="page-subtitle">
+          <code>{{ permission.content_type.app_label }}.{{ permission.codename }}</code>
+          on model <code>{{ permission.content_type.model }}</code>
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'permission_index' %}" class="button is-small is-light" title="Back to permissions list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Permissions</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups granting this permission ({{ groups|length }})</div></div>
+    <div class="pc-body">
+      {% if groups %}
+      <ul class="is-size-7">
+        {% for g in groups %}
+        <li><a href="{% url 'permission_group_detail' g.pk %}">{{ g.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No permission groups currently grant this permission.</p>
+      {% endif %}
+    </div>
   </div>
 </div>
 {% endblock %}

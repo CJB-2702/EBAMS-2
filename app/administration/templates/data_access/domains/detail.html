@@ -5,65 +5,75 @@
 <li class="is-active"><a href="#" aria-current="page">{{ domain.name }}</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ domain.name }}</h1>
-    <p class="subtitle is-6 has-text-grey">Data domain — slug <code>{{ domain.slug }}</code></p>
-  </div>
-  {% if can_edit %}
-  <div class="buttons">
-    <a class="button is-link is-medium" href="{% url 'domain_edit' domain.pk %}">
-      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-      <span>Edit</span>
-    </a>
-    <form method="post" action="{% url 'domain_delete' domain.pk %}" onsubmit="return confirm('Delete this domain? Any user assignments and template entries are cleared.');" class="is-inline-block">
-      {% csrf_token %}
-      <button class="button is-medium is-danger is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-        <span>Delete</span>
-      </button>
-    </form>
-  </div>
-  {% endif %}
-</div>
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Organizations linked to this domain ({{ organizations|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if organizations %}
-    <ul>
-      {% for o in organizations %}
-      <li><a href="{% url 'organization_detail' o.pk %}">{{ o.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No organizations linked.</p>
-    {% endif %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">layers</span></div>
+      <div>
+        <h1 class="page-title">{{ domain.name }}</h1>
+        <p class="page-subtitle">Data domain — slug <code>{{ domain.slug }}</code></p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'domain_index' %}" class="button is-small is-light" title="Back to domains list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Domains</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'domain_edit' domain.pk %}" class="button is-small is-warning" title="Edit domain">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'domain_delete' domain.pk %}" onsubmit="return confirm('Delete this domain? Any user assignments and template entries are cleared.');" style="display:inline-block;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" title="Delete domain">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Users with access to this domain ({{ user_assignments|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if user_assignments %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>User</th><th>Email</th></tr></thead>
-      <tbody>
-        {% for ua in user_assignments %}
-        <tr>
-          <td><a href="{% url 'user_detail' ua.user_id %}">{{ ua.user.username }}</a></td>
-          <td>{{ ua.user.email|default:"—" }}</td>
-        </tr>
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations linked to this domain ({{ organizations|length }})</div></div>
+    <div class="pc-body">
+      {% if organizations %}
+      <ul class="is-size-7">
+        {% for o in organizations %}
+        <li><a href="{% url 'organization_detail' o.pk %}">{{ o.name }}</a></li>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No users have access yet.</p>
-    {% endif %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No organizations linked.</p>
+      {% endif %}
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users with access to this domain ({{ user_assignments|length }})</div></div>
+    <div class="pc-body is-flush">
+      {% if user_assignments %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>User</th><th>Email</th></tr></thead>
+        <tbody>
+          {% for ua in user_assignments %}
+          <tr>
+            <td><a href="{% url 'user_detail' ua.user_id %}">{{ ua.user.username }}</a></td>
+            <td>{{ ua.user.email|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No users have access yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

@@ -4,33 +4,66 @@
 <li class="is-active"><a href="#" aria-current="page">Permissions</a></li>
 {% endblock %}
 {% block content %}
-<h1 class="title">Permissions</h1>
-<p class="subtitle is-6 has-text-grey">Django <code>auth.Permission</code> rows. Read-only — permissions are created automatically by migrations and cannot be edited here.</p>
 
-<form method="get" class="mb-4">
-  <div class="field has-addons">
-    <div class="control is-expanded">
-      <input class="input" type="search" name="q" value="{{ q }}" placeholder="Filter by app, model, codename, or label" autocomplete="off">
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">vpn_key</span></div>
+      <div>
+        <h1 class="page-title">Permissions</h1>
+        <p class="page-subtitle">Django <code>auth.Permission</code> rows. Read-only — created automatically by migrations.</p>
+      </div>
     </div>
-    <div class="control"><button type="submit" class="button is-medium is-link is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-      <span>Filter</span>
-    </button></div>
-    {% if q %}<div class="control"><a class="button is-light is-medium" href="{% url 'permission_index' %}">Clear</a></div>{% endif %}
+    <div class="page-header-actions">
+      <a href="{% url 'administration_index' %}" class="button is-small is-light" title="Back to Administration">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Administration</span>
+      </a>
+    </div>
   </div>
-</form>
+</div>
 
-<div class="card">
-  <div class="card-content">
-    <div class="table-container">
-      <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-8">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Filter by app, model, codename, or label" autocomplete="off">
+          </div>
+        </div>
+        <div class="buttons mt-2">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <a href="{% url 'permission_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+            <span>Clear Filters</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Permissions{% if page.paginator %} ({{ page.paginator.count }}){% endif %}</div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
             <th>App</th>
             <th>Model</th>
             <th>Codename</th>
             <th>Label</th>
-            <th class="has-text-right">Open</th>
+            <th class="has-text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -41,9 +74,8 @@
             <td><code>{{ p.codename }}</code></td>
             <td>{{ p.name }}</td>
             <td class="has-text-right">
-              <a class="button is-link is-light is-medium" href="{% url 'permission_detail' p.pk %}">
+              <a class="button is-small is-info is-light" href="{% url 'permission_detail' p.pk %}" title="View permission details">
                 <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
-                <span>View</span>
               </a>
             </td>
           </tr>
@@ -55,20 +87,35 @@
     </div>
 
     {% if page.has_other_pages %}
-    <nav class="pagination" role="navigation" aria-label="pagination">
-      {% if page.has_previous %}
-      <a class="pagination-previous" href="?q={{ q }}&page={{ page.previous_page_number }}">Previous</a>
-      {% else %}
-      <span class="pagination-previous is-disabled">Previous</span>
-      {% endif %}
-      {% if page.has_next %}
-      <a class="pagination-next" href="?q={{ q }}&page={{ page.next_page_number }}">Next</a>
-      {% else %}
-      <span class="pagination-next is-disabled">Next</span>
-      {% endif %}
-      <p class="pagination-list has-text-grey is-size-7">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} total</p>
-    </nav>
+    <div class="pc-body" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--bulma-border-weak);">
+      <span class="has-text-grey is-size-7">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
+      <nav class="pagination is-small" role="navigation" aria-label="pagination">
+        {% if page.has_previous %}
+          <a class="pagination-previous" href="?q={{ q }}&page={{ page.previous_page_number }}">
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+            <span>Prev</span>
+          </a>
+        {% else %}
+          <a class="pagination-previous" disabled>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+            <span>Prev</span>
+          </a>
+        {% endif %}
+        {% if page.has_next %}
+          <a class="pagination-next" href="?q={{ q }}&page={{ page.next_page_number }}">
+            <span>Next</span>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+          </a>
+        {% else %}
+          <a class="pagination-next" disabled>
+            <span>Next</span>
+            <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+          </a>
+        {% endif %}
+      </nav>
+    </div>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

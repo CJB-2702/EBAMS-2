@@ -1,0 +1,34 @@
+<dual-list-box id="up-divisions-dlb">
+  <list-box slot="left" id="up-divisions-avail" label="Available divisions">
+    <select slot="options" multiple>
+      {% for item in divisions_available %}
+      <option value="{{ item.pk }}">{{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+  <div slot="controls">
+    <button type="button" class="button is-small"
+            hx-post="{% url 'user_move_divisions' target_user.pk %}"
+            hx-vals="js:{division_ids: listBox('up-divisions-avail').selected(), direction: 'add'}"
+            hx-target="#up-divisions-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Assign selected divisions">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+    </button>
+    <button type="button" class="button is-small"
+            hx-post="{% url 'user_move_divisions' target_user.pk %}"
+            hx-vals="js:{division_ids: listBox('up-divisions-held').selected(), direction: 'remove'}"
+            hx-target="#up-divisions-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Remove selected divisions">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+    </button>
+  </div>
+  <list-box slot="right" id="up-divisions-held" label="Assigned divisions">
+    <select slot="options" multiple>
+      {% for item in divisions_assigned %}
+      <option value="{{ item.pk }}">{{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+</dual-list-box>

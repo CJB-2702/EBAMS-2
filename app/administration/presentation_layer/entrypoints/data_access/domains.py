@@ -241,6 +241,94 @@ def domain_edit(request: HttpRequest, domain_id: int) -> HttpResponse:
 
 
 @require_http_methods(["POST"])
+def domain_move_organizations(request: HttpRequest, domain_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    domain = get_object_or_404(Domain, pk=domain_id)
+    ids = _parse_id_list(request.POST, "organization_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one organization.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for oid in ids:
+                if direction == "add":
+                    OrganizationDomain.objects.get_or_create(
+                        domain=domain,
+                        organization_id=oid,
+                        defaults={"created_by": actor, "updated_by": actor},
+                    )
+                else:
+                    OrganizationDomain.objects.filter(domain=domain, organization_id=oid).delete()
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    assigned_ids = list(
+        OrganizationDomain.objects.filter(domain=domain).values_list("organization_id", flat=True)
+    )
+    organizations_assigned = list(Organization.objects.filter(pk__in=assigned_ids).order_by("name"))
+    organizations_available = list(Organization.objects.exclude(pk__in=assigned_ids).order_by("name"))
+
+    msg = "Organizations linked." if direction == "add" else "Organizations unlinked."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "data_access/domains/_organizations_dlb_only.html", {
+        "domain": domain,
+        "organizations_available": organizations_available,
+        "organizations_assigned": organizations_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
+def domain_move_users(request: HttpRequest, domain_id: int) -> HttpResponse:
+    denied = _require_grant(request)
+    if denied is not None:
+        return denied
+
+    domain = get_object_or_404(Domain, pk=domain_id)
+    ids = _parse_id_list(request.POST, "user_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one user.", status=400)
+
+    try:
+        actor = request.user
+        with transaction.atomic():
+            for uid in ids:
+                if direction == "add":
+                    DataOwnershipContext(uid).enable_or_assign_domain(actor=actor, domain_id=domain.pk)
+                else:
+                    row = UserDomain.objects.get(user_id=uid, domain_id=domain.pk)
+                    DataOwnershipContext(uid).disable_domain_assignment(actor=actor, user_domain_id=row.pk)
+    except (ObjectDoesNotExist, ValueError, GrantPermissionDenied) as exc:
+        return HttpResponse(str(exc), status=400)
+
+    user_assignments = list(
+        UserDomain.objects.filter(domain=domain, is_active=True)
+        .select_related("user")
+        .order_by("user__username"),
+    )
+    users_assigned = [ua.user for ua in user_assignments]
+    assigned_user_ids = {ua.user_id for ua in user_assignments}
+    users_available = list(list_users_ordered().exclude(pk__in=assigned_user_ids))
+
+    msg = "Users assigned to domain." if direction == "add" else "Users removed from domain."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(request, "data_access/domains/_users_dlb_only.html", {
+        "domain": domain,
+        "users_available": users_available,
+        "users_assigned": users_assigned,
+    }).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)
+
+
+@require_http_methods(["POST"])
 def domain_delete(request: HttpRequest, domain_id: int) -> HttpResponse:
     denied = _require_admin(request)
     if denied is not None:

@@ -1,0 +1,133 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}collapsable-side-bar{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+<style>
+  #demo-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    height: 300px;
+    border: 1px solid var(--bulma-border-weak);
+    background: var(--bulma-scheme-main-bis);
+    transition: grid-template-columns 0.18s ease;
+  }
+  #demo-shell:has(collapsable-side-bar[collapsed]) {
+    grid-template-columns: 40px 1fr;
+  }
+  .demo-content-area {
+    padding: 1.5rem;
+    background: var(--bulma-scheme-main);
+  }
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Components</p>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">menu_open</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;collapsable-side-bar&gt;</h1>
+        <p class="page-subtitle">Collapsible application sidebar shell component.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+    
+    <!-- Live Demo -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Live Demo</div>
+      </div>
+      <div class="pc-body">
+        <div id="demo-shell">
+          <collapsable-side-bar aria-label="Demo side navigation">
+            <p class="sidebar-section-label">Demo Menu</p>
+            <a class="sidebar-link is-active" href="#"><span class="material-icons" style="font-size:1rem; vertical-align:middle; margin-right:4px;">dashboard</span>Dashboard</a>
+            <a class="sidebar-link" href="#"><span class="material-icons" style="font-size:1rem; vertical-align:middle; margin-right:4px;">settings</span>Settings</a>
+          </collapsable-side-bar>
+          <div class="demo-content-area">
+            <h3 class="title is-6">Application Workspace</h3>
+            <p class="is-size-7 has-text-grey">
+              Click the toggle button (☰) inside the sidebar to collapse it. 
+              When collapsed, clicking anywhere on the sidebar strip will automatically expand it again.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- API & Documentation -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">API & Usage</div>
+      </div>
+      <div class="pc-body content is-size-7">
+        <h4 class="title is-6">HTML Attributes</h4>
+        <ul>
+          <li><code>collapsed</code> (boolean) - present when the sidebar is in its collapsed state. Can be toggled programmatically or via direct user clicks.</li>
+        </ul>
+
+        <h4 class="title is-6">CSS Integration</h4>
+        <p>
+          To make the parent layout adjust seamlessly, style the parent container to observe the state of the component:
+        </p>
+        <pre class="ks-code" style="display:block; white-space:pre;">.app-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  transition: grid-template-columns 0.18s ease;
+}
+.app-shell:has(collapsable-side-bar[collapsed]) {
+  grid-template-columns: 40px 1fr;
+}</pre>
+      </div>
+    </div>
+
+    <!-- Code Snippet -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Template Code</div>
+      </div>
+      <div class="pc-body">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;!-- Include script in base --&gt;
+&lt;script src="{% static 'web_components/collapsable_side_bar.js' %}"&gt;&lt;/script&gt;
+
+&lt;!-- Markup --&gt;
+&lt;div class="app-shell"&gt;
+  &lt;collapsable-side-bar aria-label="Section navigation"&gt;
+    &lt;p class="sidebar-section-label"&gt;Navigation&lt;/p&gt;
+    &lt;a class="sidebar-link is-active" href="#"&gt;Dashboard&lt;/a&gt;
+    &lt;a class="sidebar-link" href="#"&gt;Settings&lt;/a&gt;
+  &lt;/collapsable-side-bar&gt;
+  &lt;div class="content"&gt;...&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

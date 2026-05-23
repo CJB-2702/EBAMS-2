@@ -6,15 +6,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Kitchen Sink — Design System</title>
   <meta name="color-scheme" content="light dark">
-  <link rel="stylesheet" href="{% static 'css/bulma.min.css' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
   <style>
+    /* ── Top nav (from portal base) ── */
+    .app-topnav {
+      display: flex;
+      align-items: center;
+      height: 3rem;
+      background: var(--bulma-scheme-invert);
+      color: var(--bulma-scheme-main);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--bulma-border);
+      position: relative;
+      z-index: 40;
+    }
+    .app-topnav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      height: 100%;
+      white-space: nowrap;
+      border-right: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* ── Page hero (wraps title + actions on all pages) ── */
+    .page-hero {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      border-left: 4px solid var(--bulma-primary);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .page-hero-content { flex: 1; }
+    .page-hero-actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start; }
+    .page-title    { font-size: 1.85rem; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 0.9rem; color: var(--bulma-text-weak); margin-top: 0.3rem; }
+
     /* All colors expressed via Bulma scheme variables so the page flips with prefers-color-scheme. */
     body {
-      background-color: var(--bulma-scheme-main);
+      background-color: var(--bulma-scheme-main-bis);
       color: var(--bulma-text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
     }
     .ks-sidebar {
       position: sticky;
@@ -66,7 +114,7 @@
       color: var(--bulma-text-weak);
     }
     .ks-demo-box {
-      background: var(--bulma-scheme-main-bis);
+      background: var(--bulma-card-background-color);
       border: 1px solid var(--bulma-border-weak);
       padding: 1.5rem;
       margin-bottom: 1rem;
@@ -76,6 +124,9 @@
       color: var(--bulma-text-weak);
     }
     .ks-sidebar .menu-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
       font-size: 0.82rem;
       padding: 0.2em 0.5em;
       color: var(--bulma-text);
@@ -100,25 +151,46 @@
   });
 </script>
 
-<div style="display: grid; grid-template-columns: 200px 1fr; min-height: 100vh;">
+<!-- ─── TOP NAV ─── -->
+<nav class="app-topnav" role="navigation">
+  <div class="app-topnav-brand">EBAMS</div>
+</nav>
+
+<div style="display: grid; grid-template-columns: 200px 1fr; flex: 1; overflow: hidden;">
 
   <!-- ── Sidebar TOC ── -->
   <aside class="ks-sidebar p-4">
-    <p class="menu-label mt-2">Page Examples</p>
+    <p class="menu-label mt-2">Web Components</p>
     <ul class="menu-list">
-      <li><a href="{% url 'kitchen_sink_work_portal_example' %}">Work Portal Example</a></li>
-      <li><a href="{% url 'kitchen_sink_search_page_example' %}">Search Page Example</a></li>
-      <li><a href="{% url 'kitchen_sink_index_example' %}">Index / Portal Hub Example</a></li>
-      <li><a href="{% url 'kitchen_sink_sidebar_behavior_example' %}">Sidebar Behavior</a></li>
+      <li><a href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> Index</a></li>
+      <li>
+        <ul>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">menu_open</span></span> collapsable-side-bar</a></li>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">swap_horiz</span></span> dual-listbox</a></li>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">view_carousel</span></span> image-carousel</a></li>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> list-box</a></li>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> search-dropdown</a></li>
+          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">notification_important</span></span> toast-alert</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <p class="menu-label mt-4">Page Examples</p>
+    <ul class="menu-list">
+      <li><a href="{% url 'kitchen_sink_work_portal_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">business_center</span></span> Work Portal Example</a></li>
+      <li><a href="{% url 'kitchen_sink_search_page_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> Search Page Example</a></li>
+      <li><a href="{% url 'kitchen_sink_index_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">hub</span></span> Index / Portal Hub Example</a></li>
+      <li><a href="{% url 'kitchen_sink_sidebar_behavior_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">menu</span></span> Sidebar Behavior</a></li>
     </ul>
 
     <p class="menu-label mt-4">Top Bar</p>
     <ul class="menu-list">
-      <li><a href="{% url 'kitchen_sink_topbar_popovers' %}">Popovers API</a></li>
+      <li><a href="{% url 'kitchen_sink_topbar_popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">web</span></span> Popovers API</a></li>
     </ul>
 
     <p class="menu-label mt-4">Design System</p>
     <ul class="menu-list">
+      <li><a href="#page-hero-pattern">Page Hero Pattern</a></li>
       <li><a href="#typography">Typography</a></li>
       <li><a href="#colors">Colors</a></li>
       <li><a href="#buttons">Buttons</a></li>
@@ -149,22 +221,21 @@
   </aside>
 
   <!-- ── Main Content ── -->
-  <main class="p-6" style="max-width: 960px;">
+  <main class="p-6" style="max-width: 960px; overflow-y: auto;">
 
-    <nav class="breadcrumb mb-3" aria-label="breadcrumbs">
-      <ul>
-        <li><a href="{% url 'public_home' %}">Home</a></li>
-        <li class="is-active"><a aria-current="page">Kitchen Sink</a></li>
-      </ul>
-    </nav>
-    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.25rem;">
-      <h1 class="title is-3 mb-0">Design System — Kitchen Sink</h1>
-      <button id="theme-toggle" class="button is-small is-light" style="font-family: var(--app-font-mono-input); font-size: 0.72rem;" title="Toggle light / dark mode">
-        <span class="icon"><span class="material-icons" aria-hidden="true">brightness_6</span></span>
-        <span id="theme-toggle-label">dark</span>
-      </button>
+    <!-- ── Hero (page header with title + actions) ── -->
+    <div class="page-hero">
+      <div class="page-hero-content">
+        <h1 class="page-title">Design System — Kitchen Sink</h1>
+        <p class="page-subtitle">All visual components and patterns in one reference page.</p>
+      </div>
+      <div class="page-hero-actions">
+        <button id="theme-toggle" class="button is-small is-light" style="font-family: var(--app-font-mono-input); font-size: 0.72rem;" title="Toggle light / dark mode">
+          <span class="icon"><span class="material-icons" aria-hidden="true">brightness_6</span></span>
+          <span id="theme-toggle-label">dark</span>
+        </button>
+      </div>
     </div>
-    <p class="subtitle is-6 has-text-grey mb-5">All visual components and patterns in one reference page.</p>
 
     <script>
       (function () {
@@ -191,6 +262,37 @@
         });
       })();
     </script>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PAGE HERO PATTERN (Documentation)
+    ════════════════════════════════════════════════════════════ -->
+    <section id="page-hero-pattern" class="ks-section">
+      <h2 class="title is-5 mb-4">Page Structure — Hero Container Pattern</h2>
+      <p class="is-size-7 has-text-grey mb-3">
+        <strong>Rule:</strong> Every page must have a consistent header structure:
+      </p>
+      <div class="ks-demo-box">
+        <p class="ks-label">Required elements in every page header:</p>
+        <ol class="is-size-7 has-text-grey" style="padding-left: 1.5rem; line-height: 1.8;">
+          <li><strong>Top navigation bar</strong> — consistent app chrome across all portals (brand + portal tabs)</li>
+          <li><strong>Page hero container</strong> — wraps title, subtitle, and primary action buttons
+            <ul style="margin-top: 0.3rem; padding-left: 1rem;">
+              <li>Left side: Page title (large, bold) + subtitle (context/description)</li>
+              <li>Right side: Primary action buttons (Create, Export, Settings, etc.)</li>
+              <li>Left border accent: 4px solid primary color</li>
+              <li>Never combine title and actions inline — always flex layout with space-between</li>
+            </ul>
+          </li>
+          <li><strong>Quick details / stat bar</strong> (optional) — below hero for key metrics</li>
+          <li><strong>Main content area</strong> — cards and forms below the hero</li>
+        </ol>
+      </div>
+      <p class="is-size-7 has-text-grey mt-3">
+        The hero pattern creates visual hierarchy: every user immediately knows what page they're on (title),
+        what they can do (actions), and how healthy the data is (stats). The top nav provides consistent
+        navigation across portals.
+      </p>
+    </section>
 
     <!-- ═══════════════════════════════════════════════════════════
          TYPOGRAPHY
@@ -251,17 +353,17 @@
 
       <p class="ks-label mt-4">Carbon neutral scale (surface / text / border)</p>
       <div style="display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; margin-bottom: 1rem;">
-        <div style="background: var(--carbon-white); height: 3rem; border: 1px solid var(--bulma-border-weak);"></div>
-        <div style="background: var(--carbon-gray-10); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-20); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-30); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-40); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-50); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-60); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-70); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-80); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-90); height: 3rem;"></div>
-        <div style="background: var(--carbon-gray-100); height: 3rem;"></div>
+        <div style="background: var(--white); height: 3rem; border: 1px solid var(--bulma-border-weak);"></div>
+        <div style="background: var(--gray-10); height: 3rem;"></div>
+        <div style="background: var(--gray-20); height: 3rem;"></div>
+        <div style="background: var(--gray-30); height: 3rem;"></div>
+        <div style="background: var(--gray-40); height: 3rem;"></div>
+        <div style="background: var(--gray-50); height: 3rem;"></div>
+        <div style="background: var(--gray-60); height: 3rem;"></div>
+        <div style="background: var(--gray-70); height: 3rem;"></div>
+        <div style="background: var(--gray-80); height: 3rem;"></div>
+        <div style="background: var(--gray-90); height: 3rem;"></div>
+        <div style="background: var(--gray-100); height: 3rem;"></div>
       </div>
       <div style="display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; font-family: var(--app-font-mono-input); font-size: 0.6rem; text-align: center; color: var(--bulma-text-weak);">
         <span>W</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90</span><span>100</span>
@@ -269,10 +371,10 @@
 
       <p class="ks-label mt-4">Carbon blue scale (interactive / primary / link)</p>
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin-bottom: 0.5rem;">
-        <div style="background: var(--carbon-blue-40); height: 3rem;"></div>
-        <div style="background: var(--carbon-blue-50); height: 3rem;"></div>
-        <div style="background: var(--carbon-blue-60); height: 3rem;"></div>
-        <div style="background: var(--carbon-blue-70); height: 3rem;"></div>
+        <div style="background: var(--blue-40); height: 3rem;"></div>
+        <div style="background: var(--blue-50); height: 3rem;"></div>
+        <div style="background: var(--blue-60); height: 3rem;"></div>
+        <div style="background: var(--blue-70); height: 3rem;"></div>
       </div>
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; font-family: var(--app-font-mono-input); font-size: 0.6rem; text-align: center; color: var(--bulma-text-weak); margin-bottom: 1rem;">
         <span>40 Link-dark</span><span>50 Primary-dark</span><span>60 Primary-light</span><span>70 Link-light</span>
@@ -280,22 +382,22 @@
 
       <p class="ks-label">Support palette (red / green / yellow / cyan)</p>
       <div style="display: flex; gap: 2px; margin-bottom: 0.5rem;">
-        <div style="background: var(--carbon-red-40); height: 2.5rem; flex: 1;" title="Red 40 — Danger dark"></div>
-        <div style="background: var(--carbon-red-50); height: 2.5rem; flex: 1;" title="Red 50 — Danger dark"></div>
-        <div style="background: var(--carbon-red-60); height: 2.5rem; flex: 1;" title="Red 60 — Danger light"></div>
+        <div style="background: var(--red-40); height: 2.5rem; flex: 1;" title="Red 40 — Danger dark"></div>
+        <div style="background: var(--red-50); height: 2.5rem; flex: 1;" title="Red 50 — Danger dark"></div>
+        <div style="background: var(--red-60); height: 2.5rem; flex: 1;" title="Red 60 — Danger light"></div>
         <div style="width: 2px;"></div>
-        <div style="background: var(--carbon-green-40); height: 2.5rem; flex: 1;" title="Green 40 — Success dark"></div>
-        <div style="background: var(--carbon-green-50); height: 2.5rem; flex: 1;" title="Green 50 — Success light"></div>
+        <div style="background: var(--green-40); height: 2.5rem; flex: 1;" title="Green 40 — Success dark"></div>
+        <div style="background: var(--green-50); height: 2.5rem; flex: 1;" title="Green 50 — Success light"></div>
         <div style="width: 2px;"></div>
-        <div style="background: var(--carbon-yellow-30); height: 2.5rem; flex: 1;" title="Yellow 30 — Warning"></div>
-        <div style="background: var(--carbon-orange-40); height: 2.5rem; flex: 1;" title="Orange 40"></div>
+        <div style="background: var(--yellow-30); height: 2.5rem; flex: 1;" title="Yellow 30 — Warning"></div>
+        <div style="background: var(--orange-40); height: 2.5rem; flex: 1;" title="Orange 40"></div>
         <div style="width: 2px;"></div>
-        <div style="background: var(--carbon-cyan-40); height: 2.5rem; flex: 1;" title="Cyan 40"></div>
-        <div style="background: var(--carbon-cyan-50); height: 2.5rem; flex: 1;" title="Cyan 50 — Info"></div>
+        <div style="background: var(--cyan-40); height: 2.5rem; flex: 1;" title="Cyan 40"></div>
+        <div style="background: var(--cyan-50); height: 2.5rem; flex: 1;" title="Cyan 50 — Info"></div>
         <div style="width: 2px;"></div>
-        <div style="background: var(--carbon-teal-40); height: 2.5rem; flex: 1;" title="Teal 40"></div>
-        <div style="background: var(--carbon-teal-50); height: 2.5rem; flex: 1;" title="Teal 50"></div>
-        <div style="background: var(--carbon-purple-60); height: 2.5rem; flex: 1;" title="Purple 60"></div>
+        <div style="background: var(--teal-40); height: 2.5rem; flex: 1;" title="Teal 40"></div>
+        <div style="background: var(--teal-50); height: 2.5rem; flex: 1;" title="Teal 50"></div>
+        <div style="background: var(--purple-60); height: 2.5rem; flex: 1;" title="Purple 60"></div>
       </div>
       <p class="is-size-7 has-text-grey">Hover for color name. Red → Green → Yellow/Orange → Cyan → Teal → Purple.</p>
     </section>

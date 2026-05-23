@@ -1,0 +1,79 @@
+<div>
+
+  <!-- Set password -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+        Set password
+      </div>
+    </div>
+    <div class="pc-body">
+      <div class="notification is-warning is-light is-size-7 mb-3">
+        <p class="mb-2"><strong>Password requirements (OWASP-compliant):</strong></p>
+        <ul style="margin-left: 1.5rem; list-style-type: disc;">
+          <li>Minimum 12 characters</li>
+          <li>Cannot match username or email</li>
+          <li>Cannot be a commonly used password</li>
+          <li>Spaces and special characters are allowed and encouraged</li>
+        </ul>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_password">
+        <div class="columns is-multiline">
+          {% if password_form.non_field_errors %}
+          <div class="column is-12">
+            <div class="notification is-danger is-light">{{ password_form.non_field_errors }}</div>
+          </div>
+          {% endif %}
+          {% for field in password_form %}
+          <div class="column is-6">
+            <div class="field">
+              <label class="label is-small" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              <div class="control">{{ field }}</div>
+              {% if field.errors %}<p class="help is-danger">{{ field.errors }}</p>{% endif %}
+              {% if field.help_text %}<p class="help">{{ field.help_text|safe }}</p>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="mt-3">
+          <button class="button is-small is-link" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+            <span>Update password</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Organization assignments -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>
+        Organization assignments (informational)
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system on the user detail page.</p>
+      {% include "users/_organizations_dlb_only.html" %}
+    </div>
+  </div>
+
+  <!-- Division assignments -->
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span>
+        Division assignments (informational)
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system.</p>
+      {% include "users/_divisions_dlb_only.html" %}
+    </div>
+  </div>
+
+</div>

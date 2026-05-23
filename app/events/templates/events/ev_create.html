@@ -1,17 +1,30 @@
 {% extends "events/ev_base.html" %}
 
 {% block title %}New Event{% endblock %}
-{% block subtitle %}Create event{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">New Event</a></li>
+{% endblock %}
+{% block sidebar_create_active %}is-active{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb is-size-7 mb-3" aria-label="breadcrumbs">
-  <ul>
-    <li><a href="{% url 'event_index' %}">Events</a></li>
-    <li class="is-active"><a href="#" aria-current="page">New Event</a></li>
-  </ul>
-</nav>
 
-<h1 class="title is-5 mb-4">New Event</h1>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">⊕</div>
+      <div>
+        <h1 class="page-title">New Event</h1>
+        <p class="page-subtitle">Create a new event record in your domain.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'event_index' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>All Events</span>
+      </a>
+    </div>
+  </div>
+</div>
 
 {% if errors %}
 <div class="notification is-danger is-light mb-4">
@@ -19,13 +32,16 @@
 </div>
 {% endif %}
 
-<form method="post" style="max-width: 640px;">
+<form method="post" style="max-width: 720px;">
   {% csrf_token %}
-  <div class="card">
-    <div class="card-content">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>Event Details</div>
+    </div>
+    <div class="pc-body">
 
       <div class="field">
-        <label class="label">Domain <span class="has-text-danger">*</span></label>
+        <label class="label is-small">Domain <span class="has-text-danger">*</span></label>
         <div class="control">
           <div class="select is-fullwidth">
             <select name="domain_id" required>
@@ -42,7 +58,7 @@
       </div>
 
       <div class="field">
-        <label class="label">Title <span class="has-text-danger">*</span></label>
+        <label class="label is-small">Title <span class="has-text-danger">*</span></label>
         <div class="control">
           <input class="input is-family-monospace" type="text" name="title"
             value="{{ form_data.title|default:'' }}" required>
@@ -50,7 +66,7 @@
       </div>
 
       <div class="field">
-        <label class="label">Description</label>
+        <label class="label is-small">Description</label>
         <div class="control">
           <textarea class="textarea" name="description" rows="3">{{ form_data.description|default:'' }}</textarea>
         </div>
@@ -59,7 +75,7 @@
       <div class="columns">
         <div class="column">
           <div class="field">
-            <label class="label">Event Type</label>
+            <label class="label is-small">Event Type</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="event_type">
@@ -73,7 +89,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Status</label>
+            <label class="label is-small">Status</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="status">
@@ -87,7 +103,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Priority</label>
+            <label class="label is-small">Priority</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select name="priority">
@@ -105,7 +121,7 @@
       <div class="columns">
         <div class="column">
           <div class="field">
-            <label class="label">Event Start</label>
+            <label class="label is-small">Event Start</label>
             <div class="control">
               <input class="input is-family-monospace" type="datetime-local" name="event_start"
                 value="{{ form_data.event_start|default:'' }}">
@@ -114,7 +130,7 @@
         </div>
         <div class="column">
           <div class="field">
-            <label class="label">Event End</label>
+            <label class="label is-small">Event End</label>
             <div class="control">
               <input class="input is-family-monospace" type="datetime-local" name="event_end"
                 value="{{ form_data.event_end|default:'' }}">
@@ -125,18 +141,16 @@
 
     </div>
 
-    <footer class="card-footer custom-card-footer">
-      <div class="card-footer-secondaries">
-        <a href="{% url 'event_index' %}" class="button is-medium is-light">
-          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
-          <span>Cancel</span>
-        </a>
-      </div>
-      <button class="button is-medium is-primary card-footer-primary" type="submit">
+    <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--bulma-border-weak); display:flex; justify-content:space-between; align-items:center;">
+      <a href="{% url 'event_index' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+        <span>Cancel</span>
+      </a>
+      <button class="button is-small is-primary" type="submit">
         <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
         <span>Create Event</span>
       </button>
-    </footer>
+    </div>
 
   </div>
 </form>

@@ -1,0 +1,249 @@
+/**
+ * Single listbox web component — one half of the dual listbox, with a
+ * defined interface for selection access and a slot-style content model
+ * that preserves user-provided children so HTMX endpoints can target
+ * them directly.
+ *
+ * Usage (static items):
+ *   <list-box label="Available">
+ *     <ul slot="items" id="my-items">
+ *       <li value="1">Item One</li>
+ *       <li value="2">Item Two</li>
+ *     </ul>
+ *     <span slot="select-all-text">Select all permissions</span>
+ *   </list-box>
+ *
+ * Usage (HTMX-driven search — the user-supplied filter input keeps its
+ * hx-* attributes; targeting the user-supplied list by id is preserved):
+ *   <list-box label="Available permissions">
+ *     <input slot="search" class="input is-small" type="search"
+ *            placeholder="Search…"
+ *            hx-get="/admin/roles/5/permissions-dual?format=htmx-available"
+ *            hx-trigger="keyup changed delay:300ms"
+ *            hx-target="#avail-items"
+ *            hx-swap="innerHTML">
+ *     <ul slot="items" id="avail-items">
+ *       {% include "permissions/_dual_listbox_available_items.html" %}
+ *     </ul>
+ *   </list-box>
+ *
+ * Slots (designated child elements, light DOM — not shadow DOM, so HTMX
+ * targeting works):
+ *   slot="search"             — a filter input (any element). If omitted,
+ *                                a default local-filter <input> is rendered.
+ *   slot="items"              — the <ul> / <ol> holding <li value="…"> rows.
+ *                                If omitted, an empty <ul> is rendered.
+ *   slot="select-all-text"    — inline content for the "Select all" button
+ *                                label (default: "Select all visible").
+ *
+ * The "Select all" button is exposed with class="select-all" so callers
+ * can re-style or replace its label via the slot above.
+ *
+ * Selection: clicking a row toggles class="is-selected" on the <li>.
+ *
+ * Interface:
+ *   el.selected         → [{ value, label }, …]
+ *   el.selectedValues   → ["1", "2", …]
+ *   el.selectedLabels   → ["Item One", …]
+ *   el.list             → the underlying <ul>/<ol> element (for HTMX wiring)
+ *   el.clearSelection()
+ *   el.selectAllVisible()
+ *
+ * Events (bubble, composed):
+ *   list-box-change { detail: { values, labels } }   — fires on any selection change
+ */
+class ListBox extends HTMLElement {
+  connectedCallback() {
+    if (this._initialized) return;
+    this._initialized = true;
+
+    this._label = this.getAttribute('label') || 'Items';
+
+    // Pull out user-provided slot contents BEFORE we touch DOM.
+    const userSearch = this.querySelector('[slot="search"]');
+    const userItems  = this.querySelector('[slot="items"]');
+    const userSelectAllText = this.querySelector('[slot="select-all-text"]');
+    const selectAllText = userSelectAllText
+      ? userSelectAllText.innerHTML
+      : 'Select all visible';
+
+    // Detach so we can rebuild the structure.
+    if (userSearch) userSearch.remove();
+    if (userItems)  userItems.remove();
+    if (userSelectAllText) userSelectAllText.remove();
+
+    // Clear the host and build new structure programmatically.
+    this.innerHTML = '';
+    const shell = this._buildDOM(selectAllText);
+    this.appendChild(shell);
+
+    // Mount slotted nodes (or fall back to defaults).
+    const searchPlaceholder = shell.querySelector('[data-search-placeholder]');
+    if (userSearch) {
+      userSearch.removeAttribute('slot');
+      searchPlaceholder.replaceWith(userSearch);
+      this._search = userSearch;
+      this._searchIsUserProvided = true;
+    } else {
+      this._search = searchPlaceholder;
+      this._searchIsUserProvided = false;
+    }
+
+    const itemsPlaceholder = shell.querySelector('[data-items-placeholder]');
+    if (userItems) {
+      userItems.removeAttribute('slot');
+      itemsPlaceholder.replaceWith(userItems);
+      this._list = userItems;
+    } else {
+      this._list = itemsPlaceholder;
+    }
+
+    this._selectAllBtn = shell.querySelector('.select-all');
+
+    this._bind();
+  }
+
+  // ── public interface ─────────────────────────────────────────────────────
+
+  get list() {
+    return this._list;
+  }
+
+  get selected() {
+    return [...this._list.querySelectorAll('li.is-selected')].map(li => ({
+      value: li.getAttribute('value') ?? li.textContent.trim(),
+      label: li.textContent.trim(),
+    }));
+  }
+
+  get selectedValues() {
+    return this.selected.map(s => s.value);
+  }
+
+  get selectedLabels() {
+    return this.selected.map(s => s.label);
+  }
+
+  clearSelection() {
+    this._list.querySelectorAll('li.is-selected')
+      .forEach(li => li.classList.remove('is-selected'));
+    this._emitChange();
+  }
+
+  selectAllVisible() {
+    [...this._list.querySelectorAll('li')]
+      .filter(li => !li.hidden)
+      .forEach(li => li.classList.add('is-selected'));
+    this._emitChange();
+  }
+
+  // ── private ──────────────────────────────────────────────────────────────
+
+  _buildDOM(selectAllText) {
+    // Container
+    const shell = document.createElement('div');
+    shell.className = 'list-box';
+
+    // Header
+    const header = document.createElement('h4');
+    header.className = 'title is-6 mb-1';
+    header.textContent = this._label;
+
+    // Search field wrapper
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'field mb-1';
+
+    // Search input placeholder
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.className = 'input is-small';
+    searchInput.placeholder = 'Filter';
+    searchInput.autocomplete = 'off';
+    searchInput.setAttribute('aria-label', `Filter ${this._label}`);
+    searchInput.setAttribute('data-search-placeholder', '');
+    fieldDiv.appendChild(searchInput);
+
+    // Items container wrapper
+    const itemsWrapper = document.createElement('div');
+    itemsWrapper.style.display = 'flex';
+    itemsWrapper.style.flexDirection = 'column';
+
+    // Items list placeholder
+    const list = document.createElement('ul');
+    list.setAttribute('role', 'listbox');
+    list.setAttribute('aria-multiselectable', 'true');
+    list.setAttribute('aria-label', this._label);
+    list.setAttribute('data-items-placeholder', '');
+    list.style.cssText = [
+      'list-style:none',
+      'margin:0',
+      'padding:0.25rem',
+      'height:12rem',
+      'overflow:auto',
+      'border:1px solid var(--bulma-border)',
+      'background:var(--bulma-scheme-main)',
+      'color:var(--bulma-text)',
+      'font-size:0.875rem',
+    ].join(';');
+
+    // Select All button
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'select-all button is-small is-fullwidth';
+    selectAllBtn.style.borderTop = 'none';
+    selectAllBtn.title = 'Select all visible items';
+    selectAllBtn.innerHTML = selectAllText;
+
+    // Assemble
+    itemsWrapper.appendChild(list);
+    itemsWrapper.appendChild(selectAllBtn);
+    shell.appendChild(header);
+    shell.appendChild(fieldDiv);
+    shell.appendChild(itemsWrapper);
+
+    return shell;
+  }
+
+  _bind() {
+    // Row selection via click. Use delegated listener so HTMX swaps of
+    // the <li> set don't strip handlers.
+    this._list.addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (!li || !this._list.contains(li)) return;
+      li.classList.toggle('is-selected');
+      li.setAttribute('aria-selected', li.classList.contains('is-selected'));
+      this._emitChange();
+    });
+
+    // Local filter — only when the search input is the default one we
+    // rendered. A user-supplied <input slot="search"> is assumed to wire
+    // its own behaviour (typically HTMX hx-get to swap #lb-items-* / its id).
+    if (!this._searchIsUserProvided && this._search) {
+      this._search.addEventListener('input', () => {
+        const q = this._search.value.trim().toLowerCase();
+        [...this._list.querySelectorAll('li')].forEach(li => {
+          li.hidden = q ? !li.textContent.toLowerCase().includes(q) : false;
+        });
+      });
+    }
+
+    this._selectAllBtn.addEventListener('click', () => this.selectAllVisible());
+  }
+
+  _emitChange() {
+    const sel = this.selected;
+    this.dispatchEvent(new CustomEvent('list-box-change', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        values: sel.map(s => s.value),
+        labels: sel.map(s => s.label),
+      },
+    }));
+  }
+
+}
+
+if (!customElements.get('list-box')) {
+  customElements.define('list-box', ListBox);
+}

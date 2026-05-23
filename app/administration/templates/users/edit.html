@@ -1,253 +1,113 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ target_user.username }} — User{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'user_index' %}">Users</a></li>
 <li><a href="{% url 'user_detail' target_user.pk %}">{{ target_user.username }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert {
+      --toast-max-width: 1216px;
+    }
+  </style>
+{% endblock %}
 {% block content %}
-<style>
-  #up-perms-left option.up-perm-inherited-row {
-    background-color: #ededed;
-    color: #363636;
-  }
-</style>
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'user_detail' target_user.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to profile</span>
-  </a>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">manage_accounts</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ target_user.username }}</h1>
+        <p class="page-subtitle">Password, capability assignments, and data scope.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'user_detail' target_user.pk %}" class="button is-small is-light" title="Back to user profile">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to profile</span>
+      </a>
+    </div>
+  </div>
 </div>
 
-<h1 class="title">Edit {{ target_user.username }}</h1>
-<p class="subtitle is-6 has-text-grey">Password, capability assignments, and data scope.</p>
-
-<div class="notification is-info is-light mb-5">
-  <p class="mb-0">
+<div class="notification is-info is-light mb-4">
+  <p class="mb-0 is-size-7">
     <strong>Identity fields</strong> — username, first name, last name, and active status can only be changed in the
     <a href="/admin/">Django super admin</a> (<code>/admin/</code>), not on this page.
   </p>
 </div>
 
-<div class="card mb-5">
-  <details open>
-    <summary class="card-header"><p class="card-header-title">Set password</p></summary>
-    <div class="card-content">
-    <div class="box is-warning" style="border-left: 4px solid #ffdd57; background-color: rgba(255, 221, 87, 0.1);">
-      <p class="is-size-7 has-text-warning mb-2"><strong>Password requirements (OWASP-compliant):</strong></p>
-      <ul class="is-size-7 has-text-warning" style="margin-left: 1.5rem; list-style-type: disc;">
-        <li>Minimum 12 characters</li>
-        <li>Cannot match username or email</li>
-        <li>Cannot be a commonly used password</li>
-        <li>Spaces and special characters are allowed and encouraged</li>
-      </ul>
-    </div>
-    <form method="post" novalidate>
-      {% csrf_token %}
-      <input type="hidden" name="action" value="set_password">
-      <div class="columns is-multiline">
-        {% if password_form.non_field_errors %}
-        <div class="column is-12">
-          <div class="notification is-danger is-light">{{ password_form.non_field_errors }}</div>
-        </div>
-        {% endif %}
-        {% for field in password_form %}
-        <div class="column is-6">
-          <div class="field">
-            <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-            <div class="control">{{ field }}</div>
-            {% if field.errors %}<p class="help is-danger">{{ field.errors }}</p>{% endif %}
-            {% if field.help_text %}<p class="help">{{ field.help_text|safe }}</p>{% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      <footer class="card-footer custom-card-footer">
-        <div class="card-footer-secondaries"></div>
-        <button class="button is-medium is-link card-footer-primary" type="submit">
-          <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
-          <span>Update password</span>
-        </button>
-      </footer>
-    </form>
-  </div>
-  </details>
+{% url 'user_edit' target_user.pk as edit_url %}
+<div class="tabs">
+  <ul>
+    <li class="{% if active_view == 'information' %}is-active{% endif %}"
+        hx-get="{{ edit_url }}?view=information"
+        hx-target="#tabs-content"
+        hx-push-url="true">
+      <a>
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">person</span></span>
+        <span>Information</span>
+      </a>
+    </li>
+    <li class="{% if active_view == 'permissions' %}is-active{% endif %}"
+        hx-get="{{ edit_url }}?view=permissions"
+        hx-target="#tabs-content"
+        hx-push-url="true">
+      <a>
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">vpn_key</span></span>
+        <span>Permissions</span>
+      </a>
+    </li>
+    <li class="{% if active_view == 'data-access' %}is-active{% endif %}"
+        hx-get="{{ edit_url }}?view=data-access"
+        hx-target="#tabs-content"
+        hx-push-url="true">
+      <a>
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">layers</span></span>
+        <span>Data Access</span>
+      </a>
+    </li>
+  </ul>
 </div>
 
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Roles (capability gate)</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Roles bundle permission groups. Use this list to assign or remove a role; relationship type and notes can be edited per-row below.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="up-roles" left_title="Available roles" right_title="Assigned roles" left_help="Pick roles to assign." right_help="Pick roles to remove." action_add="assign_roles" action_remove="remove_roles" field_name="role_ids" list_kind="role" left_items=roles_available right_items=roles_assigned_for_listbox %}
-
-    {% if role_assignments %}
-    <h4 class="title is-6 mt-4 mb-3">Per-role relationship + notes</h4>
-    {% for ra in role_assignments %}
-    <div class="box">
-      <p class="mb-2"><strong><a href="{% url 'role_detail' ra.role.slug %}">{{ ra.role.name }}</a></strong></p>
-      <div class="columns">
-        <div class="column is-4">
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_role_relationship">
-            <input type="hidden" name="role_id" value="{{ ra.role.pk }}">
-            <div class="field has-addons">
-              <div class="control">
-                <div class="select">
-                  <select name="relationship_type">
-                    <option value="primary" {% if ra.relationship_type == "primary" %}selected{% endif %}>Primary</option>
-                    <option value="specialty" {% if ra.relationship_type == "specialty" %}selected{% endif %}>Specialty</option>
-                    <option value="side_job" {% if ra.relationship_type == "side_job" %}selected{% endif %}>Side job</option>
-                    <option value="for_fun" {% if ra.relationship_type == "for_fun" %}selected{% endif %}>For learning</option>
-                  </select>
-                </div>
-              </div>
-              <div class="control">
-                <button class="button is-medium is-link is-light" type="submit">Set</button>
-              </div>
-            </div>
-          </form>
-        </div>
-        <div class="column is-8">
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="update_role_notes">
-            <input type="hidden" name="role_id" value="{{ ra.role.pk }}">
-            <div class="field has-addons">
-              <div class="control is-expanded">
-                <input class="input" type="text" name="notes" value="{{ ra.notes }}" placeholder="Why does this user hold this role?">
-              </div>
-              <div class="control">
-                <button class="button is-medium is-link is-light" type="submit">Save notes</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-  </div>
-  </details>
+<div id="tabs-content">
+  {% include tab_partial %}
 </div>
 
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Direct permission group membership</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Adds the user to a Django <code>auth.Group</code> directly, bypassing the role system. Prefer roles unless there is a specific reason.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="up-groups" left_title="Available permission groups" right_title="Assigned permission groups" left_help="Pick groups to assign." right_help="Pick groups to remove." action_add="add_groups" action_remove="remove_groups" field_name="group_ids" list_kind="group" left_items=groups_available right_items=groups_assigned %}
-  </div>
-  </details>
-</div>
-
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Direct permissions</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Permissions already covered by an assigned permission group are shown with a grey row in the available list.</p>
-    {% url 'check_direct_permissions_against_group' target_user.pk as direct_perm_htmx_check_url %}
-    {% include "shared_components/_dual_listbox.html" with section_id="up-perms" left_title="Available permissions" right_title="Direct permissions" left_help="Pick permissions to grant directly." right_help="Pick permissions to remove." action_add="add_permissions" action_remove="remove_permissions" field_name="permission_ids" list_kind="permission" left_items=permissions_available right_items=permissions_assigned htmx_direct_perm_check_url=direct_perm_htmx_check_url %}
-  </div>
-  </details>
-</div>
-
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Domain template (scope gate)</p></summary>
-  <div class="card-content">
-    {% if current_domain_template_assignment %}
-    <p class="mb-3">
-      <strong>Currently assigned:</strong>
-      <a href="{% url 'domain_template_detail' current_domain_template_assignment.template.slug %}">{{ current_domain_template_assignment.template.name }}</a>
-    </p>
-    <div class="buttons">
-      <form method="post" class="is-inline-block">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="rebase_domain_template">
-        <button class="button is-medium is-link is-light" type="submit">
-          <span class="icon"><span class="material-icons" aria-hidden="true">sync</span></span>
-          <span>Re-rebase to current template</span>
-        </button>
-      </form>
-      <form method="post" class="is-inline-block" onsubmit="return confirm('Disable the current domain template? Domains it provided are removed unless also held manually.');">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="disable_domain_template">
-        <button class="button is-medium is-warning is-light" type="submit">
-          <span class="icon"><span class="material-icons" aria-hidden="true">visibility_off</span></span>
-          <span>Disable template assignment</span>
-        </button>
-      </form>
-    </div>
-    <hr>
-    {% endif %}
-
-    <h4 class="title is-6 mb-2">Assign a domain template</h4>
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="assign_domain_template">
-      <div class="mb-3">
-        <div class="field has-addons">
-          <div class="control is-expanded">
-            <div class="select is-fullwidth">
-              <select name="template_id" required>
-                <option value="">— Select a template —</option>
-                {% for t in available_domain_templates %}
-                <option value="{{ t.pk }}">{{ t.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="control">
-            <button class="button is-medium is-link" type="submit">
-              <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
-              <span>Assign</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="field">
-        <label class="checkbox is-size-7">
-          <input type="checkbox" name="additive" value="1">
-          Additive (do not strip previous template's domains)
-        </label>
-      </div>
-    </form>
-  </div>
-  </details>
-</div>
-
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Direct data domain assignments</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Direct user-domain rows. Domains held via the active template are managed by the template; this list adds or removes domains independently.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="up-domains" left_title="Available domains" right_title="Held by user" left_help="Pick domains to grant." right_help="Pick domains to revoke." action_add="assign_domains" action_remove="disable_domains" field_name="domain_ids" list_kind="domain" left_items=domains_available right_items=domains_assigned %}
-  </div>
-  </details>
-</div>
-
-<div class="card mb-5">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Organization assignments (informational)</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system on the user detail page.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="up-orgs" left_title="Available organizations" right_title="Assigned organizations" left_help="Pick organizations to assign." right_help="Pick organizations to remove." action_add="assign_organizations" action_remove="disable_organizations" field_name="organization_ids" list_kind="organization" left_items=organizations_available right_items=organizations_assigned %}
-  </div>
-  </details>
-</div>
-
-<div class="card">
-  <details>
-    <summary class="card-header"><p class="card-header-title">Division assignments (informational)</p></summary>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system.</p>
-    {% include "shared_components/_dual_listbox.html" with section_id="up-divs" left_title="Available divisions" right_title="Assigned divisions" left_help="Pick divisions to assign." right_help="Pick divisions to remove." action_add="assign_divisions" action_remove="disable_divisions" field_name="division_ids" list_kind="division" left_items=divisions_available right_items=divisions_assigned %}
-  </div>
-  </details>
-</div>
 {% endblock %}
 {% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
+<script>
+(function () {
+  const CSRF = '{{ csrf_token }}';
+
+  // Side effect: when permissions are added to the direct-permissions list,
+  // re-run the inherited-permission check so the warning panel updates.
+  document.addEventListener('list-box-change', function (e) {
+    const lb = e.target;
+    if (lb.id !== 'up-perms-avail') return;
+    const url = lb.dataset.permCheckUrl;
+    const panel = document.getElementById('up-perms-inherit-panel');
+    if (!url || !panel) return;
+    htmx.ajax('POST', url, {
+      target: '#up-perms-inherit-panel',
+      swap: 'innerHTML',
+      values: { csrfmiddlewaretoken: CSRF, permission_ids: e.detail.values },
+    });
+  });
+
+  // Toggle is-active on tab click (visual state — content swap is handled by HTMX).
+  document.addEventListener('click', function (e) {
+    const li = e.target.closest('.tabs li[hx-get]');
+    if (!li) return;
+    li.parentElement.querySelectorAll('li').forEach(x => x.classList.remove('is-active'));
+    li.classList.add('is-active');
+  });
+})();
+</script>
 {% endblock %}

@@ -1,0 +1,34 @@
+<dual-list-box id="pg-users-dlb">
+  <list-box slot="left" id="pg-users-avail" label="Available users">
+    <select slot="options" multiple>
+      {% for item in users_available %}
+      <option value="{{ item.pk }}">{{ item.username }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+  <div slot="controls">
+    <button type="button" class="button is-small"
+            hx-post="{% url 'permission_group_move_users' group.pk %}"
+            hx-vals="js:{user_ids: listBox('pg-users-avail').selected(), direction: 'add'}"
+            hx-target="#pg-users-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Add selected users to group">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+    </button>
+    <button type="button" class="button is-small"
+            hx-post="{% url 'permission_group_move_users' group.pk %}"
+            hx-vals="js:{user_ids: listBox('pg-users-held').selected(), direction: 'remove'}"
+            hx-target="#pg-users-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Remove selected users from group">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+    </button>
+  </div>
+  <list-box slot="right" id="pg-users-held" label="Members">
+    <select slot="options" multiple>
+      {% for item in users_assigned %}
+      <option value="{{ item.pk }}">{{ item.username }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+</dual-list-box>

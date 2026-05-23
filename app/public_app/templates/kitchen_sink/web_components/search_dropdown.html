@@ -1,0 +1,133 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}search-dropdown{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">search</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;search-dropdown&gt;</h1>
+        <p class="page-subtitle">HTMX-powered typeahead dropdown component supporting native form binding.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+    
+    <!-- Live Demo -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Live Demo</div>
+      </div>
+      <div class="pc-body">
+        <form id="demo-form">
+          <div class="field" style="max-width: 480px; margin: 0 auto;">
+            <label class="label">Permission Picker (HTMX + Django-backed)</label>
+            <div class="control">
+              <search-dropdown
+                id="demo-picker"
+                name="permission_id"
+                placeholder="Search permissions (e.g. read, write, delete)..."
+                hx-get="{% url 'kitchen_sink_dummy_search_results' %}"
+                hx-trigger="keyup changed delay:300ms, search">
+              </search-dropdown>
+            </div>
+            <p class="help">Type to load matching options, then click an item to select it.</p>
+          </div>
+        </form>
+        <hr>
+        <div class="has-text-centered">
+          <p class="is-size-7">
+            Selected form value: <span id="picked-value" class="ks-note">None</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const picker = document.getElementById('demo-picker');
+        const output = document.getElementById('picked-value');
+        
+        // FormAssociated element updates can be tracked via DOM change/input events
+        picker.addEventListener('click', () => {
+          setTimeout(() => {
+            output.textContent = picker.value || 'None';
+          }, 10);
+        });
+      });
+    </script>
+
+    <!-- API & Documentation -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">API & Properties</div>
+      </div>
+      <div class="pc-body content is-size-7">
+        <h4 class="title is-6">Form Associated Features</h4>
+        <p>
+          The component specifies <code>static formAssociated = true</code>. 
+          This lets it participate directly in standard HTML forms as a native input element (sending the chosen ID or slug value on form submit).
+        </p>
+
+        <h4 class="title is-6">Supported Attributes (Passthrough to inner input)</h4>
+        <ul>
+          <li><code>placeholder</code> - input placeholder text.</li>
+          <li><code>hx-*</code> (hx-get, hx-post, hx-trigger, hx-target, hx-swap, hx-vals, hx-include) - all HTMX routing and request config attributes are parsed and forwarded to the inner search input automatically.</li>
+        </ul>
+
+        <h4 class="title is-6">Public API</h4>
+        <ul>
+          <li><code>el.value</code> (getter/setter) - the selected option value (e.g., database primary key ID).</li>
+          <li><code>el.name</code> (getter) - the input field name used on form submission.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Code Snippet -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Template Code</div>
+      </div>
+      <div class="pc-body">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;search-dropdown
+  id="permission-picker"
+  name="permission_id"
+  placeholder="search permissions…"
+  hx-get="{% url 'kitchen_sink_dummy_search_results' %}"
+  hx-trigger="keyup changed delay:300ms, search"&gt;
+&lt;/search-dropdown&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

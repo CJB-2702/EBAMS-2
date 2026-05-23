@@ -1,53 +1,76 @@
 {% extends "adm_base.html" %}
+{% load static %}
 {% block title %}Edit {{ group.name }} — Permission group{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert { --toast-max-width: 1216px; }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'permission_group_index' %}">Permission groups</a></li>
 <li><a href="{% url 'permission_group_detail' group.pk %}">{{ group.name }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
 {% endblock %}
 {% block content %}
-<div class="mb-4">
-  <a class="button is-light is-medium" href="{% url 'permission_group_detail' group.pk %}">
-    <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-    <span>Back to permission group</span>
-  </a>
-</div>
 
-<h1 class="title">Edit {{ group.name }}</h1>
-
-{% if can_rename %}
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Details</p></header>
-  <div class="card-content">
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="rename_group">
-      <div class="field">
-        <label class="label is-size-7 mb-1" for="pg-edit-name">Name</label>
-        <div class="control">
-          <input class="input" type="text" id="pg-edit-name" name="name" value="{{ group.name }}" required>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">group_work</span></div>
+      <div>
+        <h1 class="page-title">Edit {{ group.name }}</h1>
+        <p class="page-subtitle">Permission group (Django <code>auth.Group</code>)</p>
       </div>
-      <button class="button is-medium is-link" type="submit">Save name</button>
-    </form>
-  </div>
-</div>
-{% endif %}
-
-<div class="card mb-5">
-  <header class="card-header"><p class="card-header-title">Permissions</p></header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="pg-perms" left_title="Available permissions" right_title="In this group" left_help="Pick permissions to add." right_help="Pick permissions to remove." action_add="add_permissions" action_remove="remove_permissions" field_name="permission_ids" list_kind="permission" left_items=permissions_available right_items=permissions_assigned %}
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'permission_group_detail' group.pk %}" class="button is-small is-light" title="Back to permission group">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to permission group</span>
+      </a>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header"><p class="card-header-title">Members</p></header>
-  <div class="card-content">
-    {% include "shared_components/_dual_listbox.html" with section_id="pg-users" left_title="Available users" right_title="Members" left_help="Pick users to add." right_help="Pick users to remove." action_add="add_users" action_remove="remove_users" field_name="user_ids" list_kind="user" left_items=users_available right_items=users_assigned %}
+<div class="body-grid full-width">
+
+  {% if can_rename %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rename_group">
+        <div class="field">
+          <label class="label is-small" for="pg-edit-name">Name</label>
+          <div class="control">
+            <input class="input is-small" type="text" id="pg-edit-name" name="name" value="{{ group.name }}" required>
+          </div>
+        </div>
+        <button class="button is-small is-link mt-2" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+          <span>Save name</span>
+        </button>
+      </form>
+    </div>
   </div>
+  {% endif %}
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions</div></div>
+    <div class="pc-body">
+      {% include "permissions/permission_groups/_permissions_dlb_only.html" %}
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members</div></div>
+    <div class="pc-body">
+      {% include "permissions/permission_groups/_users_dlb_only.html" %}
+    </div>
+  </div>
+
 </div>
-{% endblock %}
-{% block body_scripts %}
-{% include "shared_components/_dual_listbox_script.html" %}
 {% endblock %}

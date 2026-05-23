@@ -5,66 +5,76 @@
 <li class="is-active"><a href="#" aria-current="page">{{ division.name }}</a></li>
 {% endblock %}
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-4">
-  <div>
-    <h1 class="title mb-1">{{ division.name }}</h1>
-    <p class="subtitle is-6 has-text-grey">Division — slug <code>{{ division.slug }}</code></p>
-  </div>
-  {% if can_edit %}
-  <div class="buttons">
-    <a class="button is-link is-medium" href="{% url 'division_edit' division.pk %}">
-      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-      <span>Edit</span>
-    </a>
-    <form method="post" action="{% url 'division_delete' division.pk %}" onsubmit="return confirm('Delete this division? Organization links will be removed.');" class="is-inline-block">
-      {% csrf_token %}
-      <button class="button is-medium is-danger is-light" type="submit">
-        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-        <span>Delete</span>
-      </button>
-    </form>
-  </div>
-  {% endif %}
-</div>
 
-<div class="card mb-5">
-  <header class="card-header">
-    <p class="card-header-title">Organizations in this division ({{ organizations|length }})</p>
-  </header>
-  <div class="card-content">
-    {% if organizations %}
-    <ul>
-      {% for org in organizations %}
-      <li><a href="{% url 'organization_detail' org.pk %}">{{ org.name }}</a></li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No organizations linked.</p>
-    {% endif %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">domain</span></div>
+      <div>
+        <h1 class="page-title">{{ division.name }}</h1>
+        <p class="page-subtitle">Division — slug <code>{{ division.slug }}</code></p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'division_index' %}" class="button is-small is-light" title="Back to divisions list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Divisions</span>
+      </a>
+      {% if can_edit %}
+      <a href="{% url 'division_edit' division.pk %}" class="button is-small is-warning" title="Edit division">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'division_delete' division.pk %}" onsubmit="return confirm('Delete this division? Organization links will be removed.');" style="display:inline-block;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" title="Delete division">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">Users assigned to this division ({{ user_assignments|length }})</p>
-  </header>
-  <div class="card-content">
-    <p class="is-size-7 has-text-grey mb-3">Division assignments are <strong>informational only</strong> — they do not grant data access. They control the audit warning system on user portals.</p>
-    {% if user_assignments %}
-    <table class="table is-fullwidth is-narrow is-size-7">
-      <thead><tr><th>User</th><th>Email</th></tr></thead>
-      <tbody>
-        {% for ua in user_assignments %}
-        <tr>
-          <td><a href="{% url 'user_detail' ua.user_id %}">{{ ua.user.username }}</a></td>
-          <td>{{ ua.user.email|default:"—" }}</td>
-        </tr>
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations in this division ({{ organizations|length }})</div></div>
+    <div class="pc-body">
+      {% if organizations %}
+      <ul class="is-size-7">
+        {% for org in organizations %}
+        <li><a href="{% url 'organization_detail' org.pk %}">{{ org.name }}</a></li>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <p class="has-text-grey is-size-7 mb-0">No user assignments yet.</p>
-    {% endif %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No organizations linked.</p>
+      {% endif %}
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users assigned to this division ({{ user_assignments|length }})</div></div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-3">Division assignments are <strong>informational only</strong> — they do not grant data access. They control the audit warning system on user portals.</p>
+      {% if user_assignments %}
+      <table class="table is-fullwidth is-narrow is-size-7" style="margin:0;">
+        <thead><tr><th>User</th><th>Email</th></tr></thead>
+        <tbody>
+          {% for ua in user_assignments %}
+          <tr>
+            <td><a href="{% url 'user_detail' ua.user_id %}">{{ ua.user.username }}</a></td>
+            <td>{{ ua.user.email|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-0">No user assignments yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}

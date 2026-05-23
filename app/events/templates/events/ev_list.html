@@ -1,130 +1,153 @@
 {% extends "events/ev_base.html" %}
 
 {% block title %}Events{% endblock %}
-{% block subtitle %}All events{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">All Events</a></li>
+{% endblock %}
+{% block sidebar_events_active %}is-active{% endblock %}
 
 {% block content %}
-<div class="is-flex is-justify-content-space-between is-align-items-center mb-4">
-  <h1 class="title is-5 mb-0">Events</h1>
-  <a href="{% url 'event_create' %}" class="button is-primary">
-    <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
-    <span>New Event</span>
-  </a>
-</div>
 
-<div class="card mb-4">
-  <div class="card-content py-3">
-    <form method="get">
-      <div class="columns is-vcentered is-multiline">
-        <div class="column is-4">
-          <div class="control">
-            <input class="input is-small is-family-monospace" type="text" name="q"
-              value="{{ q }}" placeholder="Search title…">
-          </div>
-        </div>
-        <div class="column is-2">
-          <div class="select is-small is-fullwidth">
-            <select name="status">
-              <option value="">All statuses</option>
-              {% for val, label in status_choices %}
-              <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="column is-2">
-          <div class="select is-small is-fullwidth">
-            <select name="event_type">
-              <option value="">All types</option>
-              {% for val, label in type_choices %}
-              <option value="{{ val }}" {% if val == type_filter %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="column is-auto is-flex" style="gap: 0.5rem;">
-          <button class="button is-small" type="submit">
-            <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
-            <span>Filter</span>
-          </button>
-          <a href="{% url 'event_index' %}" class="button is-small is-light">
-            <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
-            <span>Clear</span>
-          </a>
-        </div>
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">↯</div>
+      <div>
+        <h1 class="page-title">Events</h1>
+        <p class="page-subtitle">Browse and filter all events across your domains.</p>
       </div>
-    </form>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'event_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>New Event</span>
+      </a>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-content p-0">
-    <table class="table is-fullwidth is-hoverable is-size-7 mb-0">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Priority</th>
-          <th>Domain</th>
-          <th>Start</th>
-          <th>Created</th>
-          <th class="has-text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in events_with_hash %}
-        <tr>
-          <td><a href="{% url 'event_detail' hash=row.hash %}">{{ row.event.title }}</a></td>
-          <td><span class="tag is-light is-small">{{ row.event.get_event_type_display }}</span></td>
-          <td>
-            {% if row.event.status == 'in_progress' %}
-              <span class="tag is-info is-light is-small">{{ row.event.get_status_display }}</span>
-            {% elif row.event.status == 'complete' %}
-              <span class="tag is-success is-light is-small">{{ row.event.get_status_display }}</span>
-            {% elif row.event.status == 'failed' %}
-              <span class="tag is-danger is-light is-small">{{ row.event.get_status_display }}</span>
-            {% elif row.event.status == 'blocked' %}
-              <span class="tag is-warning is-light is-small">{{ row.event.get_status_display }}</span>
-            {% elif row.event.status == 'cancelled' %}
-              <span class="tag is-light is-small has-text-grey">{{ row.event.get_status_display }}</span>
-            {% else %}
-              <span class="tag is-light is-small">{{ row.event.get_status_display }}</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if row.event.priority == 'critical' %}
-              <span class="tag is-danger is-light is-small">{{ row.event.get_priority_display }}</span>
-            {% elif row.event.priority == 'high' %}
-              <span class="tag is-warning is-light is-small">{{ row.event.get_priority_display }}</span>
-            {% elif row.event.priority == 'medium' %}
-              <span class="tag is-info is-light is-small">{{ row.event.get_priority_display }}</span>
-            {% elif row.event.priority %}
-              <span class="tag is-light is-small">{{ row.event.get_priority_display }}</span>
-            {% else %}
-              <span class="has-text-grey-light">—</span>
-            {% endif %}
-          </td>
-          <td>{{ row.event.domain.name }}</td>
-          <td class="is-family-monospace">{{ row.event.event_start|date:"Y-m-d H:i"|default:"—" }}</td>
-          <td class="is-family-monospace">{{ row.event.created_at|date:"Y-m-d" }}</td>
-          <td class="has-text-right">
-            <a href="{% url 'event_detail' hash=row.hash %}"
-               class="button is-info is-light is-small"
-               title="View {{ row.event.title }}" aria-label="View {{ row.event.title }}">
-              <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small">Title</label>
+            <input class="input is-small is-family-monospace" type="search" name="q"
+              value="{{ q }}" placeholder="Search title…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="status">
+                <option value="">All statuses</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Type</label>
+            <div class="select is-small is-fullwidth">
+              <select name="event_type">
+                <option value="">All types</option>
+                {% for val, label in type_choices %}
+                <option value="{{ val }}" {% if val == type_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end" style="gap: 0.5rem;">
+            <button class="button is-small is-info" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+              <span>Apply</span>
+            </button>
+            <a href="{% url 'event_index' %}" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+              <span>Clear</span>
             </a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="8" class="has-text-grey has-text-centered py-5">
-            No events found.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Events ({{ events_with_hash|length }})</div>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Domain</th>
+            <th>Start</th>
+            <th>Created</th>
+            <th class="has-text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in events_with_hash %}
+          <tr>
+            <td><a href="{% url 'event_detail' hash=row.hash %}">{{ row.event.title }}</a></td>
+            <td><span class="tag is-light is-small">{{ row.event.get_event_type_display }}</span></td>
+            <td>
+              {% if row.event.status == 'in_progress' %}
+                <span class="tag is-info is-light is-small">{{ row.event.get_status_display }}</span>
+              {% elif row.event.status == 'complete' %}
+                <span class="tag is-success is-light is-small">{{ row.event.get_status_display }}</span>
+              {% elif row.event.status == 'failed' %}
+                <span class="tag is-danger is-light is-small">{{ row.event.get_status_display }}</span>
+              {% elif row.event.status == 'blocked' %}
+                <span class="tag is-warning is-light is-small">{{ row.event.get_status_display }}</span>
+              {% elif row.event.status == 'cancelled' %}
+                <span class="tag is-light is-small has-text-grey">{{ row.event.get_status_display }}</span>
+              {% else %}
+                <span class="tag is-light is-small">{{ row.event.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.event.priority == 'critical' %}
+                <span class="tag is-danger is-light is-small">{{ row.event.get_priority_display }}</span>
+              {% elif row.event.priority == 'high' %}
+                <span class="tag is-warning is-light is-small">{{ row.event.get_priority_display }}</span>
+              {% elif row.event.priority == 'medium' %}
+                <span class="tag is-info is-light is-small">{{ row.event.get_priority_display }}</span>
+              {% elif row.event.priority %}
+                <span class="tag is-light is-small">{{ row.event.get_priority_display }}</span>
+              {% else %}
+                <span class="has-text-grey-light">—</span>
+              {% endif %}
+            </td>
+            <td>{{ row.event.domain.name }}</td>
+            <td class="is-family-monospace">{{ row.event.event_start|date:"Y-m-d H:i"|default:"—" }}</td>
+            <td class="is-family-monospace">{{ row.event.created_at|date:"Y-m-d" }}</td>
+            <td class="has-text-right">
+              <a href="{% url 'event_detail' hash=row.hash %}"
+                 class="button is-info is-light is-small"
+                 title="View {{ row.event.title }}" aria-label="View {{ row.event.title }}">
+                <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="has-text-grey has-text-centered py-5">No events found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

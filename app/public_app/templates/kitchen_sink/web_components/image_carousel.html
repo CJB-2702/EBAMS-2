@@ -1,0 +1,396 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}image-carousel & carousel-preview-items{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/image_carousel.js' %}"></script>
+<style>
+  .ks-demo-controls {
+    background-color: var(--bulma-scheme-main-bis) !important;
+    border: 1px solid var(--bulma-border) !important;
+    box-shadow: none !important;
+  }
+  .ks-demo-controls label {
+    font-size: 0.8rem;
+  }
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">photo_library</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;image-carousel&gt; &amp; &lt;carousel-preview-items&gt;</h1>
+        <p class="page-subtitle">Premium, gesture-driven Shadow-DOM sliding carousel paired with reactive, size-adjustable thumbnail previews.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <!-- Left Side: Image Gallery Demo -->
+  <div class="column is-6">
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">
+          <span class="icon mr-1"><span class="material-icons" aria-hidden="true">image</span></span>
+          Image Gallery Demo
+        </div>
+        <span class="tag is-info is-light is-small">Image Thumbnails</span>
+      </div>
+      <div class="pc-body">
+        <p class="is-size-7 mb-3 has-text-grey">
+          This instance shows how the preview component auto-detects slotted images in the carousel and generates active preview thumbnails.
+        </p>
+        
+        <div class="mb-4">
+          <image-carousel id="demo-image-carousel" preview-height="250" loop>
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500' style='background:%230f172a;'><rect width='100%' height='100%' fill='%2310b981'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>01 // Emerald</text></svg>" alt="Emerald Slide">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500' style='background:%230f172a;'><rect width='100%' height='100%' fill='%233b82f6'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>02 // Sapphire</text></svg>" alt="Sapphire Slide">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500' style='background:%230f172a;'><rect width='100%' height='100%' fill='%23ef4444'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>03 // Ruby</text></svg>" alt="Ruby Slide">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500' style='background:%230f172a;'><rect width='100%' height='100%' fill='%23f59e0b'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>04 // Amber</text></svg>" alt="Amber Slide">
+          </image-carousel>
+
+          <!-- Connected Preview Component -->
+          <div class="mt-3">
+            <carousel-preview-items id="image-previews" for="demo-image-carousel" size="50"></carousel-preview-items>
+          </div>
+        </div>
+
+        <div class="box ks-demo-controls">
+          <p class="label is-size-7 mb-2">Controls & Sizes</p>
+          <div class="field is-horizontal">
+            <div class="field-body">
+              <div class="field mr-3">
+                <label class="checkbox">
+                  <input type="checkbox" id="ic-autoplay"> Autoplay
+                </label>
+              </div>
+              <div class="field">
+                <label class="label is-size-7">Preview Size</label>
+                <div class="control">
+                  <div class="select is-small">
+                    <select id="ic-preview-size">
+                      <option value="35">35px</option>
+                      <option value="50" selected>50px (Default)</option>
+                      <option value="65">65px</option>
+                      <option value="80">80px</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="is-size-7">
+          Log: <span id="ic-event-log" class="ks-note">No event yet</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Content Slider Demo -->
+  <div class="column is-6">
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">
+          <span class="icon mr-1"><span class="material-icons" aria-hidden="true">dashboard</span></span>
+          Content Slider Demo
+        </div>
+        <span class="tag is-success is-light is-small">Icon Previews</span>
+      </div>
+      <div class="pc-body">
+        <p class="is-size-7 mb-3 has-text-grey">
+          This instance shows how the preview component handles non-image content: it renders custom icons based on <code>data-preview-icon</code>, falling back to numbering.
+        </p>
+
+        <div class="mb-4">
+          <image-carousel id="demo-card-carousel" preview-height="250" loop>
+            <div class="card p-5 has-background-link-dark has-text-white is-flex is-flex-direction-column is-justify-content-center" style="height: 100%;" data-preview-icon="cloud">
+              <h3 class="title is-4 has-text-white mb-2">Cloud Services</h3>
+              <p class="is-size-7">
+                Preview component connected to this carousel displays a Cloud icon in the corresponding item block.
+              </p>
+              <div class="mt-3">
+                <span class="tag is-link is-light is-small">Kubernetes</span>
+              </div>
+            </div>
+            
+            <div class="card p-5 has-background-primary-dark has-text-white is-flex is-flex-direction-column is-justify-content-center" style="height: 100%;" data-preview-icon="database">
+              <h3 class="title is-4 has-text-white mb-2">Relational Database</h3>
+              <p class="is-size-7">
+                Preview component connected to this carousel displays a Database icon in the corresponding item block.
+              </p>
+              <div class="mt-3">
+                <span class="tag is-primary is-light is-small">PostgreSQL</span>
+              </div>
+            </div>
+
+            <div class="card p-5 has-background-info-dark has-text-white is-flex is-flex-direction-column is-justify-content-center" style="height: 100%;" data-preview-icon="lock">
+              <h3 class="title is-4 has-text-white mb-2">Security Shield</h3>
+              <p class="is-size-7">
+                Preview component connected to this carousel displays a Lock icon in the corresponding item block.
+              </p>
+              <div class="mt-3">
+                <span class="tag is-info is-light is-small">RBAC Scopes</span>
+              </div>
+            </div>
+
+            <div class="card p-5 has-background-dark has-text-white is-flex is-flex-direction-column is-justify-content-center" style="height: 100%;">
+              <h3 class="title is-4 has-text-white mb-2">Numbered Slide</h3>
+              <p class="is-size-7">
+                No <code>data-preview-icon</code> is declared here, so the preview component falls back to rendering a neat index number.
+              </p>
+              <div class="mt-3">
+                <span class="tag is-light is-small">Fallback Index</span>
+              </div>
+            </div>
+          </image-carousel>
+
+          <!-- Connected Preview Component -->
+          <div class="mt-3">
+            <carousel-preview-items id="card-previews" for="demo-card-carousel" size="50"></carousel-preview-items>
+          </div>
+        </div>
+
+        <div class="box ks-demo-controls">
+          <p class="label is-size-7 mb-2">Controls & Sizes</p>
+          <div class="field is-horizontal">
+            <div class="field-body">
+              <div class="field mr-3">
+                <label class="checkbox">
+                  <input type="checkbox" id="cc-autoplay"> Autoplay
+                </label>
+              </div>
+              <div class="field">
+                <label class="label is-size-7">Preview Size</label>
+                <div class="control">
+                  <div class="select is-small">
+                    <select id="cc-preview-size">
+                      <option value="35">35px</option>
+                      <option value="50" selected>50px (Default)</option>
+                      <option value="65">65px</option>
+                      <option value="80">80px</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="is-size-7">
+          Log: <span id="cc-event-log" class="ks-note">No event yet</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const ic = document.getElementById('demo-image-carousel');
+    const cc = document.getElementById('demo-card-carousel');
+    
+    const icPreview = document.getElementById('image-previews');
+    const ccPreview = document.getElementById('card-previews');
+
+    const icLog = document.getElementById('ic-event-log');
+    const ccLog = document.getElementById('cc-event-log');
+
+    // Setup Custom Event Listeners
+    ic.addEventListener('carousel-change', (e) => {
+      icLog.textContent = `carousel-change: index = ${e.detail.index}`;
+    });
+    cc.addEventListener('carousel-change', (e) => {
+      ccLog.textContent = `carousel-change: index = ${e.detail.index}`;
+    });
+
+    // Control Knobs: Image Gallery Autoplay & Sizes
+    const icAutoplay = document.getElementById('ic-autoplay');
+    const icSizeSelect = document.getElementById('ic-preview-size');
+
+    icAutoplay.addEventListener('change', () => {
+      if (icAutoplay.checked) {
+        ic.setAttribute('autoplay', '');
+      } else {
+        ic.removeAttribute('autoplay');
+      }
+    });
+
+    icSizeSelect.addEventListener('change', () => {
+      icPreview.setAttribute('size', icSizeSelect.value);
+    });
+
+    // Control Knobs: Card Slider Autoplay & Sizes
+    const ccAutoplay = document.getElementById('cc-autoplay');
+    const ccSizeSelect = document.getElementById('cc-preview-size');
+
+    ccAutoplay.addEventListener('change', () => {
+      if (ccAutoplay.checked) {
+        cc.setAttribute('autoplay', '');
+      } else {
+        cc.removeAttribute('autoplay');
+      }
+    });
+
+    ccSizeSelect.addEventListener('change', () => {
+      ccPreview.setAttribute('size', ccSizeSelect.value);
+    });
+  });
+</script>
+
+<!-- API & Documentation Section -->
+<div class="pc">
+  <div class="pc-header">
+    <div class="pc-header-title">Technical API Matrix</div>
+  </div>
+  <div class="pc-body content is-size-7">
+    <div class="columns">
+      <div class="column is-6">
+        <h4 class="title is-6 mb-2">&lt;image-carousel&gt; Attributes</h4>
+        <table class="table is-bordered is-striped is-narrow is-fullwidth">
+          <thead>
+            <tr>
+              <th>Attribute</th>
+              <th>Type</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>preview-height</code></td>
+              <td>String / Num</td>
+              <td><code>300</code></td>
+              <td>Height dimensions (accepts px, %, or vh units).</td>
+            </tr>
+            <tr>
+              <td><code>autoplay</code></td>
+              <td>Boolean</td>
+              <td><code>false</code></td>
+              <td>Enables autoplay progression. Stops on hover.</td>
+            </tr>
+            <tr>
+              <td><code>autoplay-delay</code></td>
+              <td>Number</td>
+              <td><code>4000</code></td>
+              <td>Interval timer delay in milliseconds.</td>
+            </tr>
+            <tr>
+              <td><code>loop</code></td>
+              <td>Boolean</td>
+              <td><code>true</code></td>
+              <td>Loops past boundary index snaps.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="column is-6">
+        <h4 class="title is-6 mb-2">&lt;carousel-preview-items&gt; Attributes</h4>
+        <table class="table is-bordered is-striped is-narrow is-fullwidth">
+          <thead>
+            <tr>
+              <th>Attribute</th>
+              <th>Type</th>
+              <th>Default</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>for</code></td>
+              <td>String (ID)</td>
+              <td>(Required)</td>
+              <td>Binds to the matching <code>&lt;image-carousel&gt;</code> element's ID.</td>
+            </tr>
+            <tr>
+              <td><code>size</code></td>
+              <td>Number</td>
+              <td><code>50</code></td>
+              <td>Width and height of the preview blocks in pixels.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-6">
+        <h4 class="title is-6 mb-1">Public API Methods</h4>
+        <ul>
+          <li><code>carousel.next()</code> - Move to next slide.</li>
+          <li><code>carousel.prev()</code> - Move to previous slide.</li>
+          <li><code>carousel.goTo(index)</code> - Jump directly to slide index (0-based integer).</li>
+        </ul>
+      </div>
+      <div class="column is-6">
+        <h4 class="title is-6 mb-1">Custom DOM Events</h4>
+        <ul>
+          <li><code>carousel-change</code> - Emitted by carousel when slide index updates: <code>{ detail: { index: N } }</code>.</li>
+          <li><code>carousel-items-changed</code> - Emitted by carousel when slotted nodes load/modify: <code>{ detail: { items: [...] } }</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Code Snippets -->
+<div class="pc">
+  <div class="pc-header">
+    <div class="pc-header-title">Code Layout & Setup</div>
+  </div>
+  <div class="pc-body">
+    <div class="columns">
+      <div class="column is-6">
+        <h5 class="label is-size-7">Image Gallery Layout</h5>
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;image-carousel id="gallery-carousel" preview-height="300" loop&gt;
+  &lt;img src="img1.jpg" alt="Description 1"&gt;
+  &lt;img src="img2.jpg" alt="Description 2"&gt;
+&lt;/image-carousel&gt;
+
+&lt;!-- Previews component connected to the gallery --&gt;
+&lt;carousel-preview-items for="gallery-carousel" size="50"&gt;&lt;/carousel-preview-items&gt;</code></pre>
+      </div>
+      <div class="column is-6">
+        <h5 class="label is-size-7">Generic Slotted Slider with Preview Icons</h5>
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;image-carousel id="card-carousel" preview-height="250" loop&gt;
+  &lt;div class="card" data-preview-icon="cloud"&gt;
+    &lt;h3&gt;Cloud Operations&lt;/h3&gt;
+  &lt;/div&gt;
+  &lt;div class="card" data-preview-icon="database"&gt;
+    &lt;h3&gt;Database Shards&lt;/h3&gt;
+  &lt;/div&gt;
+&lt;/image-carousel&gt;
+
+&lt;!-- Previews component connected to the card slider --&gt;
+&lt;carousel-preview-items for="card-carousel" size="65"&gt;&lt;/carousel-preview-items&gt;</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
