@@ -1,0 +1,55 @@
+{# DO NOT {% include %} THIS FRAGMENT.
+   This file is a STRUCTURAL REFERENCE ONLY. It exists so engineers can copy
+   the markup shape (dual-list-box, slotted list-box children, the hx-post
+   control buttons) directly into their own _*_dlb_only.html partials with the
+   real model fields and URL inline.
+
+   Why it is not includable:
+   - Trying to drive every callsite through one generic {% include %} forced
+     a parallel `dlb_helpers.py` SimpleNamespace adapter layer just to give
+     every queryset a `.display_label`, which polluted the control layer with
+     presentation-only shape-shifting.
+   - The include's required `with` keyword list grew long enough that the
+     callsite was longer and harder to read than the inline HTML it replaced.
+   - It pushed url resolution out of the natural `{% url %}` position and
+     hid which fields the page actually renders.
+
+   See: docs/technical_decisions/incident_history/dual_listbox_template_fragment_attempt.md
+
+   Copy the structure below into your page-specific partial and bind the real
+   field names and url tags directly. Do not include this file. #}
+<dual-list-box id="{{ dlb_id }}">
+  <list-box slot="left" id="{{ left_id }}" label="{{ left_label }}"
+            {% if data_perm_check_url %}data-perm-check-url="{{ data_perm_check_url }}"{% endif %}>
+    <select slot="options" multiple>
+      {% for item in available_items %}
+      <option value="{{ item.pk }}">{{ item.display_label }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+  <div slot="controls">
+    <button type="button" class="button is-small"
+            hx-post="{{ hx_post_url }}"
+            hx-vals="js:{ {{ param_name }}: listBox('{{ left_id }}').selected(), direction: 'add' }"
+            hx-target="#{{ dlb_id }}"
+            hx-swap="outerHTML swap:1s"
+            title="{{ add_title|default:'Add selected' }}">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+    </button>
+    <button type="button" class="button is-small"
+            hx-post="{{ hx_post_url }}"
+            hx-vals="js:{ {{ param_name }}: listBox('{{ right_id }}').selected(), direction: 'remove' }"
+            hx-target="#{{ dlb_id }}"
+            hx-swap="outerHTML swap:1s"
+            title="{{ remove_title|default:'Remove selected' }}">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+    </button>
+  </div>
+  <list-box slot="right" id="{{ right_id }}" label="{{ right_label }}">
+    <select slot="options" multiple>
+      {% for item in assigned_items %}
+      <option value="{{ item.pk }}">{{ item.display_label }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+</dual-list-box>
