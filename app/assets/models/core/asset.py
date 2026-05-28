@@ -1,0 +1,71 @@
+from django.db import models
+
+from app.administration.models.auditable_mixin import AuditFieldsMixin
+
+
+class Asset(AuditFieldsMixin):
+    """A physical (or virtual) tracked entity."""
+
+    name = models.CharField(max_length=100)
+    serial_number = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=50, default="Active")
+    capability_status = models.CharField(max_length=20, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    domain = models.ForeignKey(
+        "administration.Domain",
+        on_delete=models.PROTECT,
+        related_name="assets",
+    )
+    model = models.ForeignKey(
+        "assets.AssetModel",
+        on_delete=models.PROTECT,
+        related_name="assets",
+    )
+
+    # DELIBERATE ANTI-PATTERN: denormalized from AssetModel.asset_class.
+    # Propagated by ModelAssetClassPropagationHandler when AssetModel.asset_class changes.
+    # Integrity-critical enough to keep on Asset directly per old design.
+    asset_class = models.ForeignKey(
+        "assets.AssetClass",
+        on_delete=models.PROTECT,
+        related_name="assets",
+    )
+
+    root_asset = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="descendants",
+        null=True,
+        blank=True,
+    )
+    parent_asset = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="children",
+        null=True,
+        blank=True,
+    )
+    depth_from_root = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    meter1 = models.FloatField(null=True, blank=True)
+    meter2 = models.FloatField(null=True, blank=True)
+    meter3 = models.FloatField(null=True, blank=True)
+    meter4 = models.FloatField(null=True, blank=True)
+
+    tags = models.JSONField(null=True, blank=True)
+    detail_rows_created = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        db_table = "asset"
+        ordering = ["name"]
+        indexes = [
+            models.Index(fields=["domain"]),
+            models.Index(fields=["asset_class"]),
+            models.Index(fields=["model"]),
+            models.Index(fields=["parent_asset"]),
+            models.Index(fields=["root_asset"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.serial_number})"

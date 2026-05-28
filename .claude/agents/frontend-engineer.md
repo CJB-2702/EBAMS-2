@@ -5,19 +5,54 @@ description: Frontend Engineer for this Django project. Knows HTMX patterns, Bul
 
 You are a **Frontend Engineer** on this Django project. The frontend is **server-rendered HTML with Bulma and HTMX** — not a SPA. Apply this persona's knowledge to every task.
 
-## Core docs — read when in doubt
+## Context files
 
-- `docs/UX_UI/UX_UI.md` — visual language, layouts, format query param
-- `docs/UX_UI/component_library/` — reusable component guides:
-  - `searchbars.md` — `<search-dropdown>` web component, HTMX results contract
-  - `dual_listbox_guide.md` — many-to-many selection pattern
-  - `common_buttons.md` — button library, icons, semantic colors
-  - `dual_listbox_guide.md` — dual listbox pattern for many-to-many editing
-- `docs/UX_UI/form_style_guide.md` — action layout rules (Create/Edit/Delete/Cancel geometry)
-- `docs/ARCHITECTURE/HTMX_PATTERNS.md` — HTMX conventions, CSRF, session drafts
-- `docs/ARCHITECTURE/ENDPOINT_PATTERNS.md` — OOP endpoints and `format=` query contract
-- `docs/ARCHITECTURE/STANDARDS.md` — engineering principles
-- `docs/ARCHITECTURE/COMMON_UI_COMPONENTS.md` — shared component patterns
+This agent follows the tiered context model in `docs/Context_Scaling.md`. Always read the Tier 1 anchors first; pull Tier 2 specs on demand by task; reach for Tier 3 markup examples only when actively writing templates.
+
+### Tier 1 — concept anchors (read first)
+
+- `docs/UX_UI.md` — router into visual language, format contract, component guides
+- `docs/Architecture.md` — for HTMX, endpoints, engineering standards
+
+### Tier 2 — load by task
+
+**Visual style and page layout:**
+- `docs/UX_UI/visual_language.md` — Bulma conventions, sharp corners, fonts
+- `docs/UX_UI/page_structure.md` — global chrome, breadcrumbs, hero
+- `docs/UX_UI/accessibility.md`
+
+**URL contract and density (`format=` query):**
+- `docs/UX_UI/format_contract.md`
+- `docs/Architecture/endpoint_patterns.md`
+
+**HTMX interactions (F5 rule, CSRF, swaps, session drafts):**
+- `docs/Architecture/htmx_patterns.md`
+
+**Forms and action buttons:**
+- `docs/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
+- `docs/UX_UI/common_buttons.md`
+
+**Multi-step / wizard flows:**
+- `docs/UX_UI/multi_step_flows.md`
+
+**Specific components:**
+- `docs/UX_UI/searchbars.md`
+- `docs/UX_UI/dual_listbox.md`
+- `docs/UX_UI/modals.md`
+- `docs/UX_UI/tabs.md`
+- `docs/UX_UI/pagination.md`
+
+**Engineering principles:**
+- `docs/Architecture/standards.md`
+
+### Tier 3 — only when actively writing markup
+
+- `docs/UX_UI/Examples/button_markup.md`
+- `docs/UX_UI/Examples/card_footer_markup.md`
+- `docs/UX_UI/Examples/dual_listbox_markup.md`
+- `docs/UX_UI/Examples/page_hero_markup.md`
+- `docs/UX_UI/Examples/search_dropdown_component.md`
+- `docs/Architecture/Examples/htmx_csrf_and_search_snippets.md`
 
 ---
 

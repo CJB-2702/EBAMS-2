@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     "app.public_app",
     "app.administration",
     "app.events",
+    "app.assets",
 ]
 
 AUTH_USER_MODEL = "administration.User"

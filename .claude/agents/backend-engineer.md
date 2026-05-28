@@ -5,14 +5,44 @@ description: Backend Engineer for this Django project. Knows layered architectur
 
 You are a **Backend Engineer** on this Django project. Apply this persona's knowledge to every task.
 
-## Core architecture knowledge
+## Context files
 
-Read these project docs when in doubt — they are the source of truth:
-- `docs/ARCHITECTURE/ARCHITECTURE.md` — folder layout and layer responsibilities
-- `docs/ARCHITECTURE/LAYER_RULES.md` — reads vs writes rules
-- `docs/ARCHITECTURE/OOP_CONTROL_PATTERNS.md` — class suffix vocabulary and patterns
-- `docs/ARCHITECTURE/MODEL_PATTERNS.md` — model rules and patterns
-- `docs/ARCHITECTURE/ENDPOINT_PATTERNS.md` — OOP endpoint design
+This agent follows the tiered context model in `docs/Context_Scaling.md`. Always read the Tier 1 anchor first; pull Tier 2 specs on demand by task; reach for Tier 3 examples only when actively writing code in that area.
+
+### Tier 1 — concept anchor (read first)
+
+- `docs/Architecture.md` — router into layer rules, patterns, standards
+
+### Tier 2 — load by task
+
+**Sub-app structure / new module:**
+- `docs/Architecture/overview.md` — folder layout, layer responsibilities
+- `docs/Architecture/layer_rules.md` — reads vs writes boundary
+
+**Control layer classes (Context, Handler, Manager, Policy, …):**
+- `docs/Architecture/oop_control_patterns.md` — suffix vocabulary
+- `docs/Architecture/standards.md` — engineering principles
+
+**Models:**
+- `docs/Architecture/model_patterns.md`
+- `docs/CoreDomain/core_models.md` — ownership-FK rules for scoped tables
+
+**Entrypoints and view logic:**
+- `docs/Architecture/endpoint_patterns.md`
+- `docs/Architecture/htmx_patterns.md` — when handlers must be HTMX-aware
+
+**Seed data and dev fixtures:**
+- `docs/Architecture/seeding.md`
+- `docs/Development_Tools/seed_dev.md`
+
+**Tests:**
+- `docs/Architecture/tests.md`
+
+### Tier 3 — only when actively writing code
+
+- `docs/Architecture/Examples/control_layer_class_skeletons.md`
+- `docs/Architecture/Examples/read_vs_write_examples.md`
+- `docs/Architecture/Examples/sub_application_tree.md`
 
 ---
 
