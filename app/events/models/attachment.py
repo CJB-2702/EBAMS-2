@@ -1,4 +1,4 @@
-"""CommentAttachment — links an EventComment to an EventFile."""
+"""Attachment — links a File to an Event, optionally via a Comment."""
 
 from __future__ import annotations
 
@@ -16,38 +16,46 @@ class AttachmentType(models.TextChoices):
     VIDEO = "video", "Video"
 
 
-class CommentAttachmentQuerySet(models.QuerySet):
-    def active(self) -> CommentAttachmentQuerySet:
+class AttachmentQuerySet(models.QuerySet):
+    def active(self) -> AttachmentQuerySet:
         return self.filter(deleted_at__isnull=True)
 
 
-class CommentAttachmentManager(models.Manager):
-    def get_queryset(self) -> CommentAttachmentQuerySet:
-        return CommentAttachmentQuerySet(self.model, using=self._db)
+class AttachmentManager(models.Manager):
+    def get_queryset(self) -> AttachmentQuerySet:
+        return AttachmentQuerySet(self.model, using=self._db)
 
-    def active(self) -> CommentAttachmentQuerySet:
+    def active(self) -> AttachmentQuerySet:
         return self.get_queryset().active()
 
 
-class CommentAttachment(AuditFieldsMixin, SoftDeleteMixin):
+class Attachment(AuditFieldsMixin, SoftDeleteMixin):
     """
-    Join record linking a comment to a file. Part of the audit trail —
-    old revision rows are soft-deleted rather than hard-deleted.
+    Links a File to an ActivityThread. Optionally also linked to a specific Comment
+    (comment_id non-null = comment attachment; comment_id null = standalone attachment).
 
     FK constraints:
-      comment → CASCADE  (hard-deletes if comment is hard-deleted; never fires in normal operation)
-      file    → PROTECT  (preserves referential integrity in the historical record)
+      thread  → CASCADE   (attachment deleted when thread is hard-deleted)
+      comment → SET_NULL  (demoted to standalone when comment is deleted)
+      file    → PROTECT   (preserves referential integrity in the historical record)
     """
 
     id = models.UUIDField(primary_key=True, default=generate_uuid7, editable=False)
 
-    comment = models.ForeignKey(
-        "events.EventComment",
+    thread = models.ForeignKey(
+        "events.ActivityThread",
         on_delete=models.CASCADE,
         related_name="attachments",
     )
+    comment = models.ForeignKey(
+        "events.Comment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
     file = models.ForeignKey(
-        "events.EventFile",
+        "events.File",
         on_delete=models.PROTECT,
         related_name="attachment_links",
     )
@@ -60,11 +68,15 @@ class CommentAttachment(AuditFieldsMixin, SoftDeleteMixin):
     caption = models.CharField(max_length=255, blank=True)
     display_order = models.PositiveIntegerField(default=0)
 
-    objects = CommentAttachmentManager()
+    objects = AttachmentManager()
 
     class Meta:
-        db_table = "event_comment_attachment"
+        db_table = "attachment"
         ordering = ["display_order", "created_at"]
+        indexes = [
+            models.Index(fields=["thread", "created_at"]),
+            models.Index(fields=["comment"]),
+        ]
 
     def _soft_delete(self, actor=None) -> None:
         self.deleted_at = timezone.now()
@@ -75,4 +87,6 @@ class CommentAttachment(AuditFieldsMixin, SoftDeleteMixin):
         self.save(update_fields=update_fields)
 
     def __str__(self) -> str:
-        return f"Attachment {self.id} → Comment {self.comment_id}"
+        if self.comment_id:
+            return f"Attachment {self.id} → Comment {self.comment_id}"
+        return f"Attachment {self.id} → Thread {self.thread_id} (standalone)"

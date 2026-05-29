@@ -5,11 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.events.control_layer.domain_structs.base_event_struct import BaseEventStruct
-    from app.events.models import EventFile
+    from app.events.control_layer.domain_structs.event_detail_struct import EventDetailStruct
+    from app.events.models import File
 
 
-def get_text_snippet(event_file: "EventFile", max_chars: int = 50) -> str:
+def get_text_snippet(event_file: "File", max_chars: int = 50) -> str:
     try:
         with event_file.file.open("r") as fh:
             return fh.read(max_chars)
@@ -17,9 +17,9 @@ def get_text_snippet(event_file: "EventFile", max_chars: int = 50) -> str:
         return ""
 
 
-def build_comments_context(struct: "BaseEventStruct") -> list[dict]:
+def build_comments_context(struct: "EventDetailStruct") -> list[dict]:
     """
-    Process a BaseEventStruct into a flat list for template rendering.
+    Process an EventDetailStruct into a flat list for template rendering.
     Each entry: {comment, comment_hash, attachments: [{attachment, snippet}]}
     """
     from app.utils.hashids import encode_id

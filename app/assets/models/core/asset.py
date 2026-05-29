@@ -53,6 +53,17 @@ class Asset(AuditFieldsMixin):
     meter3 = models.FloatField(null=True, blank=True)
     meter4 = models.FloatField(null=True, blank=True)
 
+    photo_gallery = models.OneToOneField(
+        "events.ActivityThread",
+        on_delete=models.PROTECT,
+        related_name="photo_gallery_asset",
+    )
+    documentation = models.OneToOneField(
+        "events.ActivityThread",
+        on_delete=models.PROTECT,
+        related_name="documentation_asset",
+    )
+
     tags = models.JSONField(null=True, blank=True)
     detail_rows_created = models.JSONField(null=True, blank=True)
 

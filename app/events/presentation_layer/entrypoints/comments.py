@@ -10,7 +10,7 @@ from django.views.decorators.http import require_http_methods
 
 from app.events.control_layer.comment_context import CommentContext
 from app.events.control_layer.handlers.comment_handler import CommentHandler
-from app.events.models import Event, EventComment
+from app.events.models import Comment, Event
 from app.utils.hashids import decode_hash, encode_id
 
 
@@ -21,14 +21,14 @@ def _resolve_event(event_hash: str) -> Event:
     return get_object_or_404(Event.objects.active().select_related("domain", "created_by"), pk=event_id)
 
 
-def _resolve_comment(comment_hash: str, event: Event) -> EventComment:
+def _resolve_comment(comment_hash: str, event: Event) -> Comment:
     comment_id = decode_hash(comment_hash)
     if comment_id is None:
         raise Http404
     return get_object_or_404(
-        EventComment.objects.active().select_related("created_by"),
+        Comment.objects.active().select_related("created_by"),
         pk=comment_id,
-        event=event,
+        activity_thread=event,
     )
 
 
@@ -70,9 +70,9 @@ def comment_edit(request: HttpRequest, event_hash: str, comment_hash: str) -> Ht
             messages.error(request, " ".join(result.errors))
         return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
 
-    from app.events.models import CommentAttachment
+    from app.events.models import Attachment
     attachments = list(
-        CommentAttachment.objects.filter(comment=comment, deleted_at__isnull=True)
+        Attachment.objects.filter(comment=comment, deleted_at__isnull=True)
         .select_related("file")
         .order_by("display_order")
     )

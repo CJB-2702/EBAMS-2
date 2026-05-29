@@ -127,74 +127,186 @@ directly, reducing coupling depth.
 
 ---
 
-## D-009 · Event → ActivityThread relationship — Django multi-table inheritance (MTI)
+## D-009 · Event → ActivityThread relationship — Django multi-table inheritance (MTI) ⚠️ SUPERSEDED
 
-**Decision:** `Event` inherits from `ActivityThread` using Django's multi-table inheritance.
-There is no explicit FK or `OneToOneField` on Event — Django generates the parent-link
-column (`activitythread_ptr_id`) automatically and uses it as Event's primary key.
+**SUPERSEDED by D-012.** Recorded here only as a rejection record.
 
-```python
-class ActivityThread(AuditFieldsMixin):
-    allow_comments = ...
-    allow_direct_attachments = ...
+**Rejected decision:** `Event` inherits from `ActivityThread` using Django's multi-table
+inheritance. A separate `activity_thread` table holds the shared thread columns; `Event`
+subclasses it and adds its own table. `activitythread_ptr_id` becomes Event's PK.
 
-class Event(ActivityThread, SoftDeleteMixin):
-    domain = ...
-    title = ...
-```
+**Why this was rejected:**
+- Every `Event.objects.get/filter` issues an implicit JOIN across two tables for three
+  thread columns (`thread_type`, `allow_comments`, `allow_direct_attachments`).
+- ~90% of rows in the activity_thread table would be Events — the thread table exists
+  almost entirely to serve Event reads, making it nearly redundant.
+- MTI implies ActivityThread is the parent/base and Event extends it. This is the
+  **wrong conceptual direction.** Event is the primary entity. ActivityThread is a
+  restricted view of Event, not its base class.
 
-**Why MTI over explicit OneToOneField(primary_key=True):**
-- The shared-PK guarantee (`event.pk == activity_thread.pk`) was the original goal. MTI
-  delivers this automatically without any handler-level coordination.
-- `Event.objects.create(allow_comments=True, title=...)` creates both rows in a single
-  call — Django handles the two-row insert atomically. No two-step "create thread, then
-  create event" dance in the handler.
-- `event.allow_comments` and `event.allow_direct_attachments` are accessible directly as
-  if they were native Event fields — no `.activity_thread.allow_comments` traversal.
-- Rescue invariant preserved: `ActivityThread.objects.get(pk=n)` and
-  `Event.objects.get(pk=n)` always refer to the same logical entity.
-
-**Trade-off acknowledged:** Every `Event.objects.get/filter` issues an implicit JOIN to
-`activity_thread`. This is acceptable because EventContext always needs both rows and the
-JOIN cost over two small-column tables is negligible at the expected data volume.
-
-**Asset threads are NOT subclassed.** Asset photo_gallery and documentation threads remain
-plain `ActivityThread` rows — only Event uses MTI. Plain threads have no subclass overhead.
-
-**Implementation note:** The default `id = BigAutoField` is removed from Event. Django
-substitutes `activitythread_ptr_id` as the PK. Existing hashid encoding at URL boundaries
-is unchanged — it still encodes `event.pk`.
+**See D-012 for the accepted design.**
 
 ---
 
-## D-010 · ActivityThreadStruct assembles CommentStructs internally
+## D-010 · EventDetailStruct assembles CommentStructs internally
 
-**Decision:** `ActivityThreadContext.load()` constructs `CommentStruct` objects using the
-existing `CommentStruct.from_components()` factory and returns them inside
-`ActivityThreadStruct.comment_structs`. Thread-level attachments (no comment) are returned
-separately in `unlinked_attachments`.
+**Decision:** `EventContext.load()` constructs `CommentStruct` objects using the existing
+`CommentStruct.from_components()` factory and returns them inside `EventDetailStruct.comment_structs`.
+Thread-level attachments (no comment) are returned separately in `unlinked_attachments`.
+
+`ActivityThreadStruct` is an exact alias of `EventDetailStruct` — there is no separate
+struct class for threads. ActivityThread rows and Event rows produce the same struct.
 
 **Rationale:** Reuses all existing CommentStruct functionality (to_dict, revision chain,
 attachment nesting) without modification. The 3-query assembly (thread + comments +
-attachments) keeps the query count flat regardless of thread size. Callers at the
-EventContext level receive fully ready structs and never need to issue follow-up queries.
+attachments) keeps the query count flat regardless of thread size. The struct alias
+reinforces that **ActivityThread is a restricted proxy of Event, not a separate concept.**
 
 **Query pattern:**
-1. `ActivityThread.objects.get(pk=thread_id)`
-2. `Comment.objects.filter(activity_thread_id=thread_id, deleted_at__isnull=True)`
-3. `Attachment.objects.filter(thread_id=thread_id, deleted_at__isnull=True).select_related("file")`
+1. `Event.threads.get(pk=id)` — unfiltered, resolves any row type by id
+2. `Comment.objects.filter(activity_thread_id=id, deleted_at__isnull=True)`
+3. `Attachment.objects.filter(thread_id=id, deleted_at__isnull=True).select_related("file")`
 
 Partition step 3 in Python → build CommentStructs from `from_components()`.
 
 ---
 
-## D-011 · EventContext is the caller boundary
+## D-011 · EventContext is the base context; ActivityThreadContext is a thin alias
 
-**Decision:** `EventContext` is the only class callers use to read event + thread data.
-It delegates internally to `ActivityThreadContext` and maps the result onto `EventDetailStruct`
-fields (`comment_structs`, `unlinked_attachments`, `can_comment`). No template or entrypoint
-imports ActivityThread, ActivityThreadContext, or ActivityThreadStruct.
+**Decision:** `EventContext` owns all thread operations (comments, attachments, file
+uploads, create/edit/delete). `ActivityThreadContext` inherits from `EventContext` with no
+additions — it is a thin alias, not a base class.
 
-**Rationale:** Keeps the thread as an implementation detail. If the thread model changes
-(e.g. ActivityThread moves to a different app), only EventContext and ActivityThreadContext
-need updating — templates and entrypoints are untouched.
+**CRITICAL — direction of inheritance:**
+
+```
+EventContext          ← base, owns all operations
+    │
+    └── ActivityThreadContext   ← restricted alias, adds nothing
+```
+
+This mirrors the model layer exactly:
+
+```
+Event                 ← concrete model, physical table owner
+    │
+    └── ActivityThread         ← restricted proxy alias, non-event rows only
+```
+
+**ActivityThread is a restricted proxy of Event. Event is NOT a subclass of ActivityThread.**
+This direction must be preserved. Any future divergence (asset-thread-specific guards,
+overrides) belongs as targeted method overrides on `ActivityThreadContext`, never as new
+base-class logic that `EventContext` inherits upward.
+
+**Rationale:** Eliminates the prior inversion where `ActivityThreadContext` was the base
+and `EventContext` extended it, implying threads were the primary concept. Events are the
+primary entity. Threads are a restricted view of events. The context hierarchy must
+reflect that.
+
+---
+
+## D-012 · Single table, ActivityThread is a restricted proxy of Event ← ACTIVE DESIGN
+
+**Decision:** Event and ActivityThread share a single physical table named `event`. `Event`
+is the concrete Django model. `ActivityThread` is a **restricted proxy alias** of `Event`.
+
+**CRITICAL — the direction of this relationship:**
+
+> **ActivityThread is a restricted proxy of Event.**
+> Event is NOT a subclass of ActivityThread.
+> ActivityThread IS an Event — the same row, the same table, the same `id` — viewed through
+> a restricted lens (non-event rows only, event-specific fields deferred on query).
+
+This is the opposite of the MTI design (D-009, rejected). In MTI, ActivityThread was the
+parent and Event subclassed it. That direction was wrong. Events are the primary entity;
+threads are a restricted view of them.
+
+**What the proxy restricts:**
+- `ActivityThread.objects` excludes event rows (`thread_type = EVENT`).
+- `ActivityThread.objects` defers event-specific fields (`title`, `description`,
+  `event_type`, `status`, `priority`, `event_start`, `event_end`) from the default SELECT.
+- `ActivityThread.save()` auto-fills deferred fields with sentinel `"__thread__"` so
+  Event's non-nullable constraints are satisfied on non-event rows.
+
+**What the proxy does NOT add:** No new fields, no new capabilities. The proxy only
+restricts and guards. All functionality lives on `Event` and `EventContext`.
+
+**Control layer mirrors this exactly:**
+- `EventContext` is the base — owns all thread operations.
+- `ActivityThreadContext(EventContext)` is a thin alias — inherits everything, adds nothing.
+- `ActivityThreadStruct = EventDetailStruct` — exact alias, no separate struct.
+
+**Managers:**
+
+| Manager | Via | Returns | Allowed in |
+|---|---|---|---|
+| `EventManager` | `Event.objects` | event rows only | templates, entrypoints, EventContext |
+| `AssetThreadManager` | `ActivityThread.objects` | non-event rows, event fields deferred | asset entrypoints, AssetHandler |
+| `AnyThreadManager` | `Event.threads` | all rows, no filter | EventContext internals only |
+
+**PK:** Explicit `id = BigAutoField(primary_key=True)` on `Event`. One PK space, one table,
+zero JOINs. `event.id == activity_thread.id` is trivially true — they are the same row.
+
+**Supersedes:** D-009 (MTI, rejected).
+
+---
+
+## D-013 · Comment deletion cascades soft-delete to attachments ← SUPERSEDES D-003 (on-delete behaviour)
+
+**Decision:** When a `Comment` is soft-deleted, all of its `Attachment` rows are also
+soft-deleted in the same control-layer operation. Attachments are **not** demoted to
+thread-level standalone; they are removed from the visible timeline entirely.
+
+**How:** The cascade is enforced in the control layer (inside `CommentContext.delete()`),
+not at the DB `ON DELETE` level. Both `Comment` (via `TraceableHistoryMixin`) and
+`Attachment` (via `SoftDeleteMixin`) already carry `deleted_at`. The struct query filters
+`deleted_at__isnull=True` so deleted rows never reach the UI.
+
+**UI contract:** Templates render attachment lists from structs only. A struct is always
+assembled with `deleted_at__isnull=True` filters, so deleted attachments are invisible
+without any template-level guard.
+
+**Supersedes D-003 (on-delete behaviour):** D-003 specified `SET_NULL` demotion
+(attachment survives, `comment_id` cleared). That behaviour is replaced by soft-delete
+cascade. The `comment` FK on `Attachment` remains nullable (still needed for Phase 2
+standalone-attachment use case), but on comment deletion the attachment is soft-deleted,
+not demoted.
+
+---
+
+## D-014 · Comment soft-delete pattern — TraceableHistoryMixin confirmed
+
+**Decision:** No new mixin is needed. `Comment` (renamed from `EventComment`) already
+uses `TraceableHistoryMixin`, which provides `deleted_at`, `revision`, and `origin_id`.
+The `_soft_delete(actor)` method is already implemented directly on the class.
+
+**Confirmed fields:**
+- `deleted_at` — soft-delete timestamp (NULL = active)
+- `revision` — integer revision counter for the edit chain
+- `origin_id` — FK to self, links revision chain back to the original comment row
+
+`Attachment` uses `SoftDeleteMixin` (provides `deleted_at` only) plus `AuditFieldsMixin`.
+Both models are fully equipped for the soft-delete cascade in D-013.
+
+---
+
+## D-015 · Attachment composite index deferred
+
+**Decision:** No composite index on `Attachment(thread, comment)` for now. Single-column
+indexes on `thread_id` and `comment_id` are sufficient until benchmarks show otherwise.
+
+**Rationale:** Premature optimisation. The access pattern (load all thread attachments,
+partition by comment in Python) can be proven or disproven under real data before
+committing to a custom index.
+
+---
+
+## D-016 · File.checksum_sha256 included from the start
+
+**Decision:** `checksum_sha256 = CharField(max_length=64, blank=True)` is included on
+the `File` model from Phase 1 (as a rename target from `EventFile`). Populated
+opportunistically on upload; blank is valid.
+
+**Rationale:** Cheap to add at schema creation time. Useful for deduplication and
+integrity checks even before a formal dedup feature exists. Deferring costs a migration
+later for a trivially small column.

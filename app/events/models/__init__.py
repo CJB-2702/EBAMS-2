@@ -1,5 +1,6 @@
-from app.events.models.attachment import AttachmentType, CommentAttachment
-from app.events.models.comment import EventComment
+from app.events.models.activity_thread_proxy import ActivityThread
+from app.events.models.attachment import Attachment, AttachmentType
+from app.events.models.comment import Comment
 from app.events.models.details import (
     AdministrationDetail,
     AssetManagementDetail,
@@ -10,27 +11,30 @@ from app.events.models.details import (
     SystemDetail,
 )
 from app.events.models.event import (
+    ActivityThreadType,
     Event,
     EventPriority,
     EventStatus,
     EventType,
     PRIORITY_CLEARING_STATUSES,
 )
-from app.events.models.file import ALLOWED_EXTENSIONS, EventFile, MAX_FILE_SIZE_BYTES
+from app.events.models.file import ALLOWED_EXTENSIONS, File, MAX_FILE_SIZE_BYTES
 
 __all__ = [
+    "ActivityThread",
+    "ActivityThreadType",
     "AdministrationDetail",
-    "AllowedExtensions",
+    "ALLOWED_EXTENSIONS",
     "AssetManagementDetail",
+    "Attachment",
     "AttachmentType",
-    "CommentAttachment",
+    "Comment",
     "DispatchingDetail",
     "Event",
-    "EventComment",
-    "EventFile",
     "EventPriority",
     "EventStatus",
     "EventType",
+    "File",
     "GenericDetail",
     "InventoryDetail",
     "MaintenanceDetail",

@@ -3,11 +3,11 @@ from django.contrib import admin
 from app.events.models import (
     AdministrationDetail,
     AssetManagementDetail,
-    CommentAttachment,
+    Attachment,
+    Comment,
     DispatchingDetail,
     Event,
-    EventComment,
-    EventFile,
+    File,
     GenericDetail,
     InventoryDetail,
     MaintenanceDetail,
@@ -65,20 +65,20 @@ class GenericDetailAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at", "created_by", "updated_by")
 
 
-@admin.register(EventComment)
-class EventCommentAdmin(admin.ModelAdmin):
-    list_display = ("pk", "event", "is_human_made", "revision", "created_by", "deleted_at")
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("pk", "activity_thread", "is_human_made", "revision", "created_by", "deleted_at")
     list_filter = ("is_human_made",)
     readonly_fields = ("created_at", "updated_at", "created_by", "updated_by", "origin_id")
 
 
-@admin.register(EventFile)
-class EventFileAdmin(admin.ModelAdmin):
+@admin.register(File)
+class FileAdmin(admin.ModelAdmin):
     list_display = ("original_filename", "file_size", "mime_type", "created_by", "deleted_at")
     readonly_fields = ("id", "created_at", "updated_at", "created_by", "updated_by")
 
 
-@admin.register(CommentAttachment)
-class CommentAttachmentAdmin(admin.ModelAdmin):
+@admin.register(Attachment)
+class AttachmentAdmin(admin.ModelAdmin):
     list_display = ("id", "comment", "file", "attachment_type", "display_order")
     readonly_fields = ("id", "created_at", "updated_at", "created_by", "updated_by")

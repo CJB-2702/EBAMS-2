@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 
 from app.events.control_layer.file_context import FileContext
 from app.events.control_layer.handlers.file_handler import FileHandler
-from app.events.models import Event, EventComment, EventFile
+from app.events.models import Comment, Event, File
 from app.utils.hashids import decode_hash
 
 
@@ -34,7 +34,7 @@ def file_upload(request: HttpRequest, event_hash: str) -> HttpResponse:
         messages.error(request, "Invalid comment reference.")
         return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
 
-    comment = get_object_or_404(EventComment.objects.active(), pk=comment_id, event=event)
+    comment = get_object_or_404(Comment.objects.active(), pk=comment_id, activity_thread=event)
 
     can_attach = (
         comment.created_by == request.user
@@ -43,7 +43,7 @@ def file_upload(request: HttpRequest, event_hash: str) -> HttpResponse:
     if not can_attach:
         return HttpResponseForbidden("You may not attach files to this comment.")
 
-    result = FileHandler(request.user).upload(comment, request.FILES.get("file"))
+    result = FileHandler(request.user).upload(event, request.FILES.get("file"), comment=comment)
     if result.ok:
         messages.success(request, f"File '{result.file.original_filename}' uploaded.")
     else:
@@ -54,7 +54,7 @@ def file_upload(request: HttpRequest, event_hash: str) -> HttpResponse:
 
 @require_http_methods(["GET"])
 def file_download(request: HttpRequest, file_id: str) -> HttpResponse:
-    event_file = get_object_or_404(EventFile.objects.filter(deleted_at__isnull=True), pk=file_id)
+    event_file = get_object_or_404(File.objects.filter(deleted_at__isnull=True), pk=file_id)
     if not event_file.file:
         return HttpResponseNotFound("File not available.")
     response = FileResponse(event_file.file.open("rb"), as_attachment=True)
@@ -64,7 +64,7 @@ def file_download(request: HttpRequest, file_id: str) -> HttpResponse:
 
 @require_http_methods(["GET"])
 def file_inline(request: HttpRequest, file_id: str) -> HttpResponse:
-    event_file = get_object_or_404(EventFile.objects.filter(deleted_at__isnull=True), pk=file_id)
+    event_file = get_object_or_404(File.objects.filter(deleted_at__isnull=True), pk=file_id)
     if not event_file.file:
         return HttpResponseNotFound("File not available.")
     mime = event_file.mime_type or "application/octet-stream"
@@ -75,7 +75,7 @@ def file_inline(request: HttpRequest, file_id: str) -> HttpResponse:
 
 @require_http_methods(["POST"])
 def file_soft_delete(request: HttpRequest, file_id: str) -> HttpResponse:
-    event_file = get_object_or_404(EventFile.objects.filter(deleted_at__isnull=True), pk=file_id)
+    event_file = get_object_or_404(File.objects.filter(deleted_at__isnull=True), pk=file_id)
     referer = request.META.get("HTTP_REFERER", reverse("event_index"))
 
     result = FileContext.from_file(event_file, request.user).delete()

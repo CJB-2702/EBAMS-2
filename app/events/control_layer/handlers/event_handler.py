@@ -10,8 +10,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from app.events.models import (
+    ActivityThreadType,
+    Comment,
     Event,
-    EventComment,
     EventPriority,
     EventStatus,
     EventType,
@@ -45,6 +46,9 @@ class EventHandler:
 
         with transaction.atomic():
             event = Event.objects.create(
+                thread_type=ActivityThreadType.EVENT,
+                allow_comments=True,
+                allow_direct_attachments=True,
                 domain_id=post_data.get("domain_id"),
                 title=post_data.get("title", "").strip(),
                 description=post_data.get("description", "").strip(),
@@ -143,8 +147,8 @@ class EventHandler:
             "changes": changes,
         })
         now = timezone.now()
-        EventComment.objects.create(
-            event=event,
+        Comment.objects.create(
+            activity_thread=event,
             content=payload,
             is_human_made=False,
             deleted_at=now,
@@ -159,8 +163,8 @@ class EventHandler:
         for c in notable:
             parts.append(f"{c['field'].replace('_', ' ').title()} changed from '{c['from']}' to '{c['to']}'")
         message = "; ".join(parts)
-        EventComment.objects.create(
-            event=event,
+        Comment.objects.create(
+            activity_thread=event,
             content=message,
             is_human_made=False,
             deleted_at=None,

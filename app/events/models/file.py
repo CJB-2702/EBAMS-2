@@ -1,4 +1,4 @@
-"""EventFile — uploaded file record. UUID7 PK, Django FileField storage."""
+"""File — uploaded file record. UUID7 PK, Django FileField storage."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def _all_allowed_extensions() -> set[str]:
     return result
 
 
-class EventFile(AuditFieldsMixin, SoftDeleteMixin):
+class File(AuditFieldsMixin, SoftDeleteMixin):
     """
     Uploaded file attached to the events domain.
     UUID7 primary key — used directly as the URL identifier.
@@ -73,7 +73,7 @@ class EventFile(AuditFieldsMixin, SoftDeleteMixin):
     objects = models.Manager()
 
     class Meta:
-        db_table = "event_file"
+        db_table = "file"
         ordering = ["-created_at"]
 
     def _soft_delete(self, actor=None) -> None:

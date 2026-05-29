@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
-from app.events.control_layer.domain_structs.base_event_struct import BaseEventStruct
+from app.events.control_layer.domain_structs.event_detail_struct import EventDetailStruct
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
@@ -21,14 +21,14 @@ class EventContext:
     """
 
     def __init__(self, event_id: int, actor) -> None:
-        self.struct = BaseEventStruct(event_id)
+        self.struct = EventDetailStruct(event_id)
         self.actor = actor
 
     @classmethod
-    def create_from_struct(cls, base_event_struct: BaseEventStruct, actor) -> "EventContext":
+    def create_from_struct(cls, event_detail_struct: EventDetailStruct, actor) -> "EventContext":
         """Build from a pre-loaded struct. Issues no DB queries."""
         instance = cls.__new__(cls)
-        instance.struct = base_event_struct
+        instance.struct = event_detail_struct
         instance.actor = actor
         return instance
 
@@ -41,29 +41,14 @@ class EventContext:
         return CommentHandler(self.actor).add(self.struct.event, post_data)
 
     def add_attachment(self, uploaded_file: "UploadedFile") -> object:
-        """
-        Attach a file directly to the event by creating a visible
-        machine-generated comment as the carrier.
-        """
+        """Attach a file directly to the event as a standalone attachment."""
         from app.events.control_layer.handlers.file_handler import FileHandler
-        from app.events.models import EventComment
-
-        with transaction.atomic():
-            machine_comment = EventComment.objects.create(
-                event=self.struct.event,
-                content=f"File added: {uploaded_file.name}",
-                is_human_made=False,
-                deleted_at=None,
-                revision=1,
-                created_by=self.actor,
-                updated_by=self.actor,
-            )
-            return FileHandler(self.actor).upload(machine_comment, uploaded_file)
+        return FileHandler(self.actor).upload(self.struct.event, uploaded_file)
 
     def delete(self) -> None:
         """
         Soft-delete the event, then cascade to all child comments.
-        EventContext does not import CommentAttachment or EventFile directly —
+        EventContext does not import Attachment or File directly —
         all child cleanup is delegated to CommentContext.
         """
         from app.events.control_layer.comment_context import CommentContext

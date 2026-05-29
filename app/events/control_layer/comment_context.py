@@ -9,13 +9,15 @@ from django.db import transaction
 from app.events.control_layer.domain_structs.comment_struct import CommentStruct
 
 if TYPE_CHECKING:
-    from app.events.models import CommentAttachment, Event, EventComment
+    from django.core.files.uploadedfile import UploadedFile
+    from app.events.control_layer.handlers.file_handler import FileResult
+    from app.events.models import Comment, Event
 
 
 class CommentContext:
     """
-    Owns the delete cascade for a comment: soft-deletes the comment,
-    its active attachment rows, and any files that become orphaned.
+    Owns the delete lifecycle for a comment. On delete, demotes attached files
+    to standalone event attachments rather than cascading the deletion.
 
     No create() method — adding a comment is handled by CommentHandler.
     """
@@ -40,8 +42,8 @@ class CommentContext:
     def event(self):
         if self._event is None:
             from app.events.models import Event
-            self._event = Event.objects.select_related("domain").get(
-                pk=self.struct.comment.event_id
+            self._event = Event.threads.select_related("domain").get(
+                pk=self.struct.comment.activity_thread_id
             )
         return self._event
 
@@ -51,24 +53,32 @@ class CommentContext:
             self._domain = self.event.domain
         return self._domain
 
+    def add_files(self, uploaded_files: "list[UploadedFile]") -> "list[FileResult]":
+        """
+        Attach one or more files to this comment in a single transaction.
+        All uploads are rolled back if any file fails validation.
+        Returns one FileResult per input file in the same order.
+        """
+        from app.events.control_layer.handlers.file_handler import FileHandler
+
+        results: list[FileResult] = []
+        with transaction.atomic():
+            for uploaded_file in uploaded_files:
+                result = FileHandler(self.actor).upload(
+                    self.event, uploaded_file, comment=self.struct.comment
+                )
+                results.append(result)
+                if not result.ok:
+                    transaction.set_rollback(True)
+        return results
+
     def edit(self, post_data) -> object:
         from app.events.control_layer.handlers.comment_handler import CommentHandler
         return CommentHandler(self.actor).edit(self.struct.comment, post_data)
 
     def delete(self) -> None:
-        from app.events.control_layer.handlers.file_handler import FileHandler
-        from app.events.models import CommentAttachment
-
         with transaction.atomic():
+            # Demote comment-linked attachments to standalone event attachments.
+            # Files are never deleted as a side effect of comment deletion.
+            self.struct.comment.attachments.filter(deleted_at__isnull=True).update(comment=None)
             self.struct.comment._soft_delete(self.actor)
-
-            for attachment in self.struct.attachments:
-                attachment._soft_delete(self.actor)
-
-                still_referenced = CommentAttachment.objects.filter(
-                    file_id=attachment.file_id,
-                    deleted_at__isnull=True,
-                ).exists()
-
-                if not still_referenced:
-                    FileHandler(self.actor).soft_delete(attachment.file)

@@ -15,7 +15,7 @@ class AssetImage(AuditFieldsMixin):
         related_name="images",
     )
     attachment = models.ForeignKey(
-        "events.EventFile",
+        "events.File",
         on_delete=models.PROTECT,
         related_name="asset_image_links",
     )

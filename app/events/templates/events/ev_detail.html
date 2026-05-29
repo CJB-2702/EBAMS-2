@@ -182,18 +182,23 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
             </div>
           </div>
           <div class="field">
-            <label class="label is-small">Attachment (optional)</label>
+            <label class="label is-small">Attachments (optional)</label>
             <div class="file has-name">
               <label class="file-label">
-                <input class="file-input" type="file" name="file" id="file-inline"
-                       onchange="document.getElementById('file-inline-name').textContent = this.files[0]?.name || 'No file chosen'">
+                <input class="file-input" type="file" name="files" id="file-inline" multiple
+                       onchange="
+                         var f=this.files,l=document.getElementById('file-inline-list');
+                         document.getElementById('file-inline-name').textContent=f.length===0?'No file chosen':f.length===1?f[0].name:f.length+' files selected';
+                         l.innerHTML='';
+                         if(f.length>1){Array.from(f).forEach(function(x){var t=document.createElement('span');t.className='tag is-light is-small';t.textContent=x.name;l.appendChild(t);});}">
                 <span class="file-cta">
                   <span class="file-icon"><span class="material-icons is-size-7" aria-hidden="true">attach_file</span></span>
-                  <span class="file-label">Choose file…</span>
+                  <span class="file-label">Choose files…</span>
                 </span>
                 <span class="file-name" id="file-inline-name">No file chosen</span>
               </label>
             </div>
+            <div class="tags mt-2" id="file-inline-list"></div>
           </div>
           <div class="buttons mt-3">
             <button class="button is-small is-primary" type="submit">

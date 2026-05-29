@@ -1,4 +1,4 @@
-"""EventComment — immutable once saved; edits create a new revision."""
+"""Comment — immutable once saved; edits create a new revision."""
 
 from __future__ import annotations
 
@@ -8,42 +8,41 @@ from django.utils import timezone
 from app.administration.models.traceable_mixin import TraceableHistoryMixin
 
 
-class EventCommentQuerySet(models.QuerySet):
-    def active(self) -> EventCommentQuerySet:
+class CommentQuerySet(models.QuerySet):
+    def active(self) -> CommentQuerySet:
         return self.filter(deleted_at__isnull=True)
 
-    def human(self) -> EventCommentQuerySet:
+    def human(self) -> CommentQuerySet:
         return self.filter(is_human_made=True)
 
-    def shadow(self) -> EventCommentQuerySet:
+    def shadow(self) -> CommentQuerySet:
         return self.filter(is_human_made=False)
 
-    def current_revisions(self) -> EventCommentQuerySet:
+    def current_revisions(self) -> CommentQuerySet:
         return self.active()
 
 
-class EventCommentManager(models.Manager):
-    def get_queryset(self) -> EventCommentQuerySet:
-        return EventCommentQuerySet(self.model, using=self._db)
+class CommentManager(models.Manager):
+    def get_queryset(self) -> CommentQuerySet:
+        return CommentQuerySet(self.model, using=self._db)
 
-    def active(self) -> EventCommentQuerySet:
+    def active(self) -> CommentQuerySet:
         return self.get_queryset().active()
 
-    def visible(self) -> EventCommentQuerySet:
+    def visible(self) -> CommentQuerySet:
         return self.get_queryset().active().human()
 
 
-class EventComment(TraceableHistoryMixin):
+class Comment(TraceableHistoryMixin):
     """
-    A comment on an event. Never modified in place — edits create a new revision.
-    Machine-generated comments have is_human_made=False.
-    Shadow history records (field diffs) have deleted_at set at creation.
-    Visible machine comments (status changes, file additions) have deleted_at=None.
-    has attacments that refrence files.
+    A comment on any activity thread (event or asset thread). Never modified in
+    place — edits create a new revision. Machine-generated comments have
+    is_human_made=False. Shadow history records (field diffs) have deleted_at
+    set at creation. Visible machine comments have deleted_at=None.
     """
 
-    event = models.ForeignKey(
-        "events.Event",
+    activity_thread = models.ForeignKey(
+        "events.ActivityThread",
         on_delete=models.CASCADE,
         related_name="comments",
     )
@@ -51,10 +50,10 @@ class EventComment(TraceableHistoryMixin):
     content = models.TextField()
     is_human_made = models.BooleanField(default=True)
 
-    objects = EventCommentManager()
+    objects = CommentManager()
 
     class Meta:
-        db_table = "event_comment"
+        db_table = "comment"
         ordering = ["created_at"]
 
     def _soft_delete(self, actor=None) -> None:
