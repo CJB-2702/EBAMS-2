@@ -57,6 +57,37 @@ class TemplateModificationManager:
     def remove_modification(self, template_mod: TemplateModification) -> None:
         template_mod.delete()
 
+    def set_modifications(
+        self,
+        *,
+        template: ConfigurationTemplate,
+        modification_ids: list[int],
+    ) -> None:
+        """Reconcile the template's required-modification set to ``modification_ids``.
+
+        Hard create/delete (matching the other set-reconcile editors): adds the
+        newly-selected modifications, drops the deselected ones, leaves the rest.
+        """
+        desired = set(modification_ids)
+        existing = dict(
+            TemplateModification.objects.filter(template=template).values_list(
+                "defined_modification_id", "id"
+            )
+        )
+        to_add = desired - existing.keys()
+        to_remove_ids = [
+            row_id for mod_id, row_id in existing.items() if mod_id not in desired
+        ]
+        for mod_id in to_add:
+            TemplateModification.objects.create(
+                template=template,
+                defined_modification_id=mod_id,
+                created_by=self.actor,
+                updated_by=self.actor,
+            )
+        if to_remove_ids:
+            TemplateModification.objects.filter(id__in=to_remove_ids).delete()
+
     def update_modification(
         self,
         template_mod: TemplateModification,

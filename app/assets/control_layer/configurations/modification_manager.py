@@ -206,3 +206,71 @@ class ModificationManager:
             actual_mod.updated_by = self.actor
             actual_mod.save()
         return actual_mod
+
+    def set_asset_modifications(
+        self,
+        *,
+        asset: "Asset",
+        modification_ids: list[int],
+    ) -> None:
+        """Reconcile the asset's active ActualModifications to ``modification_ids``.
+
+        Adds newly-selected modifications (each re-checked against the runtime
+        applicability gate, event-tracked) and retires deselected ones (soft
+        delete + removal event). Modifications already applied keep their row.
+        Reactivates a previously-retired row instead of creating a duplicate.
+        """
+        desired = set(modification_ids)
+        existing = {
+            am.defined_modification_id: am
+            for am in ActualModification.objects.filter(asset=asset).select_related(
+                "defined_modification"
+            )
+        }
+        active_ids = {mod_id for mod_id, am in existing.items() if am.is_active}
+
+        to_add = desired - active_ids
+        to_remove = active_ids - desired
+
+        with transaction.atomic():
+            for mod_id in to_remove:
+                self.remove_actual_modification(existing[mod_id])
+            for mod_id in to_add:
+                retired = existing.get(mod_id)
+                if retired is not None and not retired.is_active:
+                    self._reactivate_actual_modification(retired)
+                else:
+                    self.add_actual_modification(
+                        asset=asset,
+                        defined_modification=DefinedModification.objects.get(id=mod_id),
+                    )
+
+    def _reactivate_actual_modification(self, actual_mod: ActualModification) -> None:
+        ModificationApplicabilityValidator.check(
+            actual_mod.asset, actual_mod.defined_modification
+        )
+        with transaction.atomic():
+            title, description = AssetEventNarrator.modification_added(
+                actual_mod.asset, actual_mod.defined_modification.name
+            )
+            event = Event.objects.create(
+                domain_id=actual_mod.asset.domain_id,
+                title=title,
+                description=description,
+                event_type=EventType.ASSET_MANAGEMENT,
+                status=EventStatus.COMPLETE,
+                created_by=self.actor,
+                updated_by=self.actor,
+            )
+            AssetEvent.objects.create(
+                asset=actual_mod.asset,
+                event=event,
+                role="modification",
+                created_by=self.actor,
+                updated_by=self.actor,
+            )
+            actual_mod.is_active = True
+            actual_mod.creation_event = event
+            actual_mod.removal_event = None
+            actual_mod.updated_by = self.actor
+            actual_mod.save()

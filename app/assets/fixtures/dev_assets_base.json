@@ -300,5 +300,132 @@
    "created_by": 1,
    "updated_by": 1
   }
+ },
+ {
+  "model": "assets.definedmodification",
+  "pk": 1,
+  "fields": {
+   "name": "Cold Storage Kit",
+   "code": "CSK",
+   "description": "Insulation + heater package for freezer ops.",
+   "category": "Environmental",
+   "is_active": true,
+   "applicability_mode": "class_only",
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.definedmodification",
+  "pk": 2,
+  "fields": {
+   "name": "GPS Telemetry",
+   "code": "GPS",
+   "description": "Fleet GPS + telemetry uplink.",
+   "category": "Electronics",
+   "is_active": true,
+   "applicability_mode": "unrestricted",
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.definedmodification",
+  "pk": 3,
+  "fields": {
+   "name": "Boom Extension",
+   "code": "BOOM",
+   "description": "Extended reach boom section.",
+   "category": "Structural",
+   "is_active": true,
+   "applicability_mode": "strict",
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modificationassetclass",
+  "pk": 1,
+  "fields": {
+   "defined_modification": 1,
+   "asset_class": 1,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modificationassetclass",
+  "pk": 2,
+  "fields": {
+   "defined_modification": 3,
+   "asset_class": 3,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modificationmodel",
+  "pk": 1,
+  "fields": {
+   "defined_modification": 3,
+   "model": 3,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.configurationtemplate",
+  "pk": 1,
+  "fields": {
+   "name": "Standard Forklift Build",
+   "revision": "A",
+   "description": "Baseline cold-chain forklift configuration.",
+   "model": 1,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.templatemodification",
+  "pk": 1,
+  "fields": {
+   "template": 1,
+   "defined_modification": 1,
+   "context_notes": "Required for freezer sites.",
+   "is_required": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.templatemodification",
+  "pk": 2,
+  "fields": {
+   "template": 1,
+   "defined_modification": 2,
+   "context_notes": null,
+   "is_required": false,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
  }
 ]

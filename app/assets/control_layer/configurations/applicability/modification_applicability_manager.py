@@ -135,6 +135,55 @@ class ModificationApplicabilityManager:
             if mode == ApplicabilityMode.MODEL_SET:
                 self._rederive_class_set(defined_mod)
 
+    # ── Set-reconcile editors (dual-listbox save) ──────────────────────────────
+
+    def set_classes(
+        self, defined_mod: "DefinedModification", class_ids: list[int]
+    ) -> None:
+        """Reconcile the class allow-list to ``class_ids``.
+
+        Skipped in MODEL_SET mode, where the class set is system-derived from the
+        models and must not be hand-authored.
+        """
+        if ApplicabilityMode(defined_mod.applicability_mode) == ApplicabilityMode.MODEL_SET:
+            return
+        desired = set(class_ids)
+        existing = set(self._class_ids(defined_mod))
+        to_remove = existing - desired
+        to_add = desired - existing
+        with transaction.atomic():
+            if to_remove:
+                ModificationAssetClass.objects.filter(
+                    defined_modification=defined_mod, asset_class_id__in=to_remove
+                ).delete()
+            for class_id in to_add:
+                ModificationAssetClass.objects.create(
+                    defined_modification=defined_mod,
+                    asset_class_id=class_id,
+                    created_by=self.actor,
+                    updated_by=self.actor,
+                )
+
+    def set_models(
+        self, defined_mod: "DefinedModification", model_ids: list[int]
+    ) -> None:
+        """Reconcile the model allow-list to ``model_ids``.
+
+        Removes dropped models first, then adds new ones through ``add_model`` so
+        the STRICT dead-model guard and MODEL_SET re-derivation still apply.
+        """
+        from app.assets.models import AssetModel
+
+        desired = set(model_ids)
+        existing = set(self._model_ids(defined_mod))
+        to_remove = existing - desired
+        to_add = desired - existing
+        models = {m.id: m for m in AssetModel.objects.filter(id__in=to_remove | to_add)}
+        for model_id in to_remove:
+            self.remove_model(defined_mod, models[model_id])
+        for model_id in to_add:
+            self.add_model(defined_mod, models[model_id])
+
     # ── Internals ──────────────────────────────────────────────────────────────
 
     def _class_ids(self, defined_mod: "DefinedModification") -> list[int]:
