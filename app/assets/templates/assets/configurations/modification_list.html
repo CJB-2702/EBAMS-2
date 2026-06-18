@@ -1,0 +1,37 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Defined Modifications{% endblock %}
+{% block nav_defined_modifications %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Defined Modifications</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings_input_component</span></div>
+    <div><h1 class="page-title">Defined Modifications</h1><p class="page-subtitle">Catalog of standard alterations and add-ons that can be applied to assets.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'defined_modification_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Modification</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Modifications ({{ modifications|length }})</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Mode</th><th>Applies To</th><th>Template Uses</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for m in modifications %}
+        <tr>
+          <td class="is-family-monospace">{{ m.code }}</td>
+          <td><a href="{% url 'defined_modification_detail' modification_id=m.id %}">{{ m.name }}</a></td>
+          <td>{{ m.category }}</td>
+          <td>{% include "assets/_applicability_tag.html" with applicability=m.applicability %}</td>
+          <td class="has-text-grey is-size-7">{{ m.applicability.summary }}</td>
+          <td>{{ m.template_uses }}</td>
+          <td>{% include "assets/_status_tag.html" with value=m.is_active|yesno:"Active,Inactive" %}</td>
+          <td class="has-text-right">
+            <a href="{% url 'modification_applicability_edit' modification_id=m.id %}" class="button is-light is-small" title="Edit applicability"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span></a>
+            <a href="{% url 'defined_modification_detail' modification_id=m.id %}" class="button is-info is-light is-small" title="Open"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a>
+          </td>
+        </tr>
+        {% empty %}<tr><td colspan="8" class="has-text-grey has-text-centered py-5">No defined modifications.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

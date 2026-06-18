@@ -36,25 +36,32 @@
   {% csrf_token %}
   <div class="pc">
     <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>Event Details</div>
+      <div class="pc-header-title">Event Details</div>
     </div>
     <div class="pc-body">
 
       <div class="field">
         <label class="label is-small">Domain <span class="has-text-danger">*</span></label>
+        {% if user_domains %}
         <div class="control">
           <div class="select is-fullwidth">
             <select name="domain_id" required>
               <option value="">— select domain —</option>
-              {% for ud in user_domains %}
-              <option value="{{ ud.domain.pk }}"
-                {% if form_data.domain_id == ud.domain.pk|stringformat:"s" %}selected{% endif %}>
-                {{ ud.domain.name }}
+              {% for d in user_domains %}
+              <option value="{{ d.pk }}"
+                {% if form_data.domain_id == d.pk|stringformat:"s" %}selected{% endif %}>
+                {{ d.name }}
               </option>
               {% endfor %}
             </select>
           </div>
         </div>
+        {% else %}
+        <div class="notification is-warning is-light mb-0">
+          <p>You are not assigned to any domains, so you cannot create an event yet.</p>
+          <p class="is-size-7 mt-2">Ask an administrator to assign you to a domain.</p>
+        </div>
+        {% endif %}
       </div>
 
       <div class="field">
@@ -77,13 +84,8 @@
           <div class="field">
             <label class="label is-small">Event Type</label>
             <div class="control">
-              <div class="select is-fullwidth">
-                <select name="event_type">
-                  {% for val, label in type_choices %}
-                  <option value="{{ val }}" {% if form_data.event_type == val %}selected{% endif %}>{{ label }}</option>
-                  {% endfor %}
-                </select>
-              </div>
+              <input class="input is-family-monospace" type="text" value="Generic" readonly>
+              <input type="hidden" name="event_type" value="generic">
             </div>
           </div>
         </div>
@@ -124,7 +126,7 @@
             <label class="label is-small">Event Start</label>
             <div class="control">
               <input class="input is-family-monospace" type="datetime-local" name="event_start"
-                value="{{ form_data.event_start|default:'' }}">
+                value="{{ form_data.event_start|default:now_default }}">
             </div>
           </div>
         </div>
@@ -146,7 +148,7 @@
         <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
         <span>Cancel</span>
       </a>
-      <button class="button is-small is-primary" type="submit">
+      <button class="button is-small is-primary" type="submit" {% if not user_domains %}disabled{% endif %}>
         <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
         <span>Create Event</span>
       </button>

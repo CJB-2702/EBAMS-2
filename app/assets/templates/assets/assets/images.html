@@ -1,0 +1,59 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Images · {{ asset.name }}{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li class="is-active"><a href="#">Images</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">photo_library</span></div>
+  <div><h1 class="page-title">Image Gallery</h1><p class="page-subtitle">{{ asset.name }}</p></div>
+</div>
+<div class="page-header-actions"><a href="{% url 'asset_detail' asset_id=asset.id %}" class="button is-small is-light">Back to asset</a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">collections</span></span>Images ({{ asset.images|length }})</div></div>
+    <div class="pc-body">
+      {% if asset.images %}
+      <div class="columns is-multiline">
+        {% for img in asset.images %}
+        <div class="column is-4">
+          <div class="pc" style="margin:0;">
+            <figure class="image is-4by3" style="background:var(--bulma-background);"><img src="{{ img.url }}" alt="image {{ img.sort_order }}" style="object-fit:contain;"></figure>
+            <div class="pc-body" style="padding:0.5rem 0.75rem;">
+              <div class="is-flex is-justify-content-space-between is-align-items-center">
+                <span class="is-size-7">Order {{ img.sort_order }} {% if img.is_primary %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
+                <form method="post" style="display:inline;">{% csrf_token %}
+                  {% if not img.is_primary %}<button class="button is-small is-light" name="set_primary" value="{{ img.id }}" title="Set primary"><span class="icon"><span class="material-icons" aria-hidden="true">star</span></span></button>{% endif %}
+                  <button class="button is-small is-danger is-light" name="delete" value="{{ img.id }}" title="Delete"><span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span></button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="has-text-grey">No images yet.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>Upload</div></div>
+    <div class="pc-body">
+      <form method="post">{% csrf_token %}
+        <div class="file is-small has-name mb-3"><label class="file-label">
+          <input class="file-input" type="file" name="image" accept="image/*">
+          <span class="file-cta"><span class="file-icon"><span class="material-icons" aria-hidden="true">attach_file</span></span><span class="file-label">Choose image…</span></span>
+          <span class="file-name">No file selected</span>
+        </label></div>
+        <button class="button is-small is-link" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Upload</span></button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

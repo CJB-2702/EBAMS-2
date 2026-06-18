@@ -1,0 +1,49 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{% if mode == 'edit' %}Edit {{ asset.name }}{% else %}New Asset{% endif %}{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+{% if mode == 'edit' %}<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li><li class="is-active"><a href="#">Edit</a></li>
+{% else %}<li class="is-active"><a href="#">New</a></li>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">{% if mode == 'edit' %}edit{% else %}add{% endif %}</span></div>
+  <div><h1 class="page-title">{% if mode == 'edit' %}Edit Asset{% else %}New Asset{% endif %}</h1>
+  <p class="page-subtitle">{% if mode == 'edit' %}{{ asset.name }}{% else %}Class → Model → identity → domain.{% endif %}</p></div>
+</div></div></div>
+
+<form method="post" class="body-grid full-width">
+  {% csrf_token %}
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Identity</div></div>
+    <div class="pc-body">
+      <div class="columns is-multiline">
+        <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ asset.name|default:'' }}" placeholder="FL-North-015"></div>
+        <div class="column is-6"><label class="label is-small">Serial Number</label><input class="input is-small is-family-monospace" name="serial_number" value="{{ asset.serial_number|default:'' }}" placeholder="8FG-0000-000"></div>
+        <div class="column is-4"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if asset.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
+        <div class="column is-4"><label class="label is-small">Model</label><div class="select is-small is-fullwidth"><select name="model">{% for m in models %}<option value="{{ m.id }}" {% if asset.model.id == m.id %}selected{% endif %}>{{ m.model_name }}{% if m.subtype_name %} {{ m.subtype_name }}{% endif %}</option>{% endfor %}</select></div></div>
+        <div class="column is-4"><label class="label is-small">Data Domain</label><div class="select is-small is-fullwidth"><select name="domain">{% for d in domains %}<option value="{{ d.id }}" {% if asset.domain.id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div></div>
+        <div class="column is-4"><label class="label is-small">Status</label><div class="select is-small is-fullwidth"><select name="status">{% for s in status_choices %}<option value="{{ s }}" {% if asset.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div></div>
+        <div class="column is-8"><label class="label is-small">Tags (comma separated)</label><input class="input is-small" name="tags" value="{% for t in asset.tags %}{{ t }}{% if not forloop.last %}, {% endif %}{% endfor %}" placeholder="lease, north-dock"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Meters</div></div>
+    <div class="pc-body"><div class="columns">
+      <div class="column"><label class="label is-small">Meter 1</label><input class="input is-small" name="meter1" value="{{ asset.meter1|default:'' }}"></div>
+      <div class="column"><label class="label is-small">Meter 2</label><input class="input is-small" name="meter2" value="{{ asset.meter2|default:'' }}"></div>
+      <div class="column"><label class="label is-small">Meter 3</label><input class="input is-small" name="meter3" value="{{ asset.meter3|default:'' }}"></div>
+      <div class="column"><label class="label is-small">Meter 4</label><input class="input is-small" name="meter4" value="{{ asset.meter4|default:'' }}"></div>
+    </div></div>
+  </div>
+
+  <div class="field is-grouped">
+    <p class="control"><button type="submit" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button></p>
+    <p class="control"><a href="{% if mode == 'edit' %}{% url 'asset_detail' asset_id=asset.id %}{% else %}{% url 'asset_index' %}{% endif %}" class="button is-small is-light">Cancel</a></p>
+  </div>
+</form>
+{% endblock %}

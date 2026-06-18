@@ -1,0 +1,30 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Meter History{% endblock %}
+{% block nav_meters %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Meter History</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">speed</span></div>
+  <div><h1 class="page-title">Meter History</h1><p class="page-subtitle">Chronological meter readings across assets.</p></div></div></div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Readings ({{ rows|length }})</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Recorded</th><th>Asset</th><th>Meter</th><th>Value</th><th>Unit</th><th>Source</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="is-family-monospace">{{ r.recorded_at }}</td>
+          <td><a href="{% url 'asset_detail' asset_id=r.asset.id %}">{{ r.asset.name }}</a></td>
+          <td>#{{ r.meter_index }}</td>
+          <td class="has-text-weight-semibold">{{ r.value }}</td>
+          <td>{{ r.unit|default:"—" }}</td>
+          <td><span class="tag is-light is-small">{{ r.source }}</span></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="has-text-grey has-text-centered py-5">No readings.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

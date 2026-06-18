@@ -31,6 +31,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('administration/', include('app.administration.urls')),
     path('events/', include('app.events.urls')),
+    path('assets/', include('app.assets.urls')),
+    path('detail_extensions/', include('app.detail_extensions.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,193 @@
+{% extends "assets/asset_base.html" %}
+{% load svg_tags %}
+{% block title %}{{ asset.name }}{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ asset.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">{% svg "asset-icon" %}</div>
+      <div>
+        <h1 class="page-title">{{ asset.name }}</h1>
+        <p class="page-subtitle is-family-monospace">{{ asset.serial_number }} · {{ asset.asset_class.name }} · {{ asset.model.display_name }}</p>
+        <div class="mt-2">
+          {% include "assets/_status_tag.html" with value=asset.status %}
+          {% include "assets/_status_tag.html" with value=asset.capability_status %}
+          {% for t in asset.tags %}<span class="tag is-light is-small">{{ t }}</span>{% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'asset_edit' asset_id=asset.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
+      <a href="{% url 'asset_images' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span><span>Images</span></a>
+      <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span><span>Configuration</span></a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid has-rail">
+  <!-- MAIN -->
+  <div>
+    <!-- Identity -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Identity &amp; Status</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Name</dt><dd>{{ asset.name }}</dd>
+          <dt>Serial</dt><dd class="is-family-monospace">{{ asset.serial_number }}</dd>
+          <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=asset.asset_class.id %}">{{ asset.asset_class.name }}</a></dd>
+          <dt>Model</dt><dd><a href="{% url 'model_detail' model_id=asset.model.id %}">{{ asset.model.display_name }}</a></dd>
+          <dt>Status</dt><dd>{% include "assets/_status_tag.html" with value=asset.status %}</dd>
+          <dt>Active</dt><dd>{{ asset.is_active|yesno:"Yes,No" }}</dd>
+          <dt>Tags</dt><dd>{% for t in asset.tags %}<span class="tag is-light is-small">{{ t }}</span> {% empty %}<span class="has-text-grey-light">—</span>{% endfor %}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Meters -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Meters</div>
+        <a href="{% url 'asset_meter_history' asset_id=asset.id %}" class="button is-small is-light">History</a>
+      </div>
+      <div class="pc-body">
+        {% if asset.meters %}
+        <div class="columns is-multiline is-mobile">
+          {% for m in asset.meters %}
+          <div class="column is-3">
+            <div class="stat-tile"><div class="stat-value">{{ m.value }}</div><div class="stat-label">Meter {{ m.index }} · {{ m.unit }}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey">No meter readings.</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Image carousel -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Images</div>
+        <a href="{% url 'asset_images' asset_id=asset.id %}" class="button is-small is-light">Manage</a>
+      </div>
+      <div class="pc-body">
+        {% if asset.images %}
+        <figure class="image is-16by9 mb-2" style="background:var(--bulma-background);">
+          <img src="{{ asset.primary_image.url }}" alt="{{ asset.name }} primary image" style="object-fit:contain;">
+        </figure>
+        <div class="columns is-mobile" style="overflow-x:auto;">
+          {% for img in asset.images %}
+          <div class="column is-narrow">
+            <img src="{{ img.url }}" alt="thumb" style="height:54px;border:1px solid var(--bulma-border-weak);{% if img.is_primary %}outline:2px solid var(--bulma-primary);{% endif %}">
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey">No images uploaded.</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Capabilities (resolved) -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (resolved)</div>
+        <a href="{% url 'asset_capabilities_detail' asset_id=asset.id %}" class="button is-small is-light">Manage</a>
+      </div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr><th>Capability</th><th>Code</th><th>Source</th><th>Qty</th><th>Notes</th></tr></thead>
+          <tbody>
+            {% for c in asset.capabilities %}
+            <tr>
+              <td>{{ c.definition.name }}</td>
+              <td class="is-family-monospace">{{ c.definition.code }}</td>
+              <td><span class="tag is-light is-small">{{ c.source }}</span></td>
+              <td>{{ c.qty|default:"—" }}</td>
+              <td class="has-text-grey">{{ c.notes|default:"—" }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="5" class="has-text-grey has-text-centered py-4">No capabilities resolved.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Current configuration -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Current Configuration</div>
+        <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light">Open</a>
+      </div>
+      <div class="pc-body">
+        {% if asset.configuration %}
+        <dl class="kv">
+          <dt>Template</dt><dd><a href="{% url 'config_template_detail' template_id=asset.configuration.template.id %}">{{ asset.configuration.template.name }} (Rev {{ asset.configuration.template.revision }})</a></dd>
+          <dt>Verification</dt><dd>{% include "assets/_status_tag.html" with value=asset.configuration.verification_status %}</dd>
+          <dt>Modifications</dt><dd>{% for am in asset.configuration.actual_modifications %}<span class="tag is-light is-small">{{ am.modification.name }}</span> {% endfor %}</dd>
+        </dl>
+        {% else %}<p class="has-text-grey">No configuration recorded. <a href="{% url 'asset_configuration_edit' asset_id=asset.id %}">Add one →</a></p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Extensions panel (HTMX-loaded from /detail_extensions/asset/<id>/?format=htmx-panel) -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Detail Extensions</div>
+        <a href="{% url 'extension_config_landing' %}" class="button is-small is-light">Configure</a>
+      </div>
+      <div class="pc-body"
+           id="ext-panel-strip"
+           hx-get="{% url 'extension_panel_asset' asset.id %}?format=htmx-panel"
+           hx-trigger="load"
+           hx-target="#ext-panel-strip"
+           hx-select="#ext-panel-strip">
+        <p class="has-text-grey is-size-7">Loading extensions…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RAIL -->
+  <div class="body-rail">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data Domain</div></div>
+      <div class="pc-body"><p class="has-text-weight-semibold">{{ asset.domain.name }}</p><p class="is-size-7 has-text-grey">Access scope (replaces legacy Major Location).</p></div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick Actions</div></div>
+      <div class="pc-body">
+        <div class="buttons are-small">
+          <a href="{% url 'asset_edit' asset_id=asset.id %}" class="button is-light is-fullwidth">Edit Asset</a>
+          <a href="{% url 'asset_configuration_edit' asset_id=asset.id %}" class="button is-light is-fullwidth">Edit Configuration</a>
+          <a href="{% url 'asset_capabilities_edit' asset_id=asset.id %}" class="button is-light is-fullwidth">Edit Capabilities</a>
+          <a href="{% url 'event_create' %}" class="button is-light is-fullwidth">Add Event</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Related Assets</div>
+        <a href="{% url 'asset_hierarchy_edit' asset_id=asset.id %}" class="button is-small is-light">Edit</a>
+      </div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Root</dt><dd>{% if asset.root_asset %}<a href="{% url 'asset_detail' asset_id=asset.root_asset.id %}">{{ asset.root_asset.name }}</a>{% else %}<span class="has-text-grey-light">self</span>{% endif %}</dd>
+          <dt>Parent</dt><dd>{% if asset.parent_asset %}<a href="{% url 'asset_detail' asset_id=asset.parent_asset.id %}">{{ asset.parent_asset.name }}</a>{% else %}<span class="has-text-grey-light">—</span>{% endif %}</dd>
+          <dt>Depth</dt><dd>{{ asset.depth_from_root }}</dd>
+        </dl>
+        {% if asset.children %}
+        <p class="is-size-7 has-text-weight-semibold mt-3 mb-1">Children</p>
+        {% for c in asset.children %}<a href="{% url 'asset_detail' asset_id=c.id %}" class="is-block is-size-7">↳ {{ c.name }}</a>{% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Events</div></div>
+      <div class="pc-body">
+        <p class="is-size-7 has-text-grey">Lifecycle events are tracked in the Events portal and linked via <code>AssetEvent</code>.</p>
+        <a href="{% url 'event_index' %}" class="button is-small is-light is-fullwidth mt-2">Open Events →</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

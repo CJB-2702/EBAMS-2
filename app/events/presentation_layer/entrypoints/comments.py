@@ -9,8 +9,10 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from app.events.control_layer.comment_context import CommentContext
+from app.events.control_layer.domain_structs.comment_history_struct import CommentHistoryStruct
 from app.events.control_layer.handlers.comment_handler import CommentHandler
 from app.events.models import Comment, Event
+from app.events.presentation_layer.entrypoints.events import _check_domain_access
 from app.utils.hashids import decode_hash, encode_id
 
 
@@ -82,6 +84,32 @@ def comment_edit(request: HttpRequest, event_hash: str, comment_hash: str) -> Ht
         "comment": comment,
         "comment_hash": comment_hash,
         "attachments": attachments,
+    })
+
+
+@require_http_methods(["GET"])
+def comment_history(request: HttpRequest, event_hash: str, comment_hash: str) -> HttpResponse:
+    """Read-only revision history for a single comment lineage."""
+    event = _resolve_event(event_hash)
+    if not _check_domain_access(request, event):
+        return HttpResponseForbidden("You do not have access to this event.")
+    
+    can_edit = (
+        event.created_by == request.user
+        or request.user.has_perm("events.can_edit_others_events")
+    )
+    if not can_edit:
+        return HttpResponseForbidden("You may not view this comment history.")
+
+    comment = _resolve_comment(comment_hash, event)
+    history = CommentHistoryStruct(comment.pk)
+
+    return render(request, "events/comment/history.html", {
+        "event": event,
+        "event_hash": event_hash,
+        "comment_hash": comment_hash,
+        "rows": history.revisions,
+        "revision_count": history.revision_count,
     })
 
 

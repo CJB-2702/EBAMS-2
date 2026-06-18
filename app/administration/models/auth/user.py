@@ -5,8 +5,10 @@ import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from app.administration.models.auth.domains_mixin import DomainsMixin
 
-class User(AbstractUser):
+
+class User(AbstractUser, DomainsMixin):
     """
     Custom user model. Extends AbstractUser with a random URL-safe slug.
     Set AUTH_USER_MODEL = "administration.User" in settings.

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 from app.assets.models.core.asset import Asset
-from app.events.models import ActivityThread, ActivityThreadType
+from app.events.models import ActivityThread, FileSet
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -24,9 +24,10 @@ class AssetResult:
 class AssetHandler:
     """Handles create operations for Asset rows.
 
-    Asset creation always produces two ActivityThread rows atomically:
-      photo_gallery  (allow_comments=False, allow_direct_attachments=True)
-      documentation  (allow_comments=True,  allow_direct_attachments=True)
+    Asset creation always produces two thread rows atomically:
+      photo_gallery  → FileSet         (attachments only, comments disabled)
+      documentation  → ActivityThread  (comments + attachments)
+    The class chosen here dictates behavior — capability flags are never passed.
     Both threads are created before the Asset row — no lazy thread creation.
     """
 
@@ -39,18 +40,12 @@ class AssetHandler:
             return AssetResult(ok=False, errors=errors)
 
         with transaction.atomic():
-            photo_thread = ActivityThread.objects.create(
-                thread_type=ActivityThreadType.PHOTO_GALLERY,
-                allow_comments=False,
-                allow_direct_attachments=True,
+            photo_thread = FileSet.objects.create(
                 domain_id=post_data["domain_id"],
                 created_by=self.actor,
                 updated_by=self.actor,
             )
             doc_thread = ActivityThread.objects.create(
-                thread_type=ActivityThreadType.DOCUMENTATION,
-                allow_comments=True,
-                allow_direct_attachments=True,
                 domain_id=post_data["domain_id"],
                 created_by=self.actor,
                 updated_by=self.actor,

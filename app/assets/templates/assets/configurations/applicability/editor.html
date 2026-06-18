@@ -1,0 +1,96 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}Applicability — {{ modification.name }}{% endblock %}
+{% block nav_defined_modifications %}is-active{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'defined_modification_index' %}">Defined Modifications</a></li>
+<li><a href="{% url 'defined_modification_detail' modification_id=modification.id %}">{{ modification.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Applicability</a></li>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="ap-form">{% csrf_token %}
+  <div class="page-hero"><div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">tune</span></div>
+      <div><h1 class="page-title">Applicability — {{ modification.name }}</h1>
+        <p class="page-subtitle is-family-monospace">{{ modification.code }}</p></div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'defined_modification_detail' modification_id=modification.id %}" class="button is-light">Cancel</a>
+      <button type="submit" class="button is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button>
+    </div>
+  </div></div>
+
+  {% include "assets/configurations/applicability/_editor_body.html" %}
+</form>
+
+<script>
+// ── helpers over the list_box web component ──────────────────────────────────
+function optIds(id){ const lb = listBox(id); return lb ? Array.from(lb.select.options).map(o => +o.value) : []; }
+function moveOne(from, to, value, label){
+  const opt = document.createElement('option'); opt.value = value; opt.textContent = label;
+  to.select.appendChild(opt);
+  from.select.querySelector('option[value="' + value + '"]')?.remove();
+}
+function moveSel(from, to){
+  if (!from || !to) return;
+  from.selectedDicts().forEach(({value, label}) => moveOne(from, to, value, label));
+}
+// Strict-mode dead-model guard: refuse a model whose parent class isn't selected.
+function addModels(){
+  const body = document.getElementById('editor-body');
+  const mode = body.dataset.mode;
+  const map = JSON.parse(document.getElementById('model-class-map').textContent);
+  const from = listBox('ap-mod-avail'), to = listBox('ap-mod-sel');
+  const selectedClasses = optIds('ap-cls-sel');
+  const refused = [];
+  from.selectedDicts().forEach(({value, label}) => {
+    if (mode === 'strict' && !selectedClasses.includes(map[value])) { refused.push(label); return; }
+    moveOne(from, to, value, label);
+  });
+  const slot = document.getElementById('dead-model-error');
+  slot.innerHTML = refused.length
+    ? '<div class="notification is-danger is-light is-size-7 py-2 mb-2">Dead model refused — parent class not in the allowed class list: <strong>' + refused.join(', ') + '</strong></div>'
+    : '';
+  refreshPreview();
+}
+// ── live "Applies to" preview (mirrors mock_is_allowed) ──────────────────────
+function deriveClasses(modelIds){
+  const map = JSON.parse(document.getElementById('model-class-map').textContent);
+  return [...new Set(modelIds.map(m => map[m]).filter(c => c != null))];
+}
+function isAllowed(mode, classIds, modelIds, aCls, aMdl){
+  const eff = mode === 'model_set' ? deriveClasses(modelIds) : classIds;
+  if ((mode === 'strict' || mode === 'class_only') && !eff.includes(aCls)) return [false, 'class not in permitted set'];
+  if ((mode === 'strict' || mode === 'model_set') && !modelIds.includes(aMdl)) return [false, 'model not in permitted set'];
+  return [true, null];
+}
+function refreshPreview(){
+  const body = document.getElementById('editor-body');
+  const mode = body.dataset.mode;
+  const assets = JSON.parse(document.getElementById('preview-assets').textContent);
+  const classIds = optIds('ap-cls-sel'), modelIds = optIds('ap-mod-sel');
+  const rows = assets.map(a => {
+    const [ok, reason] = isAllowed(mode, classIds, modelIds, a.class_id, a.model_id);
+    const icon = ok
+      ? '<span class="icon has-text-success"><span class="material-icons">check_circle</span></span>'
+      : '<span class="icon has-text-danger"><span class="material-icons">cancel</span></span>';
+    return '<tr><td style="width:1.5rem;">' + icon + '</td>' +
+      '<td><strong>' + a.name + '</strong><br><span class="has-text-grey">' + a.class_name + ' · ' + a.model_name + '</span></td>' +
+      '<td class="has-text-grey">' + (ok ? '' : reason) + '</td></tr>';
+  });
+  const tbody = document.getElementById('preview-rows');
+  if (tbody) tbody.innerHTML = rows.join('');
+}
+// mark every selected option so the dual-listbox values POST on save
+document.getElementById('ap-form').addEventListener('submit', () => {
+  listBox('ap-cls-sel')?.selectAll();
+  listBox('ap-mod-sel')?.selectAll();
+});
+</script>
+{% endblock %}

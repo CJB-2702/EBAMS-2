@@ -133,6 +133,19 @@ class SearchDropdown extends HTMLElement {
 
     this.input.setAttribute("name", "q");
 
+    if (this.hasAttribute("value")) {
+      this.value = this.getAttribute("value");
+    }
+    if (this.hasAttribute("value-label")) {
+      this.input.value = this.getAttribute("value-label");
+    }
+
+    this.input.addEventListener("input", () => {
+      if (this.input.value.trim() === "") {
+        this.value = "";
+      }
+    });
+
     if (window.htmx) {
       htmx.process(this.input);
     }

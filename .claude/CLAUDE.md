@@ -98,6 +98,12 @@ These same agents are also spawnable via the Task/Agent tool when you want to de
 ## Operational slash commands
 
 - `/db-rebuild` — clears project migrations + DB, regenerates and applies migrations, optionally seeds.
+- `/kit-builder` — initiates the Kit Builder agent: interrogates the problem, proposes a phase breakdown, then generates a full `<topic>_starter_kit/` folder following the `docs/starter_kit_process/` methodology.
+- `/kit-complete <kit-name> "<summary>"` — archives a completed starter kit to `docs/technical_decisions/project_history/` and logs it with a completion date and summary.
+
+## Project History Convention
+
+Completed starter kits and major work initiatives are archived in [docs/technical_decisions/project_history/](docs/technical_decisions/project_history/) using the `/kit-complete` command. This provides a traceable record of what has been built, when, and for what purpose. The project_history.md index tracks all archived work chronologically.
 
 ---
 

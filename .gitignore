@@ -1,4 +1,5 @@
 docs/users_and_passwords.md
+default_users_passwords.json
 .env
 *.sqlite3
 *.pyc

@@ -1,0 +1,135 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Capabilities Overview{% endblock %}
+{% block nav_cap_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Capabilities</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">stars</span></div>
+      <div>
+        <h1 class="page-title">Capabilities Overview</h1>
+        <p class="page-subtitle">Central capability governance system for assets and models.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <!-- Hero / Explanation Card -->
+  <div class="pc" style="border-left: 4px solid var(--bulma-info);">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons has-text-info" aria-hidden="true">info</span></span>
+        <span>Capability Inheritance Rules (Copy-Down Pattern)</span>
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="mb-3">
+        Capabilities represent functional constraints, certificates, features, or ratings. They govern what models and assets are qualified to perform.
+      </p>
+      <div class="notification is-info is-light" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
+        <p><strong>Downwards Propagation:</strong> When capabilities are assigned at higher levels in the hierarchy, they automatically cascade down on creation:</p>
+        <hr style="margin: 0.5rem 0; background-color: var(--bulma-border-weak);">
+        <div class="columns is-vcentered">
+          <div class="column is-4 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Asset Class</span>
+            <p class="is-size-7 mt-1 has-text-grey">e.g. Ground Transportation</p>
+          </div>
+          <div class="column is-1 has-text-centered py-2">
+            <span class="material-icons" aria-hidden="true">arrow_forward</span>
+          </div>
+          <div class="column is-4 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Child Models</span>
+            <p class="is-size-7 mt-1 has-text-grey">Inherits: "Drive"</p>
+          </div>
+          <div class="column is-1 has-text-centered py-2">
+            <span class="material-icons" aria-hidden="true">arrow_forward</span>
+          </div>
+          <div class="column is-2 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Child Assets</span>
+            <p class="is-size-7 mt-1 has-text-grey">Inherits: "Drive"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Cards -->
+  <div class="columns is-multiline">
+    <!-- Card 1: Search -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Search Capabilities</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Browse and query the entire global catalog of capability definitions, codes, status, and uses counts.
+          </p>
+          <a href="{% url 'capability_definition_index' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Search Catalog</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Create -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            <span>Define a Capability</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Create a new capability requirement or specification to make it available for assignment across the organization.
+          </p>
+          <a href="{% url 'capability_definition_create' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>
+            <span>Create Definition</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Assign -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+            <span>Assign Capabilities</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Manage capability mappings and assign them directly to Classes, Models, or individual Assets.
+          </p>
+          <div class="buttons">
+            <a href="{% url 'class_capability_index' %}" class="button is-small is-light is-fullwidth mb-1">
+              <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
+              <span>Assign by Class</span>
+            </a>
+            <a href="{% url 'model_capability_index' %}" class="button is-small is-light is-fullwidth mb-1">
+              <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+              <span>Assign by Model</span>
+            </a>
+            <a href="{% url 'asset_capability_index' %}" class="button is-small is-light is-fullwidth">
+              <span class="icon"><span class="material-icons" aria-hidden="true">precision_manufacturing</span></span>
+              <span>Assign by Asset</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

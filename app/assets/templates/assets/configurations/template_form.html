@@ -1,0 +1,108 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}Edit {{ template.name }}{% endblock %}
+{% block nav_config_templates %}is-active{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'config_template_index' %}">Config Templates</a></li>
+<li><a href="{% url 'config_template_detail' template_id=template.id %}">{{ template.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+  <div><h1 class="page-title">Edit {{ template.name }}</h1></div></div></div></div>
+
+<div class="body-grid full-width">
+  <form method="post" id="template-edit-form">{% csrf_token %}
+
+    {# ── Identity ── #}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity</div></div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column"><div class="field"><label class="label is-small">Template Name</label><div class="control"><input class="input is-small" type="text" name="name" value="{{ template.name }}" required></div></div></div>
+          <div class="column is-2"><div class="field"><label class="label is-small">Revision</label><div class="control"><input class="input is-small is-family-monospace" type="text" name="revision" value="{{ template.revision }}" required></div></div></div>
+        </div>
+        <div class="field"><label class="label is-small">Description</label><div class="control"><textarea class="textarea is-small" name="description" rows="3">{{ template.description }}</textarea></div></div>
+        <div class="columns">
+          <div class="column is-6">
+            <div class="field"><label class="label is-small">Target Model</label><div class="control"><div class="select is-small is-fullwidth"><select name="model">
+              {% for m in models %}
+              <option value="{{ m.id }}" {% if m.id == template.model.id %}selected{% endif %}>{{ m.display_name }}</option>
+              {% endfor %}
+            </select></div></div></div>
+          </div>
+          <div class="column is-narrow is-flex is-align-items-flex-end pb-3">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_active" {% if template.is_active %}checked{% endif %}> Active</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Required Modifications ── #}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications</div></div>
+      <div class="pc-body">
+        <p class="is-size-7 has-text-grey mb-3">Select which modifications this template requires. Applicability rules on each modification still apply at assignment time.</p>
+        <dual-list-box>
+          <list-box slot="left" id="tmpl-mod-avail" label="Available">
+            <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+            <select slot="options" multiple>
+              {% for mod in modifications_available %}<option value="{{ mod.id }}">{{ mod.code }} — {{ mod.name }}</option>{% endfor %}
+            </select>
+          </list-box>
+          <div slot="controls">
+            <button type="button" class="button is-small" onclick="moveSel(listBox('tmpl-mod-avail'), listBox('tmpl-mod-sel'))" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span></button>
+            <button type="button" class="button is-small" onclick="moveSel(listBox('tmpl-mod-sel'), listBox('tmpl-mod-avail'))" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span></button>
+          </div>
+          <list-box slot="right" id="tmpl-mod-sel" label="Selected">
+            <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+            <select slot="options" multiple name="modifications">
+              {% for mod in modifications_selected %}<option value="{{ mod.id }}">{{ mod.code }} — {{ mod.name }}</option>{% endfor %}
+            </select>
+          </list-box>
+        </dual-list-box>
+      </div>
+    </div>
+
+    {# ── Child Components (read-only in mock) ── #}
+    {% if template.children %}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Child Components</div><span class="tag is-light is-small">read-only in mock</span></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <thead><tr><th>Model</th><th>Qty</th><th>Required?</th></tr></thead>
+          <tbody>
+            {% for child in template.children %}
+            <tr><td>{{ child.child_model.display_name }}</td><td>{{ child.quantity }}</td><td>{{ child.is_required|yesno:"Yes,No" }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="field is-grouped is-grouped-right mt-4">
+      <div class="control"><a href="{% url 'config_template_detail' template_id=template.id %}" class="button is-light">Cancel</a></div>
+      <div class="control"><button type="submit" class="button is-link">Save Template</button></div>
+    </div>
+  </form>
+</div>
+
+<script>
+function moveOne(from, to, value, label) {
+  const opt = document.createElement('option'); opt.value = value; opt.textContent = label;
+  to.select.appendChild(opt);
+  from.select.querySelector('option[value="' + value + '"]')?.remove();
+}
+function moveSel(from, to) {
+  if (!from || !to) return;
+  from.selectedDicts().forEach(({value, label}) => moveOne(from, to, value, label));
+}
+document.getElementById('template-edit-form').addEventListener('submit', () => {
+  listBox('tmpl-mod-sel')?.selectAll();
+});
+</script>
+{% endblock %}

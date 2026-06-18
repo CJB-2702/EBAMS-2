@@ -1,0 +1,74 @@
+[
+  {
+    "model": "detail_extensions.detailextensionsbyassetclass",
+    "pk": 1,
+    "fields": {
+      "asset_class": 1,
+      "extension_key": "purchase_info",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "detail_extensions.detailextensionsbyassetclass",
+    "pk": 2,
+    "fields": {
+      "asset_class": 1,
+      "extension_key": "vehicle_registration",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "detail_extensions.detailextensionsbyassetclass",
+    "pk": 3,
+    "fields": {
+      "asset_class": 1,
+      "extension_key": "smog_record",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "detail_extensions.detailextensionsbyassetclass",
+    "pk": 4,
+    "fields": {
+      "asset_class": 2,
+      "extension_key": "purchase_info",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "detail_extensions.modeldetailextensionsbyassetclass",
+    "pk": 1,
+    "fields": {
+      "asset_class": 1,
+      "extension_key": "model_info",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "detail_extensions.modeldetailextensionsbyassetclass",
+    "pk": 2,
+    "fields": {
+      "asset_class": 1,
+      "extension_key": "emissions_info",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  }
+]

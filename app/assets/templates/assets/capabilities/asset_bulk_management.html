@@ -1,0 +1,625 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ definition.name }} - Asset Bulk Management{% endblock %}
+{% block nav_cap_defs %}is-active{% endblock %}
+
+{% block extra_head %}
+<style>
+  #avail-scroll, #assigned-scroll {
+    position: relative;
+  }
+  #avail-table thead th, #assigned-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bulma-table-background-color, var(--bulma-scheme-main));
+    z-index: 10;
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+  .table td {
+    vertical-align: middle;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'capability_definition_index' %}">Capability Definitions</a></li>
+<li><a href="{% url 'capability_definition_detail' definition_id=definition.id %}">{{ definition.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Asset Bulk Management</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap">
+    <div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings</span></div>
+    <div>
+      <h1 class="page-title">Asset Capability Bulk Assignments</h1>
+      <p class="page-subtitle">Manage assignments of capability <strong>{{ definition.name }}</strong> ({{ definition.code }}) directly to individual assets.</p>
+    </div>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'capability_definition_detail' definition_id=definition.id %}" class="button is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+      <span>Back to Definition</span>
+    </a>
+  </div>
+</div></div>
+
+<div class="body-grid full-width">
+  <form method="post" id="bulk-assignment-form">{% csrf_token %}
+
+    <!-- ROW 1: Assigned Classes & Assigned Models Side-by-Side (Top 1/3 and 2/3) -->
+    <div class="columns is-variable is-4">
+      <!-- LEFT Card: Assigned Classes (1/3 width -> column is-4) -->
+      <div class="column is-4">
+        <div class="pc" style="display:flex;flex-direction:column;height:250px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
+              Assigned Asset Classes
+            </div>
+            <span class="is-size-7 has-text-grey">{{ assigned_classes|length }} classes</span>
+          </div>
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="control has-icons-left">
+              <input type="search" id="search-assigned-classes" class="input is-small" placeholder="Search classes…" autocomplete="off">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto;min-height:0">
+            <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <tbody id="assigned-classes-body">
+                {% for cls in assigned_classes %}
+                <tr class="assigned-class-row" data-name="{{ cls.name }}" data-category="{{ cls.category }}">
+                  <td><strong>{{ cls.name }}</strong></td>
+                  <td>{{ cls.category }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="has-text-grey p-3">No asset classes assigned.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT Card: Assigned Models (2/3 width -> column is-8) -->
+      <div class="column is-8">
+        <div class="pc" style="display:flex;flex-direction:column;height:250px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+              Assigned Make Models
+            </div>
+            <span class="is-size-7 has-text-grey">{{ assigned_models|length }} models</span>
+          </div>
+          <!-- Filter & Search Bar -->
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
+              <div class="control has-icons-left" style="flex:1;min-width:140px">
+                <input type="search" id="search-assigned-models" class="input is-small" placeholder="Search models by name or manufacturer…" autocomplete="off">
+                <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+              </div>
+              <div class="select is-small">
+                <select id="filter-assigned-models-class" aria-label="Filter by asset class">
+                  <option value="">All Classes</option>
+                  {% for cls in assigned_classes %}
+                  <option value="{{ cls.id }}">{{ cls.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto;min-height:0">
+            <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <thead>
+                <tr>
+                  <th>Model Name</th>
+                  <th>Class</th>
+                  <th>Manufacturers</th>
+                </tr>
+              </thead>
+              <tbody id="assigned-models-body">
+                {% for m in assigned_models %}
+                <tr class="assigned-model-row" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for man in m.manufacturers %}{{ man.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                  <td><strong>{{ m.display_name }}</strong></td>
+                  <td>{{ m.asset_class.name }}</td>
+                  <td>
+                    {% for man in m.manufacturers %}
+                      {{ man.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="has-text-grey p-3">No make models assigned.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Currently Assigned Assets Search Card (Single full-width row) -->
+    <div class="columns is-variable is-4 mt-4">
+      <div class="column is-12">
+        <div class="pc" style="display:flex;flex-direction:column;height:400px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+              Currently Assigned Assets
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="assigned-count">0</span> applied</span>
+          </div>
+          <!-- Filter + Search Bar -->
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="control has-icons-left">
+              <input type="search" id="search-assigned-assets" class="input is-small" placeholder="Search assigned assets by name, serial, or model…" autocomplete="off">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+            </div>
+          </div>
+          <!-- Scrollable Table -->
+          <div id="assigned-scroll" style="flex:1;overflow-y:auto;min-height:0">
+            <table id="assigned-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"><input type="checkbox" id="assigned-header-check" aria-label="Select all visible"></th>
+                  <th>Asset Name</th>
+                  <th>Class</th>
+                  <th>Model</th>
+                  <th style="width:4.5rem">Qty</th>
+                  <th>Notes</th>
+                  <th style="width:3rem">Active</th>
+                  <th style="width:3rem" class="has-text-centered">Remove</th>
+                </tr>
+              </thead>
+              <tbody id="assigned-body">
+                {% for a in assigned_assets %}
+                <tr class="assigned-row"
+                    data-id="{{ a.id }}"
+                    data-name="{{ a.name }}"
+                    data-serial="{{ a.serial_number }}"
+                    data-class-id="{{ a.asset_class.id }}"
+                    data-model-id="{{ a.model.id }}"
+                    data-qty="{{ a.assignment_qty }}"
+                    data-notes="{{ a.assignment_notes }}"
+                    data-active="{{ a.assignment_is_active|yesno:'true,false' }}">
+                  <td><input type="checkbox" class="remove-check" aria-label="Select {{ a.name }} for removal"></td>
+                  <td>
+                    <strong>{{ a.name }}</strong>
+                    <span class="is-size-7 has-text-grey is-family-monospace ml-1">#{{ a.serial_number }}</span>
+                  </td>
+                  <td>{{ a.asset_class.name }}</td>
+                  <td>{{ a.model.display_name }}</td>
+                  <td>
+                    <input type="number" class="input is-small py-0 px-1" name="qty_{{ a.id }}" value="{{ a.assignment_qty }}" min="1" style="height:1.75rem;border-radius:0;">
+                  </td>
+                  <td>
+                    <input type="text" class="input is-small py-0 px-2" name="notes_{{ a.id }}" value="{{ a.assignment_notes }}" style="height:1.75rem;border-radius:0;" placeholder="Add notes…">
+                  </td>
+                  <td class="has-text-centered">
+                    <input type="checkbox" name="active_{{ a.id }}" {% if a.assignment_is_active %}checked{% endif %} aria-label="Is Active">
+                  </td>
+                  <td class="has-text-centered">
+                    <button type="button" class="button is-small is-danger is-light p-1" onclick="if(confirm('Remove capability assignment for this asset?')) { unassignAsset(this.closest('.assigned-row')); updateCounts(); }" style="height:1.75rem;width:1.75rem;border-radius:0;">
+                      <span class="icon" style="margin:0"><span class="material-icons" style="font-size:1.1rem">delete</span></span>
+                    </button>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr id="assigned-empty">
+                  <td colspan="9" class="has-text-grey p-4 is-size-7 has-text-centered">No assets assigned yet.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <!-- Footer with Bulk Remove -->
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries pl-0 pr-3">
+              <button type="button" id="btn-select-all-assigned" class="button is-small is-light">Select All</button>
+            </div>
+            <button type="button" id="btn-remove" class="button is-danger is-light card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+              <span>Remove Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: All Assets (Search & Assign) Card (Full row) -->
+    <div class="columns is-variable is-4 mt-4">
+      <div class="column is-12">
+        <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+              All Assets (Search & Assign)
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="avail-count">0</span> shown</span>
+          </div>
+          <!-- Filter + Search Bar -->
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
+              <!-- Search name/serial -->
+              <div class="control has-icons-left" style="flex:1;min-width:140px">
+                <input type="search" id="search-assets" class="input is-small" placeholder="Search name or serial…" autocomplete="off">
+                <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+              </div>
+              <!-- Class Filter -->
+              <div class="select is-small">
+                <select id="filter-asset-class" aria-label="Filter by asset class">
+                  <option value="">All Classes</option>
+                  {% for cls in all_classes %}
+                  <option value="{{ cls.id }}">{{ cls.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Model Filter -->
+              <div class="select is-small">
+                <select id="filter-asset-model" aria-label="Filter by model">
+                  <option value="">All Models</option>
+                  {% for m in all_models %}
+                  <option value="{{ m.id }}" data-class="{{ m.asset_class.id }}">{{ m.display_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- Scrollable Table -->
+          <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+            <table id="avail-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"><input type="checkbox" id="avail-header-check" aria-label="Select all visible"></th>
+                  <th>Asset Name</th>
+                  <th>Class</th>
+                  <th>Model</th>
+                </tr>
+              </thead>
+              <tbody id="avail-body">
+                {% for a in available_assets %}
+                <tr class="avail-row"
+                    data-id="{{ a.id }}"
+                    data-name="{{ a.name }}"
+                    data-serial="{{ a.serial_number }}"
+                    data-class-id="{{ a.asset_class.id }}"
+                    data-model-id="{{ a.model.id }}">
+                  <td><input type="checkbox" class="avail-check" aria-label="Select {{ a.name }}"></td>
+                  <td>
+                    <strong>{{ a.name }}</strong>
+                    <span class="is-size-7 has-text-grey is-family-monospace ml-1">#{{ a.serial_number }}</span>
+                  </td>
+                  <td>{{ a.asset_class.name }}</td>
+                  <td>{{ a.model.display_name }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <!-- Left Footer with Bulk Assign -->
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries pl-0 pr-3">
+              <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
+            </div>
+            <button type="button" id="btn-assign" class="button is-link card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">arrow_upward</span></span>
+              <span>Bulk Assign Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="field is-grouped mt-4">
+      <p class="control"><button type="submit" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Assignments</span></button></p>
+      <p class="control"><a href="{% url 'capability_definition_detail' definition_id=definition.id %}" class="button is-small is-light">Cancel</a></p>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const filterClass  = document.getElementById('filter-asset-class');
+  const filterModel  = document.getElementById('filter-asset-model');
+  const searchInput  = document.getElementById('search-assets');
+  const availBody    = document.getElementById('avail-body');
+  const assignedBody = document.getElementById('assigned-body');
+  const availCountEl = document.getElementById('avail-count');
+  const assignedCountEl = document.getElementById('assigned-count');
+  const headerCheck  = document.getElementById('avail-header-check');
+  const btnSelectAll = document.getElementById('btn-select-all');
+
+  // Assigned Classes and Models filtering
+  const searchAssignedClasses = document.getElementById('search-assigned-classes');
+  const assignedClassesBody = document.getElementById('assigned-classes-body');
+  if (searchAssignedClasses && assignedClassesBody) {
+    searchAssignedClasses.addEventListener('input', () => {
+      const query = searchAssignedClasses.value.trim().toLowerCase();
+      assignedClassesBody.querySelectorAll('.assigned-class-row').forEach(row => {
+        const name = (row.dataset.name || '').toLowerCase();
+        const category = (row.dataset.category || '').toLowerCase();
+        row.hidden = query && !name.includes(query) && !category.includes(query);
+      });
+    });
+  }
+
+  const searchAssignedModels = document.getElementById('search-assigned-models');
+  const filterAssignedModelsClass = document.getElementById('filter-assigned-models-class');
+  const assignedModelsBody = document.getElementById('assigned-models-body');
+  if (assignedModelsBody) {
+    const filterModelsList = () => {
+      const query = searchAssignedModels ? searchAssignedModels.value.trim().toLowerCase() : '';
+      const classId = filterAssignedModelsClass ? filterAssignedModelsClass.value : '';
+      assignedModelsBody.querySelectorAll('.assigned-model-row').forEach(row => {
+        const name = (row.dataset.name || '').toLowerCase();
+        const manufacturers = (row.dataset.manufacturers || '').toLowerCase();
+        const rClassId = row.dataset.classId || '';
+
+        const textMatch = !query || name.includes(query) || manufacturers.includes(query);
+        const classMatch = !classId || rClassId === classId;
+        row.hidden = !(textMatch && classMatch);
+      });
+    };
+    if (searchAssignedModels) searchAssignedModels.addEventListener('input', filterModelsList);
+    if (filterAssignedModelsClass) filterAssignedModelsClass.addEventListener('change', filterModelsList);
+  }
+
+  // Assigned Assets filtering & bulk actions
+  const searchAssignedAssets = document.getElementById('search-assigned-assets');
+  const assignedHeaderCheck = document.getElementById('assigned-header-check');
+  const btnSelectAllAssigned = document.getElementById('btn-select-all-assigned');
+
+  if (searchAssignedAssets && assignedBody) {
+    const filterAssignedAssets = () => {
+      const query = searchAssignedAssets.value.trim().toLowerCase();
+      assignedBody.querySelectorAll('.assigned-row').forEach(row => {
+        const name = (row.dataset.name || '').toLowerCase();
+        const serial = (row.dataset.serial || '').toLowerCase();
+        row.hidden = query && !name.includes(query) && !serial.includes(query);
+      });
+      updateAssignedHeaderCheckState();
+    };
+    searchAssignedAssets.addEventListener('input', filterAssignedAssets);
+  }
+
+  function updateAssignedHeaderCheckState() {
+    if (!assignedHeaderCheck) return;
+    const visibleChecks = Array.from(assignedBody.querySelectorAll('.assigned-row:not([hidden]) .remove-check'));
+    if (visibleChecks.length === 0) {
+      assignedHeaderCheck.checked = false;
+      assignedHeaderCheck.indeterminate = false;
+      if (btnSelectAllAssigned) btnSelectAllAssigned.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    assignedHeaderCheck.checked = checkedCount === visibleChecks.length;
+    assignedHeaderCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+    
+    if (btnSelectAllAssigned) {
+      btnSelectAllAssigned.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  if (assignedHeaderCheck) {
+    assignedHeaderCheck.addEventListener('change', function() {
+      const checked = this.checked;
+      assignedBody.querySelectorAll('.assigned-row:not([hidden]) .remove-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnSelectAllAssigned) btnSelectAllAssigned.textContent = checked ? 'Deselect All' : 'Select All';
+    });
+  }
+
+  if (btnSelectAllAssigned) {
+    btnSelectAllAssigned.addEventListener('click', () => {
+      const visibleChecks = Array.from(assignedBody.querySelectorAll('.assigned-row:not([hidden]) .remove-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateAssignedHeaderCheckState();
+    });
+  }
+
+  if (assignedBody) {
+    assignedBody.addEventListener('change', e => {
+      if (e.target.classList.contains('remove-check')) {
+        updateAssignedHeaderCheckState();
+      }
+    });
+  }
+
+  window.updateCounts = function() {
+    if (assignedCountEl) assignedCountEl.textContent = assignedBody.querySelectorAll('.assigned-row').length;
+  };
+
+  function filterAssets() {
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const classId = filterClass ? filterClass.value : '';
+    const modelId = filterModel ? filterModel.value : '';
+
+    let totalPassing = 0;
+
+    availBody.querySelectorAll('.avail-row').forEach(row => {
+      if (row.dataset.assignedInSession === 'true') {
+        row.hidden = true;
+        return;
+      }
+
+      const name = (row.dataset.name || '').toLowerCase();
+      const serial = (row.dataset.serial || '').toLowerCase();
+      const rClass = row.dataset.classId || '';
+      const rModel = row.dataset.modelId || '';
+
+      const textMatch = !query || name.includes(query) || serial.includes(query);
+      const classMatch = !classId || rClass === classId;
+      const modelMatch = !modelId || rModel === modelId;
+
+      const match = textMatch && classMatch && modelMatch;
+      row.hidden = !match;
+
+      if (match) totalPassing++;
+    });
+
+    if (availCountEl) availCountEl.textContent = totalPassing;
+    updateHeaderCheckState();
+  }
+
+  function updateHeaderCheckState() {
+    if (!headerCheck) return;
+    const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check'));
+    if (visibleChecks.length === 0) {
+      headerCheck.checked = false;
+      headerCheck.indeterminate = false;
+      if (btnSelectAll) btnSelectAll.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    headerCheck.checked = checkedCount === visibleChecks.length;
+    headerCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+
+    if (btnSelectAll) {
+      btnSelectAll.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  // Filter Cascade logic
+  if (filterClass) {
+    filterClass.addEventListener('change', function () {
+      const cls = this.value;
+      if (filterModel) {
+        filterModel.querySelectorAll('option[data-class]').forEach(opt => {
+          opt.hidden = !!(cls && opt.dataset.class !== cls);
+        });
+        if (cls && filterModel.selectedIndex > 0 && filterModel.options[filterModel.selectedIndex].hidden) {
+          filterModel.value = '';
+        }
+      }
+      filterAssets();
+    });
+  }
+  if (filterModel) filterModel.addEventListener('change', filterAssets);
+  if (searchInput) searchInput.addEventListener('input', filterAssets);
+
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener('click', () => {
+      const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateHeaderCheckState();
+    });
+  }
+
+  if (headerCheck) {
+    headerCheck.addEventListener('change', function () {
+      const checked = this.checked;
+      availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnSelectAll) {
+        btnSelectAll.textContent = checked ? 'Deselect All' : 'Select All';
+      }
+    });
+  }
+
+  availBody.addEventListener('change', e => {
+    if (e.target.classList.contains('avail-check')) {
+      updateHeaderCheckState();
+    }
+  });
+
+  // Assign Selected
+  document.getElementById('btn-assign').addEventListener('click', () => {
+    availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:checked').forEach(cb => {
+      const row = cb.closest('.avail-row');
+      assignAsset(row);
+    });
+    window.updateCounts();
+  });
+
+  // Remove Selected
+  document.getElementById('btn-remove').addEventListener('click', () => {
+    if (confirm('Remove capability assignments for all selected assets?')) {
+      assignedBody.querySelectorAll('.assigned-row .remove-check:checked').forEach(cb => {
+        unassignAsset(cb.closest('.assigned-row'));
+      });
+      window.updateCounts();
+    }
+  });
+
+  function assignAsset(availRow) {
+    availRow.hidden = true;
+    availRow.dataset.assignedInSession = 'true';
+    availRow.querySelector('.avail-check').checked = false;
+
+    const empty = document.getElementById('assigned-empty');
+    if (empty) empty.remove();
+
+    const { id, name, serial, classId, modelId } = availRow.dataset;
+    const classText = availRow.cells[2].textContent.trim();
+    const modelText = availRow.cells[3].textContent.trim();
+
+    const tr = document.createElement('tr');
+    tr.className = 'assigned-row';
+    Object.assign(tr.dataset, { id, name, serial, classId, modelId, fromAvail: 'true' });
+    tr.innerHTML = `
+      <td><input type="checkbox" class="remove-check" aria-label="Select ${name} for removal"></td>
+      <td>
+        <strong>${name}</strong>
+        <span class="is-size-7 has-text-grey is-family-monospace ml-1">#${serial}</span>
+      </td>
+      <td>${classText}</td>
+      <td>${modelText}</td>
+      <td>
+        <input type="number" class="input is-small py-0 px-1" name="qty_${id}" value="1" min="1" style="height:1.75rem;border-radius:0;">
+      </td>
+      <td>
+        <input type="text" class="input is-small py-0 px-2" name="notes_${id}" value="" style="height:1.75rem;border-radius:0;" placeholder="Add notes…">
+      </td>
+      <td class="has-text-centered">
+        <input type="checkbox" name="active_${id}" checked aria-label="Is Active">
+      </td>
+      <td class="has-text-centered">
+        <button type="button" class="button is-small is-danger is-light p-1" onclick="if(confirm('Remove capability assignment for this asset?')) { unassignAsset(this.closest('.assigned-row')); updateCounts(); }" style="height:1.75rem;width:1.75rem;border-radius:0;">
+          <span class="icon" style="margin:0"><span class="material-icons" style="font-size:1.1rem">delete</span></span>
+        </button>
+      </td>`;
+    assignedBody.appendChild(tr);
+    filterAssets();
+    if (searchAssignedAssets) {
+      searchAssignedAssets.dispatchEvent(new Event('input'));
+    }
+  }
+
+  window.unassignAsset = function(assignedRow) {
+    const id = assignedRow.dataset.id;
+    const availRow = availBody.querySelector(`.avail-row[data-id="${id}"]`);
+    if (availRow) {
+      availRow.dataset.assignedInSession = 'false';
+      availRow.querySelector('.avail-check').checked = false;
+    }
+    assignedRow.remove();
+    if (!assignedBody.querySelector('.assigned-row')) {
+      const tr = document.createElement('tr');
+      tr.id = 'assigned-empty';
+      tr.innerHTML = '<td colspan="9" class="has-text-grey p-4 is-size-7 has-text-centered">No assets assigned yet.</td>';
+      assignedBody.appendChild(tr);
+    }
+    filterAssets();
+    if (searchAssignedAssets) {
+      searchAssignedAssets.dispatchEvent(new Event('input'));
+    }
+    updateAssignedHeaderCheckState();
+  };
+
+  /* Init */
+  filterAssets();
+  window.updateCounts();
+
+})();
+</script>
+{% endblock %}

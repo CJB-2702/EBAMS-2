@@ -35,6 +35,9 @@ class AssetModel(AuditFieldsMixin):
 
     is_active = models.BooleanField(default=True)
 
+    # No provisioning state lives here — it is tracked in a separate state table
+    # owned by the extensions app (P2 / E7). assets owns no such state.
+
     manufacturers = models.ManyToManyField(
         "assets.Manufacturer",
         through="assets.ModelManufacturer",

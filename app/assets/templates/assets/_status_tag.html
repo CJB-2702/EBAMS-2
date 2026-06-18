@@ -1,0 +1,14 @@
+{% comment %}Reusable status pill. Usage: {% include "assets/_status_tag.html" with value=asset.status %}{% endcomment %}
+{% if value == "Active" or value == "Operational" %}
+  <span class="tag is-success is-light is-small">{{ value }}</span>
+{% elif value == "Limited" or value == "Partial" or value == "partial" %}
+  <span class="tag is-warning is-light is-small">{{ value }}</span>
+{% elif value == "Down" %}
+  <span class="tag is-danger is-light is-small">{{ value }}</span>
+{% elif value == "Inactive" %}
+  <span class="tag is-light is-small has-text-grey">{{ value }}</span>
+{% elif value %}
+  <span class="tag is-light is-small">{{ value }}</span>
+{% else %}
+  <span class="has-text-grey-light">—</span>
+{% endif %}

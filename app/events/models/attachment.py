@@ -31,7 +31,8 @@ class AttachmentManager(models.Manager):
 
 class Attachment(AuditFieldsMixin, SoftDeleteMixin):
     """
-    Links a File to an ActivityThread. Optionally also linked to a specific Comment
+    Links a File to a thread row (Event, ActivityThread, or FileSet — all share
+    the `event` table). Optionally also linked to a specific Comment
     (comment_id non-null = comment attachment; comment_id null = standalone attachment).
 
     FK constraints:

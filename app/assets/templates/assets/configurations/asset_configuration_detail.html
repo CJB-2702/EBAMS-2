@@ -1,0 +1,60 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ asset.name }} - Configuration{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Configuration</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings_suggest</span></div>
+  <div><h1 class="page-title">{{ asset.name }} Configuration</h1><p class="page-subtitle">Current applied modifications and verification status.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'asset_configuration_edit' asset_id=asset.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Update Configuration</span></a></div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    {% if configuration %}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Configuration Status</div></div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column"><div class="label is-small has-text-grey mb-0">Template</div><div><a href="{% url 'config_template_detail' template_id=configuration.template.id %}">{{ configuration.template.name }}</a> Rev {{ configuration.template.revision }}</div></div>
+          <div class="column"><div class="label is-small has-text-grey mb-0">Verification Status</div><div>{% include "assets/_status_tag.html" with value=configuration.verification_status %}</div></div>
+          <div class="column"><div class="label is-small has-text-grey mb-0">Documented At</div><div>{{ configuration.documented_at|default:"—" }}</div></div>
+        </div>
+        <div class="mt-3"><div class="label is-small has-text-grey mb-0">Notes</div><div>{{ configuration.notes|default:"—" }}</div></div>
+      </div>
+    </div>
+    
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Actual Modifications ({{ configuration.actual_modifications|length }})</div></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Applied At</th><th>Applicability</th><th>Active</th></tr></thead>
+          <tbody>
+            {% for mod in configuration.actual_modifications %}
+            <tr>
+              <td class="is-family-monospace">{{ mod.modification.code }}</td>
+              <td><a href="{% url 'defined_modification_detail' modification_id=mod.modification.id %}">{{ mod.modification.name }}</a></td>
+              <td>{{ mod.modification.category }}</td>
+              <td>{{ mod.applied_at }}</td>
+              <td><span class="tag is-success is-light is-small" title="Passed the applicability gate when applied to this asset."><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span><span>Permitted</span></span></td>
+              <td>{% include "assets/_status_tag.html" with value=mod.is_active|yesno:"Active,Inactive" %}</td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="has-text-grey has-text-centered py-4">No modifications applied.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="notification is-light">
+      <p>This asset currently does not have a documented configuration.</p>
+      <div class="mt-3"><a href="{% url 'asset_configuration_edit' asset_id=asset.id %}" class="button is-small is-info">Establish Configuration</a></div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="body-rail">
+  </div>
+</div>
+{% endblock %}

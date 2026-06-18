@@ -6,3 +6,6 @@ class AssetsConfig(AppConfig):
     name = "app.assets"
     label = "assets"
     verbose_name = "Assets"
+
+    def ready(self) -> None:
+        pass

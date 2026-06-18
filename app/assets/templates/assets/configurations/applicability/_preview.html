@@ -1,0 +1,19 @@
+{% comment %}"Applies to" preview card. Server-renders the verdict for the saved
+lists (F5 path); JS in editor.html updates rows live as the author edits.{% endcomment %}
+<div class="pc" id="applies-preview">
+  <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>Applies to</div></div>
+  <div class="pc-body is-flush">
+    <table class="table is-fullwidth is-size-7" style="margin:0;"><tbody id="preview-rows">
+      {% for row in preview %}
+      <tr>
+        <td style="width:1.5rem;">
+          {% if row.allowed %}<span class="icon has-text-success"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+          {% else %}<span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">cancel</span></span>{% endif %}
+        </td>
+        <td><strong>{{ row.name }}</strong><br><span class="has-text-grey">{{ row.class_name }} · {{ row.model_name }}</span></td>
+        <td class="has-text-grey">{% if not row.allowed %}{{ row.reason }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody></table>
+  </div>
+</div>

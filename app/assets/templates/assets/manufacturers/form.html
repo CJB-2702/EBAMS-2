@@ -1,0 +1,28 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{% if mode == 'edit' %}Edit Manufacturer{% else %}New Manufacturer{% endif %}{% endblock %}
+{% block nav_manufacturers %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'manufacturer_index' %}">Manufacturers</a></li>
+{% if mode == 'edit' %}<li><a href="{% url 'manufacturer_detail' manufacturer_id=manufacturer.id %}">{{ manufacturer.name }}</a></li><li class="is-active"><a href="#">Edit</a></li>{% else %}<li class="is-active"><a href="#">New</a></li>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">{% if mode == 'edit' %}edit{% else %}add{% endif %}</span></div>
+  <div><h1 class="page-title">{% if mode == 'edit' %}Edit Manufacturer{% else %}New Manufacturer{% endif %}</h1></div></div></div></div>
+
+<form method="post" class="body-grid full-width">{% csrf_token %}
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturer</div></div>
+    <div class="pc-body"><div class="columns is-multiline">
+      <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ manufacturer.name|default:'' }}"></div>
+      <div class="column is-3"><label class="label is-small">Code</label><input class="input is-small is-family-monospace" name="code" value="{{ manufacturer.code|default:'' }}"></div>
+      <div class="column is-3"><label class="checkbox is-small mt-5"><input type="checkbox" name="is_active" {% if manufacturer.is_active or mode == 'create' %}checked{% endif %}> Active</label></div>
+      <div class="column is-9"><label class="label is-small">Website</label><input class="input is-small" name="website" value="{{ manufacturer.website|default:'' }}" placeholder="https://"></div>
+    </div></div>
+  </div>
+  <div class="field is-grouped">
+    <p class="control"><button type="submit" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button></p>
+    <p class="control"><a href="{% if mode == 'edit' %}{% url 'manufacturer_detail' manufacturer_id=manufacturer.id %}{% else %}{% url 'manufacturer_index' %}{% endif %}" class="button is-small is-light">Cancel</a></p>
+  </div>
+</form>
+{% endblock %}

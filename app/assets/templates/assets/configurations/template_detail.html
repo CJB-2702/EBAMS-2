@@ -1,0 +1,74 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ template.name }}{% endblock %}
+{% block nav_config_templates %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'config_template_index' %}">Config Templates</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ template.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+  <div><h1 class="page-title">{{ template.name }} <span class="tag is-light">Rev {{ template.revision }}</span></h1><p class="page-subtitle">Target Model: <a href="{% url 'model_detail' model_id=template.model.id %}">{{ template.model.display_name }}</a></p></div></div>
+  <div class="page-header-actions"><a href="{% url 'config_template_edit' template_id=template.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit Template</span></a></div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div class="body-grid-main">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity</div></div>
+      <div class="pc-body">
+        <div class="columns is-multiline">
+          <div class="column is-12"><div class="label is-small has-text-grey mb-0">Description</div><div>{{ template.description|default:"—" }}</div></div>
+          <div class="column is-6"><div class="label is-small has-text-grey mb-0">Status</div><div>{% include "assets/_status_tag.html" with value=template.is_active|yesno:"Active,Inactive" %}</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications ({{ template.modifications|length }})</div></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <thead><tr><th>Code</th><th>Name</th><th>Category</th></tr></thead>
+          <tbody>
+            {% for mod in template.modifications %}
+            <tr><td class="is-family-monospace">{{ mod.code }}</td><td><a href="{% url 'defined_modification_detail' modification_id=mod.id %}">{{ mod.name }}</a></td><td>{{ mod.category }}</td></tr>
+            {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">No modifications required.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Child Components ({{ template.children|length }})</div></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <thead><tr><th>Model</th><th>Qty</th><th>Required?</th></tr></thead>
+          <tbody>
+            {% for child in template.children %}
+            <tr><td><a href="{% url 'model_detail' model_id=child.child_model.id %}">{{ child.child_model.display_name }}</a></td><td>{{ child.quantity }}</td><td>{{ child.is_required|yesno:"Yes,No" }}</td></tr>
+            {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">No child components required.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Usage</div></div>
+      <div class="pc-body">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <span class="is-size-7 has-text-grey">Asset Assignments</span>
+          <a href="{% url 'asset_index' %}?template={{ template.id }}" class="tag is-light" title="View assets using this template">{{ asset_stats.total }}</a>
+        </div>
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <span class="is-size-7 has-text-grey">Verified</span>
+          <span class="tag is-success is-light">{{ asset_stats.verified }}</span>
+        </div>
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <span class="is-size-7 has-text-grey">Partial</span>
+          <span class="tag is-warning is-light">{{ asset_stats.partial }}</span>
+        </div>
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+          <span class="is-size-7 has-text-grey">Required Modifications</span>
+          <span class="tag is-light">{{ template.modifications|length }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

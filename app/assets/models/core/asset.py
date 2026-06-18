@@ -54,7 +54,7 @@ class Asset(AuditFieldsMixin):
     meter4 = models.FloatField(null=True, blank=True)
 
     photo_gallery = models.OneToOneField(
-        "events.ActivityThread",
+        "events.FileSet",
         on_delete=models.PROTECT,
         related_name="photo_gallery_asset",
     )
@@ -65,7 +65,8 @@ class Asset(AuditFieldsMixin):
     )
 
     tags = models.JSONField(null=True, blank=True)
-    detail_rows_created = models.JSONField(null=True, blank=True)
+    # No provisioning state lives here — it is tracked in a separate state table
+    # owned by the extensions app (P2 / E7). assets owns no such state.
 
     class Meta:
         db_table = "asset"

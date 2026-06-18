@@ -1,3 +1,4 @@
+{% load svg_tags %}
 <nav class="app-topnav" role="navigation" aria-label="Primary" {% if current_app_group %}current-application-group="{{ current_app_group }}" data-current-application-group="{{ current_app_group }}"{% endif %}>
   <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS</a>
 
@@ -13,6 +14,40 @@
           <div class="portal-dropdown-inner">
             <a href="{% url 'event_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
             <a href="{% url 'event_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Assets">
+        <button class="portal-tab-btn" commandfor="portal-assets" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="icon">{% svg "asset-icon" %}</span></span> Assets <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-assets" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Core</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'asset_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
+                <a href="{% url 'asset_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
+                <a href="{% url 'model_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Models</a>
+                <a href="{% url 'class_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Classes</a>
+                <a href="{% url 'manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Capabilities</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'capability_definition_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Definitions</a>
+                <a href="{% url 'asset_capability_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Configurations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'config_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
+                <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Modifications</a>
+              </div>
+            </div>
           </div>
         </div>
       </li>

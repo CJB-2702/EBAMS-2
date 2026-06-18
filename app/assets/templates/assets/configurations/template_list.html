@@ -1,0 +1,84 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}Config Templates{% endblock %}
+{% block nav_config_templates %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Config Templates</a></li>{% endblock %}
+
+{% block extra_head %}
+  <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+    <div><h1 class="page-title">Configuration Templates</h1><p class="page-subtitle">Baseline templates for required modifications and child components.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'config_template_builder' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Template</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+        Filters
+      </div>
+    </div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-variable is-2">
+          <div class="column is-4">
+            <label class="label is-small">Search Templates</label>
+            <div class="control">
+              <input class="input" type="search" name="q" value="{{ q }}" placeholder="Template Name or Description…">
+            </div>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Target Model</label>
+            <search-dropdown
+                id="model-search"
+                name="model"
+                placeholder="All Target Models"
+                value="{{ model_filter }}"
+                value-label="{{ selected_model.display_name }}"
+                hx-get="{% url 'model_index' %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search">
+            </search-dropdown>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Modification Included</label>
+            <search-dropdown
+                id="mod-search"
+                name="modification"
+                placeholder="All Modifications"
+                value="{{ modification_filter }}"
+                value-label="{{ selected_modification.name }}"
+                hx-get="{% url 'defined_modification_index' %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search">
+            </search-dropdown>
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-info is-fullwidth" type="submit">Apply</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Templates ({{ templates|length }})</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Template Name</th><th>Revision</th><th>Target Asset Model</th><th>Child Assets Required</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for t in templates %}
+        <tr>
+          <td><a href="{% url 'config_template_detail' template_id=t.id %}">{{ t.name }}</a></td>
+          <td>{{ t.revision }}</td>
+          <td>{{ t.model.display_name }}</td>
+          <td>{{ t.children|length }}</td>
+          <td>{% include "assets/_status_tag.html" with value=t.is_active|yesno:"Active,Inactive" %}</td>
+          <td class="has-text-right"><a href="{% url 'config_template_detail' template_id=t.id %}" class="button is-info is-light is-small"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="has-text-grey has-text-centered py-5">No templates.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

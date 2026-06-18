@@ -12,6 +12,7 @@ This file is the **concept anchor** for project architecture. It states the rule
 - **Class shape is encoded in the suffix.** Struct, Context, Factory, Handler, Manager, Policy, Validator, StateMachine, Narrator, Adaptor, Orchestrator. The suffix is a contract; reading a filename should tell you what the class does before you open it.
 - **Models hold schema, never logic.** Constraints, indexes, mixins, declarative metadata only. Workflow rules belong in handlers, contexts, and guards.
 - **Endpoints are thin.** Their job is to parse the request, call search or the control layer, and return a response. Templates choose density and HTMX variants via a single `format=` query parameter — never via parallel URLs.
+- **Read models (Structs) are built proactively.** A `*Struct` that clusters related rows for a screen is worth creating on **presentation need alone** — even when no control-layer or domain-layer code consumes it yet. Prefer a dedicated read model (and aggregate structs composed of smaller ones) over query soup in a view. See [Architecture/oop_control_patterns.md](Architecture/oop_control_patterns.md).
 
 ---
 

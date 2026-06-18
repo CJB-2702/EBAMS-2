@@ -51,6 +51,8 @@ Class names follow a fixed suffix vocabulary. Reading a filename tells you the s
 ### Struct
 **File naming:** `<item_name>_struct.py`. **Purpose:** Always loads the base row, validates it exists, optionally eager-loads related slices via `eager=True` or lazy loaders. Provides `to_dict()`. **Does not perform actions** — collects data only.
 
+**Build structs proactively — presentation need alone justifies one.** A Struct does **not** require a control-layer (write or domain) consumer to earn its place. Whenever the presentation layer has an obvious need to **cluster related rows for a screen** — a detail page, a panel, a timeline, a breadcrumb tree — prefer creating a dedicated `*Struct` read model over assembling ad-hoc queries inside the view, **even if nothing in the control layer calls it yet**. Read models are cheap, testable, and keep views thin; we would rather one already exist than have a view grow its own query soup. Prefer **composing** smaller structs into an aggregate (e.g. an `AssetThreeSixtyStruct` that gathers the capability, configuration, hierarchy, and timeline structs) for whole-page reads. When a struct must stay ignorant of another app (a one-way dependency, e.g. assets ↔ extensions), it composes only its own app's structs and leaves the foreign slice to an HTMX panel URL rather than importing across the boundary.
+
 ### Context
 **Purpose:** All control logic flows through a Context tied to a natural key (usually an id). Accepts an id and an optional `eager` flag. Loads the appropriate Struct as the single source of structured data for the session. Prefer domain verbs (`MaintenanceEventContext(id).add_comment(data)`) over raw ORM in callers. Contexts expose `from_struct()` so callers who already built the Struct can skip the usual init path and avoid duplicate queries.
 
@@ -78,6 +80,7 @@ Class names follow a fixed suffix vocabulary. Reading a filename tells you the s
 - **Convention over configuration.** Naming conventions replace frameworks; disciplined imports and import-time registries only where needed.
 - **Explicit over magical.** No metaclass tricks, no implicit transactions, no hidden side effects on attribute setters.
 - **Decomposition over consolidation.** Many small files over few large ones. When in doubt, **split**.
+- **Read models are first-class and proactive.** Build a **Struct** whenever a screen needs clustered rows, even with **no** write-side or domain-layer caller. A presentation-layer use case alone justifies a read model — don't wait for a control-layer consumer to materialize first.
 - **Domain verbs over CRUD verbs.** Methods are named after **business actions**, not database operations.
 - **Tech debt is greppable.** Undesired shortcuts use **`# DELIBERATE ANTI-PATTERN`** blocks (with context), not silent acceptance.
 - **One transaction per workflow.** Outer composition decides; inner calls cooperate with **`commit=False`** when appropriate.

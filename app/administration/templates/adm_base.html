@@ -94,9 +94,9 @@
       display: flex; align-items: center; gap: 0.65rem;
     }
     .page-hero .page-header-icon {
-      width: 2.4rem; height: 2.4rem;
+      width: 3rem; height: 3rem;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem;
+      font-size: 2rem;
     }
     .page-hero .page-title {
       font-size: 1.4rem; font-weight: 700; color: var(--bulma-text-strong); margin: 0; line-height: 1.1;
@@ -159,8 +159,6 @@
 
     {% block extra_css %}{% endblock %}
   </style>
-  <script defer src="{% static 'js/htmx.min.js' %}"></script>
-  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>

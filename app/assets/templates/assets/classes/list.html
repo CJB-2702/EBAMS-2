@@ -1,0 +1,41 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Asset Classes{% endblock %}
+{% block nav_classes %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Classes</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">category</span></div>
+    <div><h1 class="page-title">Asset Classes</h1><p class="page-subtitle">Formerly “Asset Types”. Scoped by data domain set.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'class_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Class</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="pc-body"><form method="get"><div class="columns is-vcentered">
+      <div class="column is-4"><input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search classes…"></div>
+      <div class="column is-3"><div class="select is-small is-fullwidth"><select name="category"><option value="">All categories</option>{% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select></div></div>
+      <div class="column is-3"><div class="select is-small is-fullwidth"><select name="domain"><option value="">All domains</option>{% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div></div>
+      <div class="column is-2"><button class="button is-small is-info" type="submit">Apply</button></div>
+    </div></form></div>
+  </div>
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Classes ({{ classes|length }})</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Name</th><th>Category</th><th>Domains</th><th>Models</th><th>Assets</th><th>Restricted?</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for c in classes %}
+        <tr>
+          <td><a href="{% url 'class_detail' class_id=c.id %}">{{ c.name }}</a></td>
+          <td>{{ c.category|default:"—" }}</td>
+          <td>{% for d in c.domains %}<span class="tag is-light is-small">{{ d.name }}</span> {% endfor %}</td>
+          <td>{{ c.model_count }}</td><td>{{ c.asset_count }}</td>
+          <td>{% if c.restrict_to_domain_set %}<span class="tag is-warning is-light is-small">yes</span>{% else %}<span class="has-text-grey-light">no</span>{% endif %}</td>
+          <td>{% include "assets/_status_tag.html" with value=c.is_active|yesno:"Active,Inactive" %}</td>
+          <td class="has-text-right"><a href="{% url 'class_detail' class_id=c.id %}" class="button is-info is-light is-small"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a></td>
+        </tr>
+        {% empty %}<tr><td colspan="8" class="has-text-grey has-text-centered py-5">No classes.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

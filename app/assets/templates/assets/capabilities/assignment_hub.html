@@ -1,0 +1,120 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Capabilities by {{ scope }}{% endblock %}
+{% block nav_cap_class %}{% if scope == 'Asset Class' %}is-active{% endif %}{% endblock %}
+{% block nav_cap_model %}{% if scope == 'Model' %}is-active{% endif %}{% endblock %}
+{% block nav_cap_asset %}{% if scope == 'Asset' %}is-active{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'capability_definition_index' %}">Capabilities</a></li>
+<li class="is-active"><a href="#">By {{ scope }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">{{ scope_icon }}</span></div>
+  <div><h1 class="page-title">Capabilities by {{ scope }}</h1><p class="page-subtitle">Assign capability definitions at the {{ scope|lower }} level.</p></div></div></div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+      <div class="pc-body"><form method="get"><div class="columns is-vcentered">
+        {% if scope == 'Asset' %}
+        <div class="column is-3"><input class="input is-small is-family-monospace" type="search" name="q" placeholder="Asset Name or Serial…" value="{{ q }}"></div>
+        <div class="column is-2">
+          <div class="select is-small is-fullwidth">
+            <select name="model">
+              <option value="">All Models</option>
+              {% for m in all_models %}
+              <option value="{{ m.id }}" {% if model == m.id|stringformat:'s' %}selected{% endif %}>{{ m.display_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% elif scope == 'Model' %}
+        <div class="column is-3">
+          <div class="select is-small is-fullwidth">
+            <select name="model">
+              <option value="">All Models</option>
+              {% for m in all_models %}
+              <option value="{{ m.id }}" {% if model == m.id|stringformat:'s' %}selected{% endif %}>{{ m.display_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-3">
+          <div class="select is-small is-fullwidth">
+            <select name="asset_class">
+              <option value="">All Classes</option>
+              {% for c in all_classes %}
+              <option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% elif scope == 'Asset Class' %}
+        <div class="column is-4">
+          <div class="select is-small is-fullwidth">
+            <select name="asset_class">
+              <option value="">All Classes</option>
+              {% for c in all_classes %}
+              <option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% endif %}
+        <div class="column is-3">
+          <div class="select is-small is-fullwidth">
+            <select name="definition">
+              <option value="">All Capabilities</option>
+              {% for d in definitions %}
+              <option value="{{ d.id }}" {% if definition == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-2">
+          <div class="select is-small is-fullwidth">
+            <select name="is_active">
+              <option value="">All Statuses</option>
+              <option value="True" {% if is_active == "True" %}selected{% endif %}>Active</option>
+              <option value="False" {% if is_active == "False" %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-1"><button class="button is-small is-info" type="submit">Apply</button></div>
+      </div></form></div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assignments ({{ rows|length }})</div></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>{{ target_label }}</th><th>Capability</th><th>Code</th>{% if show_qty %}<th>Qty</th><th>Notes</th>{% endif %}<th>Active</th><th class="has-text-right"></th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>{% if r.asset_class %}{{ r.asset_class.name }}{% elif r.model %}{{ r.model.display_name }}{% else %}{{ r.asset.name }}{% endif %}</td>
+            <td>{{ r.definition.name }}</td>
+            <td class="is-family-monospace">{{ r.definition.code }}</td>
+            {% if show_qty %}<td>{{ r.qty|default:"—" }}</td><td class="has-text-grey">{{ r.notes|default:"—" }}</td>{% endif %}
+            <td>{% include "assets/_status_tag.html" with value=r.is_active|yesno:"Active,Inactive" %}</td>
+            <td class="has-text-right"><form method="post" style="display:inline;">{% csrf_token %}<button class="button is-danger is-light is-small" name="remove" value="{{ r.id }}" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true">link_off</span></span></button></form></td>
+          </tr>
+          {% empty %}<tr><td colspan="6" class="has-text-grey has-text-centered py-5">No assignments.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_link</span></span>Assign</div></div>
+      <div class="pc-body"><form method="post">{% csrf_token %}
+        <label class="label is-small">{{ target_label }}</label>
+        <div class="select is-small is-fullwidth mb-2"><select name="target">{% for t in targets %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></div>
+        <label class="label is-small">Capability</label>
+        <div class="select is-small is-fullwidth mb-2"><select name="definition">{% for d in definitions %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+        {% if show_qty %}<label class="label is-small">Qty</label><input class="input is-small mb-2" name="qty" type="number" min="1" value="1">
+        <label class="label is-small">Notes</label><textarea class="textarea is-small mb-2" name="notes" rows="2"></textarea>{% endif %}
+        <button class="button is-small is-link is-fullwidth" type="submit">Assign</button>
+      </form></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

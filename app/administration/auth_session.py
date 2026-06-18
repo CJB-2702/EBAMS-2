@@ -16,19 +16,12 @@ def refresh_auth_in_session(request: HttpRequest, user: AbstractBaseUser) -> Non
     """Store active data domain ids and effective permission strings on the session."""
     from django.contrib.auth.models import AnonymousUser
 
-    from app.administration.models import UserDomain
-
     if not getattr(user, "is_active", True) or isinstance(user, AnonymousUser):
         request.session.pop(SESSION_KEY_DOMAIN_IDS, None)
         request.session.pop(SESSION_KEY_PERMISSION_CODENAMES, None)
         return
 
-    domain_ids = list(
-        UserDomain.objects.filter(
-            user=user,
-            is_active=True,
-        ).values_list("domain_id", flat=True),
-    )
+    domain_ids = list(user.get_all_domain_ids())
     perms = sorted(user.get_all_permissions())
     request.session[SESSION_KEY_DOMAIN_IDS] = domain_ids
     request.session[SESSION_KEY_PERMISSION_CODENAMES] = perms

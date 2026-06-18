@@ -1,0 +1,51 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ klass.name }}{% endblock %}
+{% block nav_classes %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'class_index' %}">Classes</a></li>
+<li class="is-active"><a href="#">{{ klass.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">category</span></div>
+    <div><h1 class="page-title">{{ klass.name }}</h1><p class="page-subtitle">{{ klass.category }} · {{ klass.model_count }} models · {{ klass.asset_count }} assets</p></div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'class_edit' class_id=klass.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
+    <a href="{% url 'extension_config_landing' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span><span>Extensions</span></a>
+  </div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Name</dt><dd>{{ klass.name }}</dd>
+        <dt>Category</dt><dd>{{ klass.category|default:"—" }}</dd>
+        <dt>Description</dt><dd>{{ klass.description|default:"—" }}</dd>
+        <dt>Restrict to Domains</dt><dd>{{ klass.restrict_to_domain_set|yesno:"Yes,No" }}</dd>
+        <dt>Active</dt><dd>{{ klass.is_active|yesno:"Yes,No" }}</dd>
+      </dl></div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>
+      <a href="{% url 'class_capability_index' %}" class="button is-small is-light">Manage</a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;"><thead><tr><th>Capability</th><th>Code</th><th>Active</th></tr></thead><tbody>
+        {% for c in klass.capabilities %}<tr><td>{{ c.definition.name }}</td><td class="is-family-monospace">{{ c.definition.code }}</td><td>{{ c.is_active|yesno:"Yes,No" }}</td></tr>
+        {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">None declared.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  </div>
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span>Metrics</div></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Models</dt><dd>{{ klass.model_count }}</dd>
+        <dt>Data Domains</dt><dd>{{ klass.domains|length }}</dd>
+      </dl></div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Extension Configuration</div>
+      <a href="{% url 'extension_config_landing' %}" class="button is-small is-light">Configure</a></div>
+      <div class="pc-body"><p class="has-text-grey is-size-7">Manage extension assignments in the <a href="{% url 'extension_config_landing' %}">Extension Configuration portal</a>.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

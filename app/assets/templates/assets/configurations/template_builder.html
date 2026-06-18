@@ -1,0 +1,93 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}Config Template Builder{% endblock %}
+{% block nav_config_templates %}is-active{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'config_template_index' %}">Config Templates</a></li>
+<li class="is-active"><a href="#" aria-current="page">Builder</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+  <div><h1 class="page-title">Template Builder</h1><p class="page-subtitle">Compose a new configuration template.</p></div></div></div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <form method="post" id="template-builder-form">{% csrf_token %}
+      <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity & Scope</div></div>
+        <div class="pc-body">
+          <div class="field"><label class="label is-small">Template Name</label><div class="control"><input class="input is-small" type="text" name="name" required placeholder="e.g. Cold Storage Forklift"></div></div>
+          <div class="columns">
+            <div class="column"><div class="field"><label class="label is-small">Revision</label><div class="control"><input class="input is-small" type="text" name="revision" value="A"></div></div></div>
+            <div class="column"><div class="field"><label class="label is-small">Target Asset Model</label><div class="control"><div class="select is-small is-fullwidth"><select name="model" required><option value="">Select a model...</option>{% for m in models %}<option value="{{ m.id }}">{{ m.model_name }}</option>{% endfor %}</select></div></div></div></div>
+          </div>
+          <div class="field"><label class="label is-small">Description</label><div class="control"><textarea class="textarea is-small" name="description" rows="2"></textarea></div></div>
+        </div>
+      </div>
+      <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications</div></div>
+        <div class="pc-body">
+          <p class="is-size-7 has-text-grey mb-3">Select the defined modifications that must be applied to assets matching this template.</p>
+          <dual-list-box>
+            <list-box slot="left" id="tmpl-mod-avail" label="Available">
+              <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+              <select slot="options" multiple>
+                {% for mod in modifications %}<option value="{{ mod.id }}">{{ mod.code }} — {{ mod.name }}</option>{% endfor %}
+              </select>
+            </list-box>
+            <div slot="controls">
+              <button type="button" class="button is-small" onclick="moveSel(listBox('tmpl-mod-avail'), listBox('tmpl-mod-sel'))" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span></button>
+              <button type="button" class="button is-small" onclick="moveSel(listBox('tmpl-mod-sel'), listBox('tmpl-mod-avail'))" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span></button>
+            </div>
+            <list-box slot="right" id="tmpl-mod-sel" label="Selected">
+              <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+              <select slot="options" multiple name="modifications"></select>
+            </list-box>
+          </dual-list-box>
+        </div>
+      </div>
+      <div class="pc"><div class="pc-header"><div class="pc-header-title">Child Components (BOM)</div></div>
+        <div class="pc-body">
+          <p class="is-size-7 has-text-grey mb-3">Mock Builder UI — Normally would dynamically add rows.</p>
+          <div class="columns is-vcentered">
+            <div class="column"><label class="label is-small">Child Model</label><div class="select is-small is-fullwidth"><select><option value="">Select component model...</option>{% for m in models %}<option value="{{ m.id }}">{{ m.model_name }}</option>{% endfor %}</select></div></div>
+            <div class="column is-3"><label class="label is-small">Quantity</label><input class="input is-small" type="number" value="1"></div>
+            <div class="column is-2 is-flex is-align-items-flex-end"><button class="button is-small is-light" type="button"><span class="icon"><span class="material-icons">add</span></span></button></div>
+          </div>
+        </div>
+      </div>
+      <div class="field is-grouped is-grouped-right mt-4">
+        <div class="control"><a href="{% url 'config_template_index' %}" class="button is-light">Cancel</a></div>
+        <div class="control"><button type="submit" class="button is-link">Save Template</button></div>
+      </div>
+    </form>
+  </div>
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Help</div></div>
+      <div class="pc-body is-size-7 content">
+        <p>A configuration template defines the <strong>as-designed</strong> state for an asset.</p>
+        <p>Assets are verified against this template during commissioning.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function moveOne(from, to, value, label) {
+  const opt = document.createElement('option'); opt.value = value; opt.textContent = label;
+  to.select.appendChild(opt);
+  from.select.querySelector('option[value="' + value + '"]')?.remove();
+}
+function moveSel(from, to) {
+  if (!from || !to) return;
+  from.selectedDicts().forEach(({value, label}) => moveOne(from, to, value, label));
+}
+document.getElementById('template-builder-form').addEventListener('submit', () => {
+  listBox('tmpl-mod-sel')?.selectAll();
+});
+</script>
+{% endblock %}

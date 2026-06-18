@@ -224,3 +224,12 @@
 :root[data-theme="dark"] .has-background-warning {
   color: #161616;
 }
+
+/* ── Mock Ribbon warning banner contrast fix ──────────────────────────────────
+   Ensure the prototype warning banner has a yellow background, black text, and
+   a dark yellow border in both light and dark mode, overriding inline styles. */
+.mock-ribbon {
+  background: #fdd13a !important;
+  color: #000000 !important;
+  border-color: #d9a400 !important;
+}

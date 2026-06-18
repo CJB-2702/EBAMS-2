@@ -48,6 +48,10 @@
   direction: ltr;
   font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
+  /* Constrain to em-square: prevents fallback text from expanding layout during font-display block period */
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
 }
 
 /* Material icon glyph naturally renders wider than 1em — constrain to em-square
@@ -258,7 +262,7 @@
 
 /* ── Portal tabs ── */
 .app-portals.tabs { flex: 1; height: 100%; margin-bottom: 0; border-bottom: none; overflow: visible; }
-.app-portals.tabs ul { height: 100%; border-bottom: none; flex-wrap: nowrap; padding: 0; margin: 0; list-style: none; display: flex; }
+.app-portals.tabs ul { height: 100%; border-bottom: none; flex-wrap: nowrap; padding: 0; margin: 0; list-style: none; display: flex; justify-content: flex-start; }
 .app-portals.tabs li { height: 100%; position: relative; }
 .app-portals.tabs li a,
 .app-portals.tabs li button.portal-tab-btn {
@@ -353,4 +357,33 @@
 .portal-dropdown-label {
   font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
   color: rgba(255,255,255,0.35); margin-bottom: 0.5rem;
+}
+
+/* ── Page header icon ── */
+.page-header-icon {
+  width: 3rem; height: 3rem;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bulma-link);
+  font-size: 3rem;
+}
+
+.page-header-icon .material-icons {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  line-height: 1;
+}
+
+/* ── App card icon ── */
+.app-card-icon {
+  font-size: 3rem;
+  margin-bottom: 0.25rem;
+  color: var(--bulma-link);
+}
+
+.app-card-icon .material-icons {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  line-height: 1;
 }

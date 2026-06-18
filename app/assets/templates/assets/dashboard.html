@@ -1,0 +1,90 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Assets Dashboard{% endblock %}
+{% block nav_dashboard %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Dashboard</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard</span></div>
+      <div>
+        <h1 class="page-title">Assets Dashboard</h1>
+        <p class="page-subtitle">Fleet overview across your data domains.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'asset_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Asset</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="stat-grid mb-5">
+  <div class="stat-tile"><div class="stat-value">{{ stats.total_assets }}</div><div class="stat-label">Total Assets</div></div>
+  <div class="stat-tile"><div class="stat-value">{{ stats.active_assets }}</div><div class="stat-label">Active</div></div>
+  <div class="stat-tile"><div class="stat-value">{{ stats.total_models }}</div><div class="stat-label">Models</div></div>
+  <div class="stat-tile"><div class="stat-value">{{ stats.total_classes }}</div><div class="stat-label">Classes</div></div>
+  <div class="stat-tile"><div class="stat-value">{{ stats.total_manufacturers }}</div><div class="stat-label">Manufacturers</div></div>
+</div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recent Assets</div>
+        <a href="{% url 'asset_index' %}" class="button is-small is-light">View all</a>
+      </div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <thead><tr><th>Asset</th><th>Class</th><th>Model</th><th>Domain</th><th>Status</th><th>Capability</th></tr></thead>
+          <tbody>
+            {% for a in stats.recent_assets %}
+            <tr>
+              <td><a href="{% url 'asset_detail' asset_id=a.id %}">{{ a.name }}</a><br><span class="is-family-monospace has-text-grey is-size-7">{{ a.serial_number }}</span></td>
+              <td>{{ a.asset_class.name }}</td>
+              <td>{{ a.model.display_name }}</td>
+              <td>{{ a.domain.name }}</td>
+              <td>{% include "assets/_status_tag.html" with value=a.status %}</td>
+              <td>{% include "assets/_status_tag.html" with value=a.capability_status %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">monitor_heart</span></span>Capability Status</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Operational</dt><dd><span class="tag is-success is-light is-small">{{ stats.operational }}</span></dd>
+          <dt>Limited</dt><dd><span class="tag is-warning is-light is-small">{{ stats.limited }}</span></dd>
+          <dt>Down</dt><dd><span class="tag is-danger is-light is-small">{{ stats.down }}</span></dd>
+        </dl>
+      </div>
+    </div>
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>By Data Domain</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          {% for row in stats.by_domain %}<dt>{{ row.domain.name }}</dt><dd>{{ row.count }}</dd>{% endfor %}
+        </dl>
+      </div>
+    </div>
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick Links</div></div>
+      <div class="pc-body">
+        <div class="buttons are-small">
+          <a href="{% url 'model_index' %}" class="button is-light is-fullwidth">Models</a>
+          <a href="{% url 'class_index' %}" class="button is-light is-fullwidth">Classes</a>
+          <a href="{% url 'config_template_index' %}" class="button is-light is-fullwidth">Configuration Templates</a>
+          <a href="{% url 'capability_definition_index' %}" class="button is-light is-fullwidth">Capabilities</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

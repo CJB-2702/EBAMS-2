@@ -1,0 +1,119 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}Configure {{ ctx.descriptor.label }}{% endblock %}
+{% block nav_config %}is-active{% endblock %}
+
+{% block breadcrumb %}
+  <li><a href="{% url 'extension_config_landing' %}">Configuration</a></li>
+  <li class="is-active"><a aria-current="page">{{ ctx.descriptor.label }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div>
+        <h1 class="page-title">{{ ctx.descriptor.label }}</h1>
+        <p class="page-subtitle">
+          Key: <code>{{ ctx.descriptor.key }}</code> ·
+          Target: {{ ctx.descriptor.target.value }} ·
+          Cardinality: {{ ctx.descriptor.cardinality.value }}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'extension_config_landing' %}" class="button is-light is-small">Back to Configuration</a>
+    </div>
+  </div>
+</div>
+
+<form method="post" action="{% url 'extension_assign_editor' ctx.descriptor.key %}">
+  {% csrf_token %}
+
+  {# ── Asset Class assignments ─────────────────────────────────────────── #}
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <span class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
+        Asset Classes
+      </span>
+    </div>
+    <div class="pc-body is-flush">
+      {% if ctx.asset_classes %}
+      <table class="table is-fullwidth" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Asset Class</th>
+            <th class="has-text-centered" style="width:8rem;">Enabled</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for asset_class in ctx.asset_classes %}
+          <tr>
+            <td>{{ asset_class.name }}</td>
+            <td class="has-text-centered">
+              {% if ctx.descriptor.target.value == "asset" %}
+                <input type="checkbox"
+                       name="asset_class_{{ asset_class.id }}_{{ ctx.descriptor.key }}"
+                       {% if asset_class.id in ctx.enabled_class_ids %}checked{% endif %}>
+              {% else %}
+                <input type="checkbox"
+                       name="model_ext_class_{{ asset_class.id }}_{{ ctx.descriptor.key }}"
+                       {% if asset_class.id in ctx.enabled_class_ids %}checked{% endif %}>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p class="has-text-grey p-4">No active asset classes found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Per-model override (ASSET-target only) ──────────────────────────── #}
+  {% if ctx.descriptor.target.value == "asset" and ctx.asset_models %}
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <span class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+        Per-Model Overrides
+      </span>
+      <span class="has-text-grey" style="font-size:0.78rem; font-weight:400;">
+        Individual model enablement (in addition to class-level assignment)
+      </span>
+    </div>
+    <div class="pc-body is-flush">
+      <table class="table is-fullwidth" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Class</th>
+            <th class="has-text-centered" style="width:8rem;">Enabled</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for model in ctx.asset_models %}
+          <tr>
+            <td>{{ model.model_name }}{% if model.subtype_name %} — {{ model.subtype_name }}{% endif %}</td>
+            <td><span class="tag is-light">{{ model.asset_class.name }}</span></td>
+            <td class="has-text-centered">
+              <input type="checkbox"
+                     name="model_{{ model.id }}_{{ ctx.descriptor.key }}"
+                     {% if model.id in ctx.enabled_model_ids %}checked{% endif %}>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <footer style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
+    <a href="{% url 'extension_config_landing' %}" class="button is-light">Cancel</a>
+    <button type="submit" class="button is-primary">Save Assignment</button>
+  </footer>
+</form>
+{% endblock %}

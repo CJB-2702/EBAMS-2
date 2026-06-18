@@ -1,0 +1,610 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{% if create %}New Definition{% else %}Edit {{ definition.name }}{% endif %}{% endblock %}
+{% block nav_cap_defs %}is-active{% endblock %}
+
+{% block extra_head %}
+<style>
+  .class-avail-scroll, .model-avail-scroll {
+    position: relative;
+  }
+  .class-avail-scroll table thead th, .model-avail-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bulma-table-background-color, var(--bulma-scheme-main));
+    z-index: 10;
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'capability_definition_index' %}">Capability Definitions</a></li>
+{% if create %}
+<li class="is-active"><a href="#">New</a></li>
+{% else %}
+<li><a href="{% url 'capability_definition_detail' definition_id=definition.id %}">{{ definition.name }}</a></li>
+<li class="is-active"><a href="#">Edit</a></li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap">
+    <div class="page-header-icon"><span class="material-icons" aria-hidden="true">checklist</span></div>
+    <div><h1 class="page-title">{% if create %}New Capability Definition{% else %}Edit {{ definition.name }}{% endif %}</h1>
+    {% if not create %}<p class="page-subtitle is-family-monospace">{{ definition.code }}</p>{% endif %}</div>
+  </div>
+  {% if not create %}
+  <div class="page-header-actions">
+    <a href="{% url 'asset_bulk_management' definition_id=definition.id %}" class="button is-link">
+      <span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span>
+      <span>Asset Bulk Management</span>
+    </a>
+  </div>
+  {% endif %}
+</div></div>
+
+<form method="post" class="body-grid full-width">{% csrf_token %}
+  <div class="columns is-variable is-4 mb-0">
+    <div class="column is-8">
+      <div class="pc" style="display: flex; flex-direction: column; height: 100%;"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Definition Details</div></div>
+        <div class="pc-body" style="flex: 1;"><div class="columns is-multiline">
+          <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ definition.name|default:'' }}"></div>
+          <div class="column is-3"><label class="label is-small">Code</label><input class="input is-small is-family-monospace" name="code" value="{{ definition.code|default:'' }}"></div>
+          <div class="column is-3"><label class="checkbox is-small mt-5"><input type="checkbox" name="is_active" {% if definition.is_active or create %}checked{% endif %}> Active</label></div>
+          <div class="column is-12"><label class="label is-small">Description</label><textarea class="textarea is-small" name="description" rows="2">{{ definition.description|default:'' }}</textarea></div>
+        </div></div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <a href="{% if create %}{% url 'capability_definition_index' %}{% else %}{% url 'capability_definition_detail' definition_id=definition.id %}{% endif %}" class="button is-small is-light">Cancel</a>
+          </div>
+          <button type="submit" class="button is-link card-footer-primary" style="border: none; border-radius: 0;">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save Changes</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+    {% if not create %}
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
+        <div class="pc-body" style="flex: 1;"><dl class="kv"><dt>Class uses</dt><dd>{{ definition.class_uses }}</dd><dt>Model uses</dt><dd>{{ definition.model_uses }}</dd><dt>Asset uses</dt><dd>{{ definition.asset_uses }}</dd></dl></div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not create %}
+  <h2 class="title is-6 mt-4 mb-2">Hierarchical Capability Assignments</h2>
+  
+  <!-- LEFT Heavy Assignment Card Pair 1: Asset Classes -->
+  <div class="columns is-variable is-4" id="class-assignment-row">
+    <!-- LEFT Card (2/3) — Available Classes -->
+    <div class="column is-8">
+      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
+            Available Asset Classes
+          </div>
+          <span class="is-size-7 has-text-grey"><span id="class-avail-count">0</span> shown</span>
+        </div>
+        <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+          <div class="control has-icons-left">
+            <input type="search" id="search-classes" class="input is-small" placeholder="Search classes by name or category…" autocomplete="off">
+            <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+          </div>
+        </div>
+        <div class="class-avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+          <table class="table is-fullwidth is-hoverable" style="margin:0">
+            <thead>
+              <tr>
+                <th style="width:2.5rem"><input type="checkbox" id="class-avail-header-check" aria-label="Select all visible"></th>
+                <th>Class Name</th>
+                <th>Category</th>
+                <th style="width:2.5rem"></th>
+              </tr>
+            </thead>
+            <tbody id="class-avail-body">
+              {% for cls in available_classes %}
+              <tr class="class-avail-row" data-id="{{ cls.id }}" data-name="{{ cls.name }}" data-category="{{ cls.category }}">
+                <td><input type="checkbox" class="class-avail-check" aria-label="Select {{ cls.name }}"></td>
+                <td>{{ cls.name }}</td>
+                <td>{{ cls.category }}</td>
+                <td><a href="{% url 'class_detail' class_id=cls.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries pl-0 pr-3">
+            <button type="button" id="btn-class-select-all" class="button is-small is-light">Select All</button>
+          </div>
+          <button type="button" id="btn-class-assign" class="button is-link card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Assign Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- RIGHT Card (1/3) — Assigned Classes -->
+    <div class="column">
+      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+            Assigned Classes
+          </div>
+          <span class="is-size-7 has-text-grey"><span id="class-assigned-count">0</span> applied</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;min-height:0">
+          <table class="table is-fullwidth is-hoverable" style="margin:0">
+            <tbody id="class-assigned-body">
+              {% for cls in assigned_classes %}
+              <tr class="class-assigned-row" data-id="{{ cls.id }}" data-name="{{ cls.name }}" data-category="{{ cls.category }}">
+                <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+                  <input type="hidden" name="assigned_classes" value="{{ cls.id }}">
+                  <span>{{ cls.name }}</span>
+                  <span class="tag is-light is-small ml-1">{{ cls.category }}</span>
+                </td>
+                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+                  <a href="{% url 'class_detail' class_id=cls.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size:1rem">open_in_new</span></span></a>
+                </td>
+                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+                  <input type="checkbox" class="class-remove-check" aria-label="Remove {{ cls.name }}">
+                </td>
+              </tr>
+              {% empty %}
+              <tr id="class-assigned-empty">
+                <td colspan="3" class="has-text-grey p-4 is-size-7">No classes assigned.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <footer class="card-footer" style="padding:0">
+          <button type="button" id="btn-class-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+            <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+            <span>Remove Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEFT Heavy Assignment Card Pair 2: Make Models -->
+  <div class="columns is-variable is-4 mt-5" id="model-assignment-row">
+    <!-- LEFT Card (2/3) — Available Models -->
+    <div class="column is-8">
+      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+            Available Make Models
+          </div>
+          <span class="is-size-7 has-text-grey"><span id="model-avail-count">0</span> shown</span>
+        </div>
+        <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+          <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
+            <div class="control has-icons-left" style="flex:1;min-width:140px">
+              <input type="search" id="search-models" class="input is-small" placeholder="Search models by name or manufacturer…" autocomplete="off">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+            </div>
+            <div class="select is-small">
+              <select id="filter-model-class" aria-label="Filter by asset class">
+                <option value="">All Classes</option>
+                {% for cls in available_classes|dictsort:"name"|default:assigned_classes %}
+                <option value="{{ cls.id }}">{{ cls.name }}</option>
+                {% endfor %}
+                {% if create or not available_classes %}
+                  <option value="1">Forklift</option>
+                  <option value="2">Excavator</option>
+                  <option value="3">Boom Lift</option>
+                {% endif %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="model-avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+          <table class="table is-fullwidth is-hoverable" style="margin:0">
+            <thead>
+              <tr>
+                <th style="width:2.5rem"><input type="checkbox" id="model-avail-header-check" aria-label="Select all visible"></th>
+                <th>Model Name</th>
+                <th>Class</th>
+                <th>Manufacturers</th>
+                <th style="width:2.5rem"></th>
+              </tr>
+            </thead>
+            <tbody id="model-avail-body">
+              {% for m in available_models %}
+              <tr class="model-avail-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                <td><input type="checkbox" class="model-avail-check" aria-label="Select {{ m.display_name }}"></td>
+                <td>{{ m.display_name }}</td>
+                <td>{{ m.asset_class.name }}</td>
+                <td>{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                <td><a href="{% url 'model_detail' model_id=m.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries pl-0 pr-3">
+            <button type="button" id="btn-model-select-all" class="button is-small is-light">Select All</button>
+          </div>
+          <button type="button" id="btn-model-assign" class="button is-link card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Assign Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- RIGHT Card (1/3) — Assigned Models -->
+    <div class="column">
+      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+            Assigned Models
+          </div>
+          <span class="is-size-7 has-text-grey"><span id="model-assigned-count">0</span> applied</span>
+        </div>
+        <div style="flex:1;overflow-y:auto;min-height:0">
+          <table class="table is-fullwidth is-hoverable" style="margin:0">
+            <tbody id="model-assigned-body">
+              {% for m in assigned_models %}
+              <tr class="model-assigned-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+                  <input type="hidden" name="assigned_models" value="{{ m.id }}">
+                  <span>{{ m.display_name }}</span>
+                  <span class="tag is-light is-small ml-1">{{ m.asset_class.name }}</span>
+                </td>
+                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+                  <a href="{% url 'model_detail' model_id=m.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size:1rem">open_in_new</span></span></a>
+                </td>
+                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+                  <input type="checkbox" class="model-remove-check" aria-label="Remove {{ m.display_name }}">
+                </td>
+              </tr>
+              {% empty %}
+              <tr id="model-assigned-empty">
+                <td colspan="3" class="has-text-grey p-4 is-size-7">No models assigned.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <footer class="card-footer" style="padding:0">
+          <button type="button" id="btn-model-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+            <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+            <span>Remove Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function() {
+  'use strict';
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+     1. Asset Class Assignment logic
+     ───────────────────────────────────────────────────────────────────────────── */
+  const classAvailBody = document.getElementById('class-avail-body');
+  const classAssignedBody = document.getElementById('class-assigned-body');
+  const classHeaderCheck = document.getElementById('class-avail-header-check');
+  const btnClassSelectAll = document.getElementById('btn-class-select-all');
+  const btnClassAssign = document.getElementById('btn-class-assign');
+  const btnClassRemove = document.getElementById('btn-class-remove');
+  const searchClasses = document.getElementById('search-classes');
+  const classAvailCount = document.getElementById('class-avail-count');
+  const classAssignedCount = document.getElementById('class-assigned-count');
+
+  if (!classAvailBody) return;
+
+  function updateClassCounts() {
+    if (classAssignedCount) classAssignedCount.textContent = classAssignedBody.querySelectorAll('.class-assigned-row').length;
+  }
+
+  function filterClasses() {
+    const query = searchClasses ? searchClasses.value.trim().toLowerCase() : '';
+    let totalPassing = 0;
+    classAvailBody.querySelectorAll('.class-avail-row').forEach(row => {
+      if (row.dataset.assignedInSession === 'true') {
+        row.hidden = true;
+        return;
+      }
+      const name = (row.dataset.name || '').toLowerCase();
+      const category = (row.dataset.category || '').toLowerCase();
+      const match = !query || name.includes(query) || category.includes(query);
+      row.hidden = !match;
+      if (match) totalPassing++;
+    });
+    if (classAvailCount) classAvailCount.textContent = totalPassing;
+    updateClassHeaderCheck();
+  }
+
+  function updateClassHeaderCheck() {
+    if (!classHeaderCheck) return;
+    const visibleChecks = Array.from(classAvailBody.querySelectorAll('.class-avail-row:not([hidden]) .class-avail-check'));
+    if (visibleChecks.length === 0) {
+      classHeaderCheck.checked = false;
+      classHeaderCheck.indeterminate = false;
+      if (btnClassSelectAll) btnClassSelectAll.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    classHeaderCheck.checked = checkedCount === visibleChecks.length;
+    classHeaderCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+    if (btnClassSelectAll) btnClassSelectAll.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+  }
+
+  if (searchClasses) searchClasses.addEventListener('input', filterClasses);
+
+  if (classHeaderCheck) {
+    classHeaderCheck.addEventListener('change', function() {
+      const checked = this.checked;
+      classAvailBody.querySelectorAll('.class-avail-row:not([hidden]) .class-avail-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnClassSelectAll) btnClassSelectAll.textContent = checked ? 'Deselect All' : 'Select All';
+    });
+  }
+
+  if (btnClassSelectAll) {
+    btnClassSelectAll.addEventListener('click', () => {
+      const visibleChecks = Array.from(classAvailBody.querySelectorAll('.class-avail-row:not([hidden]) .class-avail-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateClassHeaderCheck();
+    });
+  }
+
+  classAvailBody.addEventListener('change', e => {
+    if (e.target.classList.contains('class-avail-check')) {
+      updateClassHeaderCheck();
+    }
+  });
+
+  if (btnClassAssign) {
+    btnClassAssign.addEventListener('click', () => {
+      classAvailBody.querySelectorAll('.class-avail-row:not([hidden]) .class-avail-check:checked').forEach(cb => {
+        const row = cb.closest('.class-avail-row');
+        assignClass(row);
+      });
+      updateClassCounts();
+    });
+  }
+
+  if (btnClassRemove) {
+    btnClassRemove.addEventListener('click', () => {
+      classAssignedBody.querySelectorAll('.class-assigned-row .class-remove-check:checked').forEach(cb => {
+        unassignClass(cb.closest('.class-assigned-row'));
+      });
+      updateClassCounts();
+    });
+  }
+
+  function assignClass(availRow) {
+    availRow.hidden = true;
+    availRow.dataset.assignedInSession = 'true';
+    availRow.querySelector('.class-avail-check').checked = false;
+
+    const empty = document.getElementById('class-assigned-empty');
+    if (empty) empty.remove();
+
+    const { id, name, category } = availRow.dataset;
+    const tr = document.createElement('tr');
+    tr.className = 'class-assigned-row';
+    Object.assign(tr.dataset, { id, name, category });
+    tr.innerHTML = `
+      <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="hidden" name="assigned_classes" value="${id}">
+        <span>${name}</span>
+        <span class="tag is-light is-small ml-1">${category}</span>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+        <a href="/assets/classes/${id}/" target="_blank" class="has-text-grey" title="View details">
+          <span class="icon is-small"><span class="material-icons" style="font-size:1rem">open_in_new</span></span>
+        </a>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="checkbox" class="class-remove-check" aria-label="Remove ${name}">
+      </td>`;
+    classAssignedBody.appendChild(tr);
+    filterClasses();
+  }
+
+  function unassignClass(assignedRow) {
+    const id = assignedRow.dataset.id;
+    const availRow = classAvailBody.querySelector(`.class-avail-row[data-id="${id}"]`);
+    if (availRow) {
+      availRow.dataset.assignedInSession = 'false';
+      availRow.querySelector('.class-avail-check').checked = false;
+    }
+    assignedRow.remove();
+    if (!classAssignedBody.querySelector('.class-assigned-row')) {
+      const tr = document.createElement('tr');
+      tr.id = 'class-assigned-empty';
+      tr.innerHTML = '<td colspan="3" class="has-text-grey p-4 is-size-7">No classes assigned.</td>';
+      classAssignedBody.appendChild(tr);
+    }
+    filterClasses();
+  }
+
+
+  /* ─────────────────────────────────────────────────────────────────────────────
+     2. Make Model Assignment logic
+     ───────────────────────────────────────────────────────────────────────────── */
+  const modelAvailBody = document.getElementById('model-avail-body');
+  const modelAssignedBody = document.getElementById('model-assigned-body');
+  const modelHeaderCheck = document.getElementById('model-avail-header-check');
+  const btnModelSelectAll = document.getElementById('btn-model-select-all');
+  const btnModelAssign = document.getElementById('btn-model-assign');
+  const btnModelRemove = document.getElementById('btn-model-remove');
+  const searchModels = document.getElementById('search-models');
+  const filterModelClass = document.getElementById('filter-model-class');
+  const modelAvailCount = document.getElementById('model-avail-count');
+  const modelAssignedCount = document.getElementById('model-assigned-count');
+
+  if (!modelAvailBody) return;
+
+  function updateModelCounts() {
+    if (modelAssignedCount) modelAssignedCount.textContent = modelAssignedBody.querySelectorAll('.model-assigned-row').length;
+  }
+
+  function filterModels() {
+    const query = searchModels ? searchModels.value.trim().toLowerCase() : '';
+    const classFilter = filterModelClass ? filterModelClass.value : '';
+
+    let totalPassing = 0;
+    modelAvailBody.querySelectorAll('.model-avail-row').forEach(row => {
+      if (row.dataset.assignedInSession === 'true') {
+        row.hidden = true;
+        return;
+      }
+      const name = (row.dataset.name || '').toLowerCase();
+      const manufacturers = (row.dataset.manufacturers || '').toLowerCase();
+      const classId = row.dataset.classId || '';
+      
+      const textMatch = !query || name.includes(query) || manufacturers.includes(query);
+      const classMatch = !classFilter || classId === classFilter;
+      
+      const match = textMatch && classMatch;
+      row.hidden = !match;
+      if (match) totalPassing++;
+    });
+    if (modelAvailCount) modelAvailCount.textContent = totalPassing;
+    updateModelHeaderCheck();
+  }
+
+  function updateModelHeaderCheck() {
+    if (!modelHeaderCheck) return;
+    const visibleChecks = Array.from(modelAvailBody.querySelectorAll('.model-avail-row:not([hidden]) .model-avail-check'));
+    if (visibleChecks.length === 0) {
+      modelHeaderCheck.checked = false;
+      modelHeaderCheck.indeterminate = false;
+      if (btnModelSelectAll) btnModelSelectAll.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    modelHeaderCheck.checked = checkedCount === visibleChecks.length;
+    modelHeaderCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+    if (btnModelSelectAll) btnModelSelectAll.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+  }
+
+  if (searchModels) searchModels.addEventListener('input', filterModels);
+  if (filterModelClass) filterModelClass.addEventListener('change', filterModels);
+
+  if (modelHeaderCheck) {
+    modelHeaderCheck.addEventListener('change', function() {
+      const checked = this.checked;
+      modelAvailBody.querySelectorAll('.model-avail-row:not([hidden]) .model-avail-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnModelSelectAll) btnModelSelectAll.textContent = checked ? 'Deselect All' : 'Select All';
+    });
+  }
+
+  if (btnModelSelectAll) {
+    btnModelSelectAll.addEventListener('click', () => {
+      const visibleChecks = Array.from(modelAvailBody.querySelectorAll('.model-avail-row:not([hidden]) .model-avail-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateModelHeaderCheck();
+    });
+  }
+
+  modelAvailBody.addEventListener('change', e => {
+    if (e.target.classList.contains('model-avail-check')) {
+      updateModelHeaderCheck();
+    }
+  });
+
+  if (btnModelAssign) {
+    btnModelAssign.addEventListener('click', () => {
+      modelAvailBody.querySelectorAll('.model-avail-row:not([hidden]) .model-avail-check:checked').forEach(cb => {
+        const row = cb.closest('.model-avail-row');
+        assignModel(row);
+      });
+      updateModelCounts();
+    });
+  }
+
+  if (btnModelRemove) {
+    btnModelRemove.addEventListener('click', () => {
+      modelAssignedBody.querySelectorAll('.model-assigned-row .model-remove-check:checked').forEach(cb => {
+        unassignModel(cb.closest('.model-assigned-row'));
+      });
+      updateModelCounts();
+    });
+  }
+
+  function assignModel(availRow) {
+    availRow.hidden = true;
+    availRow.dataset.assignedInSession = 'true';
+    availRow.querySelector('.model-avail-check').checked = false;
+
+    const empty = document.getElementById('model-assigned-empty');
+    if (empty) empty.remove();
+
+    const { id, name, classId, manufacturers } = availRow.dataset;
+    const classText = availRow.cells[2].textContent.trim();
+    
+    const tr = document.createElement('tr');
+    tr.className = 'model-assigned-row';
+    Object.assign(tr.dataset, { id, name, classId, manufacturers });
+    tr.innerHTML = `
+      <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="hidden" name="assigned_models" value="${id}">
+        <span>${name}</span>
+        <span class="tag is-light is-small ml-1">${classText}</span>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+        <a href="/assets/models/${id}/" target="_blank" class="has-text-grey" title="View details">
+          <span class="icon is-small"><span class="material-icons" style="font-size:1rem">open_in_new</span></span>
+        </a>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="checkbox" class="model-remove-check" aria-label="Remove ${name}">
+      </td>`;
+    modelAssignedBody.appendChild(tr);
+    filterModels();
+  }
+
+  function unassignModel(assignedRow) {
+    const id = assignedRow.dataset.id;
+    const availRow = modelAvailBody.querySelector(`.model-avail-row[data-id="${id}"]`);
+    if (availRow) {
+      availRow.dataset.assignedInSession = 'false';
+      availRow.querySelector('.model-avail-check').checked = false;
+    }
+    assignedRow.remove();
+    if (!modelAssignedBody.querySelector('.model-assigned-row')) {
+      const tr = document.createElement('tr');
+      tr.id = 'model-assigned-empty';
+      tr.innerHTML = '<td colspan="3" class="has-text-grey p-4 is-size-7">No models assigned.</td>';
+      modelAssignedBody.appendChild(tr);
+    }
+    filterModels();
+  }
+
+
+  /* Initialize */
+  filterClasses();
+  updateClassCounts();
+  filterModels();
+  updateModelCounts();
+
+})();
+</script>
+{% endblock %}

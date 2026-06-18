@@ -1,0 +1,83 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}Extension Configuration{% endblock %}
+{% block nav_config %}is-active{% endblock %}
+
+{% block breadcrumb %}
+  <li class="is-active"><a href="{% url 'extension_config_landing' %}" aria-current="page">Configuration</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div>
+        <h1 class="page-title">Extension Configuration</h1>
+        <p class="page-subtitle">Assign extensions to asset classes and models. Assignments drive provisioning.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pc">
+  <div class="pc-header">
+    <span class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>
+      Registered Extensions
+    </span>
+  </div>
+  <div class="pc-body is-flush">
+    <table class="table is-fullwidth is-hoverable" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Extension</th>
+          <th>Target</th>
+          <th>Assigned to Classes</th>
+          <th>Assigned to Models</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for summary in catalog %}
+        <tr>
+          <td>
+            <strong>{{ summary.descriptor.label }}</strong>
+            <br><small class="has-text-grey">{{ summary.descriptor.key }}</small>
+          </td>
+          <td>
+            {% if summary.descriptor.target.value == "asset" %}
+              <span class="tag is-info is-light">Asset</span>
+            {% else %}
+              <span class="tag is-warning is-light">Model</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if summary.assigned_class_ids %}
+              <span class="tag is-success is-light">{{ summary.assigned_class_ids|length }} class{{ summary.assigned_class_ids|length|pluralize }}</span>
+            {% else %}
+              <span class="has-text-grey-light">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if summary.assigned_model_ids %}
+              <span class="tag is-success is-light">{{ summary.assigned_model_ids|length }} model{{ summary.assigned_model_ids|length|pluralize }}</span>
+            {% else %}
+              <span class="has-text-grey-light">—</span>
+            {% endif %}
+          </td>
+          <td class="has-text-right">
+            <a href="{% url 'extension_assign_editor' summary.descriptor.key %}" class="button is-small is-light">
+              Configure
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="has-text-centered has-text-grey py-4">No extensions registered.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

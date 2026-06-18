@@ -1,4 +1,4 @@
-{% load static %}
+{% load static svg_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,9 +104,14 @@
     /* ── App card grid ── */
     .app-card-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 1.25rem;
       margin-bottom: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .app-card-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .app-card {
       background: var(--bulma-scheme-main);
@@ -117,7 +122,7 @@
       gap: 0.65rem;
     }
     .app-card-icon {
-      font-size: 2rem;
+      font-size: 3rem;
       margin-bottom: 0.25rem;
       color: var(--bulma-link);
     }
@@ -189,6 +194,7 @@
 
       <p class="sidebar-section-label">Applications</p>
       <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
       <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
 
       <div class="sidebar-divider"></div>
@@ -225,7 +231,7 @@
         <div class="app-card-grid">
 
           <div class="app-card">
-            <div class="app-card-icon">↯</div>
+            <div class="app-card-icon"><span class="material-icons" aria-hidden="true">event</span></div>
             <h3>Events</h3>
             <p>Track and manage events across your domains — maintenance, inspections, calibrations, and more. Attach comments, files, and assign priorities.</p>
             <div class="app-card-links">
@@ -241,7 +247,27 @@
           </div>
 
           <div class="app-card">
-            <div class="app-card-icon">⚙</div>
+            <div class="app-card-icon" style="width:3rem;height:3rem;">{% svg "asset-icon" %}</div>
+            <h3>Assets</h3>
+            <p>Manage fleet inventory, asset classes, models, capability definitions, and configuration requirements. Track meter readings and model revisions.</p>
+            <div class="app-card-links">
+              <a href="{% url 'asset_dashboard' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>
+                <span>Dashboard</span>
+              </a>
+              <a href="{% url 'asset_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+                <span>All Assets</span>
+              </a>
+              <a href="{% url 'asset_create' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+                <span>New Asset</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="app-card">
+            <div class="app-card-icon"><span class="material-icons" aria-hidden="true">settings</span></div>
             <h3>Administration</h3>
             <p>Manage users, organizations, roles, permissions, and data domain access. Control <em>who can act</em> and <em>which rows they can see</em> across the system.</p>
             <div class="app-card-links">

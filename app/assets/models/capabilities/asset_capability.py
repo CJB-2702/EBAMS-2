@@ -17,6 +17,7 @@ class AssetCapability(AuditFieldsMixin):
         related_name="asset_links",
     )
     is_active = models.BooleanField(default=True)
+    qty = models.PositiveSmallIntegerField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
     class Meta:

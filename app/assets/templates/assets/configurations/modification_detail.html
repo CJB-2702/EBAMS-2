@@ -1,0 +1,96 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ modification.name }}{% endblock %}
+{% block nav_defined_modifications %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'defined_modification_index' %}">Defined Modifications</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ modification.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings_input_component</span></div>
+    <div><h1 class="page-title">{{ modification.name }}</h1>
+      <p class="page-subtitle is-family-monospace">{{ modification.code }}{% if modification.category %} · {{ modification.category }}{% endif %}</p></div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'defined_modification_edit' modification_id=modification.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
+    <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span><span>Edit Applicability</span></a>
+  </div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    {# ── Identity ── #}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div>
+        <a href="{% url 'defined_modification_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit details"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Code</dt><dd class="is-family-monospace">{{ modification.code }}</dd>
+        <dt>Name</dt><dd>{{ modification.name }}</dd>
+        <dt>Category</dt><dd>{{ modification.category|default:"—" }}</dd>
+        <dt>Description</dt><dd>{{ modification.description|default:"—" }}</dd>
+        <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=modification.is_active|yesno:"Active,Inactive" %}</dd>
+      </dl></div>
+    </div>
+
+    {# ── Applicability ── #}
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Applicability</div>
+        <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit applicability"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a>
+      </div>
+      <div class="pc-body">
+        <div class="mb-2">{% include "assets/_applicability_tag.html" with applicability=modification.applicability %}
+          <span class="is-size-7 has-text-grey ml-1">{{ modification.applicability.summary }}</span></div>
+        <p class="is-size-7 has-text-grey">{{ modification.applicability.mode_help }}</p>
+      </div>
+    </div>
+
+    {# ── Asset Classes ── #}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Asset Classes
+        {% if modification.applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
+        {% elif modification.applicability.class_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
+        {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
+      </div>
+      <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit asset classes"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Class</th><th>Category</th></tr></thead>
+        <tbody>
+          {% for c in modification.applicability.classes %}
+          <tr><td><a href="{% url 'class_detail' class_id=c.id %}">{{ c.name }}</a></td><td class="has-text-grey">{{ c.category|default:"—" }}</td></tr>
+          {% empty %}<tr><td colspan="2" class="has-text-grey has-text-centered py-4">No asset classes listed.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    {# ── Asset Models ── #}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Asset Models
+        {% if modification.applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
+        {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
+      </div>
+      <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit asset models"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Model</th><th>Asset Class</th></tr></thead>
+        <tbody>
+          {% for m in modification.applicability.models %}
+          <tr><td><a href="{% url 'model_detail' model_id=m.id %}">{{ m.display_name }}</a></td><td class="has-text-grey">{{ m.asset_class.name }}</td></tr>
+          {% empty %}<tr><td colspan="2" class="has-text-grey has-text-centered py-4">No asset models listed.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  {# ── Rail: usage stats ── #}
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Usage</div></div>
+      <div class="pc-body">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <span class="is-size-7 has-text-grey">Asset Assignments</span>
+          <a href="{% url 'asset_index' %}?modification={{ modification.id }}" class="tag is-light" title="View assets with this modification">{{ asset_count }}</a>
+        </div>
+        <div class="is-flex is-justify-content-space-between is-align-items-center">
+          <span class="is-size-7 has-text-grey">Templates</span>
+          <a href="{% url 'config_template_index' %}?modification={{ modification.id }}" class="tag is-light" title="View templates using this modification">{{ modification.template_uses }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

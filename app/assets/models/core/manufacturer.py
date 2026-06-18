@@ -8,7 +8,7 @@ class Manufacturer(AuditFieldsMixin):
 
     name = models.CharField(max_length=200, unique=True)
     code = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    website = models.URLField(null=True, blank=True)
+    website = models.URLField(null=True, unique=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:

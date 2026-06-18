@@ -1,0 +1,73 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ model.display_name }}{% endblock %}
+{% block nav_models %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'model_index' %}">Models</a></li>
+<li class="is-active"><a href="#">{{ model.display_name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></div>
+    <div><h1 class="page-title">{{ model.display_name }}</h1><p class="page-subtitle">{{ model.asset_class.name }} · {{ model.asset_count }} asset(s)</p></div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'model_edit' model_id=model.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
+    <a href="{% url 'extension_config_landing' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span><span>Extensions</span></a>
+  </div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Model Name</dt><dd>{{ model.model_name }}</dd>
+        <dt>Subtype</dt><dd>{{ model.subtype_name|default:"—" }}</dd>
+        <dt>Revision</dt><dd>{{ model.revision|default:"—" }}</dd>
+        <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=model.asset_class.id %}">{{ model.asset_class.name }}</a></dd>
+        <dt>Base Model</dt><dd>{% if model.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% else %}revision of {{ model.base.model_name }}{% endif %}</dd>
+        <dt>Meter Units</dt><dd>{% for u in model.meter_units %}<span class="tag is-light is-small">{{ u }}</span> {% empty %}—{% endfor %}</dd>
+        <dt>Active</dt><dd>{{ model.is_active|yesno:"Yes,No" }}</dd>
+      </dl></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>
+      <a href="{% url 'model_capability_index' %}" class="button is-small is-light">Manage</a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;"><thead><tr><th>Capability</th><th>Code</th><th>Active</th></tr></thead><tbody>
+        {% for c in model.capabilities %}<tr><td>{{ c.definition.name }}</td><td class="is-family-monospace">{{ c.definition.code }}</td><td>{{ c.is_active|yesno:"Yes,No" }}</td></tr>
+        {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">None declared.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Configuration Templates</div>
+      <a href="{% url 'config_template_builder' %}" class="button is-small is-light">New</a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;"><thead><tr><th>Template</th><th>Revision</th><th>Mods</th></tr></thead><tbody>
+        {% for t in model.templates %}<tr><td><a href="{% url 'config_template_detail' template_id=t.id %}">{{ t.name }}</a></td><td>{{ t.revision }}</td><td>{{ t.modifications|length }}</td></tr>
+        {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">No templates.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturers</div></div>
+      <div class="pc-body">{% for mf in model.manufacturers %}<a href="{% url 'manufacturer_detail' manufacturer_id=mf.id %}" class="is-block is-size-7">{{ mf.name }} <span class="has-text-grey">({{ mf.code }})</span></a>{% empty %}<span class="has-text-grey">—</span>{% endfor %}</div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data Domains</div></div>
+      <div class="pc-body">{% for d in model.domains %}<span class="tag is-light is-small">{{ d.name }}</span> {% endfor %}</div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Revisions</div></div>
+      <div class="pc-body">{% for r in model.revisions %}<a href="{% url 'model_detail' model_id=r.id %}" class="is-block is-size-7">Rev {{ r.revision }}</a>{% empty %}<span class="has-text-grey is-size-7">No downstream revisions.</span>{% endfor %}</div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Extensions</div>
+      <a href="{% url 'extension_config_landing' %}" class="button is-small is-light">Configure</a></div>
+      <div class="pc-body"
+           id="ext-panel-strip"
+           hx-get="{% url 'extension_panel_model' model.id %}?format=htmx-panel"
+           hx-trigger="load"
+           hx-target="#ext-panel-strip"
+           hx-select="#ext-panel-strip">
+        <p class="has-text-grey is-size-7">Loading…</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

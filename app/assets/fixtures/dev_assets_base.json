@@ -1,0 +1,47 @@
+[
+  {
+    "model": "assets.assetclass",
+    "pk": 1,
+    "fields": {
+      "name": "Forklift",
+      "description": "Powered industrial trucks for warehouse handling.",
+      "category": "Material Handling",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 2,
+    "fields": {
+      "name": "Excavator",
+      "description": "Tracked hydraulic digging machines.",
+      "category": "Heavy Equipment",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 3,
+    "fields": {
+      "name": "Boom Lift",
+      "description": "Self-propelled aerial work platforms.",
+      "category": "Aerial",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  }
+]

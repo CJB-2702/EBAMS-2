@@ -1,0 +1,40 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}{{ descriptor.label }} — Page Pending{% endblock %}
+
+{% block breadcrumb %}
+  <li><a href="{% url 'extension_summary' descriptor.key %}">{{ descriptor.label }}</a></li>
+  <li class="is-active"><a aria-current="page">{{ slot|title }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div>
+        <h1 class="page-title">{{ descriptor.label }}</h1>
+        <p class="page-subtitle">Slot: <code>{{ slot }}</code></p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'extension_config_landing' %}" class="button is-light is-small">Configuration</a>
+    </div>
+  </div>
+</div>
+
+<div class="pc">
+  <div class="pc-body" style="text-align:center; padding:3rem 1rem; color: var(--bulma-text-weak);">
+    <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.75rem;" aria-hidden="true">extension</span>
+    <p style="font-size:1rem; font-weight:600; color: var(--bulma-text);">Page body pending</p>
+    <p style="font-size:0.85rem; margin-top:0.4rem;">
+      The routing and slot for <strong>{{ descriptor.label }}</strong> (<code>{{ descriptor.key }}</code>) is wired.
+      This slot (<code>{{ slot }}</code>) will be implemented in a follow-on phase.
+    </p>
+    <dl class="kv mt-4" style="display:inline-grid; text-align:left; margin-top:1.5rem;">
+      <dt>Extension key</dt><dd>{{ descriptor.key }}</dd>
+      <dt>Target</dt><dd>{{ descriptor.target.value }}</dd>
+      <dt>Cardinality</dt><dd>{{ descriptor.cardinality.value }}</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

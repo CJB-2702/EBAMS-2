@@ -1,0 +1,71 @@
+{% extends "events/ev_base.html" %}
+
+{% block title %}Comment History{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'event_detail' hash=event_hash %}">{{ event.title }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Comment History</a></li>
+{% endblock %}
+{% block sidebar_events_active %}is-active{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">⟲</div>
+      <div>
+        <h1 class="page-title">Comment History</h1>
+        <p class="page-subtitle">{{ revision_count }} revision{{ revision_count|pluralize }} on this comment, newest first.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'event_detail' hash=event_hash %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to Event</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div style="max-width: 760px;">
+  {% for row in rows %}
+  <div class="pc mb-3 depth-1">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        Revision {{ row.comment.revision }}
+        {% if row.is_current %}
+        <span class="tag is-success is-light ml-2">Current</span>
+        {% else %}
+        <span class="tag is-light ml-2">Superseded</span>
+        {% endif %}
+      </div>
+      <span class="has-text-grey is-size-7">
+        {{ row.comment.created_by }} &middot;
+        <span class="is-family-monospace">{{ row.comment.created_at|date:"Y-m-d H:i" }}</span>
+      </span>
+    </div>
+    <div class="pc-body is-size-7">
+      <p style="white-space: pre-wrap;">{{ row.comment.content }}</p>
+
+      {% if row.attachments %}
+      <div class="mt-3">
+        <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Attachments</p>
+        <div class="tags">
+          {% for att in row.attachments %}
+          <a href="{% url 'file_download' file_id=att.file.id %}" class="tag is-light"
+             title="{{ att.file.original_filename }} ({{ att.file.file_size|filesizeformat }})">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true">attach_file</span></span>
+            <span>{{ att.file.original_filename }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <p class="is-size-7 has-text-grey">No revisions found for this comment.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

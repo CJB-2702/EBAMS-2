@@ -26,6 +26,11 @@ class ActivityThreadType(models.TextChoices):
     DOCUMENTATION = "documentation", "Documentation"
 
 
+# Sentinel written into Event-specific required fields for non-event thread rows.
+# Never displayed; signals "this row is not an event" to any raw-SQL reader.
+_THREAD_SENTINEL = "__thread__"
+
+
 class EventType(models.TextChoices):
     GENERIC = "generic", "Generic"
     SYSTEM = "system", "System"
@@ -75,13 +80,7 @@ class EventQuerySet(models.QuerySet):
 
     def visible_to(self, user) -> EventQuerySet:
         """Return events the user may see: in their domains OR created by them."""
-        from app.administration.models.data_ownership.user_assignments.user_domains import (
-            UserDomain,
-        )
-
-        user_domain_ids = UserDomain.objects.filter(
-            user=user, is_active=True
-        ).values_list("domain_id", flat=True)
+        user_domain_ids = user.get_all_domain_ids()
 
         return self.active().filter(
             models.Q(thread_type=ActivityThreadType.EVENT),
@@ -109,6 +108,15 @@ class AnyThreadManager(models.Manager):
     pass
 
 
+class FamilyThreadManager(models.Manager):
+    """Default manager for a thread proxy — restricts to the thread_types its
+    class owns (``_THREAD_TYPES``). The three surface families are disjoint, so
+    each proxy sees only its own rows and never another family's."""
+
+    def get_queryset(self) -> models.QuerySet:
+        return super().get_queryset().filter(thread_type__in=self.model._THREAD_TYPES)
+
+
 # ---------------------------------------------------------------------------
 # Concrete model
 # ---------------------------------------------------------------------------
@@ -123,6 +131,20 @@ class Event(AuditFieldsMixin, SoftDeleteMixin):
     # JOIN on every event read for three shared columns. The sentinel approach
     # keeps event fields required and meaningful on actual event rows without
     # polluting the schema with nullable columns.
+
+    # ── Behavior contract ────────────────────────────────────────────────────
+    # The class chosen at creation dictates behavior; callers NEVER pass the
+    # capability flags. This binds the semantic class name to a fixed behavior:
+    #   Event          → event rows,  comments ON,  direct attachments ON
+    #   ActivityThread → doc threads, comments ON,  direct attachments ON
+    #   FileSet        → file sets,   comments OFF, direct attachments ON
+    # Proxy subclasses override these five attributes; save() applies them.
+    # The families are disjoint so each proxy manager sees only its own rows.
+    _THREAD_TYPES = frozenset({ActivityThreadType.EVENT})
+    _DEFAULT_THREAD_TYPE = ActivityThreadType.EVENT
+    _ALLOW_COMMENTS = True
+    _ALLOW_DIRECT_ATTACHMENTS = True
+    _SENTINEL_FIELDS: tuple[tuple[str, str], ...] = ()
 
     # ── Thread fields — present and meaningful on every row ──────────────────
     thread_type = models.CharField(
@@ -181,6 +203,20 @@ class Event(AuditFieldsMixin, SoftDeleteMixin):
                 name="event_status_start_idx",
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        # Class choice drives behavior — the chosen surface class (Event /
+        # ActivityThread / FileSet) sets its thread_type family and capability
+        # flags here, so no caller ever passes them. Non-event proxies also
+        # fill the required Event string fields with a sentinel.
+        if self.thread_type not in self._THREAD_TYPES:
+            self.thread_type = self._DEFAULT_THREAD_TYPE
+        self.allow_comments = self._ALLOW_COMMENTS
+        self.allow_direct_attachments = self._ALLOW_DIRECT_ATTACHMENTS
+        for field_name, sentinel in self._SENTINEL_FIELDS:
+            if not getattr(self, field_name):
+                setattr(self, field_name, sentinel)
+        super().save(*args, **kwargs)
 
     def _soft_delete(self, actor=None) -> None:
         self.deleted_at = timezone.now()

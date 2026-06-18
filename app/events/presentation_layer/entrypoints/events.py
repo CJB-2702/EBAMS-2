@@ -24,11 +24,7 @@ def _resolve_event(hash_str: str) -> Event:
 
 
 def _check_domain_access(request, event: Event) -> bool:
-    from app.administration.models.data_ownership.user_assignments.user_domains import UserDomain
-    user_domain_ids = set(
-        UserDomain.objects.filter(user=request.user, is_active=True).values_list("domain_id", flat=True)
-    )
-    return event.domain_id in user_domain_ids or event.created_by == request.user
+    return event.domain_id in request.user.get_all_domain_ids() or event.created_by == request.user
 
 
 @require_http_methods(["GET"])
@@ -59,11 +55,15 @@ def event_index(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(["GET", "POST"])
 def event_create(request: HttpRequest) -> HttpResponse:
-    from app.administration.models.data_ownership.user_assignments.user_domains import UserDomain
+    from django.utils import timezone
 
-    user_domains = UserDomain.objects.filter(
-        user=request.user, is_active=True
-    ).select_related("domain").order_by("domain__name")
+    from app.administration.models.data_ownership.domains import Domain
+
+    user_domains = Domain.objects.filter(
+        pk__in=request.user.get_all_domain_ids()
+    ).order_by("name")
+
+    now_default = timezone.localtime().strftime("%Y-%m-%dT%H:%M")
 
     if request.method == "POST":
         handler = EventHandler(request.user)
@@ -75,6 +75,7 @@ def event_create(request: HttpRequest) -> HttpResponse:
             "errors": result.errors,
             "form_data": request.POST,
             "user_domains": user_domains,
+            "now_default": now_default,
             "status_choices": EventStatus.choices,
             "type_choices": EventType.choices,
             "priority_choices": EventPriority.choices,
@@ -82,6 +83,7 @@ def event_create(request: HttpRequest) -> HttpResponse:
 
     return render(request, "events/ev_create.html", {
         "user_domains": user_domains,
+        "now_default": now_default,
         "status_choices": EventStatus.choices,
         "type_choices": EventType.choices,
         "priority_choices": EventPriority.choices,

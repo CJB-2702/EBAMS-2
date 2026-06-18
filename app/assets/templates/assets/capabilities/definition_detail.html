@@ -1,0 +1,119 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ definition.name }}{% endblock %}
+{% block nav_cap_defs %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'capability_definition_index' %}">Capability Definitions</a></li>
+<li class="is-active"><a href="#">{{ definition.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap">
+    <div class="page-header-icon"><span class="material-icons" aria-hidden="true">checklist</span></div>
+    <div><h1 class="page-title">{{ definition.name }}</h1>
+    <p class="page-subtitle is-family-monospace">{{ definition.code }}</p></div>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'capability_definition_edit' definition_id=definition.id %}" class="button is-small is-link">
+      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+      <span>Edit</span>
+    </a>
+    <a href="{% url 'asset_bulk_management' definition_id=definition.id %}" class="button is-small is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span>
+      <span>Asset Bulk Management</span>
+    </a>
+  </div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Name</dt><dd>{{ definition.name }}</dd>
+          <dt>Code</dt><dd class="is-family-monospace">{{ definition.code }}</dd>
+          <dt>Active</dt><dd>{{ definition.is_active|yesno:"Yes,No" }}</dd>
+          <dt>Description</dt><dd>{{ definition.description|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+    
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Assigned Classes</div></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <thead>
+            <tr>
+              <th>Class Name</th>
+              <th>Category</th>
+              <th style="width:2.5rem"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cls in assigned_classes %}
+            <tr>
+              <td>{{ cls.name }}</td>
+              <td>{{ cls.category }}</td>
+              <td><a href="{% url 'class_detail' class_id=cls.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="has-text-grey has-text-centered py-4">No classes assigned.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Assigned Make Models</div></div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <thead>
+            <tr>
+              <th>Model Name</th>
+              <th>Class</th>
+              <th>Manufacturers</th>
+              <th style="width:2.5rem"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in assigned_models %}
+            <tr>
+              <td>{{ m.display_name }}</td>
+              <td>{{ m.asset_class.name }}</td>
+              <td>
+                {% for manufacturer in m.manufacturers %}
+                  {{ manufacturer.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              </td>
+              <td><a href="{% url 'model_detail' model_id=m.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="has-text-grey has-text-centered py-4">No models assigned.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Class uses</dt><dd>{{ definition.class_uses }}</dd>
+          <dt>Model uses</dt><dd>{{ definition.model_uses }}</dd>
+          <dt>Asset uses</dt><dd>{{ definition.asset_uses }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

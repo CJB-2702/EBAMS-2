@@ -1,0 +1,132 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ asset.name }} - Capabilities{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Capabilities</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">checklist</span></div>
+      <div>
+        <h1 class="page-title">{{ asset.name }} Capabilities</h1>
+        <p class="page-subtitle">Resolved capability inventory and direct asset assignments.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'asset_capabilities_edit' asset_id=asset.id %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Update Capabilities</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid has-rail">
+  <div>
+    <!-- Capability Status Metrics -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title">Capability Status Summary</div></div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column">
+            <div class="label is-small has-text-grey mb-0">Overall Status</div>
+            <div class="mt-1">{% include "assets/_status_tag.html" with value=asset.capability_status %}</div>
+          </div>
+          <div class="column">
+            <div class="label is-small has-text-grey mb-0">Resolved Count</div>
+            <div class="is-size-5 has-text-weight-bold mt-1">{{ asset.capabilities|length }}</div>
+          </div>
+          <div class="column">
+            <div class="label is-small has-text-grey mb-0">Asset Domain</div>
+            <div class="mt-1"><span class="tag is-light is-small">{{ asset.domain.name }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Resolved Capabilities Inventory -->
+    <div class="pc">
+      <div class="pc-header">
+        <div class="pc-header-title">Resolved Capabilities Inventory ({{ asset.capabilities|length }})</div>
+      </div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-striped is-hoverable is-size-7 mb-0">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Capability Name</th>
+              <th>Source</th>
+              <th>Qty</th>
+              <th>Notes / Inheritance</th>
+              <th>Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cap in asset.capabilities %}
+            <tr>
+              <td class="is-family-monospace">
+                <a href="{% url 'capability_definition_detail' definition_id=cap.definition.id %}">
+                  {{ cap.definition.code }}
+                </a>
+              </td>
+              <td>
+                <a href="{% url 'capability_definition_detail' definition_id=cap.definition.id %}" class="has-text-weight-semibold">
+                  {{ cap.definition.name }}
+                </a>
+              </td>
+              <td>
+                <span class="tag {% if cap.source == 'Asset' %}is-info is-light{% else %}is-light{% endif %} is-small">
+                  {{ cap.source }}
+                </span>
+              </td>
+              <td>{{ cap.qty|default:"—" }}</td>
+              <td>
+                {% if cap.source == "Asset" %}
+                  <span class="has-text-weight-medium">{{ cap.notes|default:"—" }}</span>
+                {% else %}
+                  <span class="has-text-grey">Inherited from Asset {{ cap.source }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% include "assets/_status_tag.html" with value=cap.is_active|yesno:"Active,Inactive" %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="has-text-grey has-text-centered py-5">
+                This asset currently has no resolved or assigned capabilities.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <div class="body-rail">
+    <!-- Quick Specs info card -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Asset Specifications</div></div>
+      <div class="pc-body">
+        <dl class="kv">
+          <dt>Serial Number</dt>
+          <dd class="is-family-monospace">{{ asset.serial_number }}</dd>
+          <dt>Asset Class</dt>
+          <dd>{{ asset.asset_class.name }}</dd>
+          <dt>Model</dt>
+          <dd>{{ asset.model.display_name }}</dd>
+          <dt>Status</dt>
+          <dd>{% include "assets/_status_tag.html" with value=asset.status %}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

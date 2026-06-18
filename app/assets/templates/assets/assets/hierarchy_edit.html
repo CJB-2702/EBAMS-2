@@ -1,0 +1,83 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Manage Hierarchy: {{ asset.name }}{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Hierarchy</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+      <div>
+        <h1 class="page-title">Manage Hierarchy: {{ asset.name }}</h1>
+        <p class="page-subtitle is-family-monospace">Organize the parent-child relationships for this asset.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'asset_detail' asset_id=asset.id %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to Asset</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Current Lineage</div>
+    </div>
+    <div class="pc-body">
+      <dl class="kv">
+        <dt>Root Asset</dt>
+        <dd>{% if asset.root_asset %}{{ asset.root_asset.name }}{% else %}<span class="has-text-grey-light">self</span>{% endif %}</dd>
+        <dt>Parent Asset</dt>
+        <dd>{% if asset.parent_asset %}{{ asset.parent_asset.name }}{% else %}<span class="has-text-grey-light">—</span>{% endif %}</dd>
+        <dt>Children</dt>
+        <dd>
+          {% if asset.children %}
+          <ul>
+            {% for c in asset.children %}<li>{{ c.name }}</li>{% endfor %}
+          </ul>
+          {% else %}
+          <span class="has-text-grey-light">None</span>
+          {% endif %}
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>Assign Parent</div>
+    </div>
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label">Select Parent Asset</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="parent_id">
+                <option value="">-- No Parent (Make Root) --</option>
+                {% for a in all_assets %}
+                <option value="{{ a.id }}" {% if asset.parent_asset and asset.parent_asset.id == a.id %}selected{% endif %}>{{ a.name }} ({{ a.serial_number }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <p class="help">Assigning a parent will attach this asset as a child.</p>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button type="submit" class="button is-link">Update Hierarchy</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

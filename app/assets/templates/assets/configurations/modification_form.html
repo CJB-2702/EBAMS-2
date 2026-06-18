@@ -1,0 +1,43 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{% if create %}New Modification{% else %}Edit {{ modification.name }}{% endif %}{% endblock %}
+{% block nav_defined_modifications %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'defined_modification_index' %}">Defined Modifications</a></li>
+{% if create %}
+<li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% else %}
+<li><a href="{% url 'defined_modification_detail' modification_id=modification.id %}">{{ modification.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings_input_component</span></div>
+  <div><h1 class="page-title">{% if create %}New Modification{% else %}Edit {{ modification.name }}{% endif %}</h1></div></div></div></div>
+
+<div class="body-grid full-width">
+  <form method="post">{% csrf_token %}
+    <div class="pc"><div class="pc-header"><div class="pc-header-title">Details</div></div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column is-4"><div class="field"><label class="label is-small">Code</label><div class="control"><input class="input is-small is-family-monospace" type="text" name="code" value="{{ modification.code }}" required {% if not create %}readonly{% endif %}></div></div></div>
+          <div class="column"><div class="field"><label class="label is-small">Name</label><div class="control"><input class="input is-small" type="text" name="name" value="{{ modification.name }}" required></div></div></div>
+        </div>
+        <div class="field"><label class="label is-small">Category</label><div class="control"><input class="input is-small" type="text" name="category" value="{{ modification.category }}" required></div></div>
+        <div class="field"><label class="label is-small">Description</label><div class="control"><textarea class="textarea is-small" name="description" rows="3">{{ modification.description }}</textarea></div></div>
+        <div class="field"><label class="checkbox is-size-7"><input type="checkbox" name="is_active" {% if create or modification.is_active %}checked{% endif %}> Active</label></div>
+      </div>
+    </div>
+
+    {% if not create %}
+    <p class="is-size-7 has-text-grey mt-2"><span class="icon-text"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span><span>Where this modification may be applied is managed on the <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}">applicability editor</a>.</span></span></p>
+    {% endif %}
+
+    <div class="field is-grouped is-grouped-right mt-4">
+      <div class="control"><a href="{% if create %}{% url 'defined_modification_index' %}{% else %}{% url 'defined_modification_detail' modification_id=modification.id %}{% endif %}" class="button is-light">Cancel</a></div>
+      <div class="control"><button type="submit" class="button is-link">Save Modification</button></div>
+    </div>
+  </form>
+</div>
+{% endblock %}

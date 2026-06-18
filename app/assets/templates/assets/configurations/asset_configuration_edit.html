@@ -1,0 +1,549 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}{{ asset.name }} - Edit Configuration{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Compatibility column — only visible when table has .show-compat */
+  #avail-table:not(.show-compat) .cell-compat { display: none; }
+
+  /* Incompatible rows — dampened appearance */
+  #avail-body .avail-row.is-incompatible {
+    opacity: 0.45;
+    background: var(--bulma-scheme-main-bis);
+  }
+  #avail-body .avail-row.is-incompatible:hover { opacity: 0.65; }
+
+  /* Taller cells */
+  #avail-table td, #avail-table th { padding: 0.65rem 0.75rem; vertical-align: middle; }
+
+  /* Sticky header configuration */
+  #avail-scroll {
+    position: relative;
+  }
+  #avail-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bulma-table-background-color, var(--bulma-scheme-main));
+    z-index: 10;
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li><a href="{% url 'asset_configuration_detail' asset_id=asset.id %}">Configuration</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap">
+    <div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings_suggest</span></div>
+    <div><h1 class="page-title">Update Configuration</h1><p class="page-subtitle">Document the actual modifications applied to {{ asset.name }}.</p></div>
+  </div>
+  <div class="page-header-actions">
+    <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+      <span>Back to Configuration</span>
+    </a>
+  </div>
+</div></div>
+
+<div class="body-grid full-width">
+  <form method="post" id="config-form">{% csrf_token %}
+
+    <!-- Base Template -->
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title">Base Template</div></div>
+      <div class="pc-body">
+        <div class="columns">
+          <div class="column is-8">
+            <div class="columns">
+              <div class="column">
+                <label class="label is-small">Design Template</label>
+                <div class="select is-small is-fullwidth"><select name="template">
+                  <option value="">No template assigned</option>
+                  {% for t in templates %}
+                    <option value="{{ t.id }}" {% if configuration.template.id == t.id %}selected{% endif %}>{{ t.name }} (Rev {{ t.revision }})</option>
+                  {% endfor %}
+                </select></div>
+              </div>
+              <div class="column">
+                <label class="label is-small">Verification Status</label>
+                <div class="select is-small is-fullwidth"><select name="verification_status">
+                  <option value="unverified" {% if configuration.verification_status == 'unverified' %}selected{% endif %}>Unverified</option>
+                  <option value="partial" {% if configuration.verification_status == 'partial' %}selected{% endif %}>Partial</option>
+                  <option value="verified" {% if configuration.verification_status == 'verified' %}selected{% endif %}>Verified</option>
+                </select></div>
+              </div>
+            </div>
+            <div class="field mt-2"><label class="label is-small">Notes</label><div class="control"><textarea class="textarea is-small" name="notes" rows="2">{{ configuration.notes }}</textarea></div></div>
+          </div>
+          <div class="column is-4" style="border-left:1px solid var(--bulma-border);padding-left:1.25rem">
+            <label class="label is-small">Template Default Modifications</label>
+            {% if configuration.template.modifications %}
+              <ul class="is-size-7" style="list-style:none;padding:0;margin:0">
+                {% for mod in configuration.template.modifications %}
+                  <li class="mb-1"><span class="tag is-light is-small mr-1">{{ mod.code }}</span>{{ mod.name }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="is-size-7 has-text-grey">No modifications defined in this template.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <footer class="card-footer custom-card-footer">
+        <div class="card-footer-secondaries"></div>
+        <button type="submit" class="button is-link card-footer-primary">Save Configuration</button>
+      </footer>
+    </div>
+
+    <!-- Actual Modifications — two cards in a row -->
+    <div class="columns is-variable is-4" id="mod-assignment-row">
+
+      <!-- LEFT card 2/3 — available modifications -->
+      <div class="column is-8">
+        <div class="pc" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">build</span></span>
+              Available Modifications
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="avail-count"></span> shown</span>
+          </div>
+
+          <!-- Filter + search bar -->
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
+              <!-- Text search -->
+              <div class="control has-icons-left" style="flex:1;min-width:140px">
+                <input type="search" id="search-mods" class="input is-small" placeholder="Search name or model…" autocomplete="off">
+                <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+              </div>
+              <!-- Class dropdown -->
+              <div class="select is-small">
+                <select id="filter-class" aria-label="Filter by asset class">
+                  <option value="">All Classes</option>
+                  {% for cls in asset_class_options %}
+                  <option value="{{ cls.id }}">{{ cls.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Model dropdown -->
+              <div class="select is-small">
+                <select id="filter-model" aria-label="Filter by model">
+                  <option value="">All Models</option>
+                  {% for m in model_options %}
+                  <option value="{{ m.id }}" data-class="{{ m.asset_class }}">{{ m.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <!-- Incompatible toggle -->
+              <button type="button" id="btn-show-incompat" class="button is-small is-light" title="Show modifications that cannot be applied to this asset">
+                <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">visibility_off</span></span>
+                <span class="btn-incompat-label">Incompatible</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable table container -->
+          <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+            <table id="avail-table" class="table is-fullwidth is-hoverable" style="margin:0">
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"><input type="checkbox" id="avail-header-check" aria-label="Select all visible"></th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Model</th>
+                  <th class="cell-compat has-text-centered" style="width:3rem" title="Compatibility with {{ asset.asset_class.name }} · {{ asset.model.model_name }}">Status</th>
+                  <th style="width:2.5rem"></th>
+                </tr>
+              </thead>
+              <tbody id="avail-body">
+                {% for mod in modifications_available %}
+                <tr class="avail-row{% if not mod.allowed %} is-incompatible{% endif %}"
+                    data-mod-id="{{ mod.id }}"
+                    data-name="{{ mod.name }}"
+                    data-code="{{ mod.code }}"
+                    data-desc="{{ mod.description }}"
+                    data-mode="{{ mod.applicability_mode }}"
+                    data-compatible="{{ mod.allowed|yesno:'true,false' }}"
+                    data-block-reason="{{ mod.block_reason|default:'' }}"
+                    data-class-ids="{{ mod.applicability.class_ids|join:',' }}"
+                    data-model-ids="{{ mod.applicability.model_ids|join:',' }}"
+                    data-detail-url="{% url 'defined_modification_detail' modification_id=mod.id %}">
+                  <td>
+                    {% if mod.allowed %}
+                    <input type="checkbox" class="avail-check" aria-label="Select {{ mod.name }}">
+                    {% else %}
+                    <input type="checkbox" class="avail-check" disabled aria-label="{{ mod.name }} — not compatible">
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span title="{{ mod.description }}">{{ mod.name }}</span>
+                    <span class="tag is-light is-family-monospace ml-1">{{ mod.code }}</span>
+                  </td>
+                  <td class="cell-class has-text-grey">
+                    {% if mod.applicability.class_objs %}{% for c in mod.applicability.class_objs %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="has-text-grey-light">Any</span>{% endif %}
+                  </td>
+                  <td class="cell-model has-text-grey">
+                    {% if mod.applicability.model_objs %}{% for m in mod.applicability.model_objs %}{{ m.display_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}<span class="has-text-grey-light">Any</span>{% endif %}
+                  </td>
+                  <td class="cell-compat has-text-centered">
+                    {% if mod.allowed %}
+                    <span class="icon has-text-success" title="Compatible with this asset"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem">check_circle</span></span>
+                    {% else %}
+                    <span class="icon has-text-danger" title="{{ mod.block_reason }}"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem">cancel</span></span>
+                    {% endif %}
+                  </td>
+                  <td class="has-text-centered">
+                    <a href="{% url 'defined_modification_detail' modification_id=mod.id %}"
+                       class="has-text-grey"
+                       title="View modification definition"
+                       target="_blank" rel="noopener">
+                      <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem">open_in_new</span></span>
+                    </a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% if not modifications_available %}
+            <p class="is-size-7 has-text-grey p-3">No modifications available for this asset.</p>
+            {% endif %}
+            <!-- Infinite scroll sentinel -->
+            <div id="scroll-sentinel" class="has-text-centered py-3" hidden>
+              <span class="is-size-7 has-text-grey">Loading more…</span>
+            </div>
+          </div>
+
+          <!-- Left card footer -->
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries pl-0 pr-3">
+              <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
+            </div>
+            <button type="button" id="btn-assign" class="button is-link card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+              <span>Assign Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+
+      <!-- RIGHT card 1/3 — assigned modifications -->
+      <div class="column">
+        <div class="pc" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+              Applied to This Asset
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="assigned-count">{{ modifications_assigned|length }}</span> applied</span>
+          </div>
+
+          <!-- Assigned list -->
+          <div style="flex:1;overflow-y:auto;min-height:0">
+            <table class="table is-fullwidth is-hoverable" style="margin:0">
+              <tbody id="assigned-body">
+                {% for mod in modifications_assigned %}
+                <tr class="assigned-row"
+                    data-mod-id="{{ mod.id }}"
+                    data-name="{{ mod.name }}"
+                    data-code="{{ mod.code }}"
+                    data-desc="{{ mod.description }}">
+                  <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+                    <input type="hidden" name="modifications" value="{{ mod.id }}">
+                    <span title="{{ mod.description }}">{{ mod.name }}</span>
+                    <span class="tag is-light is-family-monospace ml-1">{{ mod.code }}</span>
+                  </td>
+                  <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+                    <a href="{% url 'defined_modification_detail' modification_id=mod.id %}"
+                       class="has-text-grey"
+                       title="View definition"
+                       target="_blank" rel="noopener">
+                      <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem">open_in_new</span></span>
+                    </a>
+                  </td>
+                  <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+                    <input type="checkbox" class="remove-check" aria-label="Remove {{ mod.name }}">
+                  </td>
+                </tr>
+                {% empty %}
+                <tr id="assigned-empty">
+                  <td colspan="3" class="has-text-grey p-4 is-size-7">No modifications assigned yet.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Right card footer -->
+          <footer class="card-footer" style="padding:0">
+            <button type="button" id="btn-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+              <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+              <span>Remove Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+
+    </div>
+
+  </form>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const PAGE_SIZE = 8;
+  let revealedCount  = PAGE_SIZE;
+  let showIncompat   = false;
+  let searchQuery    = '';
+
+  const filterClass    = document.getElementById('filter-class');
+  const filterModel    = document.getElementById('filter-model');
+  const searchInput    = document.getElementById('search-mods');
+  const btnIncompat    = document.getElementById('btn-show-incompat');
+  const availTable     = document.getElementById('avail-table');
+  const availBody      = document.getElementById('avail-body');
+  const assignedBody   = document.getElementById('assigned-body');
+  const availScroll    = document.getElementById('avail-scroll');
+  const sentinel       = document.getElementById('scroll-sentinel');
+  const availCountEl   = document.getElementById('avail-count');
+  const assignedCountEl = document.getElementById('assigned-count');
+  const headerCheck    = document.getElementById('avail-header-check');
+  const btnSelectAll   = document.getElementById('btn-select-all');
+
+  /* ── Counts ── */
+  function updateAssignedCount() {
+    if (assignedCountEl) assignedCountEl.textContent = assignedBody.querySelectorAll('.assigned-row').length;
+  }
+
+  /* ── Core filter predicate ── */
+  function rowPassesFilters(row) {
+    if (row.dataset.assignedInSession === 'true') return false;
+
+    const compatible = row.dataset.compatible !== 'false';
+    if (!compatible && !showIncompat) return false;
+
+    if (searchQuery) {
+      const name  = (row.dataset.name  || '').toLowerCase();
+      const cls   = row.querySelector('.cell-class')?.textContent.toLowerCase()  || '';
+      const model = row.querySelector('.cell-model')?.textContent.toLowerCase()  || '';
+      if (!name.includes(searchQuery) && !cls.includes(searchQuery) && !model.includes(searchQuery)) return false;
+    }
+
+    const clsId   = filterClass.value;
+    const modelId = filterModel.value;
+    const mode    = row.dataset.mode    || '';
+    const classIds = row.dataset.classIds ? row.dataset.classIds.split(',') : [];
+    const modelIds = row.dataset.modelIds ? row.dataset.modelIds.split(',') : [];
+
+    if (clsId && classIds.length > 0 && !classIds.includes(clsId)) return false;
+
+    if (modelId) {
+      const opt = filterModel.querySelector(`option[value="${modelId}"]`);
+      const modelParentClass = opt ? (opt.dataset.class || '') : '';
+      if (mode !== 'unrestricted') {
+        if (modelIds.length > 0) {
+          if (!modelIds.includes(modelId)) return false;
+        } else if (classIds.length > 0 && modelParentClass) {
+          if (!classIds.includes(modelParentClass)) return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /* ── Apply all filters + paging ── */
+  function applyAllFilters() {
+    let totalPassing = 0;
+    let visIdx = 0;
+
+    availBody.querySelectorAll('.avail-row').forEach(row => {
+      if (!rowPassesFilters(row)) {
+        row.hidden = true;
+        return;
+      }
+      totalPassing++;
+      visIdx++;
+      row.hidden = visIdx > revealedCount;
+    });
+
+    if (availCountEl) availCountEl.textContent = totalPassing;
+    if (sentinel)     sentinel.hidden = totalPassing <= revealedCount;
+    updateHeaderCheckState();
+  }
+
+  function updateHeaderCheckState() {
+    if (!headerCheck) return;
+    const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:not(:disabled)'));
+    if (visibleChecks.length === 0) {
+      headerCheck.checked = false;
+      headerCheck.indeterminate = false;
+      if (btnSelectAll) btnSelectAll.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    headerCheck.checked = checkedCount === visibleChecks.length;
+    headerCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+
+    if (btnSelectAll) {
+      btnSelectAll.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  /* ── Infinite scroll ── */
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) {
+      revealedCount += PAGE_SIZE;
+      applyAllFilters();
+    }
+  }, { root: availScroll, threshold: 0.1 });
+  if (sentinel) observer.observe(sentinel);
+
+  /* ── Filter class cascade ── */
+  filterClass.addEventListener('change', function () {
+    const cls = this.value;
+    filterModel.querySelectorAll('option[data-class]').forEach(opt => {
+      opt.hidden = !!(cls && opt.dataset.class !== cls);
+    });
+    if (cls && filterModel.selectedIndex > 0 && filterModel.options[filterModel.selectedIndex].hidden) {
+      filterModel.value = '';
+    }
+    revealedCount = PAGE_SIZE;
+    applyAllFilters();
+  });
+  filterModel.addEventListener('change', () => { revealedCount = PAGE_SIZE; applyAllFilters(); });
+
+  /* ── Text search ── */
+  searchInput.addEventListener('input', function () {
+    searchQuery = this.value.trim().toLowerCase();
+    revealedCount = PAGE_SIZE;
+    applyAllFilters();
+  });
+
+  /* ── Incompatible toggle ── */
+  btnIncompat.addEventListener('click', function () {
+    showIncompat = !showIncompat;
+    this.classList.toggle('is-warning', showIncompat);
+    this.classList.toggle('is-light', !showIncompat);
+    this.querySelector('.btn-incompat-label').textContent = showIncompat ? 'Incompatible' : 'Incompatible';
+    const icon = this.querySelector('.material-icons');
+    if (icon) icon.textContent = showIncompat ? 'visibility' : 'visibility_off';
+    availTable.classList.toggle('show-compat', showIncompat);
+    revealedCount = PAGE_SIZE;
+    applyAllFilters();
+  });
+
+  /* ── Toggle all visible compatible ── */
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener('click', () => {
+      const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:not(:disabled)'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateHeaderCheckState();
+    });
+  }
+
+  if (headerCheck) {
+    headerCheck.addEventListener('change', function () {
+      const checked = this.checked;
+      availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:not(:disabled)').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnSelectAll) {
+        btnSelectAll.textContent = checked ? 'Deselect All' : 'Select All';
+      }
+    });
+  }
+
+  // Row checkboxes listener
+  availBody.addEventListener('change', e => {
+    if (e.target.classList.contains('avail-check')) {
+      updateHeaderCheckState();
+    }
+  });
+
+  /* ── Assign selected ── */
+  document.getElementById('btn-assign').addEventListener('click', () => {
+    availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:checked').forEach(cb => {
+      const row = cb.closest('.avail-row');
+      if (row.dataset.compatible !== 'false') assignRow(row);
+    });
+    updateAssignedCount();
+  });
+
+  /* ── Remove selected ── */
+  document.getElementById('btn-remove').addEventListener('click', () => {
+    assignedBody.querySelectorAll('.assigned-row .remove-check:checked').forEach(cb => {
+      unassignRow(cb.closest('.assigned-row'));
+    });
+    updateAssignedCount();
+  });
+
+  /* ── Helpers ── */
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function assignRow(availRow) {
+    availRow.hidden = true;
+    availRow.dataset.assignedInSession = 'true';
+    availRow.querySelector('.avail-check').checked = false;
+
+    const empty = document.getElementById('assigned-empty');
+    if (empty) empty.remove();
+
+    const { modId: id, name, code, desc, detailUrl: url } = availRow.dataset;
+    const tr = document.createElement('tr');
+    tr.className = 'assigned-row';
+    Object.assign(tr.dataset, { modId: id, name, code, desc, fromAvail: 'true' });
+    tr.innerHTML = `
+      <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="hidden" name="modifications" value="${esc(id)}">
+        <span title="${esc(desc)}">${esc(name)}</span>
+        <span class="tag is-light is-family-monospace ml-1">${esc(code)}</span>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+        <a href="${esc(url)}" class="has-text-grey" title="View definition" target="_blank" rel="noopener">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem">open_in_new</span></span>
+        </a>
+      </td>
+      <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+        <input type="checkbox" class="remove-check" aria-label="Remove ${esc(name)}">
+      </td>`;
+    assignedBody.appendChild(tr);
+    applyAllFilters();
+  }
+
+  function unassignRow(assignedRow) {
+    const id = assignedRow.dataset.modId;
+    const availRow = availBody.querySelector(`.avail-row[data-mod-id="${id}"]`);
+    if (availRow) {
+      availRow.dataset.assignedInSession = '';
+      availRow.querySelector('.avail-check').checked = false;
+    }
+    assignedRow.remove();
+    if (!assignedBody.querySelector('.assigned-row')) {
+      const tr = document.createElement('tr');
+      tr.id = 'assigned-empty';
+      tr.innerHTML = '<td colspan="3" class="has-text-grey p-4 is-size-7">No modifications assigned yet.</td>';
+      assignedBody.appendChild(tr);
+    }
+    applyAllFilters();
+  }
+
+  /* Init */
+  applyAllFilters();
+  updateAssignedCount();
+})();
+</script>
+{% endblock %}

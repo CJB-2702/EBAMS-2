@@ -19,6 +19,7 @@ from app.events.models.event import (
     PRIORITY_CLEARING_STATUSES,
 )
 from app.events.models.file import ALLOWED_EXTENSIONS, File, MAX_FILE_SIZE_BYTES
+from app.events.models.file_set_proxy import FileSet
 
 __all__ = [
     "ActivityThread",
@@ -35,6 +36,7 @@ __all__ = [
     "EventStatus",
     "EventType",
     "File",
+    "FileSet",
     "GenericDetail",
     "InventoryDetail",
     "MaintenanceDetail",

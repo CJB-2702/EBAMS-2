@@ -1,0 +1,163 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Configurations Overview{% endblock %}
+{% block nav_config_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Configurations</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">tune</span></div>
+      <div>
+        <h1 class="page-title">Configurations Overview</h1>
+        <p class="page-subtitle">Track, define, and audit asset configuration baselines and deviations.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <!-- Hero Card: Deviations Tracker -->
+  <div class="notification is-success is-light mb-4" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
+    <div class="is-flex align-items-center mb-2">
+      <span class="icon mr-1"><span class="material-icons has-text-success" aria-hidden="true">track_changes</span></span>
+      <strong>Mission Planning Deviation Tracking</strong>
+    </div>
+    <p class="is-size-6 mb-2" style="font-weight: 500;">
+      These modification configurations are designed to track <strong>deviations</strong> from standard configurations, enabling precise status monitoring for mission planning and operational readiness.
+    </p>
+    <p class="is-size-7 has-text-grey-dark">
+      Every asset's configuration history records modifications and components added, allowing operators to understand how an asset differs from its design baseline before deployment.
+    </p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stat-grid mb-2">
+    <div class="stat-tile" style="border-left-color: var(--bulma-link);">
+      <div class="stat-value">{{ templates_count }}</div>
+      <div class="stat-label">Config Templates</div>
+    </div>
+    <div class="stat-tile" style="border-left-color: var(--bulma-primary);">
+      <div class="stat-value">{{ modifications_count }}</div>
+      <div class="stat-label">Defined Modifications</div>
+    </div>
+    <div class="stat-tile" style="border-left-color: var(--bulma-success);">
+      <div class="stat-value">{{ assets_count }}</div>
+      <div class="stat-label">Total Assets</div>
+    </div>
+  </div>
+
+  <!-- Configuration Rules Panel -->
+  <div class="pc" style="border-left: 4px solid var(--bulma-info);">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons has-text-info" aria-hidden="true">rule</span></span>
+        <span>Architecture & Lifecycle Rules</span>
+      </div>
+    </div>
+    <div class="pc-body">
+      <div class="columns">
+        <div class="column is-6">
+          <div class="box" style="border: 1px solid var(--bulma-border-weak); background: var(--bulma-background); box-shadow: none; height: 100%;">
+            <div class="is-flex align-items-center mb-2">
+              <span class="material-icons has-text-success mr-2" aria-hidden="true">check_circle</span>
+              <h4 class="title is-6 mb-0">Asset-Level Configurations</h4>
+            </div>
+            <p class="is-size-7 mb-2">
+              A <strong>configuration</strong> is a set of modifications and parts assigned directly to an <strong>individual asset</strong>.
+            </p>
+            <span class="tag is-success is-light">Supported on Assets</span>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="box" style="border: 1px solid var(--bulma-border-weak); background: var(--bulma-background); box-shadow: none; height: 100%;">
+            <div class="is-flex align-items-center mb-2">
+              <span class="material-icons has-text-danger mr-2" aria-hidden="true">cancel</span>
+              <h4 class="title is-6 mb-0">Classes & Models Restriction</h4>
+            </div>
+            <p class="is-size-7 mb-2">
+              <strong>Asset Classes</strong> and <strong>Models</strong> represent abstract definitions and <strong>cannot</strong> have active configurations directly assigned.
+            </p>
+            <span class="tag is-danger is-light">Not Allowed on Classes / Models</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="notification is-info is-light mt-3 mb-0" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
+        <div class="is-flex">
+          <span class="material-icons mr-2" aria-hidden="true">info</span>
+          <div>
+            <p><strong>Configuration Templates:</strong> A configuration template is a bundle of modifications that can be copied to an asset and used as a reference against its current assigned modification set.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Cards -->
+  <div class="columns is-multiline">
+    <!-- Card 1: Define Modification -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">build</span></span>
+            <span>Define a Modification</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Create standard engineering modifications, catalog entries, and parameters to be applied to assets. Restrict applicability using class or model compatibility rules.
+          </p>
+          <a href="{% url 'defined_modification_create' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>
+            <span>Define Modification</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Build Template -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>
+            <span>Build a Template</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Bundle a group of modifications together into a template. These templates serve as baseline references when validating compliant configurations on individual assets.
+          </p>
+          <a href="{% url 'config_template_builder' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">architecture</span></span>
+            <span>Build Template</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Assign Modifications to Asset -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">precision_manufacturing</span></span>
+            <span>Assign to Asset</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Navigate to the asset registry to select a specific physical asset and modify its assigned modifications, retrofits, and template baselines directly.
+          </p>
+          <a href="{% url 'asset_index' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>
+            <span>Assign modifications to asset</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

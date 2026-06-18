@@ -1,0 +1,448 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}{{ asset.name }} - Edit Capabilities{% endblock %}
+{% block nav_assets %}is-active{% endblock %}
+
+{% block extra_head %}
+<style>
+  #avail-scroll, #assigned-scroll {
+    position: relative;
+  }
+  #avail-table thead th, #assigned-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bulma-table-background-color, var(--bulma-scheme-main));
+    z-index: 10;
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+  .table td {
+    vertical-align: middle;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'asset_index' %}">Assets</a></li>
+<li><a href="{% url 'asset_detail' asset_id=asset.id %}">{{ asset.name }}</a></li>
+<li><a href="{% url 'asset_capabilities_detail' asset_id=asset.id %}">Capabilities</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">settings</span></div>
+      <div>
+        <h1 class="page-title">Manage Asset Capabilities</h1>
+        <p class="page-subtitle">Configure capability assignments directly assigned to {{ asset.name }}.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'asset_capabilities_detail' asset_id=asset.id %}" class="button is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to Capabilities</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <form method="post" id="capabilities-form">{% csrf_token %}
+
+    <div class="columns is-variable is-4">
+      <!-- LEFT Card: Available Capabilities (6/12 width) -->
+      <div class="column is-6">
+        <div class="pc" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add_circle_outline</span></span>
+              Available Capabilities
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="avail-count">0</span> available</span>
+          </div>
+          <!-- Filter/Search Bar -->
+          <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+            <div class="control has-icons-left">
+              <input type="search" id="search-caps" class="input is-small" placeholder="Search capabilities by name or code…" autocomplete="off">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+            </div>
+          </div>
+          <!-- Table -->
+          <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+            <table id="avail-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"><input type="checkbox" id="avail-header-check" aria-label="Select all visible"></th>
+                  <th style="width:6rem">Code</th>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              <tbody id="avail-body">
+                {% for cap in capabilities_available %}
+                <tr class="avail-row" data-id="{{ cap.id }}" data-name="{{ cap.name }}" data-code="{{ cap.code }}">
+                  <td><input type="checkbox" class="avail-check" aria-label="Select {{ cap.name }}"></td>
+                  <td class="is-family-monospace"><strong>{{ cap.code }}</strong></td>
+                  <td>{{ cap.name }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <!-- Footer with Assign -->
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries pl-0 pr-3">
+              <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
+            </div>
+            <button type="button" id="btn-assign" class="button is-link card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+              <span>Assign Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+
+      <!-- RIGHT Card: Direct Capability Assignments (6/12 width) -->
+      <div class="column is-6">
+        <div class="pc" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
+          <div class="pc-header">
+            <div class="pc-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+              Direct Asset Assignments
+            </div>
+            <span class="is-size-7 has-text-grey"><span id="assigned-count">0</span> assigned</span>
+          </div>
+          <!-- Scrollable Table -->
+          <div id="assigned-scroll" style="flex:1;overflow-y:auto;min-height:0">
+            <table id="assigned-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+              <thead>
+                <tr>
+                  <th style="width:2.5rem"><input type="checkbox" id="assigned-header-check" aria-label="Select all assigned for removal"></th>
+                  <th>Capability</th>
+                  <th style="width:4.5rem">Qty</th>
+                  <th>Notes</th>
+                  <th style="width:3rem">Active</th>
+                </tr>
+              </thead>
+              <tbody id="assigned-body">
+                {% for cap in capabilities_assigned %}
+                <tr class="assigned-row"
+                    data-id="{{ cap.definition.id }}"
+                    data-name="{{ cap.definition.name }}"
+                    data-code="{{ cap.definition.code }}"
+                    data-qty="{{ cap.qty }}"
+                    data-notes="{{ cap.notes }}"
+                    data-active="{{ cap.is_active|yesno:'true,false' }}">
+                  <td><input type="checkbox" class="remove-check" aria-label="Select {{ cap.definition.name }} for removal"></td>
+                  <td>
+                    <strong>{{ cap.definition.name }}</strong>
+                    <span class="is-size-7 has-text-grey is-family-monospace ml-1">[{{ cap.definition.code }}]</span>
+                    <input type="hidden" name="capabilities" value="{{ cap.definition.id }}">
+                  </td>
+                  <td>
+                    <input type="number" class="input is-small py-0 px-1" name="qty_{{ cap.definition.id }}" value="{{ cap.qty }}" min="1" style="height:1.75rem;border-radius:0;">
+                  </td>
+                  <td>
+                    <input type="text" class="input is-small py-0 px-2" name="notes_{{ cap.definition.id }}" value="{{ cap.notes }}" style="height:1.75rem;border-radius:0;" placeholder="Add notes…">
+                  </td>
+                  <td class="has-text-centered">
+                    <input type="checkbox" name="active_{{ cap.definition.id }}" {% if cap.is_active %}checked{% endif %} aria-label="Is Active">
+                  </td>
+                </tr>
+                {% empty %}
+                <tr id="assigned-empty">
+                  <td colspan="5" class="has-text-grey p-4 is-size-7 has-text-centered">No direct capabilities assigned to this asset.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <!-- Footer with Remove -->
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries pl-0 pr-3">
+              <button type="button" id="btn-select-all-assigned" class="button is-small is-light">Select All</button>
+            </div>
+            <button type="button" id="btn-remove" class="button is-danger is-light card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+              <span>Remove Selected</span>
+            </button>
+          </footer>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inherited Capabilities Reference (Read-only bottom info) -->
+    <div class="pc mt-4">
+      <div class="pc-header">
+        <div class="pc-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+          Inherited Capabilities (Class &amp; Model)
+        </div>
+        <span class="is-size-7 has-text-grey">{{ capabilities_inherited|length }} inherited</span>
+      </div>
+      <div class="pc-body is-flush">
+        <table class="table is-fullwidth is-striped is-size-7 mb-0">
+          <thead>
+            <tr>
+              <th style="width:6rem">Code</th>
+              <th>Name</th>
+              <th>Source</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cap in capabilities_inherited %}
+            <tr>
+              <td class="is-family-monospace">{{ cap.definition.code }}</td>
+              <td><strong>{{ cap.definition.name }}</strong></td>
+              <td><span class="tag is-light is-small">{{ cap.source }}</span></td>
+              <td class="has-text-grey">Automatically resolved from Asset's {{ cap.source }} template.</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="has-text-grey has-text-centered py-4">No inherited capabilities from Class or Model.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="field is-grouped mt-5">
+      <p class="control">
+        <button type="submit" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+          <span>Save Capabilities</span>
+        </button>
+      </p>
+      <p class="control">
+        <a href="{% url 'asset_capabilities_detail' asset_id=asset.id %}" class="button is-small is-light">Cancel</a>
+      </p>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const searchInput = document.getElementById('search-caps');
+  const availBody = document.getElementById('avail-body');
+  const assignedBody = document.getElementById('assigned-body');
+  const availCountEl = document.getElementById('avail-count');
+  const assignedCountEl = document.getElementById('assigned-count');
+  const headerCheck = document.getElementById('avail-header-check');
+  const btnSelectAll = document.getElementById('btn-select-all');
+
+  const searchAssigned = document.getElementById('search-assigned');
+  const assignedHeaderCheck = document.getElementById('assigned-header-check');
+  const btnSelectAllAssigned = document.getElementById('btn-select-all-assigned');
+
+  // Filter available capabilities
+  function filterAvailable() {
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    let totalPassing = 0;
+
+    availBody.querySelectorAll('.avail-row').forEach(row => {
+      if (row.dataset.assignedInSession === 'true') {
+        row.hidden = true;
+        return;
+      }
+
+      const name = (row.dataset.name || '').toLowerCase();
+      const code = (row.dataset.code || '').toLowerCase();
+      const match = !query || name.includes(query) || code.includes(query);
+      row.hidden = !match;
+
+      if (match) totalPassing++;
+    });
+
+    if (availCountEl) availCountEl.textContent = totalPassing;
+    updateHeaderCheckState();
+  }
+
+  function updateHeaderCheckState() {
+    if (!headerCheck) return;
+    const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check'));
+    if (visibleChecks.length === 0) {
+      headerCheck.checked = false;
+      headerCheck.indeterminate = false;
+      if (btnSelectAll) btnSelectAll.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    headerCheck.checked = checkedCount === visibleChecks.length;
+    headerCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+
+    if (btnSelectAll) {
+      btnSelectAll.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  if (searchInput) searchInput.addEventListener('input', filterAvailable);
+
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener('click', () => {
+      const visibleChecks = Array.from(availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateHeaderCheckState();
+    });
+  }
+
+  if (headerCheck) {
+    headerCheck.addEventListener('change', function () {
+      const checked = this.checked;
+      availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnSelectAll) {
+        btnSelectAll.textContent = checked ? 'Deselect All' : 'Select All';
+      }
+    });
+  }
+
+  availBody.addEventListener('change', e => {
+    if (e.target.classList.contains('avail-check')) {
+      updateHeaderCheckState();
+    }
+  });
+
+  // Assigned capabilities count
+  window.updateCounts = function() {
+    if (assignedCountEl) assignedCountEl.textContent = assignedBody.querySelectorAll('.assigned-row').length;
+  };
+
+  // Assigned table checkboxes state
+  function updateAssignedHeaderCheckState() {
+    if (!assignedHeaderCheck) return;
+    const visibleChecks = Array.from(assignedBody.querySelectorAll('.assigned-row .remove-check'));
+    if (visibleChecks.length === 0) {
+      assignedHeaderCheck.checked = false;
+      assignedHeaderCheck.indeterminate = false;
+      if (btnSelectAllAssigned) btnSelectAllAssigned.textContent = 'Select All';
+      return;
+    }
+    const checkedCount = visibleChecks.filter(cb => cb.checked).length;
+    assignedHeaderCheck.checked = checkedCount === visibleChecks.length;
+    assignedHeaderCheck.indeterminate = checkedCount > 0 && checkedCount < visibleChecks.length;
+    
+    if (btnSelectAllAssigned) {
+      btnSelectAllAssigned.textContent = (checkedCount === visibleChecks.length) ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  if (assignedHeaderCheck) {
+    assignedHeaderCheck.addEventListener('change', function() {
+      const checked = this.checked;
+      assignedBody.querySelectorAll('.assigned-row .remove-check').forEach(cb => {
+        cb.checked = checked;
+      });
+      if (btnSelectAllAssigned) btnSelectAllAssigned.textContent = checked ? 'Deselect All' : 'Select All';
+    });
+  }
+
+  if (btnSelectAllAssigned) {
+    btnSelectAllAssigned.addEventListener('click', () => {
+      const visibleChecks = Array.from(assignedBody.querySelectorAll('.assigned-row .remove-check'));
+      const allChecked = visibleChecks.length > 0 && visibleChecks.every(cb => cb.checked);
+      visibleChecks.forEach(cb => { cb.checked = !allChecked; });
+      updateAssignedHeaderCheckState();
+    });
+  }
+
+  assignedBody.addEventListener('change', e => {
+    if (e.target.classList.contains('remove-check')) {
+      updateAssignedHeaderCheckState();
+    }
+  });
+
+  // Assign Selected
+  document.getElementById('btn-assign').addEventListener('click', () => {
+    availBody.querySelectorAll('.avail-row:not([hidden]) .avail-check:checked').forEach(cb => {
+      const row = cb.closest('.avail-row');
+      assignCapability(row);
+    });
+    window.updateCounts();
+    updateAssignedHeaderCheckState();
+  });
+
+  // Remove Selected
+  document.getElementById('btn-remove').addEventListener('click', () => {
+    assignedBody.querySelectorAll('.assigned-row .remove-check:checked').forEach(cb => {
+      unassignCapability(cb.closest('.assigned-row'));
+    });
+    window.updateCounts();
+    updateAssignedHeaderCheckState();
+  });
+
+  function assignCapability(availRow) {
+    availRow.hidden = true;
+    availRow.dataset.assignedInSession = 'true';
+    availRow.querySelector('.avail-check').checked = false;
+
+    const empty = document.getElementById('assigned-empty');
+    if (empty) empty.remove();
+
+    const { id, name, code } = availRow.dataset;
+    const tr = document.createElement('tr');
+    tr.className = 'assigned-row';
+    Object.assign(tr.dataset, { id, name, code });
+    tr.innerHTML = `
+      <td><input type="checkbox" class="remove-check" aria-label="Select ${name} for removal"></td>
+      <td>
+        <strong>${name}</strong>
+        <span class="is-size-7 has-text-grey is-family-monospace ml-1">[${code}]</span>
+        <input type="hidden" name="capabilities" value="${id}">
+      </td>
+      <td>
+        <input type="number" class="input is-small py-0 px-1" name="qty_${id}" value="1" min="1" style="height:1.75rem;border-radius:0;">
+      </td>
+      <td>
+        <input type="text" class="input is-small py-0 px-2" name="notes_${id}" value="" style="height:1.75rem;border-radius:0;" placeholder="Add notes…">
+      </td>
+      <td class="has-text-centered">
+        <input type="checkbox" name="active_${id}" checked aria-label="Is Active">
+      </td>`;
+    assignedBody.appendChild(tr);
+    filterAvailable();
+  }
+
+  function unassignCapability(assignedRow) {
+    const id = assignedRow.dataset.id;
+    const availRow = availBody.querySelector(`.avail-row[data-id="${id}"]`);
+    if (availRow) {
+      availRow.dataset.assignedInSession = 'false';
+      availRow.querySelector('.avail-check').checked = false;
+    }
+    assignedRow.remove();
+    if (!assignedBody.querySelector('.assigned-row')) {
+      const tr = document.createElement('tr');
+      tr.id = 'assigned-empty';
+      tr.innerHTML = '<td colspan="5" class="has-text-grey p-4 is-size-7 has-text-centered">No direct capabilities assigned to this asset.</td>';
+      assignedBody.appendChild(tr);
+    }
+    filterAvailable();
+  }
+
+  // Set initial state of available rows already assigned
+  assignedBody.querySelectorAll('.assigned-row').forEach(row => {
+    const id = row.dataset.id;
+    const availRow = availBody.querySelector(`.avail-row[data-id="${id}"]`);
+    if (availRow) {
+      availRow.hidden = true;
+      availRow.dataset.assignedInSession = 'true';
+    }
+  });
+
+  /* Init */
+  filterAvailable();
+  window.updateCounts();
+  updateAssignedHeaderCheckState();
+
+})();
+</script>
+{% endblock %}

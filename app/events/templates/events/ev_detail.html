@@ -28,7 +28,7 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
 <div class="page-hero">
   <div class="page-header">
     <div class="page-header-title-wrap">
-      <div class="page-header-icon">↯</div>
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event</span></div>
       <div>
         <h1 class="page-title">{{ event.title }}</h1>
         <p class="page-subtitle">{{ event.domain.name }} &middot; Created {{ event.created_at|date:"Y-m-d H:i" }} by {{ event.created_by }}</p>
@@ -140,8 +140,14 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
                 <span class="tag is-light ml-1">rev {{ row.comment.revision }}</span>
                 {% endif %}
               </span>
-              {% if row.comment.created_by == request.user %}
               <div style="display:flex; gap:0.4rem;">
+                {% if row.comment.revision > 1 %}
+                <a href="{% url 'comment_history' event_hash=event_hash comment_hash=row.comment_hash %}"
+                  class="button is-small is-light" title="View revision history">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>
+                </a>
+                {% endif %}
+                {% if row.comment.created_by == request.user %}
                 <a href="{% url 'comment_edit' event_hash=event_hash comment_hash=row.comment_hash %}"
                   class="button is-small is-info is-light">
                   <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
@@ -153,8 +159,8 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
                     <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
                   </button>
                 </form>
+                {% endif %}
               </div>
-              {% endif %}
             </div>
             <p>{{ row.comment.content }}</p>
             {% include "events/comment/fragments/attachment_carousel.html" with comment_id=row.comment.pk att_list=row.attachments %}

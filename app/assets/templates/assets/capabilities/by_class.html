@@ -1,0 +1,146 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Capabilities by Asset Class{% endblock %}
+{% block nav_cap_class %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'capability_definition_index' %}">Capabilities</a></li>
+<li class="is-active"><a href="#">By Asset Class</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header"><div class="page-header-title-wrap">
+  <div class="page-header-icon"><span class="material-icons" aria-hidden="true">category</span></div>
+  <div><h1 class="page-title">Capabilities by Asset Class</h1><p class="page-subtitle">View and manage capability assignments at the asset class level.</p></div></div></div></div>
+
+<div class="body-grid full-width">
+  <!-- Filters Panel -->
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-vcentered">
+          <div class="column is-3">
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search classes…">
+          </div>
+          <div class="column is-2">
+            <div class="select is-small is-fullwidth">
+              <select name="category">
+                <option value="">All Categories</option>
+                {% for cat in all_categories %}
+                <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <div class="select is-small is-fullwidth">
+              <select name="domain">
+                <option value="">All Domains</option>
+                {% for d in all_domains %}
+                <option value="{{ d.id }}" {% if domain == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <div class="select is-small is-fullwidth">
+              <select name="definition">
+                <option value="">All Capabilities</option>
+                {% for d in definitions %}
+                <option value="{{ d.id }}" {% if definition == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <div class="select is-small is-fullwidth">
+              <select name="is_active">
+                <option value="">All Statuses</option>
+                <option value="True" {% if is_active == "True" %}selected{% endif %}>Active</option>
+                <option value="False" {% if is_active == "False" %}selected{% endif %}>Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="column is-1">
+            <button class="button is-small is-info is-fullwidth" type="submit">Apply</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cards List -->
+  <div class="columns is-multiline">
+    {% for c in classes %}
+    <div class="column is-12">
+      <div class="card" style="display: flex; flex-direction: row; align-items: stretch; overflow: hidden; box-shadow: var(--bulma-card-shadow); border-radius: 0;">
+        <!-- Left Content Pane -->
+        <div style="flex-grow: 1; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--bulma-border-light);">
+          <header class="card-header" style="background-color: var(--bulma-scheme-main-bis); border-bottom: 1px solid var(--bulma-border-light); box-shadow: none; display: block; padding: 0.75rem 1rem; border-radius: 0;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; width: 100%;">
+              <!-- Left Side: Title & Category Tag -->
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="title is-6 mb-0">{{ c.name }}</span>
+                <span class="tag is-info is-light is-small">{{ c.category }}</span>
+              </div>
+              
+              <!-- Right Side: Quick Details Row -->
+              <div style="display: flex; align-items: center; gap: 1.25rem; font-size: 0.75rem;" class="has-text-grey-dark">
+                <div>
+                  <span class="has-text-grey">Stats:</span>
+                  <span class="tag is-light is-small">{{ c.model_count }} models</span>
+                  <span class="tag is-light is-small">{{ c.asset_count }} assets</span>
+                </div>
+                {% include "assets/_status_tag.html" with value=c.is_active|yesno:"Active,Inactive" %}
+              </div>
+            </div>
+          </header>
+          <div class="card-content" style="flex-grow: 1; padding: 1rem;">
+            <div class="content is-size-7">
+              <p class="has-text-grey-dark mb-3">{{ c.description }}</p>
+              <div style="border-top: 1px solid var(--bulma-border-light); padding-top: 0.75rem;">
+                <p class="subtitle is-7 mb-2" style="font-weight: 600;">Class Capabilities ({{ c.capabilities|length }}):</p>
+                {% if c.capabilities %}
+                <table class="table is-fullwidth is-striped is-size-7 mb-0">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Code</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for cap in c.capabilities %}
+                    <tr>
+                      <td>{{ cap.definition.name }}</td>
+                      <td class="is-family-monospace">{{ cap.definition.code }}</td>
+                      <td>{% include "assets/_status_tag.html" with value=cap.is_active|yesno:"Active,Inactive" %}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}
+                <p class="has-text-grey-light py-2">No capability assignments at class level.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right Action Pane -->
+        <a href="{% url 'class_edit' class_id=c.id %}" 
+           class="button is-info is-light" 
+           style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 80px; height: auto; flex-shrink: 0; border: none; border-radius: 0; gap: 0.25rem;">
+          <span class="icon" style="margin: 0;"><span class="material-icons" style="font-size: 1.5rem;">edit</span></span>
+          <span style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">edit</span>
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <div class="column is-12">
+      <div class="notification is-light has-text-centered py-6">
+        <span class="icon is-large"><span class="material-icons" aria-hidden="true">sentiment_dissatisfied</span></span>
+        <p class="has-text-grey mt-2">No asset classes match the filter criteria.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

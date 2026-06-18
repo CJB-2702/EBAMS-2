@@ -10,6 +10,7 @@ from app.events.presentation_layer.entrypoints.events import (
 from app.events.presentation_layer.entrypoints.comments import (
     comment_add,
     comment_edit,
+    comment_history,
     comment_soft_delete,
 )
 from app.events.presentation_layer.entrypoints.files import (
@@ -30,6 +31,7 @@ urlpatterns = [
     # Comments (scoped to an event)
     path("<str:event_hash>/comments/add/", comment_add, name="comment_add"),
     path("<str:event_hash>/comments/<str:comment_hash>/edit/", comment_edit, name="comment_edit"),
+    path("<str:event_hash>/comments/<str:comment_hash>/history/", comment_history, name="comment_history"),
     path("<str:event_hash>/comments/<str:comment_hash>/delete/", comment_soft_delete, name="comment_soft_delete"),
 
     # Files

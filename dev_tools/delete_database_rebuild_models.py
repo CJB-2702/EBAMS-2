@@ -127,6 +127,8 @@ def main() -> int:
             "dev_ownership",
             "dev_user_scope",
             "dev_roles",
+            "dev_assets_base",
+            "dev_extensions_enablement",
         ):
             call_command("loaddata", label, verbosity=1)
 

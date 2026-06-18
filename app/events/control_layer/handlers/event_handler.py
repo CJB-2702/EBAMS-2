@@ -10,7 +10,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from app.events.models import (
-    ActivityThreadType,
     Comment,
     Event,
     EventPriority,
@@ -46,9 +45,6 @@ class EventHandler:
 
         with transaction.atomic():
             event = Event.objects.create(
-                thread_type=ActivityThreadType.EVENT,
-                allow_comments=True,
-                allow_direct_attachments=True,
                 domain_id=post_data.get("domain_id"),
                 title=post_data.get("title", "").strip(),
                 description=post_data.get("description", "").strip(),

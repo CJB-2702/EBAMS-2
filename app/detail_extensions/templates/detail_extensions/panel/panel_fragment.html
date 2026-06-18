@@ -1,0 +1,23 @@
+{% load static %}
+{# HTMX fragment — included into a parent page via hx-target + format=htmx-panel.
+   F5-safe full-page wrapper is panel.html. #}
+<div id="ext-panel-strip" style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+  {% for descriptor in descriptors %}
+  <div class="pc" style="min-width:180px; flex:1 1 180px; margin-bottom:0;">
+    <div class="pc-header">
+      <span class="pc-header-title">
+        <span class="icon"><span class="material-icons" style="font-size:1rem;" aria-hidden="true">extension</span></span>
+        {{ descriptor.label }}
+      </span>
+    </div>
+    <div class="pc-body" style="padding:0.6rem 1rem;">
+      <a href="{% url 'extension_owner_detail' descriptor.key owner_type owner.pk %}"
+         class="button is-small is-light is-fullwidth">
+        View
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <p class="has-text-grey" style="font-size:0.82rem;">No extensions enabled for this {{ owner_type }}.</p>
+  {% endfor %}
+</div>

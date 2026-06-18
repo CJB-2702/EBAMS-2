@@ -13,7 +13,7 @@ from app.administration.control_layer.permissions.permission_grant_guard import 
     is_admin_actor,
     is_manager_actor,
 )
-from app.administration.models import Domain, DomainTemplate, UserDomain
+from app.administration.models import Domain, DomainTemplate
 
 
 class DomainAccessDenied(GrantPermissionDenied):
@@ -57,12 +57,7 @@ def assert_actor_may_assign_domains(
     else:
         raise DomainAccessDenied("No domains provided to check.")
 
-    actor_domain_ids = set(
-        UserDomain.objects.filter(
-            user=actor,
-            is_active=True,
-        ).values_list("domain_id", flat=True)
-    )
+    actor_domain_ids = actor.get_all_domain_ids()
 
     ungranted = domain_ids - actor_domain_ids
     if ungranted:

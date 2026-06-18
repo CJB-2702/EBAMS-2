@@ -13,6 +13,7 @@ Machine-maintainable index of every doc file under `docs/`, grouped by tier. See
 - docs/Authorization.md — Two-gate access model (capability + scope).
 - docs/CoreDomain.md — Shared business entities and the domain/organization/division hierarchy.
 - docs/Events.md — Events sub-application: comments, files, shadow history, contexts.
+- docs/Activity_Surfaces.md — The three surface classes (Event, ActivityThread, FileSet) over the shared event table; behavior bound to class, not flags.
 - docs/Development_Tools.md — Dev workflow, DB rebuild, environment generation, seeded users.
 - docs/ApplicationGoals.md — Product vision and user-centric objectives.
 - docs/technical_decisions.md — Rolling summary of locked decisions, active tech debt, incident takeaways.

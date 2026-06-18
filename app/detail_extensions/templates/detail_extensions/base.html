@@ -1,0 +1,156 @@
+{% load static svg_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Extensions{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body {
+      display: flex; flex-direction: column;
+      background: var(--bulma-scheme-main-bis);
+      color: var(--bulma-text);
+      font-family: var(--bulma-family-sans-serif);
+      font-size: 0.875rem;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      flex: 1; min-height: 0; overflow: hidden;
+      transition: grid-template-columns 0.18s ease;
+    }
+    .app-shell:has(collapsable-side-bar[collapsed]) { grid-template-columns: 40px 1fr; }
+    collapsable-side-bar { min-width: 0; }
+
+    .sidebar-section-label {
+      font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--bulma-text-weak); padding: 0.6rem 1rem 0.3rem; font-weight: 600;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 1rem; font-size: 0.8rem; color: var(--bulma-text);
+      border-left: 3px solid transparent;
+    }
+    .sidebar-link:hover { background: var(--bulma-background); color: var(--bulma-text-strong); }
+    .sidebar-link.is-active {
+      border-left-color: var(--bulma-primary); color: var(--bulma-link);
+      background: var(--bulma-background); font-weight: 600;
+    }
+    .sidebar-divider { height: 1px; background: var(--bulma-border-weak); margin: 0.75rem 1rem; }
+
+    .app-scrollarea { overflow-y: auto; background: var(--bulma-scheme-main-bis); }
+    .app-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
+
+    .page-hero {
+      background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak);
+      border-left: 4px solid var(--bulma-primary); padding: 1.5rem 1.75rem; margin-bottom: 1.5rem;
+    }
+    .page-hero .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .page-hero .page-header-title-wrap { display: flex; align-items: center; gap: 0.65rem; }
+    .page-hero .page-title { font-size: 1.4rem; font-weight: 700; color: var(--bulma-text-strong); margin: 0; line-height: 1.1; }
+    .page-hero .page-subtitle { font-size: 0.82rem; color: var(--bulma-text-weak); margin-top: 0.2rem; }
+    .page-hero .page-header-actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start; flex-wrap: wrap; }
+
+    .body-grid { display: grid; gap: 1.25rem; align-items: start; }
+    .body-grid.full-width { grid-template-columns: 1fr; }
+
+    .pc { background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak); margin-bottom: 1rem; }
+    .pc-header {
+      padding: 0.7rem 1rem; border-bottom: 1px solid var(--bulma-border-weak);
+      display: flex; align-items: center; justify-content: space-between;
+      font-weight: 600; font-size: 0.88rem;
+    }
+    .pc-header-title { display: flex; align-items: center; gap: 0.45rem; }
+    .pc-header-title .icon { color: var(--bulma-text-weak); font-size: 1rem; }
+    .pc-body { padding: 1rem; }
+    .pc-body.is-flush { padding: 0; }
+
+    .kv { display: grid; grid-template-columns: 9rem 1fr; gap: 0.35rem 0.75rem; font-size: 0.82rem; }
+    .kv dt { color: var(--bulma-text-weak); }
+    .kv dd { margin: 0; color: var(--bulma-text-strong); }
+
+    .button { border-radius: 0; }
+    .tag    { border-radius: 0; }
+    .input, .select select, .textarea { border-radius: 0; }
+    .box, .card { border-radius: 0; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: var(--bulma-border); }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% include "shared/topnav.html" with current_app_group="Extensions" %}
+
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Extensions navigation">
+    <nav
+      hx-boost="true"
+      hx-target="#ext-main-content"
+      hx-select="#ext-main-content"
+      hx-push-url="true"
+    >
+      <p class="sidebar-section-label">Extensions</p>
+      <a href="{% url 'extension_config_landing' %}" class="sidebar-link {% block nav_config %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configuration
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'asset_dashboard' %}" class="sidebar-link">
+        <span class="icon">{% svg "asset-icon" %}</span> Assets
+      </a>
+      <a href="{% url 'event_index' %}" class="sidebar-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events
+      </a>
+      <a href="{% url 'administration_index' %}" class="sidebar-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration
+      </a>
+      <a href="{% url 'public_home' %}" class="sidebar-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home
+      </a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="ext-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'extension_config_landing' %}">Extensions</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

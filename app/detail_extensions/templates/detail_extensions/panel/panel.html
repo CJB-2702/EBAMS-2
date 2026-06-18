@@ -1,0 +1,22 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}Extensions — {{ owner_type|capfirst }} {{ owner.pk }}{% endblock %}
+
+{% block breadcrumb %}
+  <li class="is-active"><a aria-current="page">{{ owner_type|capfirst }} Extensions Panel</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div>
+        <h1 class="page-title">Extensions — {{ owner_type|capfirst }} {{ owner.pk }}</h1>
+        <p class="page-subtitle">All extensions enabled for this {{ owner_type }}.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include "detail_extensions/panel/panel_fragment.html" %}
+{% endblock %}

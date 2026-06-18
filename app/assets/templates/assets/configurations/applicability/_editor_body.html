@@ -1,0 +1,100 @@
+{% comment %}Reshapeable editor body. Swapped via hx-get ?mode=… when the mode
+selector changes; also rendered standalone inside editor.html for the F5 path.{% endcomment %}
+<div id="editor-body" data-mode="{{ mode }}">
+  {{ model_class_map|json_script:"model-class-map" }}
+  {{ preview_assets|json_script:"preview-assets" }}
+
+  {# ── Mode selector ── #}
+  <div class="pc">
+    <div class="pc-body">
+      <label class="label is-small">Applicability mode</label>
+      <div class="buttons has-addons mb-1">
+        {% for value, label in mode_choices %}
+        <button type="button" class="button is-small {% if value == mode %}is-link is-selected{% endif %}"
+                hx-get="{% url 'modification_applicability_edit' modification_id=modification.id %}?mode={{ value }}"
+                hx-target="#editor-body" hx-swap="outerHTML">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <p class="help">{{ applicability.mode_help }}</p>
+    </div>
+  </div>
+
+  <div class="body-grid has-rail">
+    <div>
+      {# ── Asset Classes panel ── #}
+      <div class="pc">
+        <div class="pc-header"><div class="pc-header-title">Asset Classes
+          {% if applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
+          {% elif applicability.class_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
+          {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
+        </div></div>
+        <div class="pc-body">
+          {% if applicability.class_derived %}
+            <p class="is-size-7 has-text-grey mb-2">Computed from the selected models — not editable in this mode.</p>
+            <div class="tags">
+              {% for c in applicability.classes %}<span class="tag">{{ c.name }}</span>{% empty %}<span class="has-text-grey-light">— add models below —</span>{% endfor %}
+            </div>
+          {% else %}
+            {% if not applicability.class_binding %}<p class="is-size-7 has-text-grey mb-2">Not enforced in this mode — kept as search hints.</p>{% endif %}
+            <dual-list-box>
+              <list-box slot="left" id="ap-cls-avail" label="Available">
+                <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+                <select slot="options" multiple>
+                  {% for c in classes_available %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                </select>
+              </list-box>
+              <div slot="controls">
+                <button type="button" class="button is-small" onclick="moveSel(listBox('ap-cls-avail'), listBox('ap-cls-sel')); refreshPreview()" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span></button>
+                <button type="button" class="button is-small" onclick="moveSel(listBox('ap-cls-sel'), listBox('ap-cls-avail')); refreshPreview()" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span></button>
+              </div>
+              <list-box slot="right" id="ap-cls-sel" label="Selected">
+                <select slot="options" multiple name="classes">
+                  {% for c in classes_selected %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+                </select>
+              </list-box>
+            </dual-list-box>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Asset Models panel ── #}
+      <div class="pc">
+        <div class="pc-header"><div class="pc-header-title">Asset Models
+          {% if applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
+          {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
+        </div></div>
+        <div class="pc-body">
+          {% if not applicability.model_binding %}<p class="is-size-7 has-text-grey mb-2">Not enforced in this mode — kept as search hints.</p>{% endif %}
+          <div id="dead-model-error"></div>
+          <dual-list-box>
+            <list-box slot="left" id="ap-mod-avail" label="Available">
+              <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+              <select slot="options" multiple>
+                {% for m in models_available %}<option value="{{ m.id }}">{{ m.label }}</option>{% endfor %}
+              </select>
+            </list-box>
+            <div slot="controls">
+              <button type="button" class="button is-small" onclick="addModels()" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span></button>
+              <button type="button" class="button is-small" onclick="moveSel(listBox('ap-mod-sel'), listBox('ap-mod-avail')); refreshPreview()" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span></button>
+            </div>
+            <list-box slot="right" id="ap-mod-sel" label="Selected">
+              <select slot="options" multiple name="models">
+                {% for m in models_selected %}<option value="{{ m.id }}">{{ m.label }}</option>{% endfor %}
+              </select>
+            </list-box>
+          </dual-list-box>
+        </div>
+      </div>
+    </div>
+
+    {# ── Rail: preview + combine reminder ── #}
+    <div class="body-rail">
+      {% include "assets/configurations/applicability/_preview.html" %}
+      <div class="pc"><div class="pc-body">
+        <p class="is-size-7 has-text-grey"><strong>Combine rule:</strong> when both class and model are enforced
+        (<em>Strict</em>), an asset must satisfy <strong>both</strong> (AND). A model whose parent class
+        isn't allowed is a <em>dead model</em> and is refused here.</p>
+      </div></div>
+    </div>
+  </div>
+</div>
