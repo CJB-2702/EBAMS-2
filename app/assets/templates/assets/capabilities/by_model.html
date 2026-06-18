@@ -90,7 +90,7 @@
               <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <span class="title is-6 mb-0">{{ m.display_name }}</span>
                 <span class="tag is-info is-light is-small">{{ m.asset_class.name }}</span>
-                {% for mf in m.manufacturers %}
+                {% for mf in m.manufacturers.all %}
                 <span class="tag is-light is-small">{{ mf.name }}</span>
                 {% endfor %}
               </div>

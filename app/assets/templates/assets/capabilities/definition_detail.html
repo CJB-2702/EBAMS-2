@@ -86,7 +86,7 @@
               <td>{{ m.display_name }}</td>
               <td>{{ m.asset_class.name }}</td>
               <td>
-                {% for manufacturer in m.manufacturers %}
+                {% for manufacturer in m.manufacturers.all %}
                   {{ manufacturer.name }}{% if not forloop.last %}, {% endif %}
                 {% endfor %}
               </td>

@@ -1,47 +1,304 @@
 [
-  {
-    "model": "assets.assetclass",
-    "pk": 1,
-    "fields": {
-      "name": "Forklift",
-      "description": "Powered industrial trucks for warehouse handling.",
-      "category": "Material Handling",
-      "is_active": true,
-      "restrict_to_domain_set": false,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": 1,
-      "updated_by": 1
-    }
-  },
-  {
-    "model": "assets.assetclass",
-    "pk": 2,
-    "fields": {
-      "name": "Excavator",
-      "description": "Tracked hydraulic digging machines.",
-      "category": "Heavy Equipment",
-      "is_active": true,
-      "restrict_to_domain_set": false,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": 1,
-      "updated_by": 1
-    }
-  },
-  {
-    "model": "assets.assetclass",
-    "pk": 3,
-    "fields": {
-      "name": "Boom Lift",
-      "description": "Self-propelled aerial work platforms.",
-      "category": "Aerial",
-      "is_active": true,
-      "restrict_to_domain_set": false,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z",
-      "created_by": 1,
-      "updated_by": 1
-    }
+ {
+  "model": "assets.assetclass",
+  "pk": 1,
+  "fields": {
+   "name": "Forklift",
+   "description": "Powered industrial trucks for warehouse handling.",
+   "category": "Material Handling",
+   "is_active": true,
+   "restrict_to_domain_set": false,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
   }
+ },
+ {
+  "model": "assets.assetclass",
+  "pk": 2,
+  "fields": {
+   "name": "Excavator",
+   "description": "Tracked hydraulic digging machines.",
+   "category": "Heavy Equipment",
+   "is_active": true,
+   "restrict_to_domain_set": false,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetclass",
+  "pk": 3,
+  "fields": {
+   "name": "Boom Lift",
+   "description": "Self-propelled aerial work platforms.",
+   "category": "Aerial",
+   "is_active": true,
+   "restrict_to_domain_set": false,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.capabilitydefinition",
+  "pk": 1,
+  "fields": {
+   "name": "Lifting",
+   "code": "LIFT",
+   "description": "Capable of raising and lowering loads.",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.capabilitydefinition",
+  "pk": 2,
+  "fields": {
+   "name": "Towing",
+   "code": "TOW",
+   "description": "Capable of towing trailers or other equipment.",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.capabilitydefinition",
+  "pk": 3,
+  "fields": {
+   "name": "Aerial Work",
+   "code": "AERIAL",
+   "description": "Provides an elevated work platform for personnel.",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.manufacturer",
+  "pk": 1,
+  "fields": {
+   "name": "Toyota Material Handling",
+   "code": "TMH",
+   "website": "https://www.toyota-forklifts.com",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.manufacturer",
+  "pk": 2,
+  "fields": {
+   "name": "Caterpillar",
+   "code": "CAT",
+   "website": "https://www.cat.com",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.manufacturer",
+  "pk": 3,
+  "fields": {
+   "name": "Genie (Terex)",
+   "code": "GEN",
+   "website": "https://www.genielift.com",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.manufacturer",
+  "pk": 4,
+  "fields": {
+   "name": "Hyster (Legacy)",
+   "code": "HYS",
+   "website": null,
+   "is_active": false,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetmodel",
+  "pk": 1,
+  "fields": {
+   "model_name": "8FGCU25",
+   "subtype_name": "Cushion Tire",
+   "revision": null,
+   "is_base_model": true,
+   "base_model": null,
+   "asset_class": 1,
+   "meter1_unit": "Hours",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetmodel",
+  "pk": 2,
+  "fields": {
+   "model_name": "320",
+   "subtype_name": "GC Hydraulic",
+   "revision": null,
+   "is_base_model": true,
+   "base_model": null,
+   "asset_class": 2,
+   "meter1_unit": "Hours",
+   "meter2_unit": "Km",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetmodel",
+  "pk": 3,
+  "fields": {
+   "model_name": "Z-45",
+   "subtype_name": "Articulating Boom",
+   "revision": null,
+   "is_base_model": true,
+   "base_model": null,
+   "asset_class": 3,
+   "meter1_unit": "Hours",
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modelmanufacturer",
+  "pk": 1,
+  "fields": {
+   "model": 1,
+   "manufacturer": 1,
+   "is_primary": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modelmanufacturer",
+  "pk": 2,
+  "fields": {
+   "model": 2,
+   "manufacturer": 2,
+   "is_primary": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modelmanufacturer",
+  "pk": 3,
+  "fields": {
+   "model": 3,
+   "manufacturer": 3,
+   "is_primary": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetclasscapability",
+  "pk": 1,
+  "fields": {
+   "asset_class": 1,
+   "capability_definition": 1,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetclasscapability",
+  "pk": 2,
+  "fields": {
+   "asset_class": 2,
+   "capability_definition": 2,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.assetclasscapability",
+  "pk": 3,
+  "fields": {
+   "asset_class": 3,
+   "capability_definition": 3,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modelcapability",
+  "pk": 1,
+  "fields": {
+   "model": 1,
+   "capability_definition": 2,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ },
+ {
+  "model": "assets.modelcapability",
+  "pk": 2,
+  "fields": {
+   "model": 3,
+   "capability_definition": 1,
+   "is_active": true,
+   "created_at": "2024-01-01T00:00:00Z",
+   "updated_at": "2024-01-01T00:00:00Z",
+   "created_by": 1,
+   "updated_by": 1
+  }
+ }
 ]

@@ -220,11 +220,11 @@
             </thead>
             <tbody id="model-avail-body">
               {% for m in available_models %}
-              <tr class="model-avail-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+              <tr class="model-avail-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers.all %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                 <td><input type="checkbox" class="model-avail-check" aria-label="Select {{ m.display_name }}"></td>
                 <td>{{ m.display_name }}</td>
                 <td>{{ m.asset_class.name }}</td>
-                <td>{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                <td>{% for manufacturer in m.manufacturers.all %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
                 <td><a href="{% url 'model_detail' model_id=m.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
               </tr>
               {% endfor %}
@@ -257,7 +257,7 @@
           <table class="table is-fullwidth is-hoverable" style="margin:0">
             <tbody id="model-assigned-body">
               {% for m in assigned_models %}
-              <tr class="model-assigned-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+              <tr class="model-assigned-row" data-id="{{ m.id }}" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for manufacturer in m.manufacturers.all %}{{ manufacturer.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                 <td style="padding:0.65rem 0.75rem;vertical-align:middle">
                   <input type="hidden" name="assigned_models" value="{{ m.id }}">
                   <span>{{ m.display_name }}</span>

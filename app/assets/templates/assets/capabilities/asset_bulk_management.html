@@ -119,11 +119,11 @@
               </thead>
               <tbody id="assigned-models-body">
                 {% for m in assigned_models %}
-                <tr class="assigned-model-row" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for man in m.manufacturers %}{{ man.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+                <tr class="assigned-model-row" data-name="{{ m.display_name }}" data-class-id="{{ m.asset_class.id }}" data-manufacturers="{% for man in m.manufacturers.all %}{{ man.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
                   <td><strong>{{ m.display_name }}</strong></td>
                   <td>{{ m.asset_class.name }}</td>
                   <td>
-                    {% for man in m.manufacturers %}
+                    {% for man in m.manufacturers.all %}
                       {{ man.name }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                   </td>
@@ -184,6 +184,7 @@
                     data-active="{{ a.assignment_is_active|yesno:'true,false' }}">
                   <td><input type="checkbox" class="remove-check" aria-label="Select {{ a.name }} for removal"></td>
                   <td>
+                    <input type="hidden" name="assigned_assets" value="{{ a.id }}">
                     <strong>{{ a.name }}</strong>
                     <span class="is-size-7 has-text-grey is-family-monospace ml-1">#{{ a.serial_number }}</span>
                   </td>
@@ -569,6 +570,7 @@
     tr.innerHTML = `
       <td><input type="checkbox" class="remove-check" aria-label="Select ${name} for removal"></td>
       <td>
+        <input type="hidden" name="assigned_assets" value="${id}">
         <strong>${name}</strong>
         <span class="is-size-7 has-text-grey is-family-monospace ml-1">#${serial}</span>
       </td>
