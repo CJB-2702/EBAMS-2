@@ -36,6 +36,7 @@ from app.assets.presentation_layer.entrypoints.classes import (
 from app.assets.presentation_layer.entrypoints.configurations import (
     asset_configuration_detail,
     asset_configuration_edit,
+    asset_configuration_index,
     config_template_builder,
     config_template_detail,
     config_template_edit,
@@ -131,4 +132,5 @@ urlpatterns = [
     path("configurations/modifications/<int:modification_id>/edit/", defined_modification_edit, name="defined_modification_edit"),
     path("configurations/modifications/<int:modification_id>/applicability/", modification_applicability_edit, name="modification_applicability_edit"),
     path("configurations/modifications/<int:modification_id>/applicability/set-mode/", modification_applicability_set_mode, name="modification_applicability_set_mode"),
+    path("configurations/by-asset/", asset_configuration_index, name="asset_configuration_index"),
 ]

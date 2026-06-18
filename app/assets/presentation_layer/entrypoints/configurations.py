@@ -99,22 +99,28 @@ def config_template_detail(request: HttpRequest, template_id: int) -> HttpRespon
 # ── Defined modifications ──
 @require_http_methods(["GET"])
 def defined_modification_index(request: HttpRequest) -> HttpResponse:
-    q = request.GET.get("q", "").strip().lower()
     modifications = mock.get_defined_modifications()
-    if q:
-        modifications = [m for m in modifications if q in m.name.lower() or q in m.code.lower()]
         
     if request.GET.get("format") == "htmx-search-results":
+        q = request.GET.get("q", "").strip().lower()
+        filtered = [m for m in modifications if q in m.name.lower() or q in m.code.lower()] if q else modifications
         results = [
             f'<li data-value="{m.id}">[{m.code}] {m.name}</li>'
-            for m in modifications
+            for m in filtered
         ]
         if not results:
             return HttpResponse('<li class="is-disabled">No matches.</li>')
         return HttpResponse("\n".join(results))
 
+    categories = sorted({m.category for m in modifications if getattr(m, "category", None)})
+
     return render(request, "assets/configurations/modification_list.html", {
-        "modifications": modifications, "q": request.GET.get("q", "").strip(),
+        "modifications": modifications,
+        "q": request.GET.get("q", "").strip(),
+        "all_assets": mock.get_assets(),
+        "all_classes": mock.get_classes(),
+        "all_models": mock.get_models(),
+        "categories": categories,
     })
 
 
@@ -249,4 +255,55 @@ def asset_configuration_edit(request: HttpRequest, asset_id: int) -> HttpRespons
         "modifications_assigned": modifications_assigned,
         "asset_class_options": mock.get_asset_class_options(),
         "model_options": mock.get_asset_model_options(),
+    })
+
+
+@require_http_methods(["GET"])
+def asset_configuration_index(request: HttpRequest) -> HttpResponse:
+    # Deep load assets so they have resolved configurations
+    assets = [mock.get_asset(a.id) for a in mock.get_assets()]
+    
+    # Parse filter params
+    q = request.GET.get("q", "").strip().lower()
+    domain = request.GET.get("domain", "").strip()
+    klass = request.GET.get("asset_class", "").strip()
+    model = request.GET.get("model", "").strip()
+    manufacturer = request.GET.get("manufacturer", "").strip()
+    status = request.GET.get("status", "").strip()
+    template_id = request.GET.get("template", "").strip()
+    
+    # Apply filters
+    if q:
+        assets = [a for a in assets if q in a.name.lower() or q in a.serial_number.lower()]
+    if domain:
+        assets = [a for a in assets if a.domain and str(a.domain.id) == domain]
+    if klass:
+        assets = [a for a in assets if a.asset_class and str(a.asset_class.id) == klass]
+    if model:
+        assets = [a for a in assets if a.model and str(a.model.id) == model]
+    if manufacturer:
+        assets = [a for a in assets if any(str(m.id) == manufacturer for m in a.model.manufacturers)]
+    if status:
+        assets = [a for a in assets if a.status == status]
+    if template_id:
+        assets = [
+            a for a in assets
+            if a.configuration and a.configuration.template and str(a.configuration.template.id) == template_id
+        ]
+        
+    return render(request, "assets/configurations/by_asset.html", {
+        "assets": assets,
+        "q": q,
+        "domain": domain,
+        "asset_class": klass,
+        "model": model,
+        "manufacturer": manufacturer,
+        "status": status,
+        "template_id": template_id,
+        "domains": mock.DOMAINS,
+        "classes": mock.ASSET_CLASSES,
+        "models": mock.get_models(),
+        "manufacturers": mock.MANUFACTURERS,
+        "status_choices": mock.STATUS_CHOICES,
+        "templates": mock.get_config_templates(),
     })

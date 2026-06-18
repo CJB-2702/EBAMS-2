@@ -17,19 +17,6 @@
 </div>
 
 <div class="body-grid full-width">
-  <!-- Hero Card: Deviations Tracker -->
-  <div class="notification is-success is-light mb-4" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
-    <div class="is-flex align-items-center mb-2">
-      <span class="icon mr-1"><span class="material-icons has-text-success" aria-hidden="true">track_changes</span></span>
-      <strong>Mission Planning Deviation Tracking</strong>
-    </div>
-    <p class="is-size-6 mb-2" style="font-weight: 500;">
-      These modification configurations are designed to track <strong>deviations</strong> from standard configurations, enabling precise status monitoring for mission planning and operational readiness.
-    </p>
-    <p class="is-size-7 has-text-grey-dark">
-      Every asset's configuration history records modifications and components added, allowing operators to understand how an asset differs from its design baseline before deployment.
-    </p>
-  </div>
 
   <!-- Stats Grid -->
   <div class="stat-grid mb-2">
@@ -56,6 +43,20 @@
       </div>
     </div>
     <div class="pc-body">
+      <!-- Mission Planning Deviation Tracking -->
+      <div class="notification is-success is-light mb-4" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
+        <div class="is-flex align-items-center mb-2">
+          <span class="icon mr-1"><span class="material-icons has-text-success" aria-hidden="true">track_changes</span></span>
+          <strong>Mission Planning Deviation Tracking</strong>
+        </div>
+        <p class="is-size-7 mb-2">
+          These modification configurations are designed to track <strong>deviations</strong> from standard configurations, enabling precise status monitoring for mission planning and operational readiness.
+        </p>
+        <p class="is-size-7 has-text-grey-dark">
+          Every asset's configuration history records modifications and components added, allowing operators to understand how an asset differs from its design baseline before deployment.
+        </p>
+      </div>
+
       <div class="columns">
         <div class="column is-6">
           <div class="box" style="border: 1px solid var(--bulma-border-weak); background: var(--bulma-background); box-shadow: none; height: 100%;">
@@ -76,7 +77,7 @@
               <h4 class="title is-6 mb-0">Classes & Models Restriction</h4>
             </div>
             <p class="is-size-7 mb-2">
-              <strong>Asset Classes</strong> and <strong>Models</strong> represent abstract definitions and <strong>cannot</strong> have active configurations directly assigned.
+              <strong>Asset Classes</strong> and <strong>Models</strong> cannot have active configurations directly assigned, but configurations (modifications) can be restricted to specific models or asset classes for validation.
             </p>
             <span class="tag is-danger is-light">Not Allowed on Classes / Models</span>
           </div>
@@ -84,10 +85,26 @@
       </div>
 
       <div class="notification is-info is-light mt-3 mb-0" style="border-radius: 0; border: 1px solid var(--bulma-border-weak);">
-        <div class="is-flex">
-          <span class="material-icons mr-2" aria-hidden="true">info</span>
-          <div>
-            <p><strong>Configuration Templates:</strong> A configuration template is a bundle of modifications that can be copied to an asset and used as a reference against its current assigned modification set.</p>
+        <p class="mb-2"><strong>Template Referencing & Deviation:</strong> Physical assets accept templates as a reference. Technicians can auto-add or auto-remove the template's specified modifications to align the asset, while allowing the configuration to deviate from the baseline:</p>
+        <hr style="margin: 0.5rem 0; background-color: var(--bulma-border-weak);">
+        <div class="columns is-vcentered">
+          <div class="column is-4 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Configuration Template</span>
+            <p class="is-size-7 mt-1 has-text-grey">Reference Baseline (Expected Items)</p>
+          </div>
+          <div class="column is-1 has-text-centered py-2">
+            <span class="material-icons" aria-hidden="true">arrow_forward</span>
+          </div>
+          <div class="column is-4 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Auto Add / Remove</span>
+            <p class="is-size-7 mt-1 has-text-grey">Alignment by Technician</p>
+          </div>
+          <div class="column is-1 has-text-centered py-2">
+            <span class="material-icons" aria-hidden="true">compare_arrows</span>
+          </div>
+          <div class="column is-2 has-text-centered py-2">
+            <span class="tag is-info is-medium" style="width: 100%;">Deviation Allowed</span>
+            <p class="is-size-7 mt-1 has-text-grey">Custom Asset Configuration</p>
           </div>
         </div>
       </div>
