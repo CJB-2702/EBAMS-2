@@ -51,6 +51,8 @@ Build the kit as markdown files in a folder at the project root named `<topic>_s
 | `initial_prompt.md` | Verbatim user request (preserved) + clarifying decisions captured during interrogation. |
 | `decisions.md` | Architectural decision log — each decision gets a short ID (D1, D2…), the options considered, and what was chosen and why. |
 | `brainstorming_session_<YYYYMMDD>.md` | Human-readable narrative: goal, how the session ran, key facts established, decisions reached, open questions carried into implementation. |
+| `functionality_and_roles.md` | **Required in every kit.** An explicit functionality-set × role/persona matrix for the user to review — what each capability is and which role may C/R/U/D it. This is where access scope and any permission/gating semantics (who may release, approve, edit, comment, etc.) are decided, so they are reviewable *before* implementation. Mark undecided cells with `?`. |
+| `model_diagram.md` | **Required in every kit.** A **single** consolidated data-model picture for the *whole* kit (one ASCII/Mermaid entity-relationship diagram spanning every phase's tables, plus a one-line-per-table summary and the key model rules). It is the at-a-glance map the per-phase `data_relational_plan.md` files break down in detail — keep exactly one such document, named `model_diagram.md`, in the **base of the kit** (not per phase). Keep it in sync with `decisions.md` and the phase data plans; when they disagree, those win and the diagram is corrected. |
 
 #### Root-level documents (create when applicable)
 
@@ -79,7 +81,7 @@ Each phase folder `phase_N_<name>/` contains:
 
 **`business_concept.md`** — written as if explaining to a non-technical product owner. No model names, no class names. Use domain language. List major capabilities, who uses them, what user value they deliver.
 
-**`data_relational_plan.md`** — tables only (name + key fields). FK direction explicit. No implementation detail (no Django field types, no `Meta` classes). Prioritize domain-core relationships; explicitly exclude cross-cutting concerns (auth, RBAC, audit columns) unless this phase specifically adds them.
+**`data_relational_plan.md`** — tables only (name + key fields). FK direction explicit. No implementation detail (no Django field types, no `Meta` classes). Prioritize domain-core relationships; explicitly exclude cross-cutting concerns (auth, RBAC, audit columns) unless this phase specifically adds them. These per-phase plans are the detailed breakdown of the single root-level `model_diagram.md` — when you add or change a table here, update `model_diagram.md` so the kit-wide picture stays current.
 
 **`control_layer_plan.md`** — use the project's OOP suffix vocabulary exactly:
 

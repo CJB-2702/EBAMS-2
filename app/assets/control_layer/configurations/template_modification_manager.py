@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.db import transaction
+
 from app.assets.models.configurations import (
     ConfigurationTemplate,
     DefinedModification,
@@ -127,6 +129,35 @@ class TemplateModificationManager:
             created_by=self.actor,
             updated_by=self.actor,
         )
+
+    def set_children(
+        self,
+        *,
+        template: ConfigurationTemplate,
+        children: list[dict],
+    ) -> None:
+        """Replace the template's expected-children declarations with ``children``.
+
+        Each item: ``{model_id, quantity, is_required, child_configuration}``.
+        Full replace (one transaction) — the editor posts the complete desired set,
+        and TemplateChild rows carry several attributes, so reconcile-by-key buys
+        little. Skips a child that is the template's own model.
+        """
+        with transaction.atomic():
+            TemplateChild.objects.filter(parent_template=template).delete()
+            for item in children:
+                model_id = item.get("model_id")
+                if not model_id or model_id == template.model_id:
+                    continue
+                TemplateChild.objects.create(
+                    parent_template=template,
+                    child_model_id=model_id,
+                    quantity=max(1, item.get("quantity") or 1),
+                    is_required=bool(item.get("is_required")),
+                    child_configuration=(item.get("child_configuration") or "").strip() or None,
+                    created_by=self.actor,
+                    updated_by=self.actor,
+                )
 
     def remove_child(self, template_child: TemplateChild) -> None:
         template_child.delete()

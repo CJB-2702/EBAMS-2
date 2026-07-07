@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EBAMS{% if user.is_authenticated %} — Home{% endif %}</title>
+  <title>EBAMS2{% if user.is_authenticated %} — Home{% endif %}</title>
   <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
   <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
   <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
@@ -104,11 +104,16 @@
     /* ── App card grid ── */
     .app-card-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 1.25rem;
       margin-bottom: 1.25rem;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
+      .app-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 600px) {
       .app-card-grid {
         grid-template-columns: 1fr;
       }
@@ -195,6 +200,7 @@
       <p class="sidebar-section-label">Applications</p>
       <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
       <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
+      <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon">{% svg "part-icon" %}</span> Parts</a>
       <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
 
       <div class="sidebar-divider"></div>
@@ -267,6 +273,26 @@
           </div>
 
           <div class="app-card">
+            <div class="app-card-icon" style="width:3rem;height:3rem;">{% svg "part-icon" %}</div>
+            <h3>Parts</h3>
+            <p>Track part definitions, supply sources, manufacturers, supplier mappings, and part revisions. Attach comments and track engineering specifications.</p>
+            <div class="app-card-links">
+              <a href="{% url 'parts_hub' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+                <span>Hub &amp; Search</span>
+              </a>
+              <a href="{% url 'part_create' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+                <span>New Part</span>
+              </a>
+              <a href="{% url 'part_manufacturer_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>
+                <span>Manufacturers</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="app-card">
             <div class="app-card-icon"><span class="material-icons" aria-hidden="true">settings</span></div>
             <h3>Administration</h3>
             <p>Manage users, organizations, roles, permissions, and data domain access. Control <em>who can act</em> and <em>which rows they can see</em> across the system.</p>
@@ -300,7 +326,7 @@
 <div class="login-wrap">
   <div class="login-card">
     <h1>Sign in</h1>
-    <p class="login-sub">Enter your credentials to access EBAMS.</p>
+    <p class="login-sub">Enter your credentials to access EBAMS2.</p>
 
     <div class="mb-4">
       <a href="{% url 'oidc_authentication_init' %}" class="button is-link is-fullwidth">

@@ -128,9 +128,12 @@ def main() -> int:
             "dev_user_scope",
             "dev_roles",
             "dev_assets_base",
+            "dev_assets_instances",
             "dev_extensions_enablement",
         ):
             call_command("loaddata", label, verbosity=1)
+
+        call_command("seed_parts_dev", verbosity=1)
 
     print("Done.", flush=True)
     return 0

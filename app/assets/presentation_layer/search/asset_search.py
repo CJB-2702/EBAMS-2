@@ -1,0 +1,159 @@
+"""Read helpers for the asset screens.
+
+The asset list and 360 detail span many tables (class, model, manufacturers,
+domain, meters, images, capabilities, configuration, hierarchy), so all reads live
+here behind ``search/``. The detail loader returns the asset plus the computed
+display bundles the 360 template needs (meters/images/capabilities/configuration)
+as separate values — the reverse relations ``images``/``children`` can't be
+shadowed on the instance, so the view passes these alongside ``asset``.
+"""
+
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+from django.db.models import QuerySet
+
+from app.assets.control_layer.domain_structs.asset_capability_struct import (
+    AssetCapabilityStruct,
+)
+from app.assets.control_layer.domain_structs.asset_configuration_struct import (
+    AssetConfigurationStruct,
+)
+from app.assets.models import Asset
+
+
+def search_assets(
+    *,
+    q: str = "",
+    domain: str = "",
+    asset_class: str = "",
+    model: str = "",
+    manufacturer: str = "",
+    status: str = "",
+    capability_status: str = "",
+) -> QuerySet[Asset]:
+    qs = (
+        Asset.objects.select_related("asset_class", "model", "domain")
+        .prefetch_related("model__manufacturers")
+        .order_by("name")
+    )
+
+    q = (q or "").strip()
+    if q:
+        qs = qs.filter(name__icontains=q) | qs.filter(serial_number__icontains=q)
+        qs = qs.distinct()
+    if domain:
+        qs = qs.filter(domain_id=domain)
+    if asset_class:
+        qs = qs.filter(asset_class_id=asset_class)
+    if model:
+        qs = qs.filter(model_id=model)
+    if manufacturer:
+        qs = qs.filter(model__manufacturers__id=manufacturer).distinct()
+    if status:
+        qs = qs.filter(status=status)
+    if capability_status:
+        qs = qs.filter(capability_status=capability_status)
+
+    return qs
+
+
+def load_asset_base(asset_id: int) -> Asset | None:
+    """The asset with header FK slices for edit/hierarchy/meter screens."""
+    return (
+        Asset.objects.select_related(
+            "asset_class", "model", "domain", "parent_asset", "root_asset"
+        )
+        .prefetch_related("children")
+        .filter(id=asset_id)
+        .first()
+    )
+
+
+def build_meter_rows(asset: Asset) -> list[SimpleNamespace]:
+    """Current meters as ``(index, unit, value)`` for indices the model defines a
+    unit for."""
+    model = asset.model
+    units = [model.meter1_unit, model.meter2_unit, model.meter3_unit, model.meter4_unit]
+    values = [asset.meter1, asset.meter2, asset.meter3, asset.meter4]
+    rows: list[SimpleNamespace] = []
+    for index, (unit, value) in enumerate(zip(units, values), start=1):
+        if unit:
+            rows.append(SimpleNamespace(index=index, unit=unit, value=value))
+    return rows
+
+
+def load_meter_history(asset: Asset) -> list[SimpleNamespace]:
+    """Meter-history rows for an asset, each annotated with its model unit."""
+    model = asset.model
+    units = {
+        1: model.meter1_unit,
+        2: model.meter2_unit,
+        3: model.meter3_unit,
+        4: model.meter4_unit,
+    }
+    rows = []
+    for r in asset.meter_history.all():
+        rows.append(
+            SimpleNamespace(
+                recorded_at=r.recorded_at,
+                meter_index=r.meter_index,
+                value=r.value,
+                unit=units.get(r.meter_index) or "",
+                source=r.source or "manual",
+            )
+        )
+    return rows
+
+
+def load_asset_detail(asset_id: int) -> dict | None:
+    """The 360 detail bundle: the asset plus computed display collections."""
+    asset = (
+        Asset.objects.select_related(
+            "asset_class", "model", "domain", "parent_asset", "root_asset"
+        )
+        .prefetch_related("children", "images__attachment")
+        .filter(id=asset_id)
+        .first()
+    )
+    if asset is None:
+        return None
+
+    cap_struct = AssetCapabilityStruct.from_asset(asset)
+    capabilities = [
+        SimpleNamespace(
+            definition=ac.capability_definition,
+            source=cap_struct.provenance_of(ac),
+            qty=ac.qty,
+            notes=ac.notes,
+        )
+        for ac in cap_struct.capabilities
+    ]
+
+    cfg_struct = AssetConfigurationStruct.from_asset(asset)
+    if cfg_struct.asset_configuration is not None:
+        configuration = SimpleNamespace(
+            template=cfg_struct.asset_configuration.template,
+            verification_status=cfg_struct.asset_configuration.verification_status,
+            actual_modifications=[
+                SimpleNamespace(modification=am.defined_modification)
+                for am in cfg_struct.actual_modifications
+            ],
+        )
+    else:
+        configuration = None
+
+    image_rows = list(asset.images.all())
+    primary_image = next((img for img in image_rows if img.is_primary), None)
+    if primary_image is None and image_rows:
+        primary_image = image_rows[0]
+
+    return {
+        "asset": asset,
+        "meters": build_meter_rows(asset),
+        "capabilities": capabilities,
+        "configuration": configuration,
+        "images": image_rows,
+        "primary_image": primary_image,
+    }

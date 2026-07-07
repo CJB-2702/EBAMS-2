@@ -8,6 +8,8 @@ checkbox→bool, blank→None, ids→int. Field names follow the actual template
 
 from __future__ import annotations
 
+import json
+
 from app.assets.models.configurations import VerificationStatus
 
 
@@ -48,7 +50,37 @@ class ConfigurationTemplateEditAdaptor:
     def from_post(post) -> dict:
         data = ConfigurationTemplateCreateAdaptor.from_post(post)
         data["is_active"] = _checkbox(post, "is_active")
+        data["children"] = _children(post)
         return data
+
+
+def _children(post) -> list[dict]:
+    """Parse the expected-children card pair, posted as JSON in ``children_json``.
+
+    Each item: ``{model_id, quantity, is_required, child_configuration}``. Bad rows
+    (missing/invalid model id) are dropped at the boundary.
+    """
+    raw = post.get("children_json") or "[]"
+    try:
+        items = json.loads(raw)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(items, list):
+        return []
+    out: list[dict] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        model_id = _to_int(item.get("model_id"))
+        if not model_id:
+            continue
+        out.append({
+            "model_id": model_id,
+            "quantity": _to_int(item.get("quantity")) or 1,
+            "is_required": bool(item.get("is_required")),
+            "child_configuration": (item.get("child_configuration") or "").strip() or None,
+        })
+    return out
 
 
 class ApplicabilityEditAdaptor:

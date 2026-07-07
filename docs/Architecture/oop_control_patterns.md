@@ -9,6 +9,8 @@ This document describes **common shapes** in the control layer so that:
 
 For verbatim class shapes and module skeletons see [Examples/control_layer_class_skeletons.md](Examples/control_layer_class_skeletons.md).
 
+**Add-on-demand (Tier 3):** for canonical GoF / Fowler-PoEAA names behind these suffixes, load [vocabulary/](vocabulary/README.md) — a thin cross-walk reference, never scanned by default.
+
 ---
 
 ## 1. Class suffix vocabulary as a navigational aid

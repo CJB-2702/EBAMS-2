@@ -1,0 +1,171 @@
+{% extends "parts/base.html" %}
+{% load static %}
+{% block title %}Supplier Items — {{ part.part_number }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Supplier Items</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+      <div><h1 class="page-title">Supplier Items — {{ part.part_number }}</h1><p class="page-subtitle">Purchasable options mapped to this Part. Mapping an item auto-indexes its MPN.</p></div></div>
+  </div>
+  <div class="page-hero-actions">
+    <button class="button is-link" commandfor="modal-add-supplier-item" command="show-modal">
+      <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+      <span>Map Supplier Item</span>
+    </button>
+  </div>
+</div>
+
+<script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+
+<div class="body-grid full-width">
+  {% for item in supplier_items %}
+  <div class="pc mb-5">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+        <a href="{% url 'supplier_item_detail' item_id=item.id %}">{{ item.mpn }}</a>
+      </div>
+      {% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}
+    </div>
+    <div class="pc-body">
+      <div class="body-grid has-rail">
+        <div>
+          <dl class="kv">
+            <dt>Manufacturer</dt><dd>{{ item.manufacturer.name }}</dd>
+            <dt>Name</dt><dd>{{ item.name|default:"—" }}</dd>
+            <dt>Compatibility</dt><dd>
+              min {{ item.compatibility_range.min_major|default:"—" }}.{{ item.compatibility_range.min_minor|default:"—" }}
+              — max {{ item.compatibility_range.max_major|default:"—" }}.{{ item.compatibility_range.max_minor|default:"—" }}
+            </dd>
+          </dl>
+
+          {# ── Gallery ── #}
+          <div class="pc depth-2 mt-4">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+            <div class="pc-body">
+              {% if item.image_documents %}
+              <image-carousel id="carousel-item-{{ item.id }}" preview-height="240" loop>
+                {% for d in item.image_documents %}
+                <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+                {% endfor %}
+              </image-carousel>
+              <div class="mt-3"><carousel-preview-items for="carousel-item-{{ item.id }}" size="50"></carousel-preview-items></div>
+              {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+            </div>
+          </div>
+
+          {# ── Comments ── #}
+          <div class="pc depth-2 mt-4">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ item.comments|length }})</div></div>
+            <div class="pc-body">
+              {% for c in item.comments %}
+              <div class="pc mb-3 depth-2">
+                <div class="pc-body is-size-7">
+                  <p class="has-text-grey mb-1"><strong>{{ c.author }}</strong> &middot; {{ c.created_at }}</p>
+                  <p>{{ c.body }}</p>
+                </div>
+              </div>
+              {% empty %}<p class="is-size-7 has-text-grey">No comments yet.</p>{% endfor %}
+
+              <div class="pc depth-2 mt-3">
+                <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div></div>
+                <div class="pc-body">
+                  <form method="post" action="{% url 'supplier_item_add_comment' item_id=item.id %}">
+                    {% csrf_token %}
+                    <div class="field">
+                      <label class="label is-small">Comment</label>
+                      <div class="control">
+                        <textarea class="textarea is-small" name="body" rows="3" placeholder="Write a comment…" required></textarea>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label class="label is-small">Domain</label>
+                      <div class="control">
+                        <div class="select is-small"><select name="domain">
+                          {% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                        </select></div>
+                      </div>
+                    </div>
+                    <div class="buttons mt-3">
+                      <button class="button is-small is-primary" type="submit">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">send</span></span>
+                        <span>Submit Comment</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="body-rail">
+          <div class="pc depth-2">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Files</div></div>
+            <div class="pc-body">
+              {% for d in item.other_documents %}
+              <p class="is-size-7 mb-1">
+                <a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">description</span></span>{{ d.filename }}
+                </a>
+              </p>
+              {% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p class="has-text-grey has-text-centered py-5">No supplier items mapped.</p>
+  {% endfor %}
+</div>
+
+<dialog id="modal-add-supplier-item" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
+  <form method="post">
+    {% csrf_token %}
+    <header class="card-header">
+      <p class="card-header-title">Map a Supplier Item</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="modal-add-supplier-item" command="close"></button>
+    </header>
+    <div class="card-content">
+      <div class="content">
+        <label class="label is-small">Manufacturer</label>
+        <div class="select is-small is-fullwidth"><select name="part_manufacturer_id" required>
+          {% for m in manufacturers %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}
+        </select></div>
+        <label class="label is-small">Manufacturer Part Number</label>
+        <input class="input is-small" type="text" name="manufacturer_part_number" required>
+        <label class="label is-small">Name</label>
+        <input class="input is-small" type="text" name="name">
+        <label class="label is-small">Compatibility range (optional)</label>
+        <div class="columns is-mobile">
+          <div class="column"><input class="input is-small" type="number" name="min_major_revision_number" placeholder="min major"></div>
+          <div class="column"><input class="input is-small" type="number" name="min_minor_revision_number" placeholder="min minor"></div>
+        </div>
+        <div class="columns is-mobile">
+          <div class="column"><input class="input is-small" type="number" name="max_major_revision_number" placeholder="max major"></div>
+          <div class="column"><input class="input is-small" type="number" name="max_minor_revision_number" placeholder="max minor"></div>
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-light" commandfor="modal-add-supplier-item" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-medium is-link card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Map Item</span>
+      </button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}

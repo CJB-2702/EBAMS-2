@@ -19,7 +19,7 @@
 
 {% block breadcrumb %}
 <li><a href="{% url 'model_index' %}">Models</a></li>
-{% if mode == 'edit' %}<li><a href="{% url 'model_detail' model_id=model.id %}">{{ model.display_name }}</a></li><li class="is-active"><a href="#">Edit</a></li>{% else %}<li class="is-active"><a href="#">New</a></li>{% endif %}
+{% if mode == 'edit' %}<li><a href="{% url 'model_detail' model_id=model.id %}">{{ model }}</a></li><li class="is-active"><a href="#">Edit</a></li>{% else %}<li class="is-active"><a href="#">New</a></li>{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -34,7 +34,7 @@
       <div class="column is-4"><label class="label is-small">Subtype</label><input class="input is-small" name="subtype_name" value="{{ model.subtype_name|default:'' }}"></div>
       <div class="column is-3"><label class="label is-small">Revision</label><input class="input is-small" name="revision" value="{{ model.revision|default:'' }}"></div>
       <div class="column is-6"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
-      <div class="column is-6"><label class="label is-small">Manufacturers</label><div class="select is-small is-multiple is-fullwidth"><select name="manufacturers" multiple size="3">{% for mf in manufacturers %}<option value="{{ mf.id }}">{{ mf.name }}</option>{% endfor %}</select></div></div>
+      <div class="column is-6"><label class="label is-small">Manufacturers</label><div class="select is-small is-multiple is-fullwidth"><select name="manufacturers" multiple size="3">{% for mf in manufacturers %}<option value="{{ mf.id }}"{% if mf.id in selected_manufacturer_ids %} selected{% endif %}>{{ mf.name }}</option>{% endfor %}</select></div></div>
     </div></div>
   </div>
   <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Meter Units</div></div>

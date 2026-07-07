@@ -175,6 +175,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Card 4: Asset Relationships -->
+    <div class="column is-4">
+      <div class="pc" style="height: 100%; display: flex; flex-direction: column;">
+        <div class="pc-header">
+          <div class="pc-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
+            <span>Asset Relationships</span>
+          </div>
+        </div>
+        <div class="pc-body is-flex-grow-1 is-flex is-flex-direction-column is-justify-content-between">
+          <p class="mb-4 has-text-grey is-size-7">
+            Group assets together in small sets — assign a tank to scuba gear, a trailer to a truck — and manage each asset's parent/child structure. Not a bill-of-materials tool.
+          </p>
+          <a href="{% url 'asset_relationships_index' %}" class="button is-small is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
+            <span>Manage asset relationships</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

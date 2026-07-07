@@ -1,0 +1,6 @@
+{% comment %}HTMX expand fragment — the next depth ring under a node.{% endcomment %}
+{% for node in nodes %}
+  {% include "assets/relationships/_tree_node.html" with node=node mode=mode asset_id=asset_id can_detach=can_detach %}
+{% empty %}
+  <p class="has-text-grey is-size-7 p-2">No children.</p>
+{% endfor %}

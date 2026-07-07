@@ -1,0 +1,174 @@
+{% extends "parts/base.html" %}
+{% load static %}
+{% block title %}Revisions — {{ part.part_number }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Revisions</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">history</span></div>
+      <div><h1 class="page-title">Revision Workbench — {{ part.part_number }}</h1><p class="page-subtitle">Append a major revision or redline; set status.</p></div></div>
+  </div>
+  <div class="page-hero-actions">
+    <button class="button is-link" commandfor="modal-add-revision" command="show-modal">
+      <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+      <span>Add Revision</span>
+    </button>
+  </div>
+</div>
+
+<script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+
+<div class="body-grid full-width">
+  {% for rev in revisions %}
+  <div class="pc mb-5">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">bookmark</span></span>
+        <a href="{% url 'revision_detail_by_id' revision_id=rev.id %}">{{ rev.major_revision_number }}.{{ rev.minor_revision_number }}</a>
+      </div>
+      {% include "assets/_status_tag.html" with value=rev.status %}
+    </div>
+    <div class="pc-body">
+      <div class="body-grid has-rail">
+        <div>
+          <dl class="kv">
+            <dt>Released</dt><dd>{{ rev.date_of_release|default:"—" }}</dd>
+            <dt>Summary</dt><dd>{{ rev.summary|default:"—" }}</dd>
+          </dl>
+          <form method="post" action="{% url 'revision_set_status' part_id=part_id revision_id=rev.id %}" class="mt-3">
+            {% csrf_token %}
+            <div class="select is-small"><select name="status" onchange="this.form.submit()">
+              <option value="draft" {% if rev.status == "draft" %}selected{% endif %}>Draft</option>
+              <option value="released" {% if rev.status == "released" %}selected{% endif %}>Released</option>
+              <option value="redline" {% if rev.status == "redline" %}selected{% endif %}>Redline</option>
+              <option value="obsolete" {% if rev.status == "obsolete" %}selected{% endif %}>Obsolete</option>
+            </select></div>
+          </form>
+
+          {# ── Gallery ── #}
+          <div class="pc depth-2 mt-4">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+            <div class="pc-body">
+              {% if rev.image_documents %}
+              <image-carousel id="carousel-rev-{{ rev.id }}" preview-height="240" loop>
+                {% for d in rev.image_documents %}
+                <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+                {% endfor %}
+              </image-carousel>
+              <div class="mt-3"><carousel-preview-items for="carousel-rev-{{ rev.id }}" size="50"></carousel-preview-items></div>
+              {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+            </div>
+          </div>
+
+          {# ── Comments ── #}
+          <div class="pc depth-2 mt-4">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ rev.comments|length }})</div></div>
+            <div class="pc-body">
+              {% for c in rev.comments %}
+              <div class="pc mb-3 depth-2">
+                <div class="pc-body is-size-7">
+                  <p class="has-text-grey mb-1"><strong>{{ c.author }}</strong> &middot; {{ c.created_at }}</p>
+                  <p>{{ c.body }}</p>
+                </div>
+              </div>
+              {% empty %}<p class="is-size-7 has-text-grey">No comments yet.</p>{% endfor %}
+
+              <div class="pc depth-2 mt-3">
+                <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div></div>
+                <div class="pc-body">
+                  <form method="post" action="{% url 'revision_add_comment' part_id=part_id revision_id=rev.id %}">
+                    {% csrf_token %}
+                    <div class="field">
+                      <label class="label is-small">Comment</label>
+                      <div class="control">
+                        <textarea class="textarea is-small" name="body" rows="3" placeholder="Write a comment…" required></textarea>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label class="label is-small">Domain</label>
+                      <div class="control">
+                        <div class="select is-small"><select name="domain">
+                          {% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+                        </select></div>
+                      </div>
+                    </div>
+                    <div class="buttons mt-3">
+                      <button class="button is-small is-primary" type="submit">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">send</span></span>
+                        <span>Submit Comment</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="body-rail">
+          <div class="pc depth-2">
+            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Files</div></div>
+            <div class="pc-body">
+              {% for d in rev.other_documents %}
+              <p class="is-size-7 mb-1">
+                <a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">description</span></span>{{ d.filename }}
+                </a>
+              </p>
+              {% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p class="has-text-grey has-text-centered py-5">No revisions.</p>
+  {% endfor %}
+</div>
+
+<dialog id="modal-add-revision" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
+  <form method="post">
+    {% csrf_token %}
+    <header class="card-header">
+      <p class="card-header-title">Append Revision</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="modal-add-revision" command="close"></button>
+    </header>
+    <div class="card-content">
+      <div class="content">
+        <label class="label is-small">Kind</label>
+        <div class="select is-small is-fullwidth mb-2"><select name="kind">
+          <option value="major">New Major</option>
+          <option value="redline">Redline (Minor)</option>
+        </select></div>
+        <label class="label is-small">Summary</label>
+        <textarea class="textarea is-small" name="summary"></textarea>
+        <label class="label is-small">Major Name (optional)</label>
+        <input class="input is-small" type="text" name="major_name">
+        <label class="label is-small">Minor Name (optional, redline)</label>
+        <input class="input is-small" type="text" name="minor_name">
+        <label class="label is-small">Redline against major (optional)</label>
+        <input class="input is-small" type="number" name="major_number">
+        <label class="label is-small">Date of Release</label>
+        <input class="input is-small" type="date" name="date_of_release">
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-light" commandfor="modal-add-revision" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-medium is-link card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Add Revision</span>
+      </button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}

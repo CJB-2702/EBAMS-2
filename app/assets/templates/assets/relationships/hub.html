@@ -1,0 +1,91 @@
+{% extends "assets/asset_base.html" %}
+{% load svg_tags %}
+{% block title %}Asset Relationships{% endblock %}
+{% block nav_rel_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Asset Relationships</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+      <div>
+        <h1 class="page-title">Asset Relationships</h1>
+        <p class="page-subtitle">Pick an asset to view or edit the assets grouped under it.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  {% include "assets/relationships/_disclaimer.html" %}
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="pc-body">
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-5">
+            <label class="label is-small">Search</label>
+            <input class="input is-small is-family-monospace" type="search" name="q" value="{{ q }}" placeholder="Name or serial…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Data Domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain">
+              <option value="">All domains</option>
+              {% for d in domains %}<option value="{{ d.id }}" {% if domain == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Asset Class</label>
+            <div class="select is-small is-fullwidth"><select name="asset_class">
+              <option value="">All classes</option>
+              {% for c in classes %}<option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assets ({{ assets|length }})</div></div>
+    <div class="pc-body">
+      {% for a in assets %}
+      <div class="card mb-2" style="display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-radius:0;box-shadow:var(--bulma-card-shadow);">
+        <div style="flex-grow:1;border-right:1px solid var(--bulma-border-light);padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;min-width:0;">
+          <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;">
+            <span class="material-icons has-text-grey" style="font-size:1.1rem;" aria-hidden="true">{% if a.direct_child_count %}account_tree{% else %}radio_button_unchecked{% endif %}</span>
+            <a href="{% url 'children_view' asset_id=a.id %}" class="title is-6 mb-0">{{ a.name }}</a>
+            {% if a.asset_class_id %}<span class="tag is-info is-light is-small">{{ a.asset_class.name }}</span>{% endif %}
+            {% if a.parent_asset_id %}<span class="tag is-light is-small">child of {{ a.parent_asset.name }}</span>{% endif %}
+          </div>
+          <div style="font-size:0.72rem;" class="has-text-grey-dark">
+            <span class="has-text-grey">Serial</span> <span class="is-family-monospace">{{ a.serial_number }}</span>
+            &nbsp;·&nbsp; <span class="has-text-grey">Domain</span> {{ a.domain.name }}
+            &nbsp;·&nbsp; <span class="tag is-light is-small">{{ a.direct_child_count }} child</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;">
+          <a href="{% url 'children_view' asset_id=a.id %}" class="button is-info is-light"
+             style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:72px;border:none;border-radius:0;gap:0.2rem;">
+            <span class="icon" style="margin:0;"><span class="material-icons" style="font-size:1.3rem;" aria-hidden="true">visibility</span></span>
+            <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">view</span>
+          </a>
+          <a href="{% url 'children_edit' asset_id=a.id %}" class="button is-light"
+             style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:72px;border:none;border-radius:0;gap:0.2rem;">
+            <span class="icon" style="margin:0;"><span class="material-icons" style="font-size:1.3rem;" aria-hidden="true">edit</span></span>
+            <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">edit</span>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey has-text-centered py-5">No assets match your filters.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

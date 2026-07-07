@@ -130,15 +130,34 @@ def config_template_edit(request: HttpRequest, template_id: int) -> HttpResponse
                     template.save(update_fields=["model", "updated_at", "updated_by"])
             if not data["is_active"] and template.is_active:
                 manager.deactivate(template)
-            TemplateModificationManager(request.user).set_modifications(
+            tmm = TemplateModificationManager(request.user)
+            tmm.set_modifications(
                 template=template, modification_ids=data["modification_ids"]
             )
+            tmm.set_children(template=template, children=data["children"])
         except ValueError as exc:
             messages.error(request, str(exc))
         else:
             messages.success(request, f"Template '{template.name}' updated.")
             return redirect(reverse("config_template_detail", kwargs={"template_id": template_id}))
     return render(request, "assets/configurations/template_form.html", editor)
+
+
+@require_http_methods(["GET"])
+def config_template_name_search(request: HttpRequest) -> HttpResponse:
+    """Search-dropdown options for the child-configuration picker: existing template
+    names as ``<li data-value="name">`` rows (the stored value is the name string)."""
+    q = request.GET.get("q", "").strip()
+    exclude_id = request.GET.get("exclude", "").strip()
+    from app.assets.models import ConfigurationTemplate
+    qs = ConfigurationTemplate.objects.order_by("name")
+    if q:
+        qs = qs.filter(name__icontains=q)
+    if exclude_id.isdigit():
+        qs = qs.exclude(id=int(exclude_id))
+    return render(request, "assets/configurations/_template_name_options.html", {
+        "templates": qs[:20],
+    })
 
 
 @require_http_methods(["GET"])
@@ -289,9 +308,11 @@ def asset_configuration_detail(request: HttpRequest, asset_id: int) -> HttpRespo
     result = search.load_asset_configuration_detail(asset_id)
     if result is None:
         raise Http404
-    asset, configuration = result
+    asset, configuration, children_configurations = result
     return render(request, "assets/configurations/asset_configuration_detail.html", {
-        "asset": asset, "configuration": configuration,
+        "asset": asset,
+        "configuration": configuration,
+        "children_configurations": children_configurations,
     })
 
 
@@ -328,6 +349,7 @@ def asset_configuration_index(request: HttpRequest) -> HttpResponse:
     status = request.GET.get("status", "").strip()
     template_id = request.GET.get("template", "").strip()
     refs = search.reference_lists()
+    labels = search.asset_filter_labels(asset_class, model)
     return render(request, "assets/configurations/by_asset.html", {
         "assets": search.search_assets_with_configuration(
             q=q, domain=domain, asset_class=asset_class, model=model,
@@ -335,6 +357,8 @@ def asset_configuration_index(request: HttpRequest) -> HttpResponse:
         ),
         "q": q, "domain": domain, "asset_class": asset_class, "model": model,
         "manufacturer": manufacturer, "status": status, "template_id": template_id,
+        "selected_class": labels["selected_class"],
+        "selected_model": labels["selected_model"],
         "domains": refs["domains"], "classes": refs["classes"],
         "models": refs["models"], "manufacturers": refs["manufacturers"],
         "status_choices": search.STATUS_CHOICES, "templates": refs["templates"],

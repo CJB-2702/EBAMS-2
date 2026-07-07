@@ -12,14 +12,31 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.db import transaction
+
 from app.assets.control_layer.domain_structs.asset_struct import AssetStruct
+from app.assets.control_layer.guards.asset_serial_number_guard import (
+    AssetSerialNumberValidator,
+)
+from app.assets.control_layer.domain_structs.asset_tree_struct import AssetTreeStruct
 from app.assets.control_layer.managers.asset_hierarchy_manager import (
     AssetHierarchyManager,
 )
+from app.assets.control_layer.managers.asset_image_manager import AssetImageManager
+from app.assets.control_layer.managers.asset_relationship_manager import (
+    AssetRelationshipManager,
+)
 from app.assets.control_layer.managers.meter_manager import MeterManager
+from app.assets.models import Asset
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
+
+
+class AssetValidationError(Exception):
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = errors
+        super().__init__("; ".join(errors))
 
 
 class AssetContext:
@@ -45,9 +62,58 @@ class AssetContext:
     def hierarchy(self) -> AssetHierarchyManager:
         return AssetHierarchyManager(self.asset, self.actor)
 
+    @property
+    def relationships(self) -> AssetRelationshipManager:
+        """Parent/child write path, viewed from this asset as the parent."""
+        return AssetRelationshipManager(self.asset, self.actor)
+
+    @property
+    def images(self) -> AssetImageManager:
+        return AssetImageManager(self.asset, self.actor)
+
     # ── Domain verbs ─────────────────────────────────────────────────────────
+    def update(self, *, data: dict) -> "Asset":
+        """Apply editable metadata (name, serial, status, tags). Serial uniqueness
+        is re-validated excluding this asset."""
+        a = self.asset
+        if "serial_number" in data:
+            errors = AssetSerialNumberValidator.validate(
+                data["serial_number"], exclude_asset_id=a.id
+            )
+            if errors:
+                raise AssetValidationError(errors)
+
+        changed: list[str] = []
+        for field in ("name", "serial_number", "status", "tags"):
+            if field in data:
+                value = data[field]
+                if field in ("name", "serial_number"):
+                    value = (value or "").strip()
+                setattr(a, field, value)
+                changed.append(field)
+
+        if changed:
+            a.updated_by = self.actor
+            with transaction.atomic():
+                a.save(update_fields=[*changed, "updated_at", "updated_by"])
+        return a
+
     def record_meters(self, readings: dict[int, float], **kwargs):
         return self.meters.record(readings, **kwargs)
 
+    def tree(self, *, max_depth: int = 2) -> AssetTreeStruct:
+        """Nested child tree rooted at this asset, materialized to ``max_depth``."""
+        return AssetTreeStruct.from_asset(self.asset, max_depth=max_depth)
+
     def reparent(self, new_parent_id: int | None) -> None:
-        self.hierarchy.reparent(new_parent_id)
+        """Set this asset's parent. Routes through the relationship manager so the
+        cycle guard, subtree cascade, history row, and dual-linked Event are applied
+        on every move (single write path)."""
+        if new_parent_id is None:
+            current_parent = self.asset.parent_asset
+            if current_parent is None:
+                return
+            AssetRelationshipManager(current_parent, self.actor).detach_child(self.asset.id)
+        else:
+            new_parent = Asset.objects.get(id=new_parent_id)
+            AssetRelationshipManager(new_parent, self.actor).attach_child(self.asset.id)

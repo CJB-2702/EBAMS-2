@@ -1,0 +1,44 @@
+{% extends "parts/base.html" %}
+{% block title %}Revision {{ revision.major }}.{{ revision.minor }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">Part</a></li>
+  <li><a href="{% url 'part_revisions' part_id=part_id %}">Revisions</a></li>
+  <li class="is-active"><a href="#" aria-current="page">{{ revision.major }}.{{ revision.minor }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">find_in_page</span></div>
+    <div><h1 class="page-title">Revision {{ revision.major }}.{{ revision.minor }}</h1><p class="page-subtitle">{{ revision.status }} · {{ revision.date_of_release|default:"—" }}</p></div></div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Detail</div></div>
+    <div class="pc-body"><dl class="kv">
+      <dt>Major Name</dt><dd>{{ revision.major_name|default:"—" }}</dd>
+      <dt>Minor Name</dt><dd>{{ revision.minor_name|default:"—" }}</dd>
+      <dt>Summary</dt><dd>{{ revision.summary|default:"—" }}</dd>
+      <dt>Notes</dt><dd>{{ revision.notes|default:"—" }}</dd>
+    </dl></div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents</div></div>
+      <div class="pc-body">
+        {% for d in revision.documents %}<p class="is-size-7">{{ d.filename }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+        <form method="post" action="{% url 'revision_attach_document' part_id=part_id revision_id=revision.id %}" enctype="multipart/form-data" class="mt-3">
+          {% csrf_token %}
+          <input class="input is-small" type="file" name="file">
+          <input class="input is-small mt-2" type="text" name="caption" placeholder="Caption (optional)">
+          <button class="button is-small is-link mt-2" type="submit">Attach</button>
+        </form>
+      </div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">comment</span></span>Comments</div></div>
+      <div class="pc-body">
+        {% for c in revision.comments %}<p class="is-size-7"><strong>{{ c.author }}</strong> — {{ c.body }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

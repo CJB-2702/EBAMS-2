@@ -29,11 +29,11 @@
         <tbody>
           {% for m in models %}
           <tr>
-            <td><a href="{% url 'model_detail' model_id=m.id %}">{{ m.display_name }}</a></td>
+            <td><a href="{% url 'model_detail' model_id=m.id %}">{{ m }}</a></td>
             <td>{{ m.asset_class.name }}</td>
-            <td>{% for mf in m.manufacturers %}<span class="tag is-light is-small">{{ mf.name }}</span> {% endfor %}</td>
-            <td>{% if m.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% else %}<span class="tag is-light is-small">rev of {{ m.base.model_name }}</span>{% endif %}</td>
-            <td>{% for d in m.domains %}<span class="tag is-light is-small">{{ d.name }}</span> {% endfor %}</td>
+            <td>{% for mf in m.manufacturers.all %}<span class="tag is-light is-small">{{ mf.name }}</span> {% endfor %}</td>
+            <td>{% if m.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% else %}<span class="tag is-light is-small">rev of {{ m.base_model.model_name }}</span>{% endif %}</td>
+            <td>{% for d in m.domains.all %}<span class="tag is-light is-small">{{ d.name }}</span> {% endfor %}</td>
             <td>{% include "assets/_status_tag.html" with value=m.is_active|yesno:"Active,Inactive" %}</td>
             <td>{{ m.asset_count|default:0 }}</td>
             <td class="has-text-right"><a href="{% url 'model_detail' model_id=m.id %}" class="button is-info is-light is-small"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a></td>

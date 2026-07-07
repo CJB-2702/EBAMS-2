@@ -33,6 +33,7 @@ urlpatterns = [
     path('events/', include('app.events.urls')),
     path('assets/', include('app.assets.urls')),
     path('detail_extensions/', include('app.detail_extensions.urls')),
+    path('parts/', include('app.parts.urls')),
 ]
 
 if settings.DEBUG:

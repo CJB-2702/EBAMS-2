@@ -1,0 +1,58 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Relationships — {{ asset.name }}{% endblock %}
+{% block nav_config_index %}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'asset_relationships_index' %}">Asset Relationships</a></li>
+  <li class="is-active"><a href="#" aria-current="page">{{ asset.name }} — Children</a></li>
+{% endblock %}
+
+{% block extra_css %}
+  .parent-chain { margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--bulma-border-weak); }
+  .parent-chain .parent-chain-label {
+    display: flex; align-items: center; gap: 0.25rem;
+    color: var(--bulma-text-weak); text-transform: uppercase;
+    font-size: 0.68rem; letter-spacing: 0.06em; font-weight: 600;
+  }
+  .parent-chain .parent-chain-label::after { content: ""; }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+      <div>
+        <h1 class="page-title">{{ asset.name }} — Relationships</h1>
+        <p class="page-subtitle">Assets grouped under this one. Expand a card to load deeper levels.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'children_edit' asset_id=asset.id %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit children</span>
+      </a>
+      <a href="{% url 'asset_detail' asset_id=asset.id %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span><span>Asset detail</span>
+      </a>
+    </div>
+  </div>
+
+  {% if ancestors %}
+  <nav class="breadcrumb is-small parent-chain" aria-label="parent chain">
+    <ul>
+      <li class="parent-chain-label">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">subdirectory_arrow_right</span></span>
+        <span>Part of</span>
+      </li>
+      {% for ancestor in ancestors %}
+        <li><a href="{% url 'children_view' asset_id=ancestor.id %}">{{ ancestor.name }}</a></li>
+      {% endfor %}
+      <li class="is-active"><a href="#" aria-current="page">{{ asset.name }}</a></li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<div class="body-grid full-width">
+  {% include "assets/relationships/_tree.html" %}
+</div>
+{% endblock %}

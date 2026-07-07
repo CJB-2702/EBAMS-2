@@ -4,6 +4,10 @@
 {% block title %}Asset Configuration Hub{% endblock %}
 {% block nav_config_asset %}is-active{% endblock %}
 
+{% block extra_head %}
+  <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
 {% block breadcrumb %}
 <li><a href="{% url 'configurations_index' %}">Configurations</a></li>
 <li class="is-active"><a href="#" aria-current="page">By Asset</a></li>
@@ -56,26 +60,28 @@
           <!-- Asset Class -->
           <div class="column is-2">
             <label class="label is-small">Asset Class</label>
-            <div class="select is-small is-fullwidth">
-              <select name="asset_class" aria-label="Filter by asset class">
-                <option value="">All classes</option>
-                {% for c in classes %}
-                <option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <search-dropdown
+                id="asset-class-search"
+                name="asset_class"
+                placeholder="All classes"
+                value="{{ asset_class }}"
+                value-label="{{ selected_class.name }}"
+                hx-get="{% url 'class_index' %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search">
+            </search-dropdown>
           </div>
           <!-- Asset Model -->
           <div class="column is-2">
             <label class="label is-small">Asset Model</label>
-            <div class="select is-small is-fullwidth">
-              <select name="model" aria-label="Filter by asset model">
-                <option value="">All models</option>
-                {% for m in models %}
-                <option value="{{ m.id }}" {% if model == m.id|stringformat:'s' %}selected{% endif %}>{{ m.display_name }}</option>
-                {% endfor %}
-              </select>
-            </div>
+            <search-dropdown
+                id="asset-model-search"
+                name="model"
+                placeholder="All models"
+                value="{{ model }}"
+                value-label="{{ selected_model.display_name }}"
+                hx-get="{% url 'model_index' %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search">
+            </search-dropdown>
           </div>
           <!-- Manufacturer -->
           <div class="column is-3">

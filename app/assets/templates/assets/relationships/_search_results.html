@@ -1,0 +1,33 @@
+{% comment %}HTMX attach-candidate results (search-row-cards).
+Context: candidates (list[Asset] with direct_child_count), asset_id (subject), q.{% endcomment %}
+{% for c in candidates %}
+<div class="card mb-2" style="display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-radius:0;box-shadow:var(--bulma-card-shadow);">
+  <div style="flex-grow:1;border-right:1px solid var(--bulma-border-light);padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;min-width:0;">
+    <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;">
+      <span class="title is-6 mb-0">{{ c.name }}</span>
+      {% if c.asset_class_id %}<span class="tag is-info is-light is-small">{{ c.asset_class.name }}</span>{% endif %}
+      {% if c.parent_asset_id %}<span class="tag is-warning is-light is-small" title="Already has a parent — attaching here moves it">has parent · will move</span>{% endif %}
+    </div>
+    <div style="font-size:0.72rem;" class="has-text-grey-dark">
+      <span class="has-text-grey">Serial</span> <span class="is-family-monospace">{{ c.serial_number }}</span>
+      &nbsp;·&nbsp; <span class="has-text-grey">Domain</span> {{ c.domain.name }}
+      &nbsp;·&nbsp; <span class="tag is-light is-small">{{ c.direct_child_count }} child</span>
+    </div>
+  </div>
+  <form method="post" action="{% url 'children_attach' asset_id=asset_id %}" style="display:flex;margin:0;">
+    {% csrf_token %}
+    <input type="hidden" name="child_id" value="{{ c.id }}">
+    <button type="submit" class="button is-success is-light"
+            style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:80px;border:none;border-radius:0;gap:0.2rem;">
+      <span class="icon" style="margin:0;"><span class="material-icons" style="font-size:1.3rem;" aria-hidden="true">add_link</span></span>
+      <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">attach</span>
+    </button>
+  </form>
+</div>
+{% empty %}
+  {% if q %}
+    <p class="has-text-grey is-size-7 p-2">No attachable assets match &ldquo;{{ q }}&rdquo;.</p>
+  {% else %}
+    <p class="has-text-grey is-size-7 p-2">Type a name or serial to search.</p>
+  {% endif %}
+{% endfor %}

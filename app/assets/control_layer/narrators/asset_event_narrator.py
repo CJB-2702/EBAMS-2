@@ -64,6 +64,26 @@ class AssetEventNarrator:
         )
         return title, description
 
+    # ── Relationship events (parent/child) ──────────────────────────────────
+
+    @staticmethod
+    def child_attached(parent: "Asset", child: "Asset") -> tuple[str, str]:
+        title = f"Asset Attached: {child.name} under {parent.name}"
+        description = (
+            f"Asset '{child.name}' (serial {child.serial_number}) was attached as a "
+            f"child of '{parent.name}' (serial {parent.serial_number})."
+        )
+        return title, description
+
+    @staticmethod
+    def child_detached(parent: "Asset", child: "Asset") -> tuple[str, str]:
+        title = f"Asset Detached: {child.name} from {parent.name}"
+        description = (
+            f"Asset '{child.name}' (serial {child.serial_number}) was detached from "
+            f"'{parent.name}' and is now a standalone root asset."
+        )
+        return title, description
+
     # ── P4: capability events ────────────────────────────────────────────────
 
     @staticmethod

@@ -33,7 +33,7 @@
       <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ klass.name|default:'' }}"></div>
       <div class="column is-6"><label class="label is-small">Category</label><input class="input is-small" name="category" value="{{ klass.category|default:'' }}"></div>
       <div class="column is-12"><label class="label is-small">Description</label><textarea class="textarea is-small" name="description" rows="2">{{ klass.description|default:'' }}</textarea></div>
-      <div class="column is-6"><label class="label is-small">Data Domains</label><div class="select is-small is-multiple is-fullwidth"><select name="domains" multiple size="3">{% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div></div>
+      <div class="column is-6"><label class="label is-small">Data Domains</label><div class="select is-small is-multiple is-fullwidth"><select name="domains" multiple size="3">{% for d in domains %}<option value="{{ d.id }}"{% if d.id in selected_domain_ids %} selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div></div>
       <div class="column is-6"><label class="checkbox is-small mt-5"><input type="checkbox" name="restrict_to_domain_set" {% if klass.restrict_to_domain_set %}checked{% endif %}> Restrict to domain set</label></div>
     </div></div>
   </div>

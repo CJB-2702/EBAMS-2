@@ -53,6 +53,10 @@ class AssetModelFactory:
                 is_base_model=data.get("is_base_model", True),
                 base_model_id=data.get("base_model_id"),
                 asset_class_id=data["asset_class_id"],
+                meter1_unit=data.get("meter1_unit") or None,
+                meter2_unit=data.get("meter2_unit") or None,
+                meter3_unit=data.get("meter3_unit") or None,
+                meter4_unit=data.get("meter4_unit") or None,
                 created_by=actor,
                 updated_by=actor,
             )

@@ -14,7 +14,7 @@
       <div class="page-header-icon">{% svg "asset-icon" %}</div>
       <div>
         <h1 class="page-title">{{ asset.name }}</h1>
-        <p class="page-subtitle is-family-monospace">{{ asset.serial_number }} · {{ asset.asset_class.name }} · {{ asset.model.display_name }}</p>
+        <p class="page-subtitle is-family-monospace">{{ asset.serial_number }} · {{ asset.asset_class.name }} · {{ asset.model }}</p>
         <div class="mt-2">
           {% include "assets/_status_tag.html" with value=asset.status %}
           {% include "assets/_status_tag.html" with value=asset.capability_status %}
@@ -41,7 +41,7 @@
           <dt>Name</dt><dd>{{ asset.name }}</dd>
           <dt>Serial</dt><dd class="is-family-monospace">{{ asset.serial_number }}</dd>
           <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=asset.asset_class.id %}">{{ asset.asset_class.name }}</a></dd>
-          <dt>Model</dt><dd><a href="{% url 'model_detail' model_id=asset.model.id %}">{{ asset.model.display_name }}</a></dd>
+          <dt>Model</dt><dd><a href="{% url 'model_detail' model_id=asset.model.id %}">{{ asset.model }}</a></dd>
           <dt>Status</dt><dd>{% include "assets/_status_tag.html" with value=asset.status %}</dd>
           <dt>Active</dt><dd>{{ asset.is_active|yesno:"Yes,No" }}</dd>
           <dt>Tags</dt><dd>{% for t in asset.tags %}<span class="tag is-light is-small">{{ t }}</span> {% empty %}<span class="has-text-grey-light">—</span>{% endfor %}</dd>
@@ -55,9 +55,9 @@
         <a href="{% url 'asset_meter_history' asset_id=asset.id %}" class="button is-small is-light">History</a>
       </div>
       <div class="pc-body">
-        {% if asset.meters %}
+        {% if meters %}
         <div class="columns is-multiline is-mobile">
-          {% for m in asset.meters %}
+          {% for m in meters %}
           <div class="column is-3">
             <div class="stat-tile"><div class="stat-value">{{ m.value }}</div><div class="stat-label">Meter {{ m.index }} · {{ m.unit }}</div></div>
           </div>
@@ -73,14 +73,14 @@
         <a href="{% url 'asset_images' asset_id=asset.id %}" class="button is-small is-light">Manage</a>
       </div>
       <div class="pc-body">
-        {% if asset.images %}
+        {% if images %}
         <figure class="image is-16by9 mb-2" style="background:var(--bulma-background);">
-          <img src="{{ asset.primary_image.url }}" alt="{{ asset.name }} primary image" style="object-fit:contain;">
+          <img src="{{ primary_image.attachment.file.url }}" alt="{{ asset.name }} primary image" style="object-fit:contain;">
         </figure>
         <div class="columns is-mobile" style="overflow-x:auto;">
-          {% for img in asset.images %}
+          {% for img in images %}
           <div class="column is-narrow">
-            <img src="{{ img.url }}" alt="thumb" style="height:54px;border:1px solid var(--bulma-border-weak);{% if img.is_primary %}outline:2px solid var(--bulma-primary);{% endif %}">
+            <img src="{{ img.attachment.file.url }}" alt="thumb" style="height:54px;border:1px solid var(--bulma-border-weak);{% if img.is_primary %}outline:2px solid var(--bulma-primary);{% endif %}">
           </div>
           {% endfor %}
         </div>
@@ -97,7 +97,7 @@
         <table class="table is-fullwidth is-size-7" style="margin:0;">
           <thead><tr><th>Capability</th><th>Code</th><th>Source</th><th>Qty</th><th>Notes</th></tr></thead>
           <tbody>
-            {% for c in asset.capabilities %}
+            {% for c in capabilities %}
             <tr>
               <td>{{ c.definition.name }}</td>
               <td class="is-family-monospace">{{ c.definition.code }}</td>
@@ -118,11 +118,11 @@
         <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light">Open</a>
       </div>
       <div class="pc-body">
-        {% if asset.configuration %}
+        {% if configuration %}
         <dl class="kv">
-          <dt>Template</dt><dd><a href="{% url 'config_template_detail' template_id=asset.configuration.template.id %}">{{ asset.configuration.template.name }} (Rev {{ asset.configuration.template.revision }})</a></dd>
-          <dt>Verification</dt><dd>{% include "assets/_status_tag.html" with value=asset.configuration.verification_status %}</dd>
-          <dt>Modifications</dt><dd>{% for am in asset.configuration.actual_modifications %}<span class="tag is-light is-small">{{ am.modification.name }}</span> {% endfor %}</dd>
+          <dt>Template</dt><dd><a href="{% url 'config_template_detail' template_id=configuration.template.id %}">{{ configuration.template.name }} (Rev {{ configuration.template.revision }})</a></dd>
+          <dt>Verification</dt><dd>{% include "assets/_status_tag.html" with value=configuration.verification_status %}</dd>
+          <dt>Modifications</dt><dd>{% for am in configuration.actual_modifications %}<span class="tag is-light is-small">{{ am.modification.name }}</span> {% endfor %}</dd>
         </dl>
         {% else %}<p class="has-text-grey">No configuration recorded. <a href="{% url 'asset_configuration_edit' asset_id=asset.id %}">Add one →</a></p>{% endif %}
       </div>
@@ -174,9 +174,9 @@
           <dt>Parent</dt><dd>{% if asset.parent_asset %}<a href="{% url 'asset_detail' asset_id=asset.parent_asset.id %}">{{ asset.parent_asset.name }}</a>{% else %}<span class="has-text-grey-light">—</span>{% endif %}</dd>
           <dt>Depth</dt><dd>{{ asset.depth_from_root }}</dd>
         </dl>
-        {% if asset.children %}
+        {% if asset.children.all %}
         <p class="is-size-7 has-text-weight-semibold mt-3 mb-1">Children</p>
-        {% for c in asset.children %}<a href="{% url 'asset_detail' asset_id=c.id %}" class="is-block is-size-7">↳ {{ c.name }}</a>{% endfor %}
+        {% for c in asset.children.all %}<a href="{% url 'asset_detail' asset_id=c.id %}" class="is-block is-size-7">↳ {{ c.name }}</a>{% endfor %}
         {% endif %}
       </div>
     </div>
@@ -185,7 +185,7 @@
       <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Events</div></div>
       <div class="pc-body">
         <p class="is-size-7 has-text-grey">Lifecycle events are tracked in the Events portal and linked via <code>AssetEvent</code>.</p>
-        <a href="{% url 'event_index' %}" class="button is-small is-light is-fullwidth mt-2">Open Events →</a>
+        <a href="{% url 'event_index' %}?asset={{ asset.id }}" class="button is-small is-light is-fullwidth mt-2">Open Events →</a>
       </div>
     </div>
   </div>

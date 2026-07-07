@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,6 +17,19 @@ from app.events.models import Event, EventPriority, EventStatus, EventType
 from app.events.presentation_layer.search.event_search import list_events_for_user
 from app.events.presentation_layer.tools.file_previews import build_comments_context
 from app.utils.hashids import decode_hash, encode_id
+
+# Cards per page for the expanded (large) infinite-scroll view.
+CARDS_PER_PAGE = 8
+
+
+def build_event_card(event: Event, user) -> dict:
+    """Context for a single expanded event card: metadata + comments."""
+    ctx = EventContext(event.pk, user)
+    return {
+        "event": event,
+        "hash": encode_id(event.pk),
+        "comments": build_comments_context(ctx.struct),
+    }
 
 
 def _resolve_event(hash_str: str) -> Event:
@@ -32,6 +48,7 @@ def event_index(request: HttpRequest) -> HttpResponse:
     q = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "").strip()
     type_filter = request.GET.get("event_type", "").strip()
+    asset_filter = request.GET.get("asset", "").strip()
 
     qs = list_events_for_user(request.user)
     if q:
@@ -41,15 +58,57 @@ def event_index(request: HttpRequest) -> HttpResponse:
     if type_filter:
         qs = qs.filter(event_type=type_filter)
 
-    events_with_hash = [{"event": e, "hash": encode_id(e.pk)} for e in qs]
+    asset = None
+    if asset_filter.isdigit():
+        from app.assets.models import Asset
 
-    return render(request, "events/ev_list.html", {
-        "events_with_hash": events_with_hash,
+        asset = Asset.objects.filter(pk=int(asset_filter)).first()
+        qs = qs.filter(asset_links__asset_id=int(asset_filter)).distinct()
+
+    fmt = request.GET.get("format", "").strip()
+
+    # Querystring carrying just the active filters (no page / format) so the
+    # density switch and infinite-scroll sentinel can preserve filter state.
+    filter_params = {k: v for k, v in (
+        ("q", q),
+        ("status", status_filter),
+        ("event_type", type_filter),
+        ("asset", asset_filter),
+    ) if v}
+    base_query = urlencode(filter_params)
+
+    shared = {
         "q": q,
         "status_filter": status_filter,
         "type_filter": type_filter,
+        "asset_filter": asset_filter,
+        "asset": asset,
+        "base_query": base_query,
         "status_choices": EventStatus.choices,
         "type_choices": EventType.choices,
+        "current_format": fmt or "condensed",
+    }
+
+    # ── Expanded card view + its infinite-scroll fragment ──
+    if fmt in ("large", "htmx-event-cards"):
+        page_obj = Paginator(qs, CARDS_PER_PAGE).get_page(request.GET.get("page"))
+        cards = [build_event_card(e, request.user) for e in page_obj]
+        card_ctx = {**shared, "current_format": "large", "cards": cards, "page_obj": page_obj}
+        if fmt == "htmx-event-cards":
+            return render(request, "events/fragments/event_cards_page.html", card_ctx)
+        return render(request, "events/ev_list_large.html", card_ctx)
+
+    events_with_hash = [{"event": e, "hash": encode_id(e.pk)} for e in qs]
+
+    # ── Medium view: richer full-width rows ──
+    if fmt == "medium":
+        return render(request, "events/ev_list_medium.html", {
+            **shared, "events_with_hash": events_with_hash,
+        })
+
+    # ── Condensed (default): flat table ──
+    return render(request, "events/ev_list.html", {
+        **shared, "events_with_hash": events_with_hash,
     })
 
 

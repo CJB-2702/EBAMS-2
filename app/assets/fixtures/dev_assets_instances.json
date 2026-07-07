@@ -1,0 +1,1259 @@
+[
+{
+ "model": "events.event",
+ "pk": 1,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.376Z",
+  "updated_at": "2026-06-25T03:26:18.376Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 2,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.378Z",
+  "updated_at": "2026-06-25T03:26:18.378Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 3,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.385Z",
+  "updated_at": "2026-06-25T03:26:18.385Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Asset Created: Forklift FL-100",
+  "description": "Asset 'Forklift FL-100' (serial FL-100) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 4,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.398Z",
+  "updated_at": "2026-06-25T03:26:18.398Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Capability Added: Towing",
+  "description": "Capability 'Towing' auto-assigned to asset 'Forklift FL-100' from model template at creation.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 5,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.472Z",
+  "updated_at": "2026-06-25T03:26:18.473Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 2,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 6,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.473Z",
+  "updated_at": "2026-06-25T03:26:18.473Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 2,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 7,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.475Z",
+  "updated_at": "2026-06-25T03:26:18.475Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 2,
+  "title": "Asset Created: Forklift FL-101",
+  "description": "Asset 'Forklift FL-101' (serial FL-101) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 8,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.478Z",
+  "updated_at": "2026-06-25T03:26:18.478Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 2,
+  "title": "Capability Added: Towing",
+  "description": "Capability 'Towing' auto-assigned to asset 'Forklift FL-101' from model template at creation.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 9,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.508Z",
+  "updated_at": "2026-06-25T03:26:18.508Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 10,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.509Z",
+  "updated_at": "2026-06-25T03:26:18.509Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 11,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.511Z",
+  "updated_at": "2026-06-25T03:26:18.511Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "Asset Created: Excavator EX-200",
+  "description": "Asset 'Excavator EX-200' (serial EX-200) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 12,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.560Z",
+  "updated_at": "2026-06-25T03:26:18.560Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 4,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 13,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.561Z",
+  "updated_at": "2026-06-25T03:26:18.561Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 4,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 14,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.562Z",
+  "updated_at": "2026-06-25T03:26:18.562Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 4,
+  "title": "Asset Created: Boom Lift BL-300",
+  "description": "Asset 'Boom Lift BL-300' (serial BL-300) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 15,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.565Z",
+  "updated_at": "2026-06-25T03:26:18.565Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 4,
+  "title": "Capability Added: Lifting",
+  "description": "Capability 'Lifting' auto-assigned to asset 'Boom Lift BL-300' from model template at creation.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 16,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.609Z",
+  "updated_at": "2026-06-25T03:26:18.609Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 17,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.610Z",
+  "updated_at": "2026-06-25T03:26:18.610Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 18,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.612Z",
+  "updated_at": "2026-06-25T03:26:18.613Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Asset Created: Corolla CAR-400",
+  "description": "Asset 'Corolla CAR-400' (serial CAR-400) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 19,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.659Z",
+  "updated_at": "2026-06-25T03:26:18.659Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 5,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 20,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.660Z",
+  "updated_at": "2026-06-25T03:26:18.660Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 5,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 21,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.661Z",
+  "updated_at": "2026-06-25T03:26:18.661Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 5,
+  "title": "Asset Created: F-150 TRK-500",
+  "description": "Asset 'F-150 TRK-500' (serial TRK-500) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 22,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.706Z",
+  "updated_at": "2026-06-25T03:26:18.707Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 6,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 23,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.708Z",
+  "updated_at": "2026-06-25T03:26:18.708Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 6,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 24,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.712Z",
+  "updated_at": "2026-06-25T03:26:18.712Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 6,
+  "title": "Asset Created: F-250 TRK-600",
+  "description": "Asset 'F-250 TRK-600' (serial TRK-600) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 25,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.764Z",
+  "updated_at": "2026-06-25T03:26:18.764Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 26,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.767Z",
+  "updated_at": "2026-06-25T03:26:18.767Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 27,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.773Z",
+  "updated_at": "2026-06-25T03:26:18.773Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Asset Created: F-250 TRK-601",
+  "description": "Asset 'F-250 TRK-601' (serial TRK-601) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 28,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.818Z",
+  "updated_at": "2026-06-25T03:26:18.818Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "photo_gallery",
+  "allow_comments": false,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 29,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.820Z",
+  "updated_at": "2026-06-25T03:26:18.821Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "documentation",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "__thread__",
+  "description": "",
+  "event_type": "generic",
+  "status": null,
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 30,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.828Z",
+  "updated_at": "2026-06-25T03:26:18.828Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 3,
+  "title": "Asset Created: Excavator EX-201",
+  "description": "Asset 'Excavator EX-201' (serial EX-201) was created.",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 31,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.914Z",
+  "updated_at": "2026-06-25T03:26:18.914Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Asset Attached: Forklift FL-100 under Excavator EX-200",
+  "description": "Asset 'Forklift FL-100' (serial FL-100) was attached as a child of 'Excavator EX-200' (serial EX-200).",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 32,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.954Z",
+  "updated_at": "2026-06-25T03:26:18.954Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 2,
+  "title": "Asset Attached: Forklift FL-101 under Excavator EX-200",
+  "description": "Asset 'Forklift FL-101' (serial FL-101) was attached as a child of 'Excavator EX-200' (serial EX-200).",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "events.event",
+ "pk": 33,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.980Z",
+  "updated_at": "2026-06-25T03:26:18.980Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "deleted_at": null,
+  "thread_type": "event",
+  "allow_comments": true,
+  "allow_direct_attachments": true,
+  "domain": 1,
+  "title": "Asset Attached: Corolla CAR-400 under F-250 TRK-600",
+  "description": "Asset 'Corolla CAR-400' (serial CAR-400) was attached as a child of 'F-250 TRK-600' (serial TRK-600).",
+  "event_type": "asset_management",
+  "status": "complete",
+  "priority": null,
+  "event_start": null,
+  "event_end": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 1,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.379Z",
+  "updated_at": "2026-06-25T03:26:18.908Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Forklift FL-100",
+  "serial_number": "FL-100",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 1,
+  "model": 1,
+  "asset_class": 1,
+  "root_asset": 3,
+  "parent_asset": 3,
+  "depth_from_root": 1,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 1,
+  "documentation": 2,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 2,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.474Z",
+  "updated_at": "2026-06-25T03:26:18.951Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Forklift FL-101",
+  "serial_number": "FL-101",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 2,
+  "model": 1,
+  "asset_class": 1,
+  "root_asset": 3,
+  "parent_asset": 3,
+  "depth_from_root": 1,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 5,
+  "documentation": 6,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 3,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.510Z",
+  "updated_at": "2026-06-25T03:26:18.510Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Excavator EX-200",
+  "serial_number": "EX-200",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 3,
+  "model": 2,
+  "asset_class": 2,
+  "root_asset": 3,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 9,
+  "documentation": 10,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 4,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.561Z",
+  "updated_at": "2026-06-25T03:26:18.561Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Boom Lift BL-300",
+  "serial_number": "BL-300",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 4,
+  "model": 3,
+  "asset_class": 3,
+  "root_asset": 4,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 12,
+  "documentation": 13,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 5,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.611Z",
+  "updated_at": "2026-06-25T03:26:18.977Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Corolla CAR-400",
+  "serial_number": "CAR-400",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 1,
+  "model": 4,
+  "asset_class": 4,
+  "root_asset": 7,
+  "parent_asset": 7,
+  "depth_from_root": 1,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 16,
+  "documentation": 17,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 6,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.660Z",
+  "updated_at": "2026-06-25T03:26:18.660Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "F-150 TRK-500",
+  "serial_number": "TRK-500",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 5,
+  "model": 5,
+  "asset_class": 4,
+  "root_asset": 6,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 19,
+  "documentation": 20,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 7,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.709Z",
+  "updated_at": "2026-06-25T03:26:18.709Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "F-250 TRK-600",
+  "serial_number": "TRK-600",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 6,
+  "model": 6,
+  "asset_class": 4,
+  "root_asset": 7,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 22,
+  "documentation": 23,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 8,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.768Z",
+  "updated_at": "2026-06-25T03:26:18.768Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "F-250 TRK-601",
+  "serial_number": "TRK-601",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 1,
+  "model": 6,
+  "asset_class": 4,
+  "root_asset": 8,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 25,
+  "documentation": 26,
+  "tags": null
+ }
+},
+{
+ "model": "assets.asset",
+ "pk": 9,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.822Z",
+  "updated_at": "2026-06-25T03:26:18.822Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "name": "Excavator EX-201",
+  "serial_number": "EX-201",
+  "status": "Active",
+  "capability_status": null,
+  "is_active": true,
+  "domain": 3,
+  "model": 2,
+  "asset_class": 2,
+  "root_asset": 9,
+  "parent_asset": null,
+  "depth_from_root": 0,
+  "meter1": null,
+  "meter2": null,
+  "meter3": null,
+  "meter4": null,
+  "photo_gallery": 28,
+  "documentation": 29,
+  "tags": null
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 1,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.387Z",
+  "updated_at": "2026-06-25T03:26:18.387Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 1,
+  "event": 3,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 2,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.400Z",
+  "updated_at": "2026-06-25T03:26:18.400Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 1,
+  "event": 4,
+  "role": "capability"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 3,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.475Z",
+  "updated_at": "2026-06-25T03:26:18.475Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 2,
+  "event": 7,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 4,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.478Z",
+  "updated_at": "2026-06-25T03:26:18.478Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 2,
+  "event": 8,
+  "role": "capability"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 5,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.511Z",
+  "updated_at": "2026-06-25T03:26:18.511Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 3,
+  "event": 11,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 6,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.563Z",
+  "updated_at": "2026-06-25T03:26:18.563Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 4,
+  "event": 14,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 7,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.565Z",
+  "updated_at": "2026-06-25T03:26:18.565Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 4,
+  "event": 15,
+  "role": "capability"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 8,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.613Z",
+  "updated_at": "2026-06-25T03:26:18.613Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 5,
+  "event": 18,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 9,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.662Z",
+  "updated_at": "2026-06-25T03:26:18.662Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 6,
+  "event": 21,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 10,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.713Z",
+  "updated_at": "2026-06-25T03:26:18.713Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 7,
+  "event": 24,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 11,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.775Z",
+  "updated_at": "2026-06-25T03:26:18.775Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 8,
+  "event": 27,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 12,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.830Z",
+  "updated_at": "2026-06-25T03:26:18.830Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 9,
+  "event": 30,
+  "role": "lifecycle"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 13,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.917Z",
+  "updated_at": "2026-06-25T03:26:18.917Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 1,
+  "event": 31,
+  "role": "child"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 14,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.918Z",
+  "updated_at": "2026-06-25T03:26:18.918Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 3,
+  "event": 31,
+  "role": "parent"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 15,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.957Z",
+  "updated_at": "2026-06-25T03:26:18.957Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 2,
+  "event": 32,
+  "role": "child"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 16,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.958Z",
+  "updated_at": "2026-06-25T03:26:18.958Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 3,
+  "event": 32,
+  "role": "parent"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 17,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.981Z",
+  "updated_at": "2026-06-25T03:26:18.981Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 5,
+  "event": 33,
+  "role": "child"
+ }
+},
+{
+ "model": "assets.assetevent",
+ "pk": 18,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.982Z",
+  "updated_at": "2026-06-25T03:26:18.982Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 7,
+  "event": 33,
+  "role": "parent"
+ }
+},
+{
+ "model": "assets.assetcapability",
+ "pk": 1,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.396Z",
+  "updated_at": "2026-06-25T03:26:18.396Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 1,
+  "capability_definition": 2,
+  "is_active": true,
+  "qty": null,
+  "notes": null
+ }
+},
+{
+ "model": "assets.assetcapability",
+ "pk": 2,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.477Z",
+  "updated_at": "2026-06-25T03:26:18.477Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 2,
+  "capability_definition": 2,
+  "is_active": true,
+  "qty": null,
+  "notes": null
+ }
+},
+{
+ "model": "assets.assetcapability",
+ "pk": 3,
+ "fields": {
+  "created_at": "2026-06-25T03:26:18.564Z",
+  "updated_at": "2026-06-25T03:26:18.564Z",
+  "created_by": 1,
+  "updated_by": 1,
+  "asset": 4,
+  "capability_definition": 1,
+  "is_active": true,
+  "qty": null,
+  "notes": null
+ }
+}
+]

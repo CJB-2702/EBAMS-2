@@ -1,0 +1,137 @@
+{% extends "events/ev_base.html" %}
+
+{% block title %}Events{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">All Events</a></li>
+{% endblock %}
+{% block sidebar_events_active %}is-active{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event</span></div>
+      <div>
+        <h1 class="page-title">Events</h1>
+        <p class="page-subtitle">Medium view — summary rows with descriptions.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      {% include "events/fragments/density_switch.html" %}
+      <a href="{% url 'event_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>New Event</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+    </div>
+    <div class="pc-body">
+      {% if asset %}
+      <div class="notification is-info is-light is-small py-2 px-3 mb-3 is-flex is-align-items-center is-justify-content-space-between">
+        <span class="is-size-7">
+          <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+          Showing events linked to asset <strong>{{ asset.name }}</strong>
+        </span>
+        <a href="{% url 'asset_detail' asset_id=asset.id %}" class="is-size-7">View asset →</a>
+      </div>
+      {% endif %}
+      <form method="get">
+        <input type="hidden" name="format" value="medium">
+        {% if asset_filter %}<input type="hidden" name="asset" value="{{ asset_filter }}">{% endif %}
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small">Title</label>
+            <input class="input is-small is-family-monospace" type="search" name="q"
+              value="{{ q }}" placeholder="Search title…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="status">
+                <option value="">All statuses</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Type</label>
+            <div class="select is-small is-fullwidth">
+              <select name="event_type">
+                <option value="">All types</option>
+                {% for val, label in type_choices %}
+                <option value="{{ val }}" {% if val == type_filter %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end" style="gap: 0.5rem;">
+            <button class="button is-small is-info" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+              <span>Apply</span>
+            </button>
+            <a href="?format=medium" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+              <span>Clear</span>
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="pc">
+    <div class="pc-header">
+      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_agenda</span></span>Events ({{ events_with_hash|length }})</div>
+    </div>
+    <div class="pc-body">
+      {% for row in events_with_hash %}
+      <div class="pc depth-2 mb-2">
+        <div class="pc-body">
+          <div class="is-flex is-justify-content-space-between is-align-items-flex-start">
+            <div style="min-width:0;">
+              <a href="{% url 'event_detail' hash=row.hash %}" class="has-text-weight-semibold">{{ row.event.title }}</a>
+              <div class="mt-1" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <span class="tag is-light is-small">{{ row.event.get_event_type_display }}</span>
+                {% if row.event.status == 'in_progress' %}<span class="tag is-info is-light is-small">{{ row.event.get_status_display }}</span>
+                {% elif row.event.status == 'complete' %}<span class="tag is-success is-light is-small">{{ row.event.get_status_display }}</span>
+                {% elif row.event.status == 'failed' %}<span class="tag is-danger is-light is-small">{{ row.event.get_status_display }}</span>
+                {% elif row.event.status == 'blocked' %}<span class="tag is-warning is-light is-small">{{ row.event.get_status_display }}</span>
+                {% elif row.event.status == 'cancelled' %}<span class="tag is-light is-small has-text-grey">{{ row.event.get_status_display }}</span>
+                {% else %}<span class="tag is-light is-small">{{ row.event.get_status_display }}</span>{% endif %}
+                {% if row.event.priority == 'critical' %}<span class="tag is-danger is-light is-small">{{ row.event.get_priority_display }}</span>
+                {% elif row.event.priority == 'high' %}<span class="tag is-warning is-light is-small">{{ row.event.get_priority_display }}</span>
+                {% elif row.event.priority == 'medium' %}<span class="tag is-info is-light is-small">{{ row.event.get_priority_display }}</span>
+                {% elif row.event.priority %}<span class="tag is-light is-small">{{ row.event.get_priority_display }}</span>{% endif %}
+              </div>
+              {% if row.event.description %}
+              <p class="is-size-7 has-text-grey mt-2">{{ row.event.description|truncatechars:160 }}</p>
+              {% endif %}
+            </div>
+            <a href="{% url 'event_detail' hash=row.hash %}" class="button is-info is-light is-small ml-2"
+               title="View {{ row.event.title }}">
+              <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+            </a>
+          </div>
+          <div class="is-size-7 has-text-grey mt-2 is-family-monospace">
+            {{ row.event.domain.name }} &middot; start {{ row.event.event_start|date:"Y-m-d H:i"|default:"—" }} &middot; created {{ row.event.created_at|date:"Y-m-d" }}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey has-text-centered py-5">No events found.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

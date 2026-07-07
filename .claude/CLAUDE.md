@@ -164,6 +164,25 @@ Common mistakes:
 - `ARCHITECTURE/UX` → `docs/UX_UI/UX_UI.md`
 - `skills/backend` → `.claude/agents/backend-engineer.md`
 
+## 5. UI cards render even when empty
+
+A `pc` card (or any similarly self-contained UI section — panel, gallery, list block) must **always render**, never be conditionally hidden because its backing data is empty. Show the card with its header/chrome and an explicit empty state (e.g. `"None."`, `"No documents yet."`) instead of wrapping the whole card in `{% if data %}`.
+
+Do **not** write:
+```django
+{% if documents %}
+<div class="pc">...</div>
+{% endif %}
+```
+Do write:
+```django
+<div class="pc">
+  {% if documents %}...{% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+</div>
+```
+
+This keeps page layout stable and signals to the user that the section was checked and is simply empty, rather than looking broken or missing. Only omit a card entirely when the *feature itself* doesn't apply to that object (not when it applies but has zero rows).
+
 ---
 
 ## Project conventions worth knowing

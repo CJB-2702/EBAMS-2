@@ -1,0 +1,58 @@
+{% extends "parts/base.html" %}
+{% block title %}{{ item.mpn }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=item.internal_part.id %}">{{ item.internal_part.part_number }}</a></li>
+  <li class="is-active"><a href="#" aria-current="page">{{ item.mpn }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+    <div><h1 class="page-title">{{ item.mpn }} ({{ item.manufacturer.name }})</h1>
+      <p class="page-subtitle">Maps to <a href="{% url 'part_detail' part_id=item.internal_part.id %}">{{ item.internal_part.part_number }}</a></p></div></div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Name</dt><dd>{{ item.name|default:"—" }}</dd>
+        <dt>Description</dt><dd>{{ item.description|default:"—" }}</dd>
+        <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}</dd>
+        <dt>Compatibility</dt><dd>
+          min {{ compatibility_range.min_major|default:"—" }}.{{ compatibility_range.min_minor|default:"—" }}
+          — max {{ compatibility_range.max_major|default:"—" }}.{{ compatibility_range.max_minor|default:"—" }}
+        </dd>
+      </dl></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">update</span></span>Vendor Revision History</div></div>
+      <div class="pc-body">
+        {% for v in vendor_revisions %}
+          <p class="is-size-7"><strong>{{ v.vendor_revision_id }}</strong> — {{ v.note }} <span class="has-text-grey">({{ v.created_at }})</span></p>
+        {% empty %}<p class="has-text-grey is-size-7">None logged.</p>{% endfor %}
+        <form method="post" action="{% url 'supplier_item_log_vendor_revision' item_id=item_id %}" class="mt-3">
+          {% csrf_token %}
+          <input class="input is-small" type="text" name="vendor_revision_id" placeholder="Vendor revision id">
+          <textarea class="textarea is-small mt-2" name="note" placeholder="Note"></textarea>
+          <div class="select is-small mt-2"><select name="domain">{% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+          <button class="button is-small is-link mt-2" type="submit">Log Revision</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents</div></div>
+      <div class="pc-body">
+        {% for d in documents %}<p class="is-size-7">{{ d.filename }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+      </div>
+    </div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">comment</span></span>Comments</div></div>
+      <div class="pc-body">
+        {% for c in comments %}<p class="is-size-7"><strong>{{ c.author }}</strong> — {{ c.body }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,6 @@
 {% load svg_tags %}
 <nav class="app-topnav" role="navigation" aria-label="Primary" {% if current_app_group %}current-application-group="{{ current_app_group }}" data-current-application-group="{{ current_app_group }}"{% endif %}>
-  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS</a>
+  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS2</a>
 
   {% if request.user.is_authenticated or user.is_authenticated %}
   <div class="tabs app-portals" role="tablist">
@@ -46,6 +46,29 @@
               <div class="portal-dropdown-inner">
                 <a href="{% url 'config_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
                 <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Modifications</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Parts">
+        <button class="portal-tab-btn" commandfor="portal-parts" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="icon">{% svg "part-icon" %}</span></span> Parts <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-parts" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Core</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'parts_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
+                <a href="{% url 'part_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Part</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Supply</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'part_manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
               </div>
             </div>
           </div>

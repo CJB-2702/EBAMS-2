@@ -1,0 +1,54 @@
+{% comment %}
+One asset node in the relationship tree (search-row-cards pattern), recursive.
+Context: node (AssetTreeNode), mode ('view'|'edit'), asset_id (subject), can_detach (bool).
+Detach is only offered on the subject's direct children (can_detach=True); deeper
+rings pass can_detach=False. Expand lazy-loads the next depth via HTMX.
+{% endcomment %}
+<div class="tree-node mb-2">
+  <div class="card" style="display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-radius:0;box-shadow:var(--bulma-card-shadow);">
+    <div style="flex-grow:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--bulma-border-light);">
+      <header class="card-header" style="background-color:var(--bulma-scheme-main-bis);border-bottom:1px solid var(--bulma-border-light);box-shadow:none;display:block;padding:0.6rem 1rem;border-radius:0;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;width:100%;">
+          <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;">
+            <span class="material-icons has-text-grey" style="font-size:1.1rem;" aria-hidden="true">{% if node.child_count %}account_tree{% else %}radio_button_unchecked{% endif %}</span>
+            <a href="{% url 'children_view' asset_id=node.asset.id %}" class="title is-6 mb-0" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ node.asset.name }}</a>
+            {% if node.asset.asset_class_id %}<span class="tag is-info is-light is-small">{{ node.asset.asset_class.name }}</span>{% endif %}
+          </div>
+          <div style="display:flex;align-items:center;gap:1.1rem;font-size:0.72rem;" class="has-text-grey-dark">
+            <div><span class="has-text-grey">Serial</span> <span class="is-family-monospace">{{ node.asset.serial_number }}</span></div>
+            <div><span class="has-text-grey">Children</span> <span class="tag is-light is-small">{{ node.child_count }}</span></div>
+          </div>
+        </div>
+      </header>
+    </div>
+    <div style="display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;">
+      {% if node.has_more %}
+      <button type="button" class="button is-info is-light"
+              style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:72px;border:none;border-radius:0;gap:0.2rem;"
+              hx-get="{% url 'children_expand' asset_id=asset_id %}?node={{ node.asset.id }}&mode={{ mode }}"
+              hx-target="#children-of-{{ node.asset.id }}"
+              hx-swap="innerHTML">
+        <span class="icon" style="margin:0;"><span class="material-icons" style="font-size:1.3rem;" aria-hidden="true">unfold_more</span></span>
+        <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">expand</span>
+      </button>
+      {% endif %}
+      {% if can_detach %}
+      <form method="post" action="{% url 'children_detach' asset_id=asset_id %}" style="display:flex;margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="child_id" value="{{ node.asset.id }}">
+        <button type="submit" class="button is-danger is-light"
+                style="display:flex;flex-direction:column;justify-content:center;align-items:center;width:72px;border:none;border-radius:0;gap:0.2rem;"
+                onclick="return confirm('Detach {{ node.asset.name|escapejs }} and its sub-assets from this asset?');">
+          <span class="icon" style="margin:0;"><span class="material-icons" style="font-size:1.3rem;" aria-hidden="true">link_off</span></span>
+          <span style="font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">detach</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <div class="tree-children" id="children-of-{{ node.asset.id }}" style="padding-left:1.25rem;border-left:2px solid var(--bulma-border-light);margin-left:1rem;{% if node.children %}margin-top:0.5rem;{% endif %}">
+    {% for child in node.children %}
+      {% include "assets/relationships/_tree_node.html" with node=child mode=mode asset_id=asset_id can_detach=False %}
+    {% endfor %}
+  </div>
+</div>

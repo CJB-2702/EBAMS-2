@@ -1,0 +1,59 @@
+{% extends "parts/base.html" %}
+{% block title %}{% if mode == "edit" %}Edit {{ part.part_number }}{% else %}New Part{% endif %}{% endblock %}
+{% block nav_create %}{% if mode != "edit" %}is-active{% endif %}{% endblock %}
+{% block breadcrumb %}
+{% if mode == "edit" %}<li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% else %}<li class="is-active"><a href="#" aria-current="page">New Part</a></li>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">{% if mode == "edit" %}edit{% else %}add_box{% endif %}</span></div>
+    <div><h1 class="page-title">{% if mode == "edit" %}Edit {{ part.part_number }}{% else %}New Part{% endif %}</h1>
+      <p class="page-subtitle">{% if mode == "edit" %}Update the part record's identity and metadata.{% else %}Establishes the internal engineering record and its base revision (1.0).{% endif %}</p>
+    </div></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="columns">
+        <div class="column is-4">
+          <label class="label is-small">Part Number</label>
+          <input class="input is-small" type="text" name="part_number" value="{{ part.part_number|default:'' }}" required>
+        </div>
+        <div class="column is-8">
+          <label class="label is-small">Name</label>
+          <input class="input is-small" type="text" name="name" value="{{ part.name|default:'' }}" required>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column is-4">
+          <label class="label is-small">Part Type</label>
+          <input class="input is-small" type="text" name="part_type" value="{{ part.part_type|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small">Category</label>
+          <input class="input is-small" type="text" name="category" value="{{ part.category|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small">&nbsp;</label>
+          <label class="checkbox is-size-7"><input type="checkbox" name="is_active" {% if mode != "edit" or part.is_active %}checked{% endif %}> Active</label>
+          &nbsp;&nbsp;
+          <label class="checkbox is-size-7"><input type="checkbox" name="is_domain_limited" {% if part.is_domain_limited %}checked{% endif %}> Domain-limited</label>
+        </div>
+      </div>
+      <label class="label is-small">Description</label>
+      <textarea class="textarea is-small" name="description">{{ part.description|default:'' }}</textarea>
+
+      <div class="mt-4">
+        <button class="button is-link is-small" type="submit">{% if mode == "edit" %}Save Changes{% else %}Create Part{% endif %}</button>
+        {% if mode == "edit" %}<a href="{% url 'part_detail' part_id=part_id %}" class="button is-light is-small">Cancel</a>
+        {% else %}<a href="{% url 'parts_hub' %}" class="button is-light is-small">Cancel</a>{% endif %}
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

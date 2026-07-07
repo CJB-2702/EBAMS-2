@@ -16,18 +16,17 @@
 
 <div class="body-grid has-rail">
   <div>
-    {% if configuration %}
     <div class="pc"><div class="pc-header"><div class="pc-header-title">Configuration Status</div></div>
       <div class="pc-body">
         <div class="columns">
-          <div class="column"><div class="label is-small has-text-grey mb-0">Template</div><div><a href="{% url 'config_template_detail' template_id=configuration.template.id %}">{{ configuration.template.name }}</a> Rev {{ configuration.template.revision }}</div></div>
-          <div class="column"><div class="label is-small has-text-grey mb-0">Verification Status</div><div>{% include "assets/_status_tag.html" with value=configuration.verification_status %}</div></div>
+          <div class="column"><div class="label is-small has-text-grey mb-0">Template</div><div>{% if configuration.template %}<a href="{% url 'config_template_detail' template_id=configuration.template.id %}">{{ configuration.template.name }}</a> Rev {{ configuration.template.revision }}{% else %}<span class="has-text-grey">No template assigned</span>{% endif %}</div></div>
+          <div class="column"><div class="label is-small has-text-grey mb-0">Verification Status</div><div>{% if configuration.verification_status %}{% include "assets/_status_tag.html" with value=configuration.verification_status %}{% else %}<span class="has-text-grey">—</span>{% endif %}</div></div>
           <div class="column"><div class="label is-small has-text-grey mb-0">Documented At</div><div>{{ configuration.documented_at|default:"—" }}</div></div>
         </div>
         <div class="mt-3"><div class="label is-small has-text-grey mb-0">Notes</div><div>{{ configuration.notes|default:"—" }}</div></div>
       </div>
     </div>
-    
+
     <div class="pc"><div class="pc-header"><div class="pc-header-title">Actual Modifications ({{ configuration.actual_modifications|length }})</div></div>
       <div class="pc-body is-flush">
         <table class="table is-fullwidth is-size-7 mb-0">
@@ -47,14 +46,89 @@
         </table>
       </div>
     </div>
-    {% else %}
-    <div class="notification is-light">
-      <p>This asset currently does not have a documented configuration.</p>
-      <div class="mt-3"><a href="{% url 'asset_configuration_edit' asset_id=asset.id %}" class="button is-small is-info">Establish Configuration</a></div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
+        Child Assets &amp; Configurations ({{ children_configurations|length }})
+      </div></div>
+      <div class="pc-body is-flush">
+        <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">Direct children only (one layer deep).</p>
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <thead><tr><th>Child Asset</th><th>Class</th><th>Configuration Template</th><th>Verification</th><th class="has-text-right">Mods</th><th></th></tr></thead>
+          <tbody>
+            {% for cc in children_configurations %}
+            <tr>
+              <td><a href="{% url 'children_view' asset_id=cc.asset.id %}">{{ cc.asset.name }}</a> <span class="has-text-grey is-family-monospace">{{ cc.asset.serial_number }}</span></td>
+              <td>{{ cc.asset.asset_class.name }}</td>
+              <td>
+                {% if cc.template %}
+                  <a href="{% url 'config_template_detail' template_id=cc.template.id %}">{{ cc.template.name }}</a>{% if cc.template.revision %} <span class="has-text-grey">Rev {{ cc.template.revision }}</span>{% endif %}
+                {% else %}
+                  <span class="has-text-grey">No configuration</span>
+                {% endif %}
+              </td>
+              <td>{% if cc.template %}{% include "assets/_status_tag.html" with value=cc.verification_status %}{% else %}—{% endif %}</td>
+              <td class="has-text-right">{{ cc.modification_count }}</td>
+              <td class="has-text-right"><a href="{% url 'asset_configuration_detail' asset_id=cc.asset.id %}" class="button is-light is-small" title="Open child configuration"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a></td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="has-text-grey has-text-centered py-4">This asset has no child assets.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    {% endif %}
   </div>
   <div class="body-rail">
+    {% if configuration.template %}
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+        Expected Modifications ({{ configuration.expected_modifications|length }})
+      </div></div>
+      <div class="pc-body is-flush">
+        <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">From template <strong>{{ configuration.template.name }}</strong>.</p>
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <tbody>
+            {% for m in configuration.expected_modifications %}
+            <tr>
+              <td>
+                <a href="{% url 'defined_modification_detail' modification_id=m.defined_modification.id %}">{{ m.defined_modification.name }}</a>
+                <span class="has-text-grey is-family-monospace">{{ m.defined_modification.code }}</span>
+                {% if m.context_notes %}<br><span class="has-text-grey is-size-7">{{ m.context_notes }}</span>{% endif %}
+              </td>
+              <td class="has-text-right">
+                {% if m.is_required %}<span class="tag is-link is-light is-small">Required</span>{% else %}<span class="tag is-light is-small">Optional</span>{% endif %}
+              </td>
+            </tr>
+            {% empty %}<tr><td class="has-text-grey has-text-centered py-3">No expected modifications.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pc">
+      <div class="pc-header"><div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
+        Expected Children ({{ configuration.expected_children|length }})
+      </div></div>
+      <div class="pc-body is-flush">
+        <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">Child models the template expects.</p>
+        <table class="table is-fullwidth is-size-7 mb-0">
+          <tbody>
+            {% for c in configuration.expected_children %}
+            <tr>
+              <td>{{ c.child_model }}</td>
+              <td class="has-text-right">
+                <span class="tag is-light is-small" title="Expected quantity">&times;{{ c.quantity }}</span>
+                {% if c.is_required %}<span class="tag is-link is-light is-small">Required</span>{% else %}<span class="tag is-light is-small">Optional</span>{% endif %}
+              </td>
+            </tr>
+            {% empty %}<tr><td class="has-text-grey has-text-centered py-3">No expected children.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

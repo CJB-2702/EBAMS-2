@@ -1,0 +1,21 @@
+{# One page of event cards + infinite-scroll sentinel.
+   Expects: cards, page_obj, base_query. Used both for the first page (included
+   in ev_list_large.html) and for each subsequent htmx-event-cards fragment. #}
+{% for card in cards %}
+  {% include "events/fragments/event_card.html" with card=card %}
+{% empty %}
+  {% if page_obj.number == 1 %}
+  <div class="pc depth-1"><div class="pc-body has-text-centered has-text-grey py-5">No events found.</div></div>
+  {% endif %}
+{% endfor %}
+
+{% if page_obj.has_next %}
+<div hx-get="?{{ base_query }}{% if base_query %}&{% endif %}format=htmx-event-cards&page={{ page_obj.next_page_number }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML">
+  <div class="has-text-centered py-4 has-text-grey is-size-7 htmx-indicator">
+    <span class="icon"><span class="material-icons" aria-hidden="true">hourglass_empty</span></span>
+    <span>Loading more…</span>
+  </div>
+</div>
+{% endif %}

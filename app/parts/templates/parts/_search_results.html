@@ -1,0 +1,16 @@
+{% if term %}
+<div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Results for "{{ term }}" ({{ results|length }})</div></div>
+  <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <thead><tr><th>Part Number</th><th>Name</th><th>Current Revision</th></tr></thead>
+    <tbody>
+      {% for p in results %}
+      <tr>
+        <td><a href="{% url 'part_detail' part_id=p.id %}">{{ p.part_number }}</a></td>
+        <td>{{ p.name }}</td>
+        <td>{% if p.current_revision %}{{ p.current_revision.major }}.{{ p.current_revision.minor }}{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-5">No matches.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}

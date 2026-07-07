@@ -41,6 +41,7 @@ from app.assets.presentation_layer.entrypoints.configurations import (
     config_template_detail,
     config_template_edit,
     config_template_index,
+    config_template_name_search,
     configurations_index,
     defined_modification_create,
     defined_modification_detail,
@@ -48,6 +49,15 @@ from app.assets.presentation_layer.entrypoints.configurations import (
     defined_modification_index,
     modification_applicability_edit,
     modification_applicability_set_mode,
+)
+from app.assets.presentation_layer.entrypoints.asset_relationships import (
+    asset_relationships_index,
+    children_attach,
+    children_detach,
+    children_edit,
+    children_expand,
+    children_search,
+    children_view,
 )
 from app.assets.presentation_layer.entrypoints.dashboard import asset_dashboard
 from app.assets.presentation_layer.entrypoints.manufacturers import (
@@ -57,6 +67,10 @@ from app.assets.presentation_layer.entrypoints.manufacturers import (
     manufacturer_index,
 )
 from app.assets.presentation_layer.entrypoints.meter_history import meter_history_index
+from app.assets.presentation_layer.entrypoints.part_associations import (
+    part_class_association_index,
+    part_model_association_index,
+)
 from app.assets.presentation_layer.entrypoints.models import (
     model_create,
     model_detail,
@@ -76,6 +90,13 @@ urlpatterns = [
     path("assets/<int:asset_id>/hierarchy/edit/", asset_hierarchy_edit, name="asset_hierarchy_edit"),
     path("assets/<int:asset_id>/images/", asset_images, name="asset_images"),
     path("assets/<int:asset_id>/meter-history/", asset_meter_history, name="asset_meter_history"),
+    path("assets/<int:asset_id>/children/", children_view, name="children_index"),
+    path("assets/<int:asset_id>/children/view/", children_view, name="children_view"),
+    path("assets/<int:asset_id>/children/edit/", children_edit, name="children_edit"),
+    path("assets/<int:asset_id>/children/expand/", children_expand, name="children_expand"),
+    path("assets/<int:asset_id>/children/search/", children_search, name="children_search"),
+    path("assets/<int:asset_id>/children/attach/", children_attach, name="children_attach"),
+    path("assets/<int:asset_id>/children/detach/", children_detach, name="children_detach"),
     path("assets/<int:asset_id>/configuration/", asset_configuration_detail, name="asset_configuration_detail"),
     path("assets/<int:asset_id>/configuration/edit/", asset_configuration_edit, name="asset_configuration_edit"),
     path("assets/<int:asset_id>/capabilities/", asset_capabilities_detail, name="asset_capabilities_detail"),
@@ -124,6 +145,7 @@ urlpatterns = [
     path("configurations/", configurations_index, name="configurations_index"),
     path("configurations/templates/", config_template_index, name="config_template_index"),
     path("configurations/templates/builder/", config_template_builder, name="config_template_builder"),
+    path("configurations/templates/name-search/", config_template_name_search, name="config_template_name_search"),
     path("configurations/templates/<int:template_id>/", config_template_detail, name="config_template_detail"),
     path("configurations/templates/<int:template_id>/edit/", config_template_edit, name="config_template_edit"),
     path("configurations/modifications/", defined_modification_index, name="defined_modification_index"),
@@ -133,4 +155,11 @@ urlpatterns = [
     path("configurations/modifications/<int:modification_id>/applicability/", modification_applicability_edit, name="modification_applicability_edit"),
     path("configurations/modifications/<int:modification_id>/applicability/set-mode/", modification_applicability_set_mode, name="modification_applicability_set_mode"),
     path("configurations/by-asset/", asset_configuration_index, name="asset_configuration_index"),
+
+    # Asset Relationships (parent/child grouping)
+    path("asset-relationships/", asset_relationships_index, name="asset_relationships_index"),
+
+    # Part Associations (placeholder — future association framework)
+    path("part-associations/models/", part_model_association_index, name="part_model_association_index"),
+    path("part-associations/classes/", part_class_association_index, name="part_class_association_index"),
 ]

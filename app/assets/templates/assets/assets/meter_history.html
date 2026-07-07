@@ -41,7 +41,7 @@
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select name="meter_index">
-                      {% for m in asset.meters %}
+                      {% for m in meters %}
                       <option value="{{ m.index }}">Meter {{ m.index }} ({{ m.unit }})</option>
                       {% endfor %}
                     </select>
@@ -112,9 +112,9 @@
         <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assessment</span></span>Current Meters</div>
       </div>
       <div class="pc-body">
-        {% if asset.meters %}
+        {% if meters %}
         <div class="columns is-multiline is-mobile">
-          {% for m in asset.meters %}
+          {% for m in meters %}
           <div class="column is-12">
             <div class="stat-tile">
               <div class="stat-value">{{ m.value }}</div>

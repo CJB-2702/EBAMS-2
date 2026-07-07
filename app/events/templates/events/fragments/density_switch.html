@@ -1,0 +1,21 @@
+{# Density switch — preserves active filters via base_query. Expects current_format + base_query. #}
+<div class="buttons has-addons mb-0">
+  <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=condensed"
+     class="button is-small {% if current_format == 'condensed' %}is-link is-selected{% else %}is-light{% endif %}"
+     title="Table view">
+    <span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span>
+    <span>Table</span>
+  </a>
+  <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=medium"
+     class="button is-small {% if current_format == 'medium' %}is-link is-selected{% else %}is-light{% endif %}"
+     title="Medium view">
+    <span class="icon"><span class="material-icons" aria-hidden="true">view_agenda</span></span>
+    <span>Medium</span>
+  </a>
+  <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=large"
+     class="button is-small {% if current_format == 'large' %}is-link is-selected{% else %}is-light{% endif %}"
+     title="Expanded cards">
+    <span class="icon"><span class="material-icons" aria-hidden="true">view_day</span></span>
+    <span>Expanded</span>
+  </a>
+</div>

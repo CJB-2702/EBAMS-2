@@ -24,6 +24,9 @@ from app.assets.control_layer.configurations.applicability.applicability_policy 
 from app.assets.control_layer.configurations.applicability.applicability_struct import (
     ApplicabilityStruct,
 )
+from app.assets.control_layer.domain_structs.configuration_template_struct import (
+    ConfigurationTemplateStruct,
+)
 from app.assets.models import (
     Asset,
     AssetClass,
@@ -333,11 +336,31 @@ def load_config_template_editor(template_id: int) -> dict | None:
     _decorate_template(template)
     selected_ids = {m.id for m in template.modifications}
     all_mods = list(DefinedModification.objects.order_by("name"))
+    # Pool of models assignable as expected children — every model except the
+    # template's own target model (a template can't declare its own model as child).
+    child_models = [
+        _decorate_model(m)
+        for m in AssetModel.objects.select_related("asset_class")
+        .exclude(id=template.model_id)
+        .order_by("model_name", "subtype_name")
+    ]
     return {
         "template": template,
         "models": [_decorate_model(m) for m in AssetModel.objects.order_by("model_name")],
         "modifications_available": [m for m in all_mods if m.id not in selected_ids],
         "modifications_selected": [m for m in all_mods if m.id in selected_ids],
+        "child_models": child_models,
+        "child_classes": list(AssetClass.objects.order_by("name")),
+        "initial_children": [
+            {
+                "model_id": ch.child_model_id,
+                "name": ch.child_model.display_name,
+                "quantity": ch.quantity,
+                "is_required": ch.is_required,
+                "child_configuration": ch.child_configuration or "",
+            }
+            for ch in template.children
+        ],
     }
 
 
@@ -354,6 +377,24 @@ def template_filter_labels(model_id: str, modification_id: str) -> dict:
     return {
         "selected_model": selected_model,
         "selected_modification": selected_modification,
+    }
+
+
+def asset_filter_labels(asset_class_id: str, model_id: str) -> dict:
+    """Resolve display labels for the by-asset search-dropdown filters so a
+    selected asset class / model survives a full-page reload."""
+    selected_class = (
+        AssetClass.objects.filter(id=asset_class_id).first()
+        if asset_class_id else None
+    )
+    selected_model = None
+    if model_id:
+        m = AssetModel.objects.filter(id=model_id).first()
+        if m:
+            selected_model = _decorate_model(m)
+    return {
+        "selected_class": selected_class,
+        "selected_model": selected_model,
     }
 
 
@@ -393,6 +434,50 @@ def _build_configuration_view(asset: Asset):
     return config
 
 
+def load_asset_children_configurations(asset: Asset) -> list[SimpleNamespace]:
+    """One layer deep: each DIRECT child of ``asset`` with its current configuration
+    template, verification status, and active modification count. Does not recurse —
+    grandchildren are not included."""
+    children = list(
+        Asset.objects.filter(parent_asset=asset)
+        .select_related("asset_class", "model")
+        .order_by("name")
+    )
+    if not children:
+        return []
+
+    child_ids = [c.id for c in children]
+
+    # Newest configuration per child (rows are left in place; "latest wins").
+    latest_by_asset: dict[int, AssetConfiguration] = {}
+    for cfg in (
+        AssetConfiguration.objects.filter(asset_id__in=child_ids)
+        .select_related("template")
+        .order_by("asset_id", "-created_at")
+    ):
+        latest_by_asset.setdefault(cfg.asset_id, cfg)
+
+    mod_counts = {
+        row["asset_id"]: row["n"]
+        for row in (
+            ActualModification.objects.filter(asset_id__in=child_ids, is_active=True)
+            .values("asset_id")
+            .annotate(n=Count("id"))
+        )
+    }
+
+    rows: list[SimpleNamespace] = []
+    for child in children:
+        cfg = latest_by_asset.get(child.id)
+        rows.append(SimpleNamespace(
+            asset=child,
+            template=cfg.template if cfg else None,
+            verification_status=cfg.verification_status if cfg else None,
+            modification_count=mod_counts.get(child.id, 0),
+        ))
+    return rows
+
+
 def load_asset_configuration_detail(asset_id: int):
     asset = (
         Asset.objects.select_related("asset_class", "model", "domain")
@@ -402,10 +487,19 @@ def load_asset_configuration_detail(asset_id: int):
     if asset is None:
         return None
     _decorate_model(asset.model)
-    config = _build_configuration_view(asset)
-    # Detail page treats "no template" as no configuration.
-    configuration = config if (config and config.template is not None) else None
-    return asset, configuration
+    # Always return the configuration view so the status and actual-modifications
+    # cards render even when no template is assigned. Expected-side data is only
+    # available when a template is present.
+    configuration = _build_configuration_view(asset)
+    configuration.expected_modifications = []
+    configuration.expected_children = []
+    if configuration.template is not None:
+        # Expected-side, straight from the template: modifications + child models.
+        expected = ConfigurationTemplateStruct.from_template(configuration.template)
+        configuration.expected_modifications = expected.modifications
+        configuration.expected_children = expected.children
+    children_configurations = load_asset_children_configurations(asset)
+    return asset, configuration, children_configurations
 
 
 def search_assets_with_configuration(

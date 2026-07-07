@@ -1,0 +1,43 @@
+{% comment %}Shared structure panel: ancestors strip + subject + child tree.
+Context: asset, tree (AssetTreeStruct), ancestors, mode.{% endcomment %}
+<div class="pc">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
+      Structure
+    </div>
+  </div>
+  <div class="pc-body">
+    {% if ancestors %}
+    <p class="is-size-7 has-text-grey mb-3">
+      <span class="has-text-grey-light">Part of:</span>
+      {% for a in ancestors %}<a href="{% url 'children_view' asset_id=a.id %}">{{ a.name }}</a>{% if not forloop.last %} &rsaquo; {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+
+    <div class="card mb-4" style="border-radius:0;border-left:4px solid var(--bulma-link);box-shadow:none;background:var(--bulma-scheme-main-bis);">
+      <div class="card-content" style="padding:0.75rem 1rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+          <span class="material-icons has-text-link" aria-hidden="true">my_location</span>
+          <span class="title is-6 mb-0">{{ asset.name }}</span>
+          {% if asset.asset_class_id %}<span class="tag is-info is-light is-small">{{ asset.asset_class.name }}</span>{% endif %}
+          <span class="tag is-light is-small">{{ tree.root.child_count }} direct children</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tree-children-root">
+      {% for child in tree.children %}
+        {% if mode == 'edit' %}
+          {% include "assets/relationships/_tree_node.html" with node=child mode=mode asset_id=asset.id can_detach=True %}
+        {% else %}
+          {% include "assets/relationships/_tree_node.html" with node=child mode=mode asset_id=asset.id can_detach=False %}
+        {% endif %}
+      {% empty %}
+        <p class="has-text-grey has-text-centered py-5">
+          No child assets yet.{% if mode == 'edit' %} Use the search below to attach one.{% endif %}
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+</div>

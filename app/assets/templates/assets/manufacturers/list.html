@@ -27,7 +27,7 @@
           <td><a href="{% url 'manufacturer_detail' manufacturer_id=m.id %}">{{ m.name }}</a></td>
           <td class="is-family-monospace">{{ m.code|default:"—" }}</td>
           <td>{% if m.website %}<a href="{{ m.website }}" target="_blank" rel="noopener">{{ m.website }}</a>{% else %}—{% endif %}</td>
-          <td>{{ m.models|length }}</td>
+          <td>{{ m.models.all|length }}</td>
           <td>{% include "assets/_status_tag.html" with value=m.is_active|yesno:"Active,Inactive" %}</td>
           <td class="has-text-right"><a href="{% url 'manufacturer_detail' manufacturer_id=m.id %}" class="button is-info is-light is-small"><span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span></a></td>
         </tr>

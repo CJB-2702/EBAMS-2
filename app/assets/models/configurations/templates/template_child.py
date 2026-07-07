@@ -19,6 +19,13 @@ class TemplateChild(AuditFieldsMixin):
     quantity = models.PositiveSmallIntegerField(default=1)
     is_required = models.BooleanField(default=False)
 
+    # INTERIM (tech debt: "Template child configuration reference"): a soft pointer
+    # to the ConfigurationTemplate the child should be built to, stored as the
+    # template NAME (free string), not a FK. Avoids the cycle/DAG recursion the real
+    # child_template FK would introduce. Optional. Do not build integrity-critical
+    # logic on this — see docs/technical_decisions/tech_debt.
+    child_configuration = models.CharField(max_length=200, null=True, blank=True)
+
     class Meta:
         db_table = "template_child"
 

@@ -1,0 +1,100 @@
+{# Single expanded event card. Expects `card` = {event, hash, comments}. #}
+<div class="pc depth-1 mb-4" id="event-card-{{ card.hash }}">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>
+      <a href="{% url 'event_detail' hash=card.hash %}">{{ card.event.title }}</a>
+    </div>
+    <div class="is-flex" style="gap:0.35rem; align-items:center;">
+      <span class="tag is-light is-small">{{ card.event.get_event_type_display }}</span>
+      {% if card.event.status == 'in_progress' %}<span class="tag is-info is-light is-small">{{ card.event.get_status_display }}</span>
+      {% elif card.event.status == 'complete' %}<span class="tag is-success is-light is-small">{{ card.event.get_status_display }}</span>
+      {% elif card.event.status == 'failed' %}<span class="tag is-danger is-light is-small">{{ card.event.get_status_display }}</span>
+      {% elif card.event.status == 'blocked' %}<span class="tag is-warning is-light is-small">{{ card.event.get_status_display }}</span>
+      {% elif card.event.status == 'cancelled' %}<span class="tag is-light is-small has-text-grey">{{ card.event.get_status_display }}</span>
+      {% else %}<span class="tag is-light is-small">{{ card.event.get_status_display }}</span>{% endif %}
+      {% if card.event.priority == 'critical' %}<span class="tag is-danger is-light is-small">{{ card.event.get_priority_display }}</span>
+      {% elif card.event.priority == 'high' %}<span class="tag is-warning is-light is-small">{{ card.event.get_priority_display }}</span>
+      {% elif card.event.priority == 'medium' %}<span class="tag is-info is-light is-small">{{ card.event.get_priority_display }}</span>
+      {% elif card.event.priority %}<span class="tag is-light is-small">{{ card.event.get_priority_display }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="pc-body">
+
+    {# ── Description ── #}
+    {% if card.event.description %}
+    <div class="depth-2 p-3 mb-3 is-size-7" style="white-space:pre-wrap; max-height:200px; overflow-y:auto;">{{ card.event.description }}</div>
+    {% endif %}
+
+    {# ── Metadata ── #}
+    <div class="columns is-size-7 is-mobile is-multiline mb-2">
+      <div class="column is-narrow">
+        <p class="has-text-grey mb-1" style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Domain</p>
+        <p>{{ card.event.domain.name }}</p>
+      </div>
+      <div class="column is-narrow">
+        <p class="has-text-grey mb-1" style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Start</p>
+        <p class="is-family-monospace">{{ card.event.event_start|date:"Y-m-d H:i"|default:"—" }}</p>
+      </div>
+      <div class="column is-narrow">
+        <p class="has-text-grey mb-1" style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">End</p>
+        <p class="is-family-monospace">{{ card.event.event_end|date:"Y-m-d H:i"|default:"—" }}</p>
+      </div>
+      <div class="column is-narrow">
+        <p class="has-text-grey mb-1" style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Created</p>
+        <p class="is-family-monospace">{{ card.event.created_at|date:"Y-m-d" }} &middot; {{ card.event.created_by }}</p>
+      </div>
+    </div>
+
+    {# ── Comments ── #}
+    <details class="mt-2" {% if card.comments %}open{% endif %}>
+      <summary class="is-size-7 has-text-weight-semibold" style="cursor:pointer;">
+        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">chat</span></span>
+        Comments ({{ card.comments|length }})
+      </summary>
+
+      <div class="mt-2">
+        {% for row in card.comments %}
+        <div class="pc depth-2 mb-2">
+          <div class="pc-body is-size-7">
+            <div class="is-flex is-justify-content-space-between mb-1">
+              <span class="has-text-grey">{{ row.comment.created_by }} &middot; {{ row.comment.created_at|date:"Y-m-d H:i" }}</span>
+              {% if row.comment.revision > 1 %}<span class="tag is-light is-small">rev {{ row.comment.revision }}</span>{% endif %}
+            </div>
+            <p>{{ row.comment.content }}</p>
+            {% include "events/comment/fragments/attachment_carousel.html" with comment_id=row.comment.pk att_list=row.attachments %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="is-size-7 has-text-grey mb-2">No comments yet.</p>
+        {% endfor %}
+
+        {# ── Inline add comment ── #}
+        {% if card.event.allow_comments %}
+        {% if comment_error %}<p class="help is-danger is-size-7">{{ comment_error }}</p>{% endif %}
+        <form method="post"
+              action="{% url 'comment_add' event_hash=card.hash %}"
+              enctype="multipart/form-data"
+              hx-post="{% url 'comment_add' event_hash=card.hash %}?format=htmx-event-card"
+              hx-target="#event-card-{{ card.hash }}"
+              hx-swap="outerHTML"
+              hx-encoding="multipart/form-data">
+          {% csrf_token %}
+          <div class="field has-addons mt-2">
+            <div class="control is-expanded">
+              <textarea class="textarea is-small" name="content" rows="1" placeholder="Write a comment…" required></textarea>
+            </div>
+            <div class="control">
+              <button class="button is-small is-primary" type="submit">
+                <span class="icon"><span class="material-icons" aria-hidden="true">send</span></span>
+                <span>Add</span>
+              </button>
+            </div>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </details>
+
+  </div>
+</div>

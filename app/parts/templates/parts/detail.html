@@ -1,0 +1,113 @@
+{% extends "parts/base.html" %}
+{% load svg_tags static %}
+{% block title %}{{ part.part_number }}{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">{{ part.part_number }}</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon" style="width:3rem;height:3rem;">{% svg "part-icon" %}</div>
+    <div><h1 class="page-title">{{ part.part_number }} — {{ part.name }}</h1>
+      <p class="page-subtitle">
+        {% if part.current_revision %}Current revision {{ part.current_revision.major }}.{{ part.current_revision.minor }} ({{ part.current_revision.status }}){% else %}No revisions{% endif %}
+        · {{ part.revision_count }} revision{{ part.revision_count|pluralize }}
+      </p>
+    </div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'part_edit' part_id=part_id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
+  </div>
+</div></div>
+
+<div class="body-grid has-rail">
+  <div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="pc-body"><dl class="kv">
+        <dt>Part Type</dt><dd>{{ part.part_type|default:"—" }}</dd>
+        <dt>Category</dt><dd>{{ part.category|default:"—" }}</dd>
+        <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=part.is_active|yesno:"Active,Inactive" %}</dd>
+        <dt>Domain Limited</dt><dd>{{ part.is_domain_limited|yesno:"Yes,No" }}</dd>
+        <dt>Description</dt><dd>{{ part.description|default:"—" }}</dd>
+      </dl></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Revision History</div>
+      <a href="{% url 'part_revisions' part_id=part_id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span><span>Revisions</span></a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>Rev</th><th>Name</th><th>Status</th><th>Released</th></tr></thead>
+        <tbody>
+          {% for rev in revisions %}
+          <tr>
+            <td><a href="{% url 'revision_detail_by_id' revision_id=rev.id %}">{{ rev.major_revision_number }}.{{ rev.minor_revision_number }}</a></td>
+            <td>{{ rev.major_revision_name|default:"—" }}{% if rev.minor_revision_name %} / {{ rev.minor_revision_name }}{% endif %}</td>
+            <td>{% include "assets/_status_tag.html" with value=rev.status %}</td>
+            <td>{{ rev.date_of_release|default:"—" }}</td>
+          </tr>
+          {% empty %}<tr><td colspan="4" class="has-text-grey has-text-centered py-5">No revisions.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>Mapped Supplier Items</div>
+      <a href="{% url 'part_supplier_items' part_id=part_id %}" class="button is-small is-info"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span><span>Supplier Items</span></a></div>
+      <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>MPN</th><th>Manufacturer</th><th>Active</th></tr></thead>
+        <tbody>
+          {% for item in supplier_items %}
+          <tr>
+            <td><a href="{% url 'supplier_item_detail' item_id=item.id %}">{{ item.mpn }}</a></td>
+            <td>{{ item.manufacturer.name }}</td>
+            <td>{% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}</td>
+          </tr>
+          {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-5">No supplier items mapped.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+      <div class="pc-body">
+        {% if image_documents %}
+        <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+        <image-carousel id="carousel-part-{{ part_id }}" preview-height="280" loop>
+          {% for d in image_documents %}
+          <img src="{% url 'file_inline' file_id=d.file_id %}"
+               alt="{{ d.filename }}"
+               loading="lazy"
+               title="{{ d.filename }}">
+          {% endfor %}
+        </image-carousel>
+        <div class="mt-3">
+          <carousel-preview-items for="carousel-part-{{ part_id }}" size="50"></carousel-preview-items>
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">comment</span></span>Comments</div></div>
+      <div class="pc-body">
+        {% for c in comments %}
+          <p class="mb-2"><strong>{{ c.author }}</strong> <span class="has-text-grey is-size-7">{{ c.created_at }}</span><br>{{ c.body }}</p>
+        {% empty %}<p class="has-text-grey">No comments yet.</p>{% endfor %}
+        <form method="post" action="{% url 'part_add_comment' part_id=part_id %}" class="mt-3">
+          {% csrf_token %}
+          <textarea class="textarea is-small" name="body" placeholder="Add a comment…"></textarea>
+          <div class="select is-small mt-2"><select name="domain">{% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+          <button class="button is-small is-link mt-2" type="submit">Post Comment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents (current rev)</div></div>
+      <div class="pc-body">
+        {% for d in other_documents %}
+        <p class="is-size-7 mb-1">
+          <a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">description</span></span>{{ d.filename }}
+          </a>
+        </p>
+        {% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

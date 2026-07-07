@@ -1,0 +1,5 @@
+{% for t in templates %}
+  <li data-value="{{ t.name }}">{{ t.name }}{% if t.revision %} <span class="has-text-grey is-size-7">Rev {{ t.revision }}</span>{% endif %}</li>
+{% empty %}
+  <li class="is-disabled">No matching templates.</li>
+{% endfor %}

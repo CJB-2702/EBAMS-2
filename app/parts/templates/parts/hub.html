@@ -1,0 +1,50 @@
+{% extends "parts/base.html" %}
+{% block title %}Parts Hub{% endblock %}
+{% block nav_hub %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Hub</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">search</span></div>
+    <div><h1 class="page-title">Find a Part</h1><p class="page-subtitle">Type any number — internal, legacy, NSN, or a vendor's MPN — and land on the definitive Part.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'part_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Part</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc">
+    <div class="pc-body">
+      <input
+        class="input"
+        type="search"
+        name="term"
+        placeholder="Part number, NSN, legacy code, or vendor MPN…"
+        value="{{ term|default:'' }}"
+        hx-get="{% url 'part_search' %}"
+        hx-trigger="keyup changed delay:300ms, search"
+        hx-target="#search-results"
+        hx-vals='{"format": "htmx-results"}'
+        hx-push-url="false"
+      >
+    </div>
+  </div>
+
+  <div id="search-results">
+    {% include "parts/_search_results.html" %}
+  </div>
+
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently Added Parts</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Part Number</th><th>Name</th><th>Active</th></tr></thead>
+      <tbody>
+        {% for p in recent_parts %}
+        <tr>
+          <td><a href="{% url 'part_detail' part_id=p.id %}">{{ p.part_number }}</a></td>
+          <td>{{ p.name }}</td>
+          <td>{% include "assets/_status_tag.html" with value=p.is_active|yesno:"Active,Inactive" %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-5">No parts yet.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

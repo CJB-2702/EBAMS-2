@@ -288,13 +288,11 @@
 
 /* CSS-driven Portal Highlighting & Dampening */
 .app-topnav[current-application-group="Events"] .app-portals.tabs li[data-group="Events"] button.portal-tab-btn,
-.app-topnav[data-current-application-group="Events"] .app-portals.tabs li[data-group="Events"] button.portal-tab-btn {
-  color: #fff !important;
-  border-bottom-color: var(--bulma-primary) !important;
-  background: rgba(255,255,255,0.04) !important;
-  opacity: 1 !important;
-}
-
+.app-topnav[data-current-application-group="Events"] .app-portals.tabs li[data-group="Events"] button.portal-tab-btn,
+.app-topnav[current-application-group="Assets"] .app-portals.tabs li[data-group="Assets"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Assets"] .app-portals.tabs li[data-group="Assets"] button.portal-tab-btn,
+.app-topnav[current-application-group="Parts"] .app-portals.tabs li[data-group="Parts"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Parts"] .app-portals.tabs li[data-group="Parts"] button.portal-tab-btn,
 .app-topnav[current-application-group="Administration"] .app-portals.tabs li[data-group="Administration"] button.portal-tab-btn,
 .app-topnav[data-current-application-group="Administration"] .app-portals.tabs li[data-group="Administration"] button.portal-tab-btn {
   color: #fff !important;

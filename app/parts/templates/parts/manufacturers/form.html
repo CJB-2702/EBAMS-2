@@ -1,0 +1,33 @@
+{% extends "parts/base.html" %}
+{% block title %}New Manufacturer{% endblock %}
+{% block nav_manufacturers %}is-active{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_manufacturer_index' %}">Manufacturers</a></li>
+  <li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_business</span></div>
+    <div><h1 class="page-title">New Part Manufacturer</h1></div></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-body">
+    <form method="post">
+      {% csrf_token %}
+      <label class="label is-small">Name</label>
+      <input class="input is-small" type="text" name="name" value="{{ manufacturer.name|default:'' }}" required>
+      <label class="label is-small">Code</label>
+      <input class="input is-small" type="text" name="code" value="{{ manufacturer.code|default:'' }}">
+      <label class="label is-small">Website</label>
+      <input class="input is-small" type="url" name="website" value="{{ manufacturer.website|default:'' }}">
+      <label class="checkbox is-size-7 mt-2"><input type="checkbox" name="is_active" checked> Active</label>
+      <div class="mt-4">
+        <button class="button is-link is-small" type="submit">Create</button>
+        <a href="{% url 'part_manufacturer_index' %}" class="button is-light is-small">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "assets/asset_base.html" %}
+{% block title %}Edit Relationships — {{ asset.name }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'asset_relationships_index' %}">Asset Relationships</a></li>
+  <li><a href="{% url 'children_view' asset_id=asset.id %}">{{ asset.name }}</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Edit children</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+      <div>
+        <h1 class="page-title">Edit Children — {{ asset.name }}</h1>
+        <p class="page-subtitle">Detach a child, or search below to attach an asset to this set.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'children_view' asset_id=asset.id %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span><span>View</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  {% include "assets/relationships/_disclaimer.html" %}
+  {% include "assets/relationships/_tree.html" %}
+
+  <div class="pc mt-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_link</span></span>
+        Attach an asset
+      </div>
+    </div>
+    <div class="pc-body">
+      <p class="is-size-7 has-text-grey mb-2">
+        Search for an asset and attach it as a child of <strong>{{ asset.name }}</strong>.
+        An asset that already has a parent will be moved here, bringing its sub-assets with it.
+      </p>
+      <input class="input is-small is-family-monospace mb-3" type="search" name="q"
+             placeholder="Search name or serial…" autocomplete="off"
+             hx-get="{% url 'children_search' asset_id=asset.id %}"
+             hx-trigger="keyup changed delay:300ms, search"
+             hx-target="#attach-results"
+             hx-swap="innerHTML">
+      <div id="attach-results">
+        <p class="has-text-grey is-size-7 p-2">Type a name or serial to search.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

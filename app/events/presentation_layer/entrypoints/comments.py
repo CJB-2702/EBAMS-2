@@ -40,6 +40,17 @@ def comment_add(request: HttpRequest, event_hash: str) -> HttpResponse:
 
     if request.method == "POST":
         result = CommentHandler(request.user).add(event, request.POST, request.FILES)
+
+        # Inline add from the expanded card view: re-render just that card so
+        # the new comment appears without leaving the list.
+        if request.headers.get("HX-Request") and request.GET.get("format") == "htmx-event-card":
+            from app.events.presentation_layer.entrypoints.events import build_event_card
+
+            return render(request, "events/fragments/event_card.html", {
+                "card": build_event_card(event, request.user),
+                "comment_error": "" if result.ok else " ".join(result.errors),
+            })
+
         if result.ok:
             messages.success(request, "Comment added.")
         else:

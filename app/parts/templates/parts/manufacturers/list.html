@@ -1,0 +1,34 @@
+{% extends "parts/base.html" %}
+{% block title %}Part Manufacturers{% endblock %}
+{% block nav_manufacturers %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Manufacturers</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">business</span></div>
+    <div><h1 class="page-title">Part Manufacturers</h1><p class="page-subtitle">Separate from the asset manufacturer registry (D2) — many more vendors expected here.</p></div></div>
+  <div class="page-header-actions"><a href="{% url 'part_manufacturer_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Manufacturer</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="pc"><div class="pc-body"><form method="get">
+    <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Name…">
+  </form></div></div>
+
+  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Manufacturers ({{ manufacturers|length }})</div></div>
+    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Name</th><th>Code</th><th>Website</th><th>Active</th></tr></thead>
+      <tbody>
+        {% for m in manufacturers %}
+        <tr>
+          <td>{{ m.name }}</td>
+          <td class="is-family-monospace">{{ m.code|default:"—" }}</td>
+          <td>{% if m.website %}<a href="{{ m.website }}" target="_blank" rel="noopener">{{ m.website }}</a>{% else %}—{% endif %}</td>
+          <td>{% include "assets/_status_tag.html" with value=m.is_active|yesno:"Active,Inactive" %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="4" class="has-text-grey has-text-centered py-5">No manufacturers.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}
