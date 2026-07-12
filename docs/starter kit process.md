@@ -1,5 +1,0 @@
-- `[x]` Refactor `docs/starter kit process.md`
-- `[x]` Create `route-planner.md` persona
-- `[x]` Create `ui-planner.md` persona
-- `[x]` Create `backend-builder.md` persona
-- `[/]` Create Walkthrough document

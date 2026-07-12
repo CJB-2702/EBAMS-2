@@ -1,6 +1,14 @@
+---
+type: "UX Guide"
+title: "Tabs — allowable implementation approaches"
+description: "Four allowable tab strategies, ranked by preference."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Tabs — allowable implementation approaches
 
-Four allowable tab strategies, ranked by preference. Pick the one that matches the page's content size and interactivity profile. Background on the failed web-component-only path: [../technical_decisions/incident_history/2026-05-web_component_tab_incident.md](../technical_decisions/incident_history/2026-05-web_component_tab_incident.md).
+Four allowable tab strategies, ranked by preference. Pick the one that matches the page's content size and interactivity profile. Background on the failed web-component-only path: [../../technical_decisions/incident_history/2026-05-web_component_tab_incident.md](../../technical_decisions/incident_history/2026-05-web_component_tab_incident.md).
 
 ## Approach 1 — HTMX (preferred for large pages)
 
@@ -8,36 +16,7 @@ Four allowable tab strategies, ranked by preference. Pick the one that matches t
 
 **Rule.** Prefer this when the total content across all tabs exceeds **1,000 lines** of template code. Lazy-loading each tab over HTMX keeps the initial page load light.
 
-**Pattern.** One canonical URL, branch on the `HX-Request` header plus a `?view=` query parameter (per [../Architecture.md](../Architecture.md) HTMX rules).
-
-```html
-<div class="tabs">
-  <ul>
-    <li class="is-active"
-        hx-get="/administration/users/2/edit?view=information"
-        hx-target="#tabs-content"
-        hx-push-url="true">
-      <a>Information</a>
-    </li>
-    <li hx-get="/administration/users/2/edit?view=permissions"
-        hx-target="#tabs-content"
-        hx-push-url="true">
-      <a>Permissions</a>
-    </li>
-    <li hx-get="/administration/users/2/edit?view=data-access"
-        hx-target="#tabs-content"
-        hx-push-url="true">
-      <a>Data Access</a>
-    </li>
-  </ul>
-</div>
-
-<div id="tabs-content">
-  {% include tab_partial %}
-</div>
-```
-
-In the view, branch on the request: full page on a hard load, partial fragment on HTMX nav.
+**Pattern.** One canonical URL, branch on the `HX-Request` header plus a `?view=` query parameter (per [../../Architecture.md](../../Architecture.md) HTMX rules). The view branches on the request: full page on a hard load, partial fragment on HTMX nav. Canonical markup: [../Examples/tabs_htmx_markup.md](../Examples/tabs_htmx_markup.md).
 
 **Why this scales.** F5 still works (every `?view=` URL renders a full page). Browser back/forward works via `hx-push-url="true"`. No third-party tab library, no custom-element timing pitfalls.
 
@@ -47,7 +26,7 @@ In the view, branch on the request: full page on a hard load, partial fragment o
 
 **Use case.** Smaller, self-contained tabbed widgets where the combined content is light enough to ship in the initial response and no part of the tab content needs to be lazy-loaded.
 
-**Rule.** Use the approved web-component pattern from the component library. Two non-negotiable requirements pulled from the [Web Component Tab Incident](../technical_decisions/incident_history/2026-05-web_component_tab_incident.md):
+**Rule.** Use the approved web-component pattern from the component library. Two non-negotiable requirements pulled from the [Web Component Tab Incident](../../technical_decisions/incident_history/2026-05-web_component_tab_incident.md):
 
 1. **Defer init past parse.** Do not call `querySelectorAll` in `connectedCallback` — it fires on the opening tag, before children exist. Either defer to `DOMContentLoaded`, gate on a `tabPanels.length > 0` MutationObserver with `subtree: true`, or call `customElements.define(...)` inside a `DOMContentLoaded` handler so upgrades happen after the full tree is parsed.
 2. **Never put `<li>` children inside a custom element that is itself inside a `<li>`** without a real `<ul>` / `<ol>` between them. Custom element names are not parser scoping boundaries — an inner `<li>` will implicitly close the outer one and corrupt the tab structure. Use `<ul data-slot="left">` (as in `<dual-listbox-alt>`) when you need to pass list data to a slotted child.

@@ -1,7 +1,15 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Control Layer Plan"
+description: "and [docs/Architecture/patterns/oop_control_patterns.md](../../docs/Architecture/patterns/oop_control_patterns.md)."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-1-asset-and-model-contexts]
+context_tier: 2
+---
+
 # Phase 1 — Control Layer Plan
 
 *Per [`docs/starter_kit_process/how_to_plan_control_layer.md`](../../docs/starter_kit_process/how_to_plan_control_layer.md)
-and [`docs/Architecture/oop_control_patterns.md`](../../docs/Architecture/oop_control_patterns.md).
+and [`docs/Architecture/patterns/oop_control_patterns.md`](../../docs/Architecture/patterns/oop_control_patterns.md).
 Names use the strict suffix vocabulary.*
 
 ## Target tree

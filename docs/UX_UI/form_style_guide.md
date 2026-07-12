@@ -1,8 +1,16 @@
+---
+type: "UX Guide"
+title: "Form & action layout style guide"
+description: "How **Create**, **Edit**, **Delete**, **Cancel**, and other actions are positioned on cards, forms, and inline controls."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Form & action layout style guide
 
 How **Create**, **Edit**, **Delete**, **Cancel**, and other actions are positioned on cards, forms, and inline controls. The geometry is the same everywhere so users build muscle memory: *primary on the bottom-right, dangerous things small and far from the primary*.
 
-For the master button table see [common_buttons.md](common_buttons.md). For verbatim card-footer markup see [Examples/card_footer_markup.md](Examples/card_footer_markup.md).
+For the master button table see [components/common_buttons.md](components/common_buttons.md). For verbatim card-footer markup see [Examples/card_footer_markup.md](Examples/card_footer_markup.md).
 
 ---
 
@@ -53,7 +61,7 @@ Delete is always a **secondary** action — it never sits in the primary slot, a
 | Slot | Bottom-left, inline with Cancel/Reset |
 | Style | `is-small is-danger is-light` (light red, not solid red) |
 | Width | Capped via `style="max-width: 6rem;"` or `is-small` only — explicitly **less wide** than Cancel |
-| Confirmation | Required. Use a native `<dialog>` modal (see [modals.md](modals.md)) for non-trivial deletes; a `confirm()` is acceptable for low-stakes removals. |
+| Confirmation | Required. Use a native `<dialog>` modal (see [components/modals.md](components/modals.md)) for non-trivial deletes; a `confirm()` is acceptable for low-stakes removals. |
 | Position relative to Cancel | **Right of Cancel/Reset** so the user's pointer travels through the safer buttons first |
 
 Never make Delete the primary action of an edit form. If a screen exists *only* to delete a thing, the primary action on that screen is the deletion — but that is a dedicated screen, not the edit form.

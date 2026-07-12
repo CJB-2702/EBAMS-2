@@ -11,11 +11,19 @@ class CollapsableSideBar extends HTMLElement {
       <style>
         :host {
           display: block;
-          background: var(--bulma-scheme-main-bis);
+          background: var(--white);
           border-right: 1px solid var(--bulma-border);
           overflow-y: auto;
           min-width: 0;
           padding-bottom: 1rem;
+        }
+        @media (prefers-color-scheme: dark) {
+          :host-context(:root:not([data-theme="light"])) {
+            background: var(--gray-100);
+          }
+        }
+        :host-context([data-theme="dark"]) {
+          background: var(--gray-100);
         }
         :host([collapsed]) {
           overflow: hidden;

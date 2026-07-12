@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Renamed \"ownership group\" → \"Data Domain\""
+description: "The data-scope primitive is renamed from **\"ownership group\"** to **\"Data Domain\"** (or simply **\"Domain\"**)."
+tags: [technical-decisions, technical-decision, history]
+context_tier: 2
+---
+
 # Renamed "ownership group" → "Data Domain"
 
 - **Date:** 2026-04

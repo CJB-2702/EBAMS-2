@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2a — Business Concept"
+description: "Different kinds of assets need different structured information."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2a-plugin-framework]
+context_tier: 2
+---
+
 # Phase 2a — Business Concept
 
 *Business value only — no schema, no class names.*

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2 — Model Changes"
+description: "One model changes: Attachment."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-2]
+context_tier: 2
+---
+
 # Phase 2 — Model Changes
 
 One model changes: `Attachment`. One column is added, one column's nullability changes.

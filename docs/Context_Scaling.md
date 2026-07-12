@@ -1,3 +1,11 @@
+---
+type: "Concept Anchor"
+title: "Technical Specification: Context Scaling Framework"
+description: "As development environments grow, unmanaged context injection degrades LLM performance, introduces hallucinations, and wastes token allocations."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # Technical Specification: Context Scaling Framework
 
 ## 1. Core Philosophy
@@ -38,12 +46,4 @@ All cross-file references are **strictly one-directional: parent → child only.
 
 ## Sub-specifications
 
-| Topic | File |
-| :--- | :--- |
-| Tier file inventories & Key Files | [Context_Scaling/tier_reference.md](Context_Scaling/tier_reference.md) |
-| Persona slash command routing | [Context_Scaling/persona_routing.md](Context_Scaling/persona_routing.md) |
-| Mapping scripts & docs crawler | [Context_Scaling/tools_and_scripts.md](Context_Scaling/tools_and_scripts.md) |
-| Technical decisions system | [Context_Scaling/technical_decisions_system.md](Context_Scaling/technical_decisions_system.md) |
-| `skeleton.md` spec & template | [Context_Scaling/skeleton_spec.md](Context_Scaling/skeleton_spec.md) |
-| Domain skeleton bundles | [Context_Scaling/domain_skeleton_bundles_spec.md](Context_Scaling/domain_skeleton_bundles_spec.md) |
-| Refactoring guide & post-session synthesis | [Context_Scaling/refactoring_guide.md](Context_Scaling/refactoring_guide.md) |
+See [Context_Scaling/index.md](Context_Scaling/index.md) for the full, machine-routable index of Tier 2 guides (tier reference, persona routing, skeleton specs, technical decisions system, refactoring guide).

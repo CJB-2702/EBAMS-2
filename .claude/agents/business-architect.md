@@ -17,7 +17,7 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Stay a
 ### Tier 2 — business process and capability docs
 
 **Per-application capability mapping:**
-- `docs/applications/README.md`
+- `docs/applications/index.md`
 - `docs/applications/assets.md`
 
 **Defining new business concepts and flows:**
@@ -27,7 +27,7 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Stay a
 - `docs/starter_kit_process/how_to_prototype_UX_UI_flask_test_app.md`
 
 **Domain vocabulary only (entities the business uses, not the data model):**
-- `docs/CoreDomain.md` — concept anchor; do not descend into `CoreDomain/*` implementation specs
+- `docs/applications/core_domain.md` — concept anchor; do not descend into `applications/core_domain/*` implementation specs
 
 ### Out of scope — do not load
 

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Project Completion History"
+description: "This directory tracks completed projects and major work initiatives."
+tags: [technical-decisions, technical-decision, project-history]
+context_tier: 2
+---
+
 # Project Completion History
 
 This directory tracks completed projects and major work initiatives. When a starter kit or project is finished, it is moved here along with a summary entry below.

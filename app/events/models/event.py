@@ -156,6 +156,12 @@ class Event(AuditFieldsMixin, SoftDeleteMixin):
     allow_comments = models.BooleanField(default=True)
     allow_direct_attachments = models.BooleanField(default=True)
 
+    # Genuinely per-instance — NOT stamped by save() from a class attr (unlike
+    # the capability flags above). When True, standalone file attach/detach on
+    # this thread posts a machine comment to its timeline (see
+    # ThreadPolicy.narrates_file_changes and DirectAttachmentHandler).
+    narrate_file_changes = models.BooleanField(default=False)
+
     # ── Event fields — required on event rows; sentinel-filled on others ─────
     domain = models.ForeignKey(
         "administration.Domain",

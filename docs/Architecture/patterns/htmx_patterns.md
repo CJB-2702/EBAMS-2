@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: HTMX Patterns
+description: Conventions for layering HTMX interactivity on a static-first Django MPA.
+tags: [architecture, htmx, frontend, progressive-enhancement]
+---
+
 # HTMX & Progressive Enhancement Guidelines
 
 ## Core philosophy: "Enhanced, not defined"
@@ -49,7 +56,7 @@ Search results use a dedicated partial template for speed and reduced server loa
 - **URL contract:** the **same canonical route** as the normal list (no parallel `/search` path). Add `format=htmx-search-results` plus the search query (`q`). The view branches on `format` and returns **only** the results fragment.
 - **Example URL:** `.../comments?format=htmx-search-results&q=query`.
 
-For markup see [Examples/htmx_csrf_and_search_snippets.md](Examples/htmx_csrf_and_search_snippets.md).
+For markup see [../Examples/htmx_csrf_and_search_snippets.md](../Examples/htmx_csrf_and_search_snippets.md).
 
 ---
 
@@ -66,11 +73,7 @@ Use Bulma's skeleton/loading states for round-trip feedback.
 
 HTMX may use `hx-get`, `hx-post`, `hx-put`, `hx-patch`, and `hx-delete` so the browser sends the same verbs as the OOP endpoint design (see [endpoint_patterns.md](endpoint_patterns.md)). That aligns with REST-style routes while keeping CSRF protection.
 
-**Django middleware:** ensure `django.middleware.csrf.CsrfViewMiddleware` is in `MIDDLEWARE` (default). Unsafe methods (POST, PUT, PATCH, DELETE) require a valid CSRF token; GET and HEAD do not. The middleware accepts the token from the `X-CSRFToken` header on AJAX requests, including HTMX.
-
-**Base template hook:** include a `htmx:configRequest` listener once in the project base template so every HTMX request sends the CSRF token header. See [Examples/htmx_csrf_and_search_snippets.md](Examples/htmx_csrf_and_search_snippets.md).
-
-**Request bodies and `request.POST`:** for PUT and PATCH, Django does not populate `request.POST` from typical form bodies the way it does for POST. Views should read the payload as the API defines (`request.body` with JSON, or `QueryDict` parsing). This is independent of CSRF.
+**Base template hook:** include a `htmx:configRequest` listener once in the project base template so every HTMX request sends the CSRF token header. See [../Examples/htmx_csrf_and_search_snippets.md](../Examples/htmx_csrf_and_search_snippets.md). Middleware requirements and PUT/PATCH body-parsing detail: [../Examples/csrf_and_http_methods.md](../Examples/csrf_and_http_methods.md).
 
 ---
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app.parts.control_layer.domain_structs.supplier_item_struct import (
+from app.parts.control_layer.domain_structs.reverse_structs.supplier_item_struct import (
     SupplierItemStruct,
 )
 from app.parts.control_layer.managers.part_thread_manager import PartThreadManager

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2b — Business Concept"
+description: "Road-going assets carry a **registration** module: plate number, registration."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2b-first-party-plugins]
+context_tier: 2
+---
+
 # Phase 2b — Business Concept
 
 *Business value only — no schema, no class names.*

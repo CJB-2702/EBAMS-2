@@ -1,3 +1,11 @@
+---
+type: "Skeleton Bundle"
+title: "Asset Management — skeleton bundle"
+description: "For task types: build or modify the asset management sub-application (models, control layer, endpoints, templates)."
+tags: [applications, skeleton-bundle, assets]
+context_tier: 2
+---
+
 # Asset Management — skeleton bundle
 
 For task types: build or modify the asset management sub-application (models, control layer, endpoints, templates).
@@ -16,7 +24,7 @@ For task types: build or modify the asset management sub-application (models, co
 - `docs/applications/assets.md` — application overview and scope anchors.
 - `docs/Architecture/layer_rules.md` — reads vs writes.
 - `docs/Authorization/data_ownership.md` — Golden Rule and domain scoping.
-- `docs/Events/events.md` — how to emit events from this app.
+- `docs/applications/events/events.md` — how to emit events from this app.
 
 ## Key reminders
 

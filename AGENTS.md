@@ -36,7 +36,7 @@ app/
 docs/
   Architecture/         ← layer rules, patterns, standards (source of truth)
   Authorization/        ← RBAC, data domains, users, password policy
-  CoreDomain/           ← core entity model schemas
+  applications/         ← per-application docs (core_domain, events, assets, ...)
   dev_tools/            ← scripts (db rebuild, env gen, memory log)
 .agents/
   personas/             ← persona sub-agents (Admin, Backend, Frontend, Business, Code Architect)
@@ -61,10 +61,10 @@ Read these when in doubt — they are authoritative:
 - [docs/Architecture.md](docs/Architecture.md) — Layered architecture summary
 - [docs/Architecture/overview.md](docs/Architecture/overview.md) — folder layout and layer responsibilities
 - [docs/Architecture/layer_rules.md](docs/Architecture/layer_rules.md) — reads vs writes
-- [docs/Architecture/oop_control_patterns.md](docs/Architecture/oop_control_patterns.md) — class suffix vocabulary
-- [docs/Architecture/model_patterns.md](docs/Architecture/model_patterns.md) — model rules
-- [docs/Architecture/endpoint_patterns.md](docs/Architecture/endpoint_patterns.md) — OOP endpoint design
-- [docs/Architecture/htmx_patterns.md](docs/Architecture/htmx_patterns.md) — HTMX conventions
+- [docs/Architecture/patterns/oop_control_patterns.md](docs/Architecture/patterns/oop_control_patterns.md) — class suffix vocabulary
+- [docs/Architecture/patterns/model_patterns.md](docs/Architecture/patterns/model_patterns.md) — model rules
+- [docs/Architecture/patterns/endpoint_patterns.md](docs/Architecture/patterns/endpoint_patterns.md) — OOP endpoint design
+- [docs/Architecture/patterns/htmx_patterns.md](docs/Architecture/patterns/htmx_patterns.md) — HTMX conventions
 - [docs/Architecture/standards.md](docs/Architecture/standards.md) — engineering principles
 - [docs/Architecture/seeding.md](docs/Architecture/seeding.md) — dev seed strategy
 - [docs/Architecture/tests.md](docs/Architecture/tests.md) — testing conventions
@@ -72,17 +72,17 @@ Read these when in doubt — they are authoritative:
 ### UX / UI
 - [docs/UX_UI.md](docs/UX_UI.md) — visual language, density (`format=`)
 - [docs/UX_UI/form_style_guide.md](docs/UX_UI/form_style_guide.md) — action layout rules for forms and cards
-- [docs/UX_UI/common_buttons.md](docs/UX_UI/common_buttons.md) — button library and semantic colors
-- [docs/UX_UI/dual_listbox.md](docs/UX_UI/dual_listbox.md) — dual listbox many-to-many selection
-- [docs/UX_UI/searchbars.md](docs/UX_UI/searchbars.md) — searchbars and autocomplete guides
+- [docs/UX_UI/components/common_buttons.md](docs/UX_UI/components/common_buttons.md) — button library and semantic colors
+- [docs/UX_UI/components/dual_listbox.md](docs/UX_UI/components/dual_listbox.md) — dual listbox many-to-many selection
+- [docs/UX_UI/components/searchbars.md](docs/UX_UI/components/searchbars.md) — searchbars and autocomplete guides
 
 ### Domain
 - [docs/Authorization/rbac.md](docs/Authorization/rbac.md) — Django permissions, groups, and templates
 - [docs/Authorization/data_ownership.md](docs/Authorization/data_ownership.md) — Ownership groups and organizational hierarchy
-- [docs/CoreDomain/core_models.md](docs/CoreDomain/core_models.md) — Core models dependency graph
-- [docs/Events/events.md](docs/Events/events.md) — Events sub-application domain
-- [docs/CoreDomain/divisions.md](docs/CoreDomain/divisions.md) — Divisions and organization hierarchy
-- [docs/technical_decisions/README.md](docs/technical_decisions/README.md) — Technical debt and decision history
+- [docs/applications/core_domain/core_models.md](docs/applications/core_domain/core_models.md) — Core models dependency graph
+- [docs/applications/events/events.md](docs/applications/events/events.md) — Events sub-application domain
+- [docs/applications/core_domain/divisions.md](docs/applications/core_domain/divisions.md) — Divisions and organization hierarchy
+- [docs/technical_decisions/index.md](docs/technical_decisions/index.md) — Technical debt and decision history
 
 
 ---

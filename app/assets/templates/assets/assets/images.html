@@ -1,4 +1,5 @@
 {% extends "assets/asset_base.html" %}
+{% load static %}
 {% block title %}Images · {{ asset.name }}{% endblock %}
 {% block nav_assets %}is-active{% endblock %}
 {% block breadcrumb %}
@@ -24,12 +25,12 @@
         {% for img in images %}
         <div class="column is-4">
           <div class="pc" style="margin:0;">
-            <figure class="image is-4by3" style="background:var(--bulma-background);"><img src="{{ img.attachment.file.url }}" alt="image {{ img.sort_order }}" style="object-fit:contain;"></figure>
+            <figure class="image is-4by3" style="background:var(--bulma-background);"><img src="{{ img.file.url }}" alt="{{ img.file.original_filename }}" style="object-fit:contain;"></figure>
             <div class="pc-body" style="padding:0.5rem 0.75rem;">
               <div class="is-flex is-justify-content-space-between is-align-items-center">
-                <span class="is-size-7">Order {{ img.sort_order }} {% if img.is_primary %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
+                <span class="is-size-7">Order {{ img.display_order }} {% if img.id == primary_id %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
                 <form method="post" style="display:inline;">{% csrf_token %}
-                  {% if not img.is_primary %}<button class="button is-small is-light" name="set_primary" value="{{ img.id }}" title="Set primary"><span class="icon"><span class="material-icons" aria-hidden="true">star</span></span></button>{% endif %}
+                  {% if img.id != primary_id %}<button class="button is-small is-light" name="set_primary" value="{{ img.id }}" title="Set primary"><span class="icon"><span class="material-icons" aria-hidden="true">star</span></span></button>{% endif %}
                   <button class="button is-small is-danger is-light" name="delete" value="{{ img.id }}" title="Delete"><span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span></button>
                 </form>
               </div>
@@ -45,15 +46,15 @@
   <div class="pc">
     <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>Upload</div></div>
     <div class="pc-body">
-      <form method="post">{% csrf_token %}
-        <div class="file is-small has-name mb-3"><label class="file-label">
-          <input class="file-input" type="file" name="image" accept="image/*">
-          <span class="file-cta"><span class="file-icon"><span class="material-icons" aria-hidden="true">attach_file</span></span><span class="file-label">Choose image…</span></span>
-          <span class="file-name">No file selected</span>
-        </label></div>
-        <button class="button is-small is-link" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Upload</span></button>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <file-upload name="image" accept="image/*" multiple fullwidth label="Choose image(s)…"></file-upload>
+        <button class="button is-small is-link is-fullwidth" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Upload</span></button>
       </form>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block body_scripts %}
+<script defer src="{% static 'web_components/file_upload.js' %}"></script>
 {% endblock %}

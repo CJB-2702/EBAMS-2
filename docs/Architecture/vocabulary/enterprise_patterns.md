@@ -1,3 +1,10 @@
+---
+type: Vocabulary Reference
+title: Canonical Enterprise Patterns
+description: Industry-standard Gang-of-Four and Fowler patterns the codebase relies on.
+tags: [architecture, vocabulary, patterns, enterprise]
+---
+
 # Canonical patterns (GoF + Fowler PoEAA)
 
 Precise industry terms the codebase **relies on but does not encode as a suffix**.

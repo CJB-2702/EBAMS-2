@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Activity Thread + Event — Limited Proxy design"
+description: "Derived from planning session 2026-05-28."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-3]
+context_tier: 2
+---
+
 > **Superseded.** This doc predates the phased structure. For Phase 3 build specs see
 > [phase_3/goal.md](phase_3/goal.md), [phase_3/model_changes.md](phase_3/model_changes.md),
 > [phase_3/control_changes.md](phase_3/control_changes.md). This file is retained as

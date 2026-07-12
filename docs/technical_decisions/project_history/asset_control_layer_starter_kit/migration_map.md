@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Migration Map — old files → new homes"
+description: "Every file under the old app/business/core and app/business/assets mapped to."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Migration Map — old files → new homes
 
 Every file under the old `app/business/core` and `app/business/assets` mapped to
@@ -46,7 +54,7 @@ the master porting checklist. "Phase" = which sub-kit covers it.
 ## Notes
 
 - **Naming:** when porting, rename to the strict suffix vocabulary
-  (`docs/Architecture/oop_control_patterns.md`). E.g. old "Manager" that does one
+  (`docs/Architecture/patterns/oop_control_patterns.md`). E.g. old "Manager" that does one
   heavy step → `Handler`; old "Context" that loads + delegates → keep `Context`
   but back it with a `Struct`.
 - **`MakeModel` → `AssetModel`** in every ported file, plus `make` (string) →

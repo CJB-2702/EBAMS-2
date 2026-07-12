@@ -1,3 +1,11 @@
+---
+type: "Process Guide"
+title: "How to Write the Business Concept Definition Document"
+description: "You are acting as a Business Architect Agent."
+tags: [starter-kit-process, process-guide]
+context_tier: 2
+---
+
 # How to Write the Business Concept Definition Document
 
 **Role & Objective:**

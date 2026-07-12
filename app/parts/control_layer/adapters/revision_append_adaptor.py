@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import datetime
 
+from app.parts.control_layer.adapters.form_parsing import parse_int
+
 
 class RevisionAppendAdaptor:
     @staticmethod
@@ -21,14 +23,5 @@ class RevisionAppendAdaptor:
             "major_name": (post.get("major_name") or "").strip() or None,
             "minor_name": (post.get("minor_name") or "").strip() or None,
             "date_of_release": date_of_release,
-            "major_number": _to_int(post.get("major_number")),
+            "major_number": parse_int(post.get("major_number")),
         }
-
-
-def _to_int(value) -> int | None:
-    if value in (None, ""):
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None

@@ -1,4 +1,10 @@
-"""FileHandler — upload, attach, and soft-delete File rows."""
+"""FileHandler — blob lifecycle for File rows (create and soft-delete).
+
+Scope is deliberately narrow: the physical File blob only. It knows nothing
+about threads, Attachment links, display_order, or narration — those belong to
+the attachment handlers (DirectAttachmentHandler / CommentAttachmentHandler),
+which compose this handler for the blob half of the work.
+"""
 
 from __future__ import annotations
 
@@ -6,11 +12,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from django.db import transaction
-from django.utils import timezone
-
-from app.events.models import Attachment, AttachmentType, Comment, Event, File
-from app.events.models.file import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_BYTES
+from app.events.models import File
+from app.events.models.file import MAX_FILE_SIZE_BYTES
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -25,66 +28,33 @@ class FileResult:
 
 
 class FileHandler:
-    """Handles file upload, attachment linking, and soft-delete."""
+    """Creates and soft-deletes the File blob. No threads, no Attachment rows."""
 
     def __init__(self, actor: "AbstractUser") -> None:
         self.actor = actor
 
-    def upload(
-        self,
-        thread: Event,
-        uploaded_file: "UploadedFile | None",
-        comment: Comment | None = None,
-    ) -> FileResult:
+    def create_file(self, uploaded_file: "UploadedFile | None") -> FileResult:
         if not uploaded_file or not getattr(uploaded_file, "name", None):
             return FileResult(ok=False, errors=["No file provided."])
-
-        if comment is not None and comment.activity_thread_id != thread.pk:
-            raise ValueError("Comment does not belong to this thread.")
 
         errors = self._validate(uploaded_file)
         if errors:
             return FileResult(ok=False, errors=errors)
 
-        with transaction.atomic():
-            file = File.objects.create(
-                file=uploaded_file,
-                original_filename=uploaded_file.name,
-                file_size=uploaded_file.size,
-                mime_type=uploaded_file.content_type or "",
-                created_by=self.actor,
-                updated_by=self.actor,
-            )
-            attachment_type = self._infer_attachment_type(uploaded_file.name)
-            existing_count = Attachment.objects.filter(
-                thread=thread, deleted_at__isnull=True
-            ).count()
-            Attachment.objects.create(
-                thread=thread,
-                comment=comment,
-                file=file,
-                attachment_type=attachment_type,
-                display_order=existing_count,
-                created_by=self.actor,
-                updated_by=self.actor,
-            )
-
+        file = File.objects.create(
+            file=uploaded_file,
+            original_filename=uploaded_file.name,
+            file_size=uploaded_file.size,
+            mime_type=uploaded_file.content_type or "",
+            created_by=self.actor,
+            updated_by=self.actor,
+        )
         return FileResult(ok=True, file=file)
 
-    def soft_delete(self, file: File) -> FileResult:
-        """
-        Soft-delete a file and bulk soft-delete all its attachment rows.
-        Unconditional — the caller has already established intent.
-        """
-        with transaction.atomic():
-            now = timezone.now()
-            Attachment.objects.filter(file=file).update(
-                deleted_at=now,
-                updated_by=self.actor,
-                updated_at=now,
-            )
-            file._soft_delete(actor=self.actor)
-
+    def soft_delete_file(self, file: File) -> FileResult:
+        """Soft-delete the blob only. Callers that must also remove the link
+        rows use DirectAttachmentHandler.delete_file, which owns the cascade."""
+        file._soft_delete(actor=self.actor)
         return FileResult(ok=True, file=file)
 
     # ------------------------------------------------------------------ #
@@ -102,9 +72,3 @@ class FileHandler:
             ext = Path(name).suffix.lower()
             errors.append(f"File type '{ext}' is not allowed.")
         return errors
-
-    def _infer_attachment_type(self, filename: str) -> str:
-        ext = Path(filename).suffix.lower()
-        if ext in ALLOWED_EXTENSIONS.get("images", set()):
-            return AttachmentType.IMAGE
-        return AttachmentType.DOCUMENT

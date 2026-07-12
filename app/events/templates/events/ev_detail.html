@@ -163,7 +163,7 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
               </div>
             </div>
             <p>{{ row.comment.content }}</p>
-            {% include "events/comment/fragments/attachment_carousel.html" with comment_id=row.comment.pk att_list=row.attachments %}
+            {% include "events/comment/fragments/attachment_mini_cards.html" with att_list=row.attachments event_hash=event_hash comment_hash=row.comment_hash %}
           </div>
         </div>
         {% empty %}

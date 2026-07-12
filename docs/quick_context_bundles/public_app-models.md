@@ -1,3 +1,11 @@
+---
+type: "Quick Context Bundle"
+title: "Quick Context Bundle: Public App (Models Only)"
+description: "Read the full YAML output of the command."
+tags: [quick-context, quick-context-bundle]
+context_tier: 2
+---
+
 # Quick Context Bundle: Public App (Models Only)
 
 When this file is referenced or included in the conversation (e.g., using `@`), you must execute the following command to load the class/docstring context for the models of the `public_app` application:

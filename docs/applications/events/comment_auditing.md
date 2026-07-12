@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Comment Auditing — History, Attachments, and File Lifecycle"
+description: "Authoritative design — source of truth for comment editing, deletion, and file cleanup."
+tags: [events, domain-doc]
+context_tier: 2
+---
+
 # Comment Auditing — History, Attachments, and File Lifecycle
 
 Authoritative design — source of truth for comment editing, deletion, and file cleanup. References: [event_context_design.md](event_context_design.md), [events_endpoints.md](events_endpoints.md).

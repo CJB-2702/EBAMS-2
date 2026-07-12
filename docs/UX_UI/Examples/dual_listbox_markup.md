@@ -1,3 +1,11 @@
+---
+type: "UX Example"
+title: "Dual listbox markup"
+description: "Canonical fragments for the component described in [../dual_listbox.md](../dual_listbox.md)."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # Dual listbox markup
 
 Canonical fragments for the component described in [../dual_listbox.md](../dual_listbox.md).
@@ -72,6 +80,15 @@ Load the three web components once per page that uses the pattern:
   </style>
 {% endblock %}
 ```
+
+## REST-shaped API on the same URL
+
+For non-HTMX consumers, the same resource exposes a JSON contract on the same collection URL:
+
+- `GET /admin/roles/<id>/permissions` → `{ "selected": [...], "available_count": N }`.
+- `GET /admin/roles/<id>/permissions?available=true&q=asset` → `{ "items": [...], "page": 1, "next": 2 }`.
+- `PUT /admin/roles/<id>/permissions` with `{ "selected": [...] }` → 204 (full replace; idempotent).
+- `PATCH /admin/roles/<id>/permissions` with `{ "add": [...], "remove": [...] }` → 200 with new selected list.
 
 ## Side-effect pattern (e.g. inherited-permissions refresh)
 

@@ -1,3 +1,11 @@
+---
+type: "Authorization Guide"
+title: "Password Policy (OWASP-Compliant)"
+description: "This application enforces password requirements based on the [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Password Policy (OWASP-Compliant)
 
 This application enforces password requirements based on the [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html).

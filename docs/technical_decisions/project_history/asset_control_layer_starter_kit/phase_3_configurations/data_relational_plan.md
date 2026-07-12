@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Data & Relational Plan"
+description: "AssetModel ─1──< ConfigurationTemplate ─1──< TemplateChild ─*──1 AssetModel (child_model)."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-3-configurations]
+context_tier: 2
+---
+
 # Phase 3 — Data & Relational Plan
 
 *All models below are **built**. No schema added this phase.*

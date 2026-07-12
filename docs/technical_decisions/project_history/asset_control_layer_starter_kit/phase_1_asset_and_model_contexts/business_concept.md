@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Business Concept"
+description: "User value and workflows only — no schema here.*."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-1-asset-and-model-contexts]
+context_tier: 2
+---
+
 # Phase 1 — Business Concept
 
 *Per [`docs/starter_kit_process/how_to_business_concept_definition_document.md`](../../docs/starter_kit_process/how_to_business_concept_definition_document.md).

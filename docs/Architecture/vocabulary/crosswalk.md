@@ -1,3 +1,10 @@
+---
+type: Vocabulary Reference
+title: Vocabulary Cross-Walk
+description: One-row-per-term mapping between house suffixes and canonical pattern names.
+tags: [architecture, vocabulary, patterns, crosswalk]
+---
+
 # Cross-walk: house suffix ↔ canonical pattern
 
 One row per term. **House** = our class-suffix vocabulary. **Canonical** = the

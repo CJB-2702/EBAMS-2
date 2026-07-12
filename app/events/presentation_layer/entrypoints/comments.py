@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from django.contrib import messages
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -32,6 +34,20 @@ def _resolve_comment(comment_hash: str, event: Event) -> Comment:
         pk=comment_id,
         activity_thread=event,
     )
+
+
+def _attachments_json(attachments) -> str:
+    """Serialize Attachment rows for <add-comment>'s existing-attachments
+    attribute (mode="edit") — see add_comment.js."""
+    return json.dumps([
+        {
+            "id": str(att.id),
+            "name": att.file.original_filename,
+            "size": att.file.file_size,
+            "is_image": att.file.is_image(),
+        }
+        for att in attachments
+    ])
 
 
 @require_http_methods(["GET", "POST"])
@@ -75,8 +91,49 @@ def comment_edit(request: HttpRequest, event_hash: str, comment_hash: str) -> Ht
     if not can_edit:
         return HttpResponseForbidden("You may not edit this comment.")
 
+    # Inline HTMX editing: the Edit button on comment_row.html swaps the row
+    # for this same view's fragment, and row_depth/action_depth round-trip
+    # (query on GET, hidden field on POST) so the swapped-back row keeps its
+    # ambient nesting depth (see events/fragments/comments_card.html's
+    # row_depth/action_depth params).
+    row_depth = request.GET.get("row_depth", "") or request.POST.get("row_depth", "")
+    action_depth = request.GET.get("action_depth", "") or request.POST.get("action_depth", "")
+    inline = request.headers.get("HX-Request") and request.GET.get("format") == "htmx-comment-row"
+
     if request.method == "POST":
-        result = CommentHandler(request.user).edit(comment, request.POST, request.FILES)
+        remove_ids = request.POST.getlist("remove_attachments")
+        result = CommentHandler(request.user).edit(
+            comment, request.POST, request.FILES, remove_attachment_ids=remove_ids
+        )
+
+        if inline:
+            if result.ok:
+                from app.events.presentation_layer.tools.file_previews import build_comment_row
+
+                return render(request, "events/fragments/comment_row.html", {
+                    "row": build_comment_row(result.comment),
+                    "event_hash": event_hash,
+                    "row_depth": row_depth,
+                    "action_depth": action_depth,
+                })
+            from app.events.models import Attachment
+            attachments = list(
+                Attachment.objects.filter(comment=comment, deleted_at__isnull=True)
+                .select_related("file")
+                .order_by("display_order")
+            )
+            return render(request, "events/comment/fragments/comment_edit_form.html", {
+                "event": event,
+                "event_hash": event_hash,
+                "comment": comment,
+                "comment_hash": comment_hash,
+                "attachments": attachments,
+                "existing_attachments_json": _attachments_json(attachments),
+                "row_depth": row_depth,
+                "action_depth": action_depth,
+                "errors": result.errors,
+            })
+
         if result.ok:
             messages.success(request, "Comment updated.")
         else:
@@ -89,12 +146,65 @@ def comment_edit(request: HttpRequest, event_hash: str, comment_hash: str) -> Ht
         .select_related("file")
         .order_by("display_order")
     )
-    return render(request, "events/comment/edit_comment.html", {
+    ctx = {
         "event": event,
         "event_hash": event_hash,
         "comment": comment,
         "comment_hash": comment_hash,
         "attachments": attachments,
+        "row_depth": row_depth,
+        "action_depth": action_depth,
+    }
+    if inline:
+        return render(request, "events/comment/fragments/comment_edit_form.html", {
+            **ctx, "existing_attachments_json": _attachments_json(attachments),
+        })
+    return render(request, "events/comment/edit_comment.html", ctx)
+
+
+@require_http_methods(["GET"])
+def comment_view_row(request: HttpRequest, event_hash: str, comment_hash: str) -> HttpResponse:
+    """Read-only comment row fragment — HTMX-loaded to cancel out of the inline
+    edit form (events/comment/fragments/comment_edit_form.html) back to the
+    normal comment_row.html view."""
+    event = _resolve_event(event_hash)
+    if not _check_domain_access(request, event):
+        return HttpResponseForbidden("You do not have access to this event.")
+    comment = _resolve_comment(comment_hash, event)
+
+    from app.events.presentation_layer.tools.file_previews import build_comment_row
+
+    return render(request, "events/fragments/comment_row.html", {
+        "row": build_comment_row(comment),
+        "event_hash": event_hash,
+        "row_depth": request.GET.get("row_depth", ""),
+        "action_depth": request.GET.get("action_depth", ""),
+    })
+
+
+@require_http_methods(["GET"])
+def comment_gallery(request: HttpRequest, event_hash: str, comment_hash: str) -> HttpResponse:
+    """Lazy-loaded gallery fragment for one comment's image attachments —
+    HTMX-loaded (hx-trigger="revealed") into the "View as gallery" modal in
+    events/comment/fragments/attachment_mini_cards.html."""
+    event = _resolve_event(event_hash)
+    if not _check_domain_access(request, event):
+        return HttpResponseForbidden("You do not have access to this event.")
+    comment = _resolve_comment(comment_hash, event)
+
+    from app.events.models import Attachment
+    from app.events.presentation_layer.tools.generic_cards import document_dict
+
+    images = [
+        document_dict(a)
+        for a in Attachment.objects.filter(comment=comment, deleted_at__isnull=True)
+        .select_related("file")
+        .filter(file__deleted_at__isnull=True)
+        if a.file.is_image()
+    ]
+    return render(request, "events/fragments/gallery_card.html", {
+        "images": images,
+        "dom_id": comment_hash,
     })
 
 

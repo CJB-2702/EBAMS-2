@@ -1,6 +1,13 @@
+---
+type: Architecture Guide
+title: Model Patterns
+description: How Django ORM models are named, grouped, and constrained in this project.
+tags: [architecture, models, orm, domain]
+---
+
 # Model patterns and rules
 
-This document defines how Django ORM models are named, grouped, and constrained in this project. It complements [overview.md](overview.md) and [layer_rules.md](layer_rules.md).
+This document defines how Django ORM models are named, grouped, and constrained in this project. It complements [../overview.md](../overview.md) and [../layer_rules.md](../layer_rules.md).
 
 ## 1. Domain-driven grouping in `models/`
 
@@ -43,13 +50,7 @@ Exact column names and whether "current" lives on the base row or a pointer are 
 
 ## 5. Polymorphic data and "view together" scenarios
 
-When **separate tables** share a structural idea (e.g. "attachment link to some parent") but **different foreign-key targets** or **type defaults**, prefer **multiple concrete tables** over one overloaded table when integrity matters:
-
-- Example: **comment attachments** vs **maintenance attachments**
-  - `comment_attachments`: `linked_to_id` FK → comment; `linked_to_type` default `"comment"`.
-  - `maintenance_attachments`: `linked_to_id` FK → maintenance event; `linked_to_type` default `"maintenance"`.
-
-For rows that must be **unioned or searched in one stream**, use **UUID7** on the link or attachment entity so a union does not require a hand-rolled sequence generator shared across tables.
+When **separate tables** share a structural idea (e.g. "attachment link to some parent") but **different foreign-key targets** or **type defaults**, prefer **multiple concrete tables** over one overloaded table when integrity matters. For rows that must be **unioned or searched in one stream**, use **UUID7** on the link or attachment entity so a union does not require a hand-rolled sequence generator shared across tables. Worked example: [../Examples/polymorphic_attachment_example.md](../Examples/polymorphic_attachment_example.md).
 
 ## 6. Abstract models for shared column sets (domain inheritance)
 
@@ -88,4 +89,4 @@ Describe **why** the exception exists. Unmarked logic on the model is not an acc
 
 ---
 
-Together with [overview.md](overview.md) (models may not import the control layer or presentation layer), these rules keep persistence **honest and boring**: structure and integrity in `models/`, behavior in `control_layer/` and tests.
+Together with [../overview.md](../overview.md) (models may not import the control layer or presentation layer), these rules keep persistence **honest and boring**: structure and integrity in `models/`, behavior in `control_layer/` and tests.

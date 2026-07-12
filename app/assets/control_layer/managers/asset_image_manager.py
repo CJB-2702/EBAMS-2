@@ -1,7 +1,11 @@
 """AssetImageManager — image-gallery sub-area of AssetContext.
 
-Owns the asset's photo gallery: upload (creates the backing ``events.File`` then
-the ``AssetImage`` link), set-primary (exactly one primary per asset), and delete.
+Owns the asset's photo gallery. Images are ``events.Attachment`` rows on the
+asset's ``photo_gallery`` FileSet (the single source of truth); the hero image is
+the ``Asset.primary_image`` FK pointing at one of those attachments. Upload and
+delete delegate to ``events.DirectAttachmentHandler`` (blob + Attachment,
+display_order, image-type inference, whole-file delete cascade). The FileSet
+gallery has ``narrate_file_changes`` off, so gallery changes are not narrated.
 The first image uploaded becomes primary automatically.
 """
 
@@ -11,8 +15,10 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
-from app.assets.models import AssetImage
-from app.events.models import File
+from app.events.control_layer.handlers.direct_attachment_handler import (
+    DirectAttachmentHandler,
+)
+from app.events.models import Attachment, File
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
@@ -30,57 +36,50 @@ class AssetImageManager:
         self.asset = asset
         self.actor = actor
 
-    def add_image(self, uploaded: "UploadedFile") -> AssetImage:
+    def _gallery_attachments(self):
+        return Attachment.objects.active().filter(thread_id=self.asset.photo_gallery_id)
+
+    def list_images(self) -> list[Attachment]:
+        return list(self._gallery_attachments().select_related("file"))
+
+    def add_image(self, uploaded: "UploadedFile") -> Attachment:
         if uploaded is None:
             raise AssetImageError("No file was provided.")
         if not File.is_allowed_extension(uploaded.name):
             raise AssetImageError(f"File type not allowed: {uploaded.name}")
 
         with transaction.atomic():
-            attachment = File.objects.create(
-                file=uploaded,
-                original_filename=uploaded.name,
-                file_size=uploaded.size,
-                mime_type=getattr(uploaded, "content_type", "") or "application/octet-stream",
-                created_by=self.actor,
-                updated_by=self.actor,
+            is_first = not self._gallery_attachments().exists()
+            result = DirectAttachmentHandler(self.actor).attach(
+                thread=self.asset.photo_gallery, uploaded_file=uploaded
             )
-            existing = AssetImage.objects.filter(asset=self.asset)
-            is_first = not existing.exists()
-            next_order = existing.count()
-            image = AssetImage.objects.create(
-                asset=self.asset,
-                attachment=attachment,
-                is_primary=is_first,
-                sort_order=next_order,
-                created_by=self.actor,
-                updated_by=self.actor,
-            )
-        return image
+            if not result.ok or result.attachment is None:
+                raise AssetImageError("; ".join(result.errors) or "Upload failed.")
+            attachment = result.attachment
+            if is_first:
+                self._set_primary(attachment)
+        return attachment
 
-    def set_primary(self, image_id: int) -> None:
+    def set_primary(self, attachment_id) -> None:
         with transaction.atomic():
-            target = AssetImage.objects.get(asset=self.asset, id=image_id)
-            AssetImage.objects.filter(asset=self.asset, is_primary=True).exclude(
-                id=target.id
-            ).update(is_primary=False, updated_by=self.actor)
-            if not target.is_primary:
-                target.is_primary = True
-                target.updated_by = self.actor
-                target.save(update_fields=["is_primary", "updated_at", "updated_by"])
+            target = self._gallery_attachments().get(id=attachment_id)
+            self._set_primary(target)
 
-    def delete_image(self, image_id: int) -> None:
+    def delete_image(self, attachment_id) -> None:
         with transaction.atomic():
-            target = AssetImage.objects.get(asset=self.asset, id=image_id)
-            was_primary = target.is_primary
-            target.delete()
+            target = self._gallery_attachments().get(id=attachment_id)
+            was_primary = self.asset.primary_image_id == target.id
+            DirectAttachmentHandler(self.actor).delete_file(file=target.file)
             if was_primary:
-                fallback = AssetImage.objects.filter(asset=self.asset).order_by(
-                    "sort_order", "created_at"
-                ).first()
-                if fallback is not None:
-                    fallback.is_primary = True
-                    fallback.updated_by = self.actor
-                    fallback.save(
-                        update_fields=["is_primary", "updated_at", "updated_by"]
-                    )
+                fallback = (
+                    self._gallery_attachments()
+                    .exclude(id=target.id)
+                    .order_by("display_order", "created_at")
+                    .first()
+                )
+                self._set_primary(fallback)
+
+    def _set_primary(self, attachment: Attachment | None) -> None:
+        self.asset.primary_image = attachment
+        self.asset.updated_by = self.actor
+        self.asset.save(update_fields=["primary_image", "updated_at", "updated_by"])

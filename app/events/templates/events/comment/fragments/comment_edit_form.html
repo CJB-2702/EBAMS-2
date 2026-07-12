@@ -1,0 +1,43 @@
+{% comment %}
+Inline comment-edit form — HTMX-swapped in place of a comment row
+(events/fragments/comment_row.html) when its "Edit" button is clicked. Looks
+and behaves exactly like the Add Comment card (<add-comment>, add_comment.js),
+just in edit mode: header reads "Editing" with a Cancel button that swaps back
+to the read-only row (comment_view_row); the footer's Clear button re-fetches
+this same edit endpoint to discard in-progress changes, rather than resetting
+client-side; Attach Files stages new uploads exactly like the Add Comment flow;
+existing attachments show in the same file-tile grid with a per-tile
+remove/restore toggle.
+
+Same id="comment-row-{hash}" as comment_row.html (here on the <form> itself)
+so outerHTML swaps target either fragment interchangeably. Targeting is all
+relative (hx-target="this" / "closest [id^='comment-row-']") rather than by
+exact id match, since the same comment can legitimately render more than once
+on one page (e.g. the kitchen sink demos the same sample comment in several
+sections at once) — relative targeting always resolves to the instance that
+was actually clicked, regardless of duplicate ids elsewhere on the page.
+Full-page fallback (no JS) is events/comment/edit_comment.html, served by the
+same comment_edit view.
+
+Expects: event_hash, comment, comment_hash, attachments (active Attachment
+rows for this comment), existing_attachments_json (same rows, as JSON for the
+<add-comment> attribute). Optional: row_depth, action_depth, errors.
+{% endcomment %}
+<form id="comment-row-{{ comment_hash }}" method="post" enctype="multipart/form-data"
+      action="{% url 'comment_edit' event_hash=event_hash comment_hash=comment_hash %}"
+      hx-post="{% url 'comment_edit' event_hash=event_hash comment_hash=comment_hash %}?format=htmx-comment-row"
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-encoding="multipart/form-data">
+  {% csrf_token %}
+  <input type="hidden" name="row_depth" value="{{ row_depth }}">
+  <input type="hidden" name="action_depth" value="{{ action_depth }}">
+  <add-comment
+    mode="edit"
+    content="{{ comment.content }}"
+    depth="{{ row_depth|default:'depth-2' }}"
+    cancel-url="{% url 'comment_view_row' event_hash=event_hash comment_hash=comment_hash %}?row_depth={{ row_depth }}&action_depth={{ action_depth }}"
+    reload-url="{% url 'comment_edit' event_hash=event_hash comment_hash=comment_hash %}?format=htmx-comment-row&row_depth={{ row_depth }}&action_depth={{ action_depth }}"
+    existing-attachments='{{ existing_attachments_json }}'
+    error="{{ errors|join:' ' }}"></add-comment>
+</form>

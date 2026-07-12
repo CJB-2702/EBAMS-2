@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Data ownership and the Data Domain primitive"
+description: "This document describes how **data domains**, **organizations**, and **divisions** control row-level access and how they are distinct from Django's permission system."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Data ownership and the Data Domain primitive
 
-This document describes how **data domains**, **organizations**, and **divisions** control row-level access and how they are distinct from Django's permission system. Structural definitions of core tables (foreign keys, must-have edges) are in [../CoreDomain/core_models.md](../CoreDomain/core_models.md). How users carry assignments in the database and session is in [users.md](users.md). For Django-permission concepts, see [rbac.md](rbac.md).
+This document describes how **data domains**, **organizations**, and **divisions** control row-level access and how they are distinct from Django's permission system. Structural definitions of core tables (foreign keys, must-have edges) are in [../applications/core_domain/core_models.md](../applications/core_domain/core_models.md). How users carry assignments in the database and session is in [users.md](users.md). For Django-permission concepts, see [rbac.md](rbac.md).
 
 ---
 
@@ -47,7 +55,7 @@ Domain templates are a **convenience** for assigning related domains together, n
 - Historical audit trail: every addition/removal of a domain to/from a template is timestamped and soft-deleted.
 - No effect on permissions — domain templates manage data scope only.
 
-See [domain_templates_concept.md](domain_templates_concept.md) for detailed semantics.
+See [domain_templates/concept.md](domain_templates/concept.md) for detailed semantics.
 
 ---
 

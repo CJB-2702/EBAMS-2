@@ -20,16 +20,16 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 - `docs/Architecture/layer_rules.md` — reads vs writes boundary
 
 **Control layer classes (Context, Handler, Manager, Policy, …):**
-- `docs/Architecture/oop_control_patterns.md` — suffix vocabulary
+- `docs/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary
 - `docs/Architecture/standards.md` — engineering principles
 
 **Models:**
-- `docs/Architecture/model_patterns.md`
-- `docs/CoreDomain/core_models.md` — ownership-FK rules for scoped tables
+- `docs/Architecture/patterns/model_patterns.md`
+- `docs/applications/core_domain/core_models.md` — ownership-FK rules for scoped tables
 
 **Entrypoints and view logic:**
-- `docs/Architecture/endpoint_patterns.md`
-- `docs/Architecture/htmx_patterns.md` — when handlers must be HTMX-aware
+- `docs/Architecture/patterns/endpoint_patterns.md`
+- `docs/Architecture/patterns/htmx_patterns.md` — when handlers must be HTMX-aware
 
 **Seed data and dev fixtures:**
 - `docs/Architecture/seeding.md`

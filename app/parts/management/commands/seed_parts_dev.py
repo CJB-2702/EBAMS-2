@@ -13,6 +13,7 @@ Idempotent: get_or_create on part_number; safe to re-run.
 
 from __future__ import annotations
 
+import base64
 import datetime
 
 from django.contrib.auth import get_user_model
@@ -20,20 +21,31 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management.base import BaseCommand
 
 from app.administration.models import Domain
+from app.events.models import ActivityThread
 from app.parts.control_layer.factories.alias_factory import AliasFactory
 from app.parts.control_layer.factories.part_factory import PartFactory
 from app.parts.control_layer.factories.part_manufacturer_factory import (
     PartManufacturerFactory,
 )
 from app.parts.control_layer.factories.supplier_item_factory import SupplierItemFactory
+from app.parts.control_layer.managers.part_image_manager import PartImageManager
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
 from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.parts.control_layer.thread_domain import (
+    default_domain_id_for,
+    ensure_default_domains,
+)
 from app.parts.control_layer.managers.supplier_vendor_revision_manager import (
     SupplierVendorRevisionManager,
 )
 from app.parts.models import AliasSource, Part, PartManufacturer, PartRevisionStatus
 
 User = get_user_model()
+
+# 1x1 transparent PNG — a real image so seeded gallery photos actually render.
+_TINY_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+)
 
 LIGHT_PARTS = [
     ("PN-2001", "Brake Pad Set", "component", "brakes"),
@@ -121,15 +133,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         actor = User.objects.filter(username="generic_admin").first() or User.objects.first()
-        domain = Domain.objects.order_by("id").first()
-        if actor is None or domain is None:
+        if actor is None:
             self.stdout.write(
                 self.style.WARNING(
-                    "No user/domain found — run dev_auth_groups/dev_users/dev_ownership "
+                    "No user found — run dev_auth_groups/dev_users/dev_ownership "
                     "fixtures before seed_parts_dev."
                 )
             )
             return
+
+        # §1: ensure the per-variant default bootstrap domains exist, then seed
+        # part threads under the "Activity Thread" (DOCUMENTATION) default —
+        # self-documenting, and no longer dependent on ownership fixtures.
+        ensure_default_domains()
+        domain = Domain.objects.get(id=default_domain_id_for(ActivityThread))
 
         for key, spec in DRIVERS.items():
             self._seed_driver(key, spec, actor=actor, domain=domain)
@@ -189,6 +206,26 @@ class Command(BaseCommand):
                 domain_id=domain.id,
                 caption="Engineering drawing",
             )
+
+        # Part-level threads (decoupled from revisions): a base library document
+        # and a gallery photo. The gallery add auto-selects the hero and logs a
+        # backend audit comment on the gallery thread.
+        PartThreadManager(part, actor, thread_attr="documents_thread").attach_document(
+            SimpleUploadedFile(
+                f"{part.part_number}_specification.txt",
+                b"placeholder part specification / work instruction content",
+                content_type="text/plain",
+            ),
+            domain_id=domain.id,
+            caption="Part specification",
+        )
+        PartImageManager(part, actor).add(
+            SimpleUploadedFile(
+                f"{part.part_number}_model.png", _TINY_PNG, content_type="image/png"
+            ),
+            domain_id=domain.id,
+            caption="Model photo",
+        )
 
         # Manufacturers + supplier items (distinct MPNs).
         for mfr_name, mpn in spec["manufacturers"]:

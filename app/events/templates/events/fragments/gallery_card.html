@@ -1,0 +1,35 @@
+{% comment %}
+Gallery card (image documents only) — the project's established gallery
+pattern (see parts/templates/parts/detail.html and
+assets/templates/assets/assets/detail.html): <image-carousel> as the main
+slide viewer + <carousel-preview-items> as a synced thumbnail strip, both from
+app/static/web_components/image_carousel.js. No separate "gallery" component —
+this composition of the two is it.
+
+Generic contract (see app/events/presentation_layer/tools/generic_cards.py):
+  images      list of document dicts where is_image=True: {file_id, filename, caption, ...}
+  title       optional, default "Gallery"
+  dom_id      optional, unique suffix for the carousel id if this fragment appears
+              more than once on one page (default "gallery")
+{% endcomment %}
+<div class="pc">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>{{ title|default:"Gallery" }} ({{ images|length }})
+    </div>
+  </div>
+  <div class="pc-body">
+    {% if images %}
+    <image-carousel id="carousel-gallery-{{ dom_id|default:'gallery' }}" preview-height="280" loop>
+      {% for d in images %}
+      <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+      {% endfor %}
+    </image-carousel>
+    <div class="mt-3">
+      <carousel-preview-items for="carousel-gallery-{{ dom_id|default:'gallery' }}" size="50"></carousel-preview-items>
+    </div>
+    {% else %}
+    <p class="has-text-grey is-size-7">No images.</p>
+    {% endif %}
+  </div>
+</div>

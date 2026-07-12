@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2b — Control Layer Plan"
+description: "and one registry line each."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2b-first-party-plugins]
+context_tier: 2
+---
+
 # Phase 2b — Control Layer Plan
 
 **This phase adds no control-layer infrastructure.** It only adds plugin *packages*

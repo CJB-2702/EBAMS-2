@@ -1,8 +1,16 @@
+---
+type: "UX Guide"
+title: "Dual listbox component guide"
+description: "A **dual listbox** presents two side-by-side lists — *Available* and *Selected* — with controls to move items between them."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Dual listbox component guide
 
 A **dual listbox** presents two side-by-side lists — *Available* and *Selected* — with controls to move items between them. It is a deliberate, high-friction control: every move is explicit and visible. Use it when a multi-select must be **auditable**, **bulk-editable**, and **comprehensible at a glance**.
 
-For verbatim markup and component fragments see [Examples/dual_listbox_markup.md](Examples/dual_listbox_markup.md).
+For verbatim markup and component fragments see [../Examples/dual_listbox_markup.md](../Examples/dual_listbox_markup.md).
 
 ---
 
@@ -35,7 +43,7 @@ If two dual listboxes are needed on the same page, step back: that is usually a 
 - Each column has a **title with a count** (e.g. *Selected (12)*) — the count is always visible.
 - Each column has its **own search bar** scoped to that column's contents.
 - Movement controls live **between** columns: a vertically stacked pair of buttons. Prefer clickable rows with a chevron icon — fewer mouse trips.
-- The form's **primary submit lives in the parent card footer**, not inside either listbox column. See [form_style_guide.md](form_style_guide.md).
+- The form's **primary submit lives in the parent card footer**, not inside either listbox column. See [../form_style_guide.md](../form_style_guide.md).
 
 ---
 
@@ -47,22 +55,15 @@ Two server-rendered lists driven by HTMX-first light-DOM web components (`<dual-
 2. The endpoint performs the write via the control layer and returns **two** elements: a `<toast-alert>` followed by the refreshed `<dual-list-box>` fragment, replacing the entire dual listbox via `outerHTML swap:1s`.
 3. The toast auto-dismisses after a configurable delay; the fragment shows the updated *Available* and *Selected* states with correct counts.
 
-The toast component auto-mounts to `document.body` so it escapes positioned ancestors. CSRF is handled by the project's `htmx:configRequest` listener (see [../Architecture/htmx_patterns.md](../Architecture/htmx_patterns.md)).
+The toast component auto-mounts to `document.body` so it escapes positioned ancestors. CSRF is handled by the project's `htmx:configRequest` listener (see [../../Architecture/htmx_patterns.md](../../Architecture/htmx_patterns.md)).
 
-For the previous form-submission + page-reload model and the rationale for migrating, see [../technical_decisions/history/2026-05-dual-listbox-htmx-light-dom.md](../technical_decisions/history/2026-05-dual-listbox-htmx-light-dom.md) and [../technical_decisions/tech_debt/dual_listbox_migration_plan.md](../technical_decisions/tech_debt/dual_listbox_migration_plan.md).
+For the previous form-submission + page-reload model and the rationale for migrating, see [../../technical_decisions/history/2026-05-dual-listbox-htmx-light-dom.md](../../technical_decisions/history/2026-05-dual-listbox-htmx-light-dom.md) and [../../technical_decisions/tech_debt/resolved/dual_listbox_migration_plan.md](../../technical_decisions/tech_debt/resolved/dual_listbox_migration_plan.md).
 
 ---
 
 ## REST-shaped API on the same URL
 
-The same resource exposes a JSON contract under the same URL for non-HTMX consumers:
-
-- `GET /admin/roles/<id>/permissions` → `{ "selected": [...], "available_count": N }`.
-- `GET /admin/roles/<id>/permissions?available=true&q=asset` → `{ "items": [...], "page": 1, "next": 2 }`.
-- `PUT /admin/roles/<id>/permissions` with `{ "selected": [...] }` → 204 (full replace; idempotent).
-- `PATCH /admin/roles/<id>/permissions` with `{ "add": [...], "remove": [...] }` → 200 with new selected list.
-
-The HTMX endpoints are **not** a parallel API; they share the same view and dispatch on `format=`.
+The same resource also exposes a JSON contract on the same URL for non-HTMX consumers (GET/PUT/PATCH on the collection endpoint). The HTMX endpoints are **not** a parallel API; they share the same view and dispatch on `format=`. Literal request/response shapes: [../Examples/dual_listbox_markup.md](../Examples/dual_listbox_markup.md).
 
 ---
 

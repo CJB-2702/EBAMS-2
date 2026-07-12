@@ -5,8 +5,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from app.parts.control_layer.domain_structs.part_struct import PartStruct
+from app.parts.control_layer.domain_structs.part_structs.part_struct import PartStruct
 from app.parts.control_layer.managers.part_domain_manager import PartDomainManager
+from app.parts.control_layer.managers.part_image_manager import PartImageManager
 from app.parts.control_layer.managers.part_manager import PartManager
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
 from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
@@ -53,12 +54,15 @@ class PartContext:
         return PartThreadManager(owner, self.actor).documents()
 
     def comments(self, revision: PartRevision | None = None) -> list[dict]:
-        owner = revision if revision is not None else self.part
-        return PartThreadManager(owner, self.actor).comments()
+        # Revision comments live on the revision's own thread; base-Part comments
+        # (human comments + the machine audit feed) live on documents_thread.
+        if revision is not None:
+            return PartThreadManager(revision, self.actor).comments()
+        return self.documents_thread.comments()
 
     def supplier_items(self) -> list:
         """Read-only forward lookup — the Part never depends on supplier items."""
-        from app.parts.control_layer.domain_structs.supplier_item_struct import (
+        from app.parts.control_layer.domain_structs.reverse_structs.supplier_item_struct import (
             SupplierItemStruct,
         )
         from app.parts.models import SupplierItem
@@ -71,8 +75,20 @@ class PartContext:
         return PartRevisionManager(self.part, self.actor)
 
     @property
-    def thread(self) -> PartThreadManager:
-        return PartThreadManager(self.part, self.actor)
+    def documents_thread(self) -> PartThreadManager:
+        """The Part's technical library thread: base documents, human comments,
+        and the machine audit feed."""
+        return PartThreadManager(self.part, self.actor, thread_attr="documents_thread")
+
+    @property
+    def gallery(self) -> PartThreadManager:
+        """The Part's gallery thread (image attachments + backend-only audit
+        comments). Prefer ``images`` for add/remove/set-primary flows."""
+        return PartThreadManager(self.part, self.actor, thread_attr="gallery_thread")
+
+    @property
+    def images(self) -> PartImageManager:
+        return PartImageManager(self.part, self.actor)
 
     @property
     def domain_scope(self) -> PartDomainManager:

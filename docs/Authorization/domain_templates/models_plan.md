@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Domain Templates — Models and Control-Layer Plan"
+description: "This is the **architectural plan** for adding domain templates to the administration app."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Domain Templates — Models and Control-Layer Plan
 
-This is the **architectural plan** for adding domain templates to the administration app. It describes the **shape** of the new models, the **boundaries** between layers, and the **classes** that need to exist — but not every method signature. For business rules and intent, see [domain_templates_concept.md](domain_templates_concept.md).
+This is the **architectural plan** for adding domain templates to the administration app. It describes the **shape** of the new models, the **boundaries** between layers, and the **classes** that need to exist — but not every method signature. For business rules and intent, see [concept.md](concept.md). For field-by-field model detail, exact policy signatures, and the URL map, see [../Examples/domain_templates_model_detail.md](../Examples/domain_templates_model_detail.md).
 
 ---
 
@@ -51,31 +59,13 @@ app/administration/
 
 ## 2. Model layer
 
-Three models, all under `app/administration/models/data_ownership/`. All three use `AuditFieldsMixin`.
-
-### 2.1 `DomainTemplate`
-
-- Fields: `name` (unique, human-readable), `slug` (unique for URLs), `description` (long text, optional), `is_active` (boolean — inactive templates hidden from assignment dropdowns but kept for history).
-- `Meta`: `db_table = "core_domaintemplate"`, `ordering = ["name"]`, unique constraint on `slug`.
-
-### 2.2 `DomainTemplateItem`
-
-- Through-table linking a template to `Domain` rows.
-- Fields: `template` (FK, `related_name="items"`), `domain` (FK, `related_name="+"`), audit fields, `is_active` (soft-delete flag).
-- `Meta`: `db_table = "core_domaintemplate_item"`. Unique constraint on `(template, domain)` where `is_active=True` (allows soft-deleted duplicates for history).
-
-### 2.3 `UserDomainTemplate`
-
-- Records which domain template(s) are actively assigned to a user.
-- Fields: `user` (FK to `AUTH_USER_MODEL`), `template` (FK), `is_active`, audit fields.
-- Managers: `objects = ActiveUserAssignmentManager()`, `all_objects = models.Manager()`.
-- `Meta`: `db_table = "core_userdomaintemplate"`. No uniqueness constraint on `(user,)` — users may hold multiple active templates simultaneously (see [domain_templates_concept.md](domain_templates_concept.md)).
+Three models, all under `app/administration/models/data_ownership/`, all using `AuditFieldsMixin`: `DomainTemplate` (name/slug/description/is_active), `DomainTemplateItem` (through-table, template ↔ domain, soft-delete), `UserDomainTemplate` (assignment, user ↔ template, multiple active per user allowed). Field-by-field detail: [../Examples/domain_templates_model_detail.md](../Examples/domain_templates_model_detail.md).
 
 ---
 
 ## 3. Control layer
 
-Control-layer classes follow the project's [../Architecture.md](../Architecture.md) class-suffix vocabulary.
+Control-layer classes follow the project's [../../Architecture.md](../../Architecture.md) class-suffix vocabulary.
 
 ### 3.1 `DomainTemplateContext`
 
@@ -90,7 +80,7 @@ Control-layer classes follow the project's [../Architecture.md](../Architecture.
 
 - **Context** for a user's domain template assignments.
 - Assign a domain template to the user (creates/reactivates `UserDomainTemplate`).
-- Remove a template assignment (triggers smart removal — see Rule 2 in [architecture_summary.md](architecture_summary.md)).
+- Remove a template assignment (triggers smart removal — see Rule 2 in [../architecture_summary.md](../architecture_summary.md)).
 - Add/remove explicit `UserDomain` assignments (outside any template footprint).
 - Delegates the "update actual `UserDomain` set" step to `TemplateDomainRebaseHandler`.
 
@@ -110,10 +100,7 @@ Control-layer classes follow the project's [../Architecture.md](../Architecture.
 
 ### 3.5 `DomainAssignmentPolicy`
 
-- **Guard → Policy**, existing class updated with template rules.
-- `assert_actor_may_assign_template(actor, template)` — admins always pass; others must have access to all domains in the template.
-- `assert_actor_may_edit_template(actor)` — admins-only by default.
-- `assert_actor_may_assign_domains(actor, domains)` — actor may only assign domains from their own domain template.
+- **Guard → Policy**, existing class updated with template rules: who may assign/edit templates, and who may assign domains outside their own template. Exact method signatures: [../Examples/domain_templates_model_detail.md](../Examples/domain_templates_model_detail.md).
 
 ---
 
@@ -149,14 +136,9 @@ Every route that filters by domain queries against the session snapshot `user_do
 
 ---
 
-## 7. URL map (after this change)
+## 7. URL map
 
-```
-/administration/domain-templates/                    (new — list)
-/administration/domain-templates/<slug>/             (new — detail + edit)
-POST /administration/user-portal/<user_id>/domains/  (new — assign/remove/etc.)
-/administration/domains/<id>/                        (existing — domain detail)
-```
+New routes for domain templates and user-portal assignment actions. Full map: [../Examples/domain_templates_model_detail.md](../Examples/domain_templates_model_detail.md).
 
 ---
 

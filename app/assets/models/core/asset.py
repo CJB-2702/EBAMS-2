@@ -64,6 +64,17 @@ class Asset(AuditFieldsMixin):
         related_name="documentation_asset",
     )
 
+    # Hero image — points at one Attachment in photo_gallery (the single source of
+    # truth for images). SET_NULL is a safety net; the gallery manager keeps this
+    # in sync (fallback on delete, first-upload auto-primary).
+    primary_image = models.ForeignKey(
+        "events.Attachment",
+        on_delete=models.SET_NULL,
+        related_name="primary_of_asset",
+        null=True,
+        blank=True,
+    )
+
     tags = models.JSONField(null=True, blank=True)
     # No provisioning state lives here — it is tracked in a separate state table
     # owned by the extensions app (P2 / E7). assets owns no such state.

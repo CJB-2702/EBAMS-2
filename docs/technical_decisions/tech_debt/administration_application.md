@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Administration application — pending architecture work"
+description: "Notes two pending architecture changes for the administration sub-app: a possible Departments model and related scoping work."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Administration application — pending architecture work
 
 ## What

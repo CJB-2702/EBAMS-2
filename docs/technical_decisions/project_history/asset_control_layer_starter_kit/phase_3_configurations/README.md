@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Configurations"
+description: "Standard build specifications for asset models, and the tracking of how a given."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-3-configurations]
+context_tier: 2
+---
+
 # Phase 3 — Configurations
 
 Standard build specifications for asset models, and the tracking of how a given

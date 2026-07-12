@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Dual listbox: HTMX-first light-DOM components with toast alerts"
+description: "Dual-listbox UI is rebuilt as **light-DOM** custom elements (<dual-list-box>, <list-box>) driven by HTMX-first move buttons and a fixed-position <toast-alert> for feedback."
+tags: [technical-decisions, technical-decision, history]
+context_tier: 2
+---
+
 # Dual listbox: HTMX-first light-DOM components with toast alerts
 
 - **Date:** 2026-05-18
@@ -31,5 +39,5 @@ The new approach keeps the rebuild local: just the dual-listbox region is swappe
 
 ## Related
 
-- [../../UX_UI/dual_listbox.md](../../UX_UI/dual_listbox.md) — the canonical component guide.
+- [../../UX_UI/components/dual_listbox.md](../../UX_UI/components/dual_listbox.md) — the canonical component guide.
 - [../../UX_UI/Examples/dual_listbox_markup.md](../../UX_UI/Examples/dual_listbox_markup.md) — verbatim fragment and endpoint markup.

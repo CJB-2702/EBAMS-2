@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Roles — Concept"
+description: "This document describes the **business concept** of a role, the rules it enforces, and how it interacts with the rest of the access system."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Roles — Concept
 
-This document describes the **business concept** of a role, the rules it enforces, and how it interacts with the rest of the access system. It is the source of truth for *what* roles are and *why* they exist. For the unique design decisions made, see [roles_decisions.md](roles_decisions.md). For common scenarios, see [roles_examples.md](roles_examples.md).
+This document describes the **business concept** of a role, the rules it enforces, and how it interacts with the rest of the access system. It is the source of truth for *what* roles are and *why* they exist. For the unique design decisions made, see [decisions.md](decisions.md). For common scenarios, see [../Examples/roles_examples.md](../Examples/roles_examples.md).
 
 ---
 
@@ -52,7 +60,7 @@ Three concrete problems:
 - **Roles** determine what **actions** a user can perform (`has_perm` checks).
 - **Data Domains** determine what **rows** a user can see (row-level visibility filters).
 
-See [data_ownership.md](data_ownership.md) for the domain system.
+See [../data_ownership.md](../data_ownership.md) for the domain system.
 
 ---
 

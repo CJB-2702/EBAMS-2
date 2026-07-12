@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Model Changes"
+description: "Three columns are added to the event table."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-3]
+context_tier: 2
+---
+
 # Phase 3 — Model Changes
 
 ---

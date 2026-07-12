@@ -1,6 +1,14 @@
+---
+type: "Concept Anchor"
+title: "Authorization — Tier 1 Anchor"
+description: "This file is the **concept anchor** for identity, capability, and row-level access."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # Authorization — Tier 1 Anchor
 
-This file is the **concept anchor** for identity, capability, and row-level access. It states the two-gate model that every request passes through, the vocabulary that keeps the systems distinct, and the rules that govern templates, roles, and audit. Detail lives in the Tier 2 files below.
+The two-gate model that every request passes through, the vocabulary that keeps the systems distinct, and the rules that govern templates, roles, and audit. Detail lives in the Tier 2 files below.
 
 ---
 
@@ -18,23 +26,10 @@ This file is the **concept anchor** for identity, capability, and row-level acce
 
 ## Sub-specifications
 
-| Topic | File |
-| :--- | :--- |
-| One-page architectural summary of both gates | [Authorization/architecture_summary.md](Authorization/architecture_summary.md) |
-| Design trade-offs and accepted risks (revocation lockout, cascade delete, etc.) | [Authorization/architecture_decisions.md](Authorization/architecture_decisions.md) |
-| Django permissions, permission groups, what Django auth covers and does not | [Authorization/rbac.md](Authorization/rbac.md) |
-| The Data Domain primitive, the Golden Rule, admin warning system | [Authorization/data_ownership.md](Authorization/data_ownership.md) |
-| User model concerns: assignments, session snapshot, audit FKs | [Authorization/users.md](Authorization/users.md) |
-| Roles — business concept, rules, multi-role union, inheritance | [Authorization/roles_concept.md](Authorization/roles_concept.md) |
-| Roles — design decisions and rationale | [Authorization/roles_decisions.md](Authorization/roles_decisions.md) |
-| Roles — common assignment scenarios | [Authorization/roles_examples.md](Authorization/roles_examples.md) |
-| Domain templates — business concept and rules | [Authorization/domain_templates_concept.md](Authorization/domain_templates_concept.md) |
-| Domain templates — architectural plan (models, control layer) | [Authorization/domain_templates_models_plan.md](Authorization/domain_templates_models_plan.md) |
-| OWASP-aligned password policy | [Authorization/password_policy.md](Authorization/password_policy.md) |
-| Hand-maintained log of routes that deviate from the Golden Rule | [Authorization/data_access_exceptions.md](Authorization/data_access_exceptions.md) |
+See [Authorization/index.md](Authorization/index.md) for the full, machine-routable index of Tier 2 guides, skeletons, and sub-bundles (RBAC, data ownership, users, roles, domain templates, password policy, data access exceptions).
 
 ---
 
 ## Reference directionality
 
-This anchor references **only** files inside `Authorization/`. The two-gate model interacts with [CoreDomain.md](CoreDomain.md) (Data Domain is a core entity) and with the layer rules in [Architecture.md](Architecture.md) (policies are guards, contexts own writes); the relevant cross-cutting lines are summarised here so a request review never requires reading more than one Tier 1 file plus its Tier 2 children.
+This anchor references **only** files inside `Authorization/`. The two-gate model interacts with [applications/core_domain.md](applications/core_domain.md) (Data Domain is a core entity) and with the layer rules in [Architecture.md](Architecture.md) (policies are guards, contexts own writes); the relevant cross-cutting lines are summarised here so a request review never requires reading more than one Tier 1 file plus its Tier 2 children.

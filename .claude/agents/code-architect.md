@@ -19,18 +19,18 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Review
 **Layered architecture and OOP:**
 - `docs/Architecture/overview.md`
 - `docs/Architecture/layer_rules.md` — reads vs writes boundary
-- `docs/Architecture/oop_control_patterns.md` — suffix vocabulary (Struct, Context, Handler, …)
+- `docs/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary (Struct, Context, Handler, …)
 
 **Models and entrypoints:**
-- `docs/Architecture/model_patterns.md` — audit columns, no business logic on models
-- `docs/Architecture/endpoint_patterns.md`
+- `docs/Architecture/patterns/model_patterns.md` — audit columns, no business logic on models
+- `docs/Architecture/patterns/endpoint_patterns.md`
 
 **Engineering principles and tests:**
 - `docs/Architecture/standards.md`
 - `docs/Architecture/tests.md`
 
 **Frontend pattern enforcement:**
-- `docs/Architecture/htmx_patterns.md`
+- `docs/Architecture/patterns/htmx_patterns.md`
 - `docs/UX_UI/format_contract.md` — density vs htmx-* rules
 
 **Prior decisions and known tech debt (don't re-litigate):**

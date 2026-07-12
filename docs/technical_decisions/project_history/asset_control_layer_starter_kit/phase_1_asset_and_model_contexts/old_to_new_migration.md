@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Old → New Migration Notes"
+description: "Porting checklist for Phase 1, against the old Flask source."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-1-asset-and-model-contexts]
+context_tier: 2
+---
+
 # Phase 1 — Old → New Migration Notes
 
 Porting checklist for Phase 1, against the old Flask source.

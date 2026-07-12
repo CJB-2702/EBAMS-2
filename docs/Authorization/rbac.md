@@ -1,8 +1,16 @@
+---
+type: "Authorization Guide"
+title: "Role-based access control (concepts)"
+description: "This document describes concepts for capability access control in this application: what Django's built-in authorization covers, how roles (bundles of permission groups) relate to Django Group rows, and where enforcement belongs."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Role-based access control (concepts)
 
 This document describes **concepts** for capability access control in this application: what Django's built-in authorization covers, how **roles** (bundles of permission groups) relate to Django `Group` rows, and where enforcement belongs relative to **row-level** (domain) rules. For row-level data scoping, see [data_ownership.md](data_ownership.md).
 
-For the authoritative role rules, see [roles_concept.md](roles_concept.md).
+For the authoritative role rules, see [roles/concept.md](roles/concept.md).
 
 ---
 
@@ -12,7 +20,7 @@ For the authoritative role rules, see [roles_concept.md](roles_concept.md).
 | :--- | :--- | :--- |
 | **Permission** | `auth.Permission` | A single capability, tied to a model and action (e.g. `core.change_asset`). |
 | **Permission group** | `auth.Group` | An atomic bundle of permissions tied to a **specific action or feature** (e.g. "Asset Lifecycle"). **Not** a social/organizational group. Assigned to users **only through roles**. |
-| **Role** | *this project* | A named relationship between humans and a set of permission groups. Represents a real-world job profile or specialization. See [roles_concept.md](roles_concept.md). |
+| **Role** | *this project* | A named relationship between humans and a set of permission groups. Represents a real-world job profile or specialization. See [roles/concept.md](roles/concept.md). |
 | **Data domain** | *this project* | Row-level access scope — separate system. See [data_ownership.md](data_ownership.md). |
 
 ---
@@ -58,7 +66,7 @@ A **Role** is a named relationship between a user and a set of permission groups
 - Removing a parent role cascades the deletion of dependent child roles.
 - Each role assignment includes notes explaining why the user holds it.
 
-For full details see [roles_concept.md](roles_concept.md), [roles_decisions.md](roles_decisions.md), and [roles_examples.md](roles_examples.md).
+For full details see [roles/concept.md](roles/concept.md), [roles/decisions.md](roles/decisions.md), and [Examples/roles_examples.md](Examples/roles_examples.md).
 
 ---
 
@@ -92,6 +100,6 @@ Neither system affects the other. A user might be assigned the "Technician" role
 
 ## 7. Out of scope here
 
-- Schema or field lists for roles — see [roles_concept.md](roles_concept.md) and related role files.
+- Schema or field lists for roles — see [roles/concept.md](roles/concept.md) and related role files.
 - Screen layouts, portal flows — see user-portal templates.
 - Object-permission packages like `django-guardian` — not in use; stock `auth` only.

@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: Testing Conventions
+description: The source of truth for how tests are written and organized in the project.
+tags: [architecture, testing, pytest, conventions]
+---
+
 # Testing conventions
 
 Testing conventions for the project. This document is the source of truth for *how* tests are written; CI configuration lives in the repo root.

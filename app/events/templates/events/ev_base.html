@@ -186,6 +186,11 @@
 
       <div class="sidebar-divider"></div>
 
+      <p class="sidebar-section-label">Dev Reference</p>
+      <a href="{% url 'events_kitchen_sink' %}" class="sidebar-link {% block sidebar_kitchen_sink_active %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">widgets</span></span> Kitchen Sink</a>
+
+      <div class="sidebar-divider"></div>
+
       <p class="sidebar-section-label">Other Portals</p>
       <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
       <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>

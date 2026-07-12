@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Control Layer Plan"
+description: "app/assets/control_layer/."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-3-configurations]
+context_tier: 2
+---
+
 # Phase 3 — Control Layer Plan
 
 ## Target tree (built)

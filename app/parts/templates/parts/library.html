@@ -1,0 +1,71 @@
+{% extends "parts/base.html" %}
+{% load svg_tags static %}
+{% block title %}{{ part.part_number }} — Library{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Library</a></li>
+{% endblock %}
+
+{% block extra_css %}
+.lib-intro { background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak); border-left: 4px solid var(--bulma-info); padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; }
+.lib-upload { border-top: 1px solid var(--bulma-border-weak); background: var(--bulma-scheme-main-bis); padding: 1rem; }
+.lib-upload[hidden] { display: none; }
+.pc.is-base-part { border-left: 4px solid var(--bulma-primary); }
+.lib-base-note { font-size: 0.78rem; color: var(--bulma-text-weak); background: var(--bulma-scheme-main-bis); border-left: 3px solid var(--bulma-primary); padding: 0.5rem 0.7rem; margin-bottom: 0.85rem; }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon" style="width:3rem;height:3rem;">{% svg "part-icon" %}</div>
+    <div><h1 class="page-title">{{ part.part_number }} — Library</h1>
+      <p class="page-subtitle">{{ part.name }}</p>
+    </div></div>
+  <div class="page-header-actions">
+    {# Toggle every file-browser card on the page to Tiles or List at once. #}
+    <div class="buttons has-addons mb-0" id="lib-view-all">
+      <button type="button" class="button is-small" data-view-all="tiles" title="All cards to tiles">
+        <span class="icon"><span class="material-icons" aria-hidden="true">grid_view</span></span><span>Tiles</span>
+      </button>
+      <button type="button" class="button is-small" data-view-all="list" title="All cards to list">
+        <span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span><span>List</span>
+      </button>
+    </div>
+    <a href="{% url 'part_detail' part_id=part_id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Part</span></a>
+  </div>
+</div></div>
+
+<div class="lib-intro">
+  <p class="is-size-7">
+    <span class="icon-text"><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span>
+    <span><strong>This library is for technical documents</strong> — photos of the part models, engineering drawings, instruction manuals, specifications, and similar reference material.</span></span>
+  </p>
+  <p class="is-size-7 mt-1 has-text-grey">Do <strong>not</strong> store invoices, receipts, purchase orders, or other transactional records here.</p>
+</div>
+
+<div class="body-grid full-width">
+  {% include "parts/_library_section.html" with section_key="base" title="Base Part" status="" documents=base_documents revision_id="" can_manage=can_manage part_id=part_id is_base=True %}
+
+  {% for rev in revision_sections %}
+  {% include "parts/_library_section.html" with section_key=rev.id|stringformat:"s"|add:"-rev" title="Revision "|add:rev.label documents=rev.documents status=rev.status revision_id=rev.id can_manage=can_manage part_id=part_id %}
+  {% empty %}
+  <div class="pc"><div class="pc-body"><p class="has-text-grey is-size-7">This part has no revisions yet.</p></div></div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script defer src="{% static 'web_components/file_upload.js' %}"></script>
+<script defer src="{% static 'web_components/file_browser.js' %}"></script>
+<script>
+  // Page-level "toggle all": set every file-browser card to one view at once.
+  document.getElementById("lib-view-all").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-view-all]");
+    if (!btn) return;
+    const view = btn.dataset.viewAll;
+    document.querySelectorAll("file-browser").forEach((fb) => fb.setView(view));
+    document.querySelectorAll("#lib-view-all [data-view-all]").forEach((b) =>
+      b.classList.toggle("is-link", b === btn)
+    );
+  });
+</script>
+{% endblock %}

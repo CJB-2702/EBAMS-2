@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Visitor Pattern for Custom Event Cards — Design Review"
+description: "Status: **proposal / not started**."
+tags: [technical-decisions, technical-decision, tech-debt, decisions-pending]
+context_tier: 2
+---
+
 # Visitor Pattern for Custom Event Cards — Design Review
 
 Status: **proposal / not started**. No code changes accompany this doc.
@@ -89,7 +97,7 @@ your class."
 
 **Translating this to Django-Starter-Kit:** the project's existing
 `format=` convention (single canonical URL + query parameter, see
-`docs/Architecture/htmx_patterns.md`) governs requests for *one resource at
+`docs/Architecture/patterns/htmx_patterns.md`) governs requests for *one resource at
 multiple densities/fragments*, not cross-app composition — a per-module
 event-component endpoint isn't a parallel route for the same resource, it's
 a distinct resource owned by that module, so adding e.g.

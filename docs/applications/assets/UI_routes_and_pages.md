@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Asset Application - UI Routes and Pages Inventory"
+description: "1."
+tags: [applications, domain-doc, assets]
+context_tier: 2
+---
+
 # Asset Application - UI Routes and Pages Inventory
 
 ## 1. Asset & AssetModel Management (The Core)

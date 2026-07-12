@@ -357,6 +357,22 @@
   color: rgba(255,255,255,0.35); margin-bottom: 0.5rem;
 }
 
+/* ── Info popover: anchored above its trigger via CSS Anchor Positioning.
+   Chrome/Edge 125+; unsupported browsers fall back to the UA default
+   (centered on screen) since no JS positioning fallback is wired here. ── */
+.info-popover-trigger {
+  anchor-name: --info-popover-anchor;
+}
+.info-popover-box {
+  position: fixed;
+  inset: auto;
+  position-anchor: --info-popover-anchor;
+  position-area: top;
+  position-try-fallbacks: flip-block;
+  margin: 0 0 0.5rem 0;
+  max-width: 22rem;
+}
+
 /* ── Page header icon ── */
 .page-header-icon {
   width: 3rem; height: 3rem;
@@ -384,4 +400,124 @@
   width: 3rem;
   height: 3rem;
   line-height: 1;
+}
+
+/* ── <file-browser> web component (app/static/web_components/file_browser.js) ── */
+/* Pre-enhancement fallback: raw <a class="fb-item"> children read as a list
+   until <file-browser> upgrades and repaints them. */
+file-browser .fb-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; }
+file-browser:not(.file-browser) .fb-item .fb-thumb img { width: 28px; height: 28px; object-fit: cover; }
+
+/* Toolbar */
+.fb-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; align-items: center; }
+.fb-toolbar-left, .fb-toolbar-right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+.fb-search { min-width: 12rem; }
+.fb-search .icon .material-icons { font-size: 1.1rem; }
+
+/* Tiles — default is the compact horizontal mini-card (All / Documents / Video) */
+.fb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+.fb-tile { display: flex; align-items: stretch; border: 1px solid var(--bulma-border-weak); background: var(--bulma-scheme-main-bis); }
+.fb-tile-link { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; flex: 1; min-width: 0; text-decoration: none; }
+.fb-tile .fb-thumb { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--bulma-background); overflow: hidden; }
+.fb-tile .fb-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.fb-tile .fb-thumb .material-icons { color: var(--bulma-text-weak); font-size: 1.6rem; }
+.fb-tile .fb-thumb .bi { color: var(--bulma-text-weak); font-size: 1.6rem; }
+.fb-meta { display: flex; flex-direction: column; min-width: 0; }
+.fb-name { font-size: 0.78rem; font-weight: 600; color: var(--bulma-text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* In the compact mini-cards (All / Documents / Video), let long filenames wrap up to 3 lines. */
+.fb-grid:not(.fb-grid--images) .fb-name { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
+.fb-caption { font-size: 0.7rem; color: var(--bulma-text-weak); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb-sub { font-size: 0.68rem; color: var(--bulma-text-weak); margin-top: 0.2rem; }
+.fb-tile-actions { display: flex; align-items: center; padding: 0 0.35rem; border-left: 1px solid var(--bulma-border-weak); }
+.fb-tile-actions .button { border: 0; background: transparent; }
+
+/* Tiles — large vertical gallery cards when filtered to Images */
+.fb-grid--images { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.fb-grid--images .fb-tile { position: relative; }
+.fb-grid--images .fb-tile-link { flex-direction: column; align-items: stretch; gap: 0; padding: 0.6rem; }
+.fb-grid--images .fb-thumb { width: auto; height: 88px; margin-bottom: 0.4rem; }
+.fb-grid--images .fb-thumb .material-icons { font-size: 2.2rem; }
+.fb-grid--images .fb-tile-actions { position: absolute; top: 0.25rem; right: 0.25rem; padding: 0; border-left: 0; }
+.fb-grid--images .fb-tile-actions .button { background: var(--bulma-scheme-main-bis); }
+
+/* List */
+.fb-table { font-size: 0.8rem; }
+.fb-table .fb-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.fb-table .fb-th-arrow { font-size: 0.9rem; vertical-align: middle; }
+.fb-table .fb-num { text-align: right; }
+.fb-td-name a { display: inline-flex; align-items: center; gap: 0.3rem; }
+.fb-row-caption { display: block; color: var(--bulma-text-weak); font-size: 0.7rem; }
+.fb-td-actions { text-align: right; }
+.fb-td-actions .button { border: 0; background: transparent; }
+.fb-empty { padding: 0.5rem 0; }
+
+/* Existing attachment staged for removal in the inline comment-edit card
+   (add_comment.js mode="edit") — struck through and dimmed until Save/Cancel. */
+.fb-tile.ac-removed { opacity: 0.5; }
+.fb-tile.ac-removed .fb-name { text-decoration: line-through; }
+
+/* ── Standard modal styling: `<dialog class="card modal-styled">` ──
+   Recommended pattern for any native <dialog> — see
+   docs/UX_UI/components/modals.md for the full write-up. Fixes three
+   native-<dialog> pitfalls:
+     1. `.card` sets `position: relative`, which clobbers the browser's
+        built-in modal centering (`position: fixed; margin: auto`) — force
+        fixed positioning + a translate-based center instead.
+     2. A closed dialog must stay `display: none` (the UA default); putting
+        `display: flex` inline on the <dialog> tag itself outranks that
+        default and makes the modal render on every page load instead of
+        staying a popup. `flex` is restored only once `[open]` is set by
+        showModal().
+     3. Bulma's default `.card-header` uses a box-shadow as its separator;
+        swap it for the same solid `border-bottom` used by `.pc-header` so
+        modals divide header from body the same way page cards do. */
+.modal-styled {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  width: 80vw;
+  max-width: 800px;
+  max-height: 80vh;
+  border-radius: 0 !important;
+}
+
+.modal-styled[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header/body divider — matches `.pc-header`'s border-bottom instead of
+   Bulma's default card-header box-shadow. */
+.modal-styled .card-header {
+  box-shadow: none;
+  border-bottom: 1px solid var(--bulma-border-weak);
+}
+
+/* Close button: red square X flush with the modal's top-right corner. */
+.modal-styled .delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 2rem;
+  width: 2rem;
+  min-height: 2rem;
+  min-width: 2rem;
+  max-height: 2rem;
+  max-width: 2rem;
+  border-radius: 0;
+  background-color: var(--bulma-danger);
+}
+.modal-styled .delete:hover,
+.modal-styled .delete:focus {
+  background-color: var(--bulma-danger);
+  filter: brightness(1.1);
+}
+.modal-styled .delete:active {
+  filter: brightness(0.9);
+}
+.modal-styled .card-header-title {
+  padding-right: 2.75rem;
 }

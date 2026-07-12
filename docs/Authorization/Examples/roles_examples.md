@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Roles — Examples"
+description: "Common role assignment scenarios illustrating the rules in [roles/concept.md](../roles/concept.md) and [roles/decisions.md](../roles/decisions.md)."
+tags: [authorization, authorization-guide, example]
+context_tier: 3
+---
+
 # Roles — Examples
 
-Common role assignment scenarios illustrating the rules in [roles_concept.md](roles_concept.md) and [roles_decisions.md](roles_decisions.md).
+Common role assignment scenarios illustrating the rules in [roles/concept.md](../roles/concept.md) and [roles/decisions.md](../roles/decisions.md).
 
 ---
 

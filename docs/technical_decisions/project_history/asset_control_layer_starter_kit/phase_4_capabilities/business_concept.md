@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Business Concept"
+description: "The organization maintains a catalog of **capabilities** — discrete things an."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-4-capabilities]
+context_tier: 2
+---
+
 # Phase 4 — Business Concept
 
 *Business value only — no schema.*

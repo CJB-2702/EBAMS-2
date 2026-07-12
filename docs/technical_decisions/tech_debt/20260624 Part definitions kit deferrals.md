@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Tech Debt: Part Definitions Kit — deferred items"
+description: "Items consciously deferred while planning the parts application."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Tech Debt: Part Definitions Kit — deferred items
 
 **Logged:** 2026-06-24

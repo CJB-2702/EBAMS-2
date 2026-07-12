@@ -16,11 +16,36 @@ class Part(AuditFieldsMixin):
     # Domain scoping (D14) — default False = visible to all authenticated users.
     is_domain_limited = models.BooleanField(default=False)
 
-    # Lazily created on first comment/attachment (D5).
-    thread = models.OneToOneField(
+    # Two Part-level threads, each lazily created on first write (D5), both
+    # decoupled from revisions:
+    #   documents_thread — the technical library (design docs, work instructions,
+    #     specifications) plus the Part audit feed (machine comments) and human
+    #     comments shown on the detail page.
+    #   gallery_thread — the Part's photo gallery. Its comments are a backend-only
+    #     audit history (gallery image added/removed/set-primary) and are never
+    #     displayed to end users — for administrators and data engineers only.
+    documents_thread = models.OneToOneField(
         "events.ActivityThread",
         on_delete=models.PROTECT,
-        related_name="part_thread",
+        related_name="part_documents_thread",
+        null=True,
+        blank=True,
+    )
+    gallery_thread = models.OneToOneField(
+        "events.ActivityThread",
+        on_delete=models.PROTECT,
+        related_name="part_gallery_thread",
+        null=True,
+        blank=True,
+    )
+
+    # Hero image — points at one image Attachment on the part's gallery_thread. No
+    # separate FileSet: an ActivityThread already carries attachments. SET_NULL is
+    # a safety net; the image manager keeps this in sync.
+    primary_image = models.ForeignKey(
+        "events.Attachment",
+        on_delete=models.SET_NULL,
+        related_name="primary_of_part",
         null=True,
         blank=True,
     )

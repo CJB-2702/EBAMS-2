@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Business Concept"
+description: "Engineering defines, for each **model**, one or more **standard configurations** —."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-3-configurations]
+context_tier: 2
+---
+
 # Phase 3 — Business Concept
 
 *Business value only — no schema.*

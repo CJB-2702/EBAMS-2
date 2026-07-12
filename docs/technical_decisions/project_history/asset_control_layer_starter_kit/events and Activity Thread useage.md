@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Events & Activity Thread Usage"
+description: "How the assets domain attaches **comments and files** to its rows, and which."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Events & Activity Thread Usage
 
 How the assets domain attaches **comments and files** to its rows, and which

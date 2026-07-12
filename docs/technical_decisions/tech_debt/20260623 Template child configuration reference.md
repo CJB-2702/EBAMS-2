@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Tech Debt — Template child should reference a ConfigurationTemplate"
+description: "A TemplateChild (an expected child declared on a ConfigurationTemplate) should be able to."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Tech Debt — Template child should reference a ConfigurationTemplate
 
 **Logged:** 2026-06-23

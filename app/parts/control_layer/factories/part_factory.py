@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from app.parts.control_layer.errors import PartValidationError
 from app.parts.control_layer.guards.part_validator_guard import PartValidator
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
 from app.parts.models import Part, PartRevisionStatus
@@ -15,10 +16,8 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
 
 
-class PartValidationError(Exception):
-    def __init__(self, errors: list[str]) -> None:
-        self.errors = errors
-        super().__init__("; ".join(errors))
+# Re-exported for callers that historically imported it from this module.
+__all__ = ["PartFactory", "PartValidationError"]
 
 
 class PartFactory:

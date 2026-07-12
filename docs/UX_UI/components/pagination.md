@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "Pagination and shared partials"
+description: "Pagination is a single Bulma pattern reused across every list view in the application."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Pagination and shared partials
 
 Pagination is a single Bulma pattern reused across every list view in the application. There is no per-app pagination component — the same markup, same query parameters, same partial.

@@ -23,24 +23,24 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 
 **URL contract and density (`format=` query):**
 - `docs/UX_UI/format_contract.md`
-- `docs/Architecture/endpoint_patterns.md`
+- `docs/Architecture/patterns/endpoint_patterns.md`
 
 **HTMX interactions (F5 rule, CSRF, swaps, session drafts):**
-- `docs/Architecture/htmx_patterns.md`
+- `docs/Architecture/patterns/htmx_patterns.md`
 
 **Forms and action buttons:**
 - `docs/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
-- `docs/UX_UI/common_buttons.md`
+- `docs/UX_UI/components/common_buttons.md`
 
 **Multi-step / wizard flows:**
-- `docs/UX_UI/multi_step_flows.md`
+- `docs/UX_UI/components/multi_step_flows.md`
 
 **Specific components:**
-- `docs/UX_UI/searchbars.md`
-- `docs/UX_UI/dual_listbox.md`
-- `docs/UX_UI/modals.md`
-- `docs/UX_UI/tabs.md`
-- `docs/UX_UI/pagination.md`
+- `docs/UX_UI/components/searchbars.md`
+- `docs/UX_UI/components/dual_listbox.md`
+- `docs/UX_UI/components/modals.md`
+- `docs/UX_UI/components/tabs.md`
+- `docs/UX_UI/components/pagination.md`
 
 **Engineering principles:**
 - `docs/Architecture/standards.md`

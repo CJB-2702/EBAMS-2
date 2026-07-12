@@ -45,7 +45,7 @@ asset survived.
 ## Why it was NOT adopted here
 
 It conflicts with this project's stated control-layer principles
-(`docs/Architecture/oop_control_patterns.md`):
+(`docs/Architecture/patterns/oop_control_patterns.md`):
 
 | Principle | How the pipeline violates it |
 | :--- | :--- |

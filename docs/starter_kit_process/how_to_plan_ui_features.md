@@ -1,3 +1,11 @@
+---
+type: "Process Guide"
+title: "How to Plan UI Features and Page Inventory"
+description: "You are acting as a Product/UX Agent."
+tags: [starter-kit-process, process-guide]
+context_tier: 2
+---
+
 # How to Plan UI Features and Page Inventory
 
 **Role & Objective:**

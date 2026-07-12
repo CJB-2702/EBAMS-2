@@ -12,7 +12,10 @@ from app.administration.models import Domain
 from app.parts.control_layer.adapters.revision_append_adaptor import (
     RevisionAppendAdaptor,
 )
-from app.parts.control_layer.domain_structs.part_revision_struct import (
+from app.parts.control_layer.domain_structs.part_structs.part_revision_history_struct import (
+    PartRevisionHistoryStruct,
+)
+from app.parts.control_layer.domain_structs.reverse_structs.part_revision_struct import (
     PartRevisionNotFoundError,
     PartRevisionStruct,
 )
@@ -41,22 +44,7 @@ def part_revisions(request: HttpRequest, part_id: int) -> HttpResponse:
             )
         messages.success(request, "Revision added.")
         return redirect(reverse("part_revisions", kwargs={"part_id": part_id}))
-    revisions = []
-    for rev in ctx.revisions():
-        docs = ctx.documents(rev)
-        revisions.append(
-            {
-                "id": rev.id,
-                "major_revision_number": rev.major_revision_number,
-                "minor_revision_number": rev.minor_revision_number,
-                "status": rev.status,
-                "date_of_release": rev.date_of_release,
-                "summary": rev.summary,
-                "image_documents": [d for d in docs if d["is_image"]],
-                "other_documents": [d for d in docs if not d["is_image"]],
-                "comments": ctx.comments(rev),
-            }
-        )
+    revisions = PartRevisionHistoryStruct.from_id(part_id, eager_thread=True).to_dict()
     return render(
         request,
         "parts/revisions/workbench.html",

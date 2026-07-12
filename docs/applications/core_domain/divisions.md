@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Division → Organization map"
+description: "This document lists every **division** in the application and the **organizations** that belong to it."
+tags: [core-domain, domain-doc]
+context_tier: 2
+---
+
 # Division → Organization map
 
 This document lists every **division** in the application and the **organizations** that belong to it. It is a **human-maintained** reference used for onboarding and audit. For the conceptual rules around the hierarchy (and its informational-only status), see [../Authorization/data_ownership.md](../Authorization/data_ownership.md).

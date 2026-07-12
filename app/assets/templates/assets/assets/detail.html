@@ -1,4 +1,5 @@
 {% extends "assets/asset_base.html" %}
+{% load static %}
 {% load svg_tags %}
 {% block title %}{{ asset.name }}{% endblock %}
 {% block nav_assets %}is-active{% endblock %}
@@ -74,15 +75,14 @@
       </div>
       <div class="pc-body">
         {% if images %}
-        <figure class="image is-16by9 mb-2" style="background:var(--bulma-background);">
-          <img src="{{ primary_image.attachment.file.url }}" alt="{{ asset.name }} primary image" style="object-fit:contain;">
-        </figure>
-        <div class="columns is-mobile" style="overflow-x:auto;">
+        <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+        <image-carousel id="carousel-asset-{{ asset.id }}" preview-height="280" loop>
           {% for img in images %}
-          <div class="column is-narrow">
-            <img src="{{ img.attachment.file.url }}" alt="thumb" style="height:54px;border:1px solid var(--bulma-border-weak);{% if img.is_primary %}outline:2px solid var(--bulma-primary);{% endif %}">
-          </div>
+          <img src="{{ img.file.url }}" alt="{{ img.file.original_filename }}" loading="lazy">
           {% endfor %}
+        </image-carousel>
+        <div class="mt-3">
+          <carousel-preview-items for="carousel-asset-{{ asset.id }}" size="50"></carousel-preview-items>
         </div>
         {% else %}<p class="has-text-grey">No images uploaded.</p>{% endif %}
       </div>

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Tech Debt: Assets App Blocked on Parts Infrastructure"
+description: "The assets application is incomplete and cannot be finished until a dedicated **parts** application exists."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Tech Debt: Assets App Blocked on Parts Infrastructure
 
 **Logged:** 2026-06-09

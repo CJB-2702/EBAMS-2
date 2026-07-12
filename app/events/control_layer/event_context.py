@@ -20,8 +20,8 @@ class EventContext:
     No create() method — event creation is handled by EventHandler.
     """
 
-    def __init__(self, event_id: int, actor) -> None:
-        self.struct = EventDetailStruct(event_id)
+    def __init__(self, event_id: int, actor, include_shadow_comments: bool = False) -> None:
+        self.struct = EventDetailStruct(event_id, include_shadow_comments=include_shadow_comments)
         self.actor = actor
 
     @classmethod
@@ -42,8 +42,12 @@ class EventContext:
 
     def add_attachment(self, uploaded_file: "UploadedFile") -> object:
         """Attach a file directly to the event as a standalone attachment."""
-        from app.events.control_layer.handlers.file_handler import FileHandler
-        return FileHandler(self.actor).upload(self.struct.event, uploaded_file)
+        from app.events.control_layer.handlers.direct_attachment_handler import (
+            DirectAttachmentHandler,
+        )
+        return DirectAttachmentHandler(self.actor).attach(
+            thread=self.struct.event, uploaded_file=uploaded_file
+        )
 
     def delete(self) -> None:
         """

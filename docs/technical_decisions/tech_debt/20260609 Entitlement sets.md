@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Entitlement Sets: Concept Note (Future Work)"
+description: "Managing what users can do and what data they can see can quickly become complex."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Entitlement Sets: Concept Note (Future Work)
 
 Managing what users can do and what data they can see can quickly become complex. This document captures the **Entitlement Set** concept as a future simplification of the two-layer permission system already in place — it is not yet built.

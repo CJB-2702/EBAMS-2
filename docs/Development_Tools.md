@@ -1,6 +1,14 @@
+---
+type: "Concept Anchor"
+title: "Development Tools — Tier 1 Anchor"
+description: "This file is the **concept anchor** for the local development workflow: the database rebuild loop, environment generation, seeded users and credentials, and the helper scripts under dev_tools/."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # Development Tools — Tier 1 Anchor
 
-This file is the **concept anchor** for the local development workflow: the database rebuild loop, environment generation, seeded users and credentials, and the helper scripts under `dev_tools/`. Detail lives in the Tier 2 files below.
+The local development workflow: the database rebuild loop, environment generation, seeded users and credentials, and the helper scripts under `dev_tools/`. Detail lives in the Tier 2 files below.
 
 ---
 
@@ -16,12 +24,7 @@ This file is the **concept anchor** for the local development workflow: the data
 
 ## Sub-specifications
 
-| Topic | File |
-| :--- | :--- |
-| Full DB reset workflow and the `delete_database_rebuild_models.py` script | [Development_Tools/db_rebuild.md](Development_Tools/db_rebuild.md) |
-| `.env` generation, secret material, dev vs prod defaults | [Development_Tools/env_generation.md](Development_Tools/env_generation.md) |
-| Seeded user accounts, default passwords, environment overrides | [Development_Tools/users_and_passwords.md](Development_Tools/users_and_passwords.md) |
-| `seed_dev` command, fixture vs imperative seed boundaries | [Development_Tools/seed_dev.md](Development_Tools/seed_dev.md) |
+See [Development_Tools/index.md](Development_Tools/index.md) for the full, machine-routable index of Tier 2 guides (DB rebuild, `.env` generation, seed users, `seed_dev`).
 
 ---
 

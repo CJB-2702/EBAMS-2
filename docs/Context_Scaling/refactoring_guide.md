@@ -1,3 +1,11 @@
+---
+type: "Context Scaling Spec"
+title: "Context Refactoring Guide"
+description: "Documentation degrades over time if it is not refactored with the same discipline applied to source code."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Context Refactoring Guide
 
 **Refactoring order:** Always build or update the lowest tier content first — specific, concrete, detailed. Then rebuild and re-summarize the higher tier files that reference it. Never update a summary before the detail it summarizes exists.

@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "PK Hashing Migration — Slugs to Hashids"
+description: "Migration from slug-based URL addressing (stored CharField on the model) to hashid-encoded integer PKs exposed at the URL boundary."
+tags: [events, domain-doc]
+context_tier: 2
+---
+
 # PK Hashing Migration — Slugs to Hashids
 
 Migration from slug-based URL addressing (stored `CharField` on the model) to hashid-encoded integer PKs exposed at the URL boundary. The control layer and database are unaffected — only the URL pattern and the presentation-layer lookup change.

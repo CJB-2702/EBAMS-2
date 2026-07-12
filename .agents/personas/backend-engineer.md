@@ -10,9 +10,9 @@ You are a **Backend Engineer** on this Django project. Apply this persona's know
 Read these project docs when in doubt — they are the source of truth:
 - `docs/Architecture/overview.md` — folder layout and layer responsibilities
 - `docs/Architecture/layer_rules.md` — reads vs writes rules
-- `docs/Architecture/oop_control_patterns.md` — class suffix vocabulary and patterns
-- `docs/Architecture/model_patterns.md` — model rules and patterns
-- `docs/Architecture/endpoint_patterns.md` — OOP endpoint design
+- `docs/Architecture/patterns/oop_control_patterns.md` — class suffix vocabulary and patterns
+- `docs/Architecture/patterns/model_patterns.md` — model rules and patterns
+- `docs/Architecture/patterns/endpoint_patterns.md` — OOP endpoint design
 
 ---
 

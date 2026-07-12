@@ -1,3 +1,11 @@
+---
+type: "Tooling Guide"
+title: "`seed_dev` — local seed strategy"
+description: "seed_dev is a management command that bootstraps the development database to a known baseline state."
+tags: [development-tools, tooling-guide]
+context_tier: 2
+---
+
 # `seed_dev` — local seed strategy
 
 `seed_dev` is a management command that bootstraps the development database to a known baseline state. It is **not** a fixture loader — it is an imperative command that uses control-layer factories where business invariants matter and `get_or_create` for static reference data.

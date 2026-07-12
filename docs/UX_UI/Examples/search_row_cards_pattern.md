@@ -1,3 +1,11 @@
+---
+type: "UX Example"
+title: "Search Row Cards Pattern"
+description: "This design pattern is used for displaying search results and lists with enhanced information density."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # Search Row Cards Pattern
 
 This design pattern is used for displaying search results and lists with enhanced information density. It replaces traditional grid tables with row-based cards where each card takes up the full width of the container. 

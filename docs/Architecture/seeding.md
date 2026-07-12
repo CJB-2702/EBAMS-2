@@ -1,6 +1,13 @@
+---
+type: Architecture Guide
+title: Seeding Plan
+description: Where fixtures live, how to author them, and the rules for seeding dev data.
+tags: [architecture, seeding, fixtures, dev-data]
+---
+
 # Seeding plan: Django fixtures
 
-This document defines **where fixture files live**, **how to author them**, and **rules** that stay consistent with [model_patterns.md](model_patterns.md), [layer_rules.md](layer_rules.md), and [overview.md](overview.md). It applies to **JSON/YAML/XML fixtures** loaded with `manage.py loaddata`.
+This document defines **where fixture files live**, **how to author them**, and **rules** that stay consistent with [patterns/model_patterns.md](patterns/model_patterns.md), [layer_rules.md](layer_rules.md), and [overview.md](overview.md). It applies to **JSON/YAML/XML fixtures** loaded with `manage.py loaddata`.
 
 ## 1. Purpose and scope
 
@@ -96,7 +103,7 @@ Use `management/commands/` only to orchestrate loading:
 
 - [ ] Lives under the owning app's `fixtures/`.
 - [ ] Load order documented if dependencies span files or apps.
-- [ ] Audit/user FK fields populated per [model_patterns.md](model_patterns.md).
+- [ ] Audit/user FK fields populated per [patterns/model_patterns.md](patterns/model_patterns.md).
 - [ ] No secrets or real PII.
 - [ ] Regenerated or validated against current migrations.
 - [ ] `loaddata` succeeds on empty DB after `migrate`.

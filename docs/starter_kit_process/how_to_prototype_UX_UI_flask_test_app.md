@@ -1,3 +1,11 @@
+---
+type: "Process Guide"
+title: "How to Prototype UX/UI with a Flask Test App"
+description: "You are acting as a Frontend Prototyping Agent."
+tags: [starter-kit-process, process-guide]
+context_tier: 2
+---
+
 # How to Prototype UX/UI with a Flask Test App
 
 **Role & Objective:**

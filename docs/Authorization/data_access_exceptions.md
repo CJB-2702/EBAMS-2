@@ -1,3 +1,11 @@
+---
+type: "Authorization Guide"
+title: "Data Access Exceptions Log"
+description: "This file logs **every deviation** from the [Golden Rule](data_ownership.md#2-the-golden-rule) (access is determined strictly by Data Domain membership)."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Data Access Exceptions Log
 
 This file logs **every deviation** from the [Golden Rule](data_ownership.md#2-the-golden-rule) (access is determined strictly by Data Domain membership). It is maintained by hand.

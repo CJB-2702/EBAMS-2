@@ -13,6 +13,7 @@
       </p>
     </div></div>
   <div class="page-header-actions">
+    <a href="{% url 'part_library' part_id=part_id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span><span>Library</span></a>
     <a href="{% url 'part_edit' part_id=part_id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
   </div>
 </div></div>
@@ -62,7 +63,8 @@
       </table></div>
     </div>
 
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div>
+      <button type="button" class="button is-small is-link" commandfor="modal-add-gallery-image" command="show-modal"><span class="icon"><span class="material-icons" aria-hidden="true">add_photo_alternate</span></span><span>Add Image</span></button></div>
       <div class="pc-body">
         {% if image_documents %}
         <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
@@ -76,6 +78,27 @@
         </image-carousel>
         <div class="mt-3">
           <carousel-preview-items for="carousel-part-{{ part_id }}" size="50"></carousel-preview-items>
+        </div>
+        <div class="mt-3">
+          {% for d in image_documents %}
+          <div class="is-flex is-justify-content-space-between is-align-items-center py-1">
+            <span class="is-size-7 has-text-weight-medium">{{ d.filename }}
+              {% if d.is_primary %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
+            <div class="buttons are-small has-addons mb-0">
+              {% if not d.is_primary %}
+              <form method="post" action="{% url 'part_set_primary_image' part_id=part_id %}">{% csrf_token %}
+                <input type="hidden" name="attachment" value="{{ d.id }}">
+                <button class="button is-small is-light" title="Set as primary"><span class="icon"><span class="material-icons" aria-hidden="true">star</span></span></button>
+              </form>
+              {% endif %}
+              <form method="post" action="{% url 'part_remove_gallery_image' part_id=part_id %}"
+                    onsubmit="return confirm('Remove this image from the gallery?');">{% csrf_token %}
+                <input type="hidden" name="attachment" value="{{ d.id }}">
+                <button class="button is-small is-light" title="Remove from gallery"><span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">delete</span></span></button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
         </div>
         {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
       </div>
@@ -97,7 +120,27 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents (current rev)</div></div>
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Base Part Documents
+        <info-popover direction="bottom" hover="true">
+          <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">help_outline</span></span></detail>
+          <summary>
+            <p class="is-size-7"><strong>This is the part's technical library.</strong> Store the documents that define how the part is built and used — design documents, engineering drawings, work instructions, and specifications.</p>
+            <p class="is-size-7 mt-2 has-text-grey">Do <strong>not</strong> store purchase orders, receipts, invoices, or other transactional records here. Keep it a useful reference library for the people doing the work.</p>
+          </summary>
+        </info-popover></div>
+      <a href="{% url 'part_library' part_id=part_id %}" class="button is-small is-light" title="Open library"><span class="icon"><span class="material-icons" aria-hidden="true">folder_open</span></span></a></div>
+      <div class="pc-body">
+        {% for d in base_documents %}
+        <p class="is-size-7 mb-1">
+          <a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">{% if d.is_image %}image{% else %}description{% endif %}</span></span>{{ d.filename }}
+          </a>
+        </p>
+        {% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Current Revision Documents</div></div>
       <div class="pc-body">
         {% for d in other_documents %}
         <p class="is-size-7 mb-1">
@@ -110,4 +153,41 @@
     </div>
   </div>
 </div>
+
+<dialog id="modal-add-gallery-image" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
+  <form method="post" action="{% url 'part_add_gallery_image' part_id=part_id %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <header class="card-header">
+      <p class="card-header-title">Add Gallery Image</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="modal-add-gallery-image" command="close"></button>
+    </header>
+    <div class="card-content">
+      <div class="content">
+        <label class="label is-small">Image</label>
+        <div class="file is-small is-fullwidth mb-2 has-name">
+          <label class="file-label">
+            <input class="file-input" type="file" name="file" accept="image/*" required
+                   onchange="this.closest('.file').querySelector('.file-name').textContent = this.files.length ? this.files[0].name : 'No file selected';">
+            <span class="file-cta"><span class="file-icon"><span class="material-icons" aria-hidden="true">upload</span></span><span class="file-label">Choose an image…</span></span>
+            <span class="file-name">No file selected</span>
+          </label>
+        </div>
+        <label class="label is-small">Caption (optional)</label>
+        <input class="input is-small mb-2" type="text" name="caption">
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-light" commandfor="modal-add-gallery-image" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-medium is-link card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Add Image</span>
+      </button>
+    </footer>
+  </form>
+</dialog>
 {% endblock %}

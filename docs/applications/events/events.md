@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Events Domain"
+description: "This document is the authoritative source of truth for the app/events sub-application."
+tags: [events, domain-doc]
+context_tier: 2
+---
+
 # Events Domain
 
 This document is the authoritative source of truth for the `app/events` sub-application. It covers entity design, mixin strategy, behavioural rules (shadow history, soft delete), domain scoping, and permission groups.

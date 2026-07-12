@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Design Context — Attachment Architecture Evolution"
+description: "This document records the design positions considered for attaching files and comments to."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-2]
+context_tier: 2
+---
+
 # Design Context — Attachment Architecture Evolution
 
 This document records the design positions considered for attaching files and comments to

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "ActivityThread Design Document"
+description: "The ActivityThread is a lightweight anchor entity that provides any domain object with the ability to accumulate comments and file attachments."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, initial-concepts]
+context_tier: 2
+---
+
 # ActivityThread Design Document
 ## Maintenance Configuration & Inventory Application
 

@@ -1,6 +1,14 @@
+---
+type: "Context Scaling Spec"
+title: "Domain Skeleton Bundles — Specification"
+description: "Bundle files live at docs/domain_skeleton_bundles/."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Domain Skeleton Bundles — Specification
 
-Bundle files live at `docs/domain_skeleton_bundles/`. They are **Tier 2** assets — loaded on-demand at the start of a specific task type, never globally.
+Bundles live inside each Tier 1 concept folder's own `skeleton_instructions.md` (e.g. `docs/Architecture/skeleton_instructions.md`, `docs/UX_UI/skeleton_instructions.md`, `docs/Authorization/skeleton_instructions.md`) or each application's own `skeleton_instructions.md` under `docs/applications/<app-name>/` (e.g. `docs/applications/events/skeleton_instructions.md`). `docs/domain_skeleton_bundles/` holds only this spec and a thin index that links out to them. They are **Tier 2** assets — loaded on-demand at the start of a specific task type, never globally.
 
 Each bundle answers one question: *"For this kind of task, which application directories and core files should I run the codebase mapping script against?"*
 
@@ -12,28 +20,16 @@ Prevents the AI from deciding arbitrarily which folders to scan. Instead of expl
 
 ---
 
-## Bundle File Rules
+## Bundle Section Rules
 
-* **One file per task type** — not per application. Task types are modes of work: domain service, UI build, RBAC/permission change, event integration, etc.
+* **One `skeleton_instructions.md` per Tier 1 concept folder** — not per application. It covers the task types that belong to that concept: domain service, UI build, RBAC/permission change, event integration, etc.
 * **Short** — a list of paths with one-line rationales. No prose paragraphs.
 * **Three sections:** scan targets, Tier 2 docs to load alongside the scan, and what to skip.
-* **Invocation note:** include the exact script call pattern so the AI knows what to run.
+* **Invocation note:** fold the exact codebase-mapping script call(s) into the scan-targets section as a "Run codebase mapping script" note, so the AI knows what to run.
 
 ---
 
-## Naming Convention
-
-`<task-type>_skeleton_instructions.md`
-
-Examples:
-* `domain_service_skeleton_instructions.md`
-* `ui_skeleton_instructions.md`
-* `rbac_skeleton_instructions.md`
-* `event_integration_skeleton_instructions.md`
-
----
-
-## Example Bundle — `domain_service_skeleton_instructions.md`
+## Example Bundle — `docs/Architecture/skeleton_instructions.md`
 
 ```markdown
 # Domain Service / Maintenance — Skeleton Bundle
@@ -45,7 +41,7 @@ Examples:
 
 ## Load alongside scan
 - docs/Architecture/layer_rules.md          — Read/write boundaries before touching control layer.
-- docs/Architecture/oop_control_patterns.md — Suffix vocabulary for new classes.
+- docs/Architecture/patterns/oop_control_patterns.md — Suffix vocabulary for new classes.
 
 ## Skip
 - presentation_layer/templates/         — UI files not relevant to domain service work.

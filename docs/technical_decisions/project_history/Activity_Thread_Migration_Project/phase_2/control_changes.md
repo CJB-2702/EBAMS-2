@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2 — Control Layer Changes"
+description: "event is now a required argument."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-2]
+context_tier: 2
+---
+
 # Phase 2 — Control Layer Changes
 
 ---

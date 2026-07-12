@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Old → New Migration Notes"
+description: "built unique constraints (uq_asset_model_capability, uq_asset_capability)."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-4-capabilities]
+context_tier: 2
+---
+
 # Phase 4 — Old → New Migration Notes
 
 ## Source files

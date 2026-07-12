@@ -1,6 +1,14 @@
+---
+type: "Concept Anchor"
+title: "UX / UI — Tier 1 Anchor"
+description: "This file is the **concept anchor** for the front-end."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # UX / UI — Tier 1 Anchor
 
-This file is the **concept anchor** for the front-end. It states the visual language, the page-structure rules, and the contracts that hold every Bulma + HTMX surface together. Detail and markup live in the Tier 2 files below.
+The visual language, the page-structure rules, and the contracts that hold every Bulma + HTMX surface together. Detail and markup live in the Tier 2 files below.
 
 ---
 
@@ -18,20 +26,7 @@ This file is the **concept anchor** for the front-end. It states the visual lang
 
 ## Sub-specifications
 
-| Topic | File |
-| :--- | :--- |
-| Visual tokens, sharp corners, dark-mode strategy | [UX_UI/visual_language.md](UX_UI/visual_language.md) |
-| Page shell, hero, sidebars, stat bars, portal patterns | [UX_UI/page_structure.md](UX_UI/page_structure.md) |
-| `format=` density contract and HTMX fragment variants | [UX_UI/format_contract.md](UX_UI/format_contract.md) |
-| Card footer geometry, primary/secondary slot rules, inline forms | [UX_UI/form_style_guide.md](UX_UI/form_style_guide.md) |
-| Multi-step flows, session-backed drafts, namespaced state | [UX_UI/multi_step_flows.md](UX_UI/multi_step_flows.md) |
-| Native `<dialog>` + Bulma card modals; `commandfor`/`command` | [UX_UI/modals.md](UX_UI/modals.md) |
-| Allowable tab strategies; HTMX vs web component vs static | [UX_UI/tabs.md](UX_UI/tabs.md) |
-| Standard buttons, icon set, semantic colours, table-row rules | [UX_UI/common_buttons.md](UX_UI/common_buttons.md) |
-| Dual listbox: when, anatomy, session-staged commit | [UX_UI/dual_listbox.md](UX_UI/dual_listbox.md) |
-| `<search-dropdown>` picker vs plain HTMX list filter | [UX_UI/searchbars.md](UX_UI/searchbars.md) |
-| Pagination and other shared partials | [UX_UI/pagination.md](UX_UI/pagination.md) |
-| Accessibility baseline | [UX_UI/accessibility.md](UX_UI/accessibility.md) |
+See [UX_UI/index.md](UX_UI/index.md) for the full, machine-routable index of Tier 2 guides, component guides, and skeletons (visual language, page structure, `format=` contract, form style guide, buttons, dual listbox, searchbars, modals, tabs, pagination, multi-step flows, accessibility).
 
 ---
 

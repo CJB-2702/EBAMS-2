@@ -1,3 +1,11 @@
+---
+type: "Tooling Guide"
+title: "Database rebuild workflow"
+description: "The full DB reset is the canonical way to apply schema changes during active development."
+tags: [development-tools, tooling-guide]
+context_tier: 2
+---
+
 # Database rebuild workflow
 
 The full DB reset is the canonical way to apply schema changes during active development. It avoids accumulating incremental migrations whose only purpose is to bridge intermediate dev states.

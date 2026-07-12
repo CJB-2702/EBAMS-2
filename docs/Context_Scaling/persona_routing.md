@@ -1,3 +1,11 @@
+---
+type: "Context Scaling Spec"
+title: "Persona-Driven Context Routing (Slash Commands)"
+description: "To prevent context pollution, the system uses **Slash Commands** to switch between specialized development roles."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Persona-Driven Context Routing (Slash Commands)
 
 To prevent context pollution, the system uses **Slash Commands** to switch between specialized development roles. Each command configures the AI with explicit instructions regarding which Tier 2 files to load into context.

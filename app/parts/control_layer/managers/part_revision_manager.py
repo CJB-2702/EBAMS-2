@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from app.parts.control_layer.managers.part_activity_manager import PartActivityManager
 from app.parts.control_layer.narrators.part_revision_narrator import (
     PartRevisionNarrator,
 )
@@ -46,7 +47,9 @@ class PartRevisionManager:
                 created_by=self.actor,
                 updated_by=self.actor,
             )
-            PartRevisionNarrator.major_released(self.part, revision)
+            PartActivityManager.for_revision(revision, self.actor).record(
+                PartRevisionNarrator.major_released(self.part, revision)
+            )
         return revision
 
     def redline(
@@ -77,7 +80,9 @@ class PartRevisionManager:
                 created_by=self.actor,
                 updated_by=self.actor,
             )
-            PartRevisionNarrator.redline_issued(self.part, revision)
+            PartActivityManager.for_revision(revision, self.actor).record(
+                PartRevisionNarrator.redline_issued(self.part, revision)
+            )
         return revision
 
     def set_status(self, revision_id: int, status: str) -> PartRevision:
@@ -88,7 +93,9 @@ class PartRevisionManager:
         revision.status = status
         revision.updated_by = self.actor
         revision.save(update_fields=["status", "updated_at", "updated_by"])
-        PartRevisionNarrator.status_changed(self.part, revision, old_status, status)
+        PartActivityManager.for_revision(revision, self.actor).record(
+            PartRevisionNarrator.status_changed(self.part, revision, old_status, status)
+        )
         return revision
 
     @staticmethod

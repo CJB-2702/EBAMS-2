@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Carbon Colors / event detail depth system — incomplete migration"
+description: "The event detail page (http://127.0.0.1:8000/events/<hash>/) still has unfinished work on the depth/elevation system and card styling."
+tags: [technical-decisions, technical-decision, tech-debt, resolved]
+context_tier: 2
+---
+
 # Carbon Colors / event detail depth system — incomplete migration
 
 ## What this debt is

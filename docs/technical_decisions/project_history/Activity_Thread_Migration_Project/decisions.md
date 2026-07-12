@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Architecture Decisions — Activity Thread Migration"
+description: "Living document."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project]
+context_tier: 2
+---
+
 # Architecture Decisions — Activity Thread Migration
 
 Living document. Append new decisions as they are made. Most recent decisions at the bottom.

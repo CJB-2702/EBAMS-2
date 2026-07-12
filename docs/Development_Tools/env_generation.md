@@ -1,3 +1,11 @@
+---
+type: "Tooling Guide"
+title: "Environment generation (`.env`)"
+description: "The local .env is **generated, not hand-edited**."
+tags: [development-tools, tooling-guide]
+context_tier: 2
+---
+
 # Environment generation (`.env`)
 
 The local `.env` is **generated, not hand-edited**. `dev_tools/generate_env.py` writes deterministic dev defaults and cryptographically random secrets each time it is run.
@@ -21,7 +29,7 @@ This creates (or refreshes) the project-root `.env` file. Existing values are ov
 | `DJANGO_SECRET_KEY` | `secrets.token_urlsafe(50)` | Used by Django for session signing, CSRF, etc. Regenerated on every run. |
 | `DJANGO_SUPERUSER_PASSWORD` | Configured default; can be overridden | Sets the password for the seeded `super_admin` Django superuser. See [users_and_passwords.md](users_and_passwords.md). |
 | `SEED_USER_PASSWORD` | Configured default (`changeme` if unset) | Sets the password for the three seeded portal users (`generic_user`, `generic_manager`, `generic_admin`). |
-| `HASHIDS_SALT` | `secrets.token_urlsafe(32)` in prod-shaped envs, fixed dev sentinel in dev | Used by `app/utils/hashids.py` for URL PK encoding. See [../Events/pk_hashing_migration.md](../Events/pk_hashing_migration.md). |
+| `HASHIDS_SALT` | `secrets.token_urlsafe(32)` in prod-shaped envs, fixed dev sentinel in dev | Used by `app/utils/hashids.py` for URL PK encoding. See [../applications/events/pk_hashing_migration.md](../applications/events/pk_hashing_migration.md). |
 | `DEBUG` | `True` for dev | Set to `False` for any prod-shaped env. |
 | `DATABASE_URL` (if used) | SQLite path by default | Switch to Postgres by exporting before generation. |
 

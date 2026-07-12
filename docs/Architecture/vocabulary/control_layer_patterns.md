@@ -1,10 +1,17 @@
+---
+type: Vocabulary Reference
+title: House Control-Layer Patterns
+description: Definitions of the project's own class-suffix vocabulary, each anchored to a live file.
+tags: [architecture, vocabulary, control-layer, patterns]
+---
+
 # House control-layer patterns
 
 Definitions of **our own** class-suffix vocabulary, each anchored to a live file.
 Canonical equivalents are in parentheses; see [crosswalk.md](crosswalk.md) for the
 full mapping and [enterprise_patterns.md](enterprise_patterns.md) for the canonical
 terms themselves. Authoritative suffix rules:
-[oop_control_patterns.md](../oop_control_patterns.md).
+[oop_control_patterns.md](../patterns/oop_control_patterns.md).
 
 ---
 

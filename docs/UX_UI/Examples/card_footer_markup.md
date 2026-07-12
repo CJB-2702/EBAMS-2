@@ -1,3 +1,11 @@
+---
+type: "UX Example"
+title: "Card footer markup"
+description: "Canonical card-footer HTML for the geometry described in [../form_style_guide.md](../form_style_guide.md)."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # Card footer markup
 
 Canonical card-footer HTML for the geometry described in [../form_style_guide.md](../form_style_guide.md).

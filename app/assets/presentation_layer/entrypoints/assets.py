@@ -171,23 +171,31 @@ def asset_images(request: HttpRequest, asset_id: int) -> HttpResponse:
         context = AssetContext(asset_id, actor=request.user)
         try:
             if request.POST.get("delete"):
-                context.images.delete_image(int(request.POST["delete"]))
+                context.images.delete_image(request.POST["delete"])
                 messages.success(request, "Image deleted.")
             elif request.POST.get("set_primary"):
-                context.images.set_primary(int(request.POST["set_primary"]))
+                context.images.set_primary(request.POST["set_primary"])
                 messages.success(request, "Primary image updated.")
-            elif request.FILES.get("image"):
-                context.images.add_image(request.FILES["image"])
-                messages.success(request, "Image uploaded.")
+            elif request.FILES.getlist("image"):
+                uploaded = request.FILES.getlist("image")
+                for image_file in uploaded:
+                    context.images.add_image(image_file)
+                count = len(uploaded)
+                messages.success(
+                    request,
+                    "Image uploaded." if count == 1 else f"{count} images uploaded.",
+                )
             else:
                 messages.error(request, "Choose an image to upload.")
         except (AssetImageError, ObjectDoesNotExist, ValueError) as exc:
             messages.error(request, str(exc))
         return redirect(reverse("asset_images", kwargs={"asset_id": asset_id}))
 
-    images = list(asset.images.select_related("attachment").all())
+    images = AssetContext(asset_id, actor=request.user).images.list_images()
     return render(
-        request, "assets/assets/images.html", {"asset": asset, "images": images}
+        request,
+        "assets/assets/images.html",
+        {"asset": asset, "images": images, "primary_id": asset.primary_image_id},
     )
 
 

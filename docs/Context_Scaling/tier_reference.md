@@ -1,3 +1,11 @@
+---
+type: "Context Scaling Spec"
+title: "Tier Reference — Detailed Definitions"
+description: "Detailed per-tier purpose, inclusion rules, and key-file inventories for the Context Scaling framework."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Tier Reference — Detailed Definitions
 
 ## Tier 0: The Application Router (`Claude.md`)
@@ -18,13 +26,11 @@
 
 | File | Purpose |
 | :--- | :--- |
-| `docs/skeleton.md` | Machine-maintained full index of every doc file across all tiers. Owned by the docs directory crawler — never edited manually. |
 | `docs/Context_Scaling.md` | This framework. Tier table, reference directionality rule, pointers to sub-specs. |
 | `docs/Architecture.md` | Layered architecture, OOP control patterns, model and endpoint rules. |
 | `docs/UX_UI.md` | Visual language, density contract, HTMX paradigms, layout rules. |
 | `docs/Authorization.md` | Two-gate access model: capability (roles + permission groups) and scope (Data Domain). |
-| `docs/CoreDomain.md` | Shared business entities and the domain/organization/division hierarchy. |
-| `docs/Events.md` | Events sub-application: comments, files, shadow history, contexts. |
+| `docs/applications.md` | Per-application doc convention; why Authorization alone stays at Tier 1/2 while Core Domain, Events, and feature apps live under `docs/applications/`. |
 | `docs/Development_Tools.md` | Dev workflow, DB rebuild, environment generation, seeded users. |
 | `docs/ApplicationGoals.md` | Product roadmap, user-centric objectives, business logic intent. |
 | `docs/technical_decisions.md` | Rolling summary of locked decisions, active tech debt, incident takeaways. |
@@ -44,11 +50,13 @@
 
 ---
 
-## Tier 3: Library Patterns & Component Examples (`docs/[Concept]/Examples/*`)
+## Tier 3: Library Patterns & Component Examples (`docs/[Concept]/<sub category>/*`)
 
-* **Purpose:** Concrete practical reference. Functional code boilerplate, usage patterns, API contract shapes, UI component references.
-* **Inclusion:** Strictly isolated. Never scanned programmatically by default. Loaded manually when the AI is actively building or modifying a structural code block that matches an existing pattern.
-* **Code rule:** Complete, modular examples are the point. No length restriction.
+* **Purpose:** Concrete practical reference, in two flavors:
+  * **Code patterns:** Functional code boilerplate, usage patterns, API contract shapes, UI component references.
+  * **Detailed concept walkthroughs:** Higher-detail explanations, direct examples, or thorough worked-through rules that fully explain a single concept but were too long or too specific to fit cleanly into a Tier 1/Tier 2 summary without diluting it. These stay prose-first (code only where it clarifies), but go deep on one concept rather than surveying many.
+* **Inclusion:** Strictly isolated. Never scanned programmatically by default. Loaded manually when the AI is actively building or modifying a structural code block that matches an existing pattern, or when a Tier 1/2 summary references a concept that needs the fuller explanation.
+* **Code rule:** Complete, modular examples are the point for the code-pattern flavor. No length restriction for either flavor.
 
 ---
 

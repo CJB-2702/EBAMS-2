@@ -1,3 +1,10 @@
+---
+type: Architecture Example
+title: Sub-Application Folder Tree
+description: The canonical folder tree every sub-application under app/ should follow.
+tags: [architecture, layout, folder-structure, examples]
+---
+
 # Sub-application folder tree (canonical example)
 
 This is the reference tree every sub-application under `app/` should follow. Comments describe role, not folder names.

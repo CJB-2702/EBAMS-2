@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2b — Old → New Migration Notes"
+description: "The framework renames/reshapes are all in."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2b-first-party-plugins]
+context_tier: 2
+---
+
 # Phase 2b — Old → New Migration Notes
 
 The framework renames/reshapes are all in

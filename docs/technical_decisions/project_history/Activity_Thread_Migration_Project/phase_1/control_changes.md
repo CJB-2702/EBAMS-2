@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Control Layer Changes"
+description: "All changes are import and reference updates."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-1]
+context_tier: 2
+---
+
 # Phase 1 — Control Layer Changes
 
 All changes are import and reference updates. No method signatures change. No business

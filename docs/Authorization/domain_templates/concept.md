@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Domain Templates — Concept"
+description: "This document describes the **business concept** of a domain template, the rules it enforces, and how it interacts with row-level access control."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Domain Templates — Concept
 
-This document describes the **business concept** of a domain template, the rules it enforces, and how it interacts with row-level access control. It is the source of truth for *what* domain templates are and *why* they exist. For *how* they are built in code, see [domain_templates_models_plan.md](domain_templates_models_plan.md).
+This document describes the **business concept** of a domain template, the rules it enforces, and how it interacts with row-level access control. It is the source of truth for *what* domain templates are and *why* they exist. For *how* they are built in code, see [models_plan.md](models_plan.md).
 
 ---
 
@@ -35,7 +43,7 @@ Three concrete problems:
 
 ### Rule 1 — Zero or more active templates per user
 
-Multiple domain templates can be assigned to one user simultaneously. The user's domain set is the union of all template-derived domains plus any explicit `UserDomain` rows. See [architecture_summary.md](architecture_summary.md) for the propagation logic.
+Multiple domain templates can be assigned to one user simultaneously. The user's domain set is the union of all template-derived domains plus any explicit `UserDomain` rows. See [../architecture_summary.md](../architecture_summary.md) for the propagation logic.
 
 ### Rule 2 — Reference, not copy
 
@@ -43,7 +51,7 @@ Templates point at `Domain` rows. The domain itself is not duplicated; updates t
 
 ### Rule 3 — Domain templates do not grant capabilities
 
-Domain templates manage **data scope** (which rows you see). They have **zero** effect on **permission groups** (what actions you can perform). A user with the *Facility 1 Transportation* template still cannot perform actions unless they hold the required permission groups. The two systems stay separate on purpose — see [data_ownership.md](data_ownership.md) and [rbac.md](rbac.md).
+Domain templates manage **data scope** (which rows you see). They have **zero** effect on **permission groups** (what actions you can perform). A user with the *Facility 1 Transportation* template still cannot perform actions unless they hold the required permission groups. The two systems stay separate on purpose — see [../data_ownership.md](../data_ownership.md) and [../rbac.md](../rbac.md).
 
 ### Rule 4 — Template changes are auditable and historical
 

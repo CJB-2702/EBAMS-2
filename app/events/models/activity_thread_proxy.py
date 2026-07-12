@@ -27,7 +27,25 @@ from app.events.models.event import (
 
 
 class ActivityThread(Event):
-    """Comments + attachments thread. Behavior is fixed by the class."""
+    """Comments + attachments thread. Behavior is fixed by the class.
+
+    Domain scoping caveat — inherited `domain` is NOT authoritative here.
+    ActivityThread (and the file collection it carries) inherits Event's single,
+    NOT-NULL `domain` field. That single-domain model is correct for events with a
+    physical, single-domain counterpart (e.g. an asset lives in exactly one domain).
+    But when a thread is *tied to another item*, it is subordinate to that item and
+    must defer to the owning item's domain-access rules for visibility — it must NOT
+    treat its own `domain` value as the source of truth for who may read it.
+
+    The clearest case is a Part definition: a part is a *shared* record that can span
+    domains (and may be restricted to a select few via `is_domain_limited` +
+    PartDomainAccessMapping). A part's activity thread therefore has no meaningful
+    domain of its own — the `domain` set at thread-creation time is an incidental
+    bootstrap value (the column is NOT NULL and needs *something*), not an access
+    control. Who may see the thread is decided by who may access the Part, i.e. the
+    Part's domain mapping — never by this row's `domain`. Any owner that carries its
+    own domain-access model should be treated the same way.
+    """
 
     _THREAD_TYPES = frozenset({ActivityThreadType.DOCUMENTATION})
     _DEFAULT_THREAD_TYPE = ActivityThreadType.DOCUMENTATION

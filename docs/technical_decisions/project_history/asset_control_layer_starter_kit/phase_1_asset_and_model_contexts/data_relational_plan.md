@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Data & Relational Plan"
+description: "Models marked **(built)** already exist; **(NEW)** is added this phase.*."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-1-asset-and-model-contexts]
+context_tier: 2
+---
+
 # Phase 1 — Data & Relational Plan
 
 *Per [`docs/starter_kit_process/how_to_data_relational_planning_document.md`](../../docs/starter_kit_process/how_to_data_relational_planning_document.md).

@@ -95,3 +95,29 @@
 
 </div>
 {% endblock %}
+
+{% block body_scripts %}
+{% load static %}
+<script defer src="{% static 'web_components/file_browser.js' %}"></script>
+<script defer src="{% static 'web_components/file_upload.js' %}"></script>
+<script defer src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script>
+  // Small deliberate JS exception: Human/All/Machine comment-filter buttons,
+  // scoped to the nearest .pc ancestor so multiple event cards on one page
+  // stay independent of one another.
+  window.__filterComments = function(evt, btn, filter) {
+    evt.preventDefault();
+    var group = btn.closest('.comment-filter-group');
+    var card = btn.closest('.pc');
+    group.querySelectorAll('.comment-filter-item').forEach(function(b) {
+      b.classList.toggle('is-link', b === btn);
+      b.classList.toggle('is-selected', b === btn);
+      b.classList.toggle('is-light', b !== btn);
+    });
+    card.querySelectorAll('[data-comment-kind]').forEach(function(row) {
+      row.style.display = (filter === 'all' || row.dataset.commentKind === filter) ? '' : 'none';
+    });
+    return false;
+  };
+</script>
+{% endblock %}

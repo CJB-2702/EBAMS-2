@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Brainstorming Session — 2026-06-03"
+description: "Session that produced this starter kit."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Brainstorming Session — 2026-06-03
 
 Session that produced this starter kit. Captures the goal, what was investigated,

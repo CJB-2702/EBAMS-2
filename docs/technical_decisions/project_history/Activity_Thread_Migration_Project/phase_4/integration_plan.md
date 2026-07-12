@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Integration Plan"
+description: "Event.objects which already does this via EventManager)."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-4]
+context_tier: 2
+---
+
 # Phase 4 — Integration Plan
 
 ## Prerequisites

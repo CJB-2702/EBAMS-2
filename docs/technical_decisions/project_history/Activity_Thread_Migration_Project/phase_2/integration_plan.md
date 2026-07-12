@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2 — Integration Plan"
+description: "1."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-2]
+context_tier: 2
+---
+
 # Phase 2 — Integration Plan
 
 ## Prerequisites

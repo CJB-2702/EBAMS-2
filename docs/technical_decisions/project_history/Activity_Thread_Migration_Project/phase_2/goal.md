@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2 — Goal: Attachment Denormalization"
+description: "Currently, every file attached to an event must be carried by a Comment row."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-2]
+context_tier: 2
+---
+
 # Phase 2 — Goal: Attachment Denormalization
 
 ## Problem

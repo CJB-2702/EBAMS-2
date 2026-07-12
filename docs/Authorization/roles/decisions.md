@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Roles — Design Decisions"
+description: "This document outlines the **unique design decisions** made in this role system and explains **why** they were chosen."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Roles — Design Decisions
 
-This document outlines the **unique design decisions** made in this role system and explains **why** they were chosen. It complements [roles_concept.md](roles_concept.md), which describes *what* roles are. This document addresses the *why* — the trade-offs and reasoning behind constraints that aren't obvious from reading the concept alone.
+This document outlines the **unique design decisions** made in this role system and explains **why** they were chosen. It complements [concept.md](concept.md), which describes *what* roles are. This document addresses the *why* — the trade-offs and reasoning behind constraints that aren't obvious from reading the concept alone.
 
 ---
 

@@ -1,3 +1,11 @@
+---
+type: "Tooling Guide"
+title: "Users and passwords (local reference)"
+description: "This file is **gitignored** so it can hold environment-specific credentials."
+tags: [development-tools, tooling-guide]
+context_tier: 2
+---
+
 # Users and passwords (local reference)
 
 This file is **gitignored** so it can hold environment-specific credentials. Do not commit real production passwords here.

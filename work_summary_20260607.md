@@ -580,7 +580,7 @@ read path). Save #7 for after you've felt the duplication firsthand.
 ## Part 12 — If you're new, read in this order
 
 1. This document, Parts 2–3 (architecture + core nouns).
-2. `docs/Architecture.md` and `docs/Architecture/oop_control_patterns.md` — the
+2. `docs/Architecture.md` and `docs/Architecture/patterns/oop_control_patterns.md` — the
    suffix vocabulary, authoritative.
 3. `app/assets/control_layer/orchestrators/asset_creation_orchestrator.py` — the
    spine workflow, then follow its calls outward.

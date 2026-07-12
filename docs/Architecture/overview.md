@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: Architecture Overview
+description: The layered sub-application layout and the responsibilities of each layer.
+tags: [architecture, layout, layers, overview]
+---
+
 # Sub-application layout and layer responsibilities
 
 This document defines the "Extra-Explicit" layout for Django apps in this project. HTTP handling, business logic, data access, and presentation-oriented shaping are split into dedicated layers so behavior stays easy to find and change.
@@ -49,7 +56,11 @@ Code in `control_layer/adapters/` cleans `request.POST` (or similar) before a wr
 Any `.filter()`, `.exclude()`, or `.annotate()` chain longer than one line belongs in `presentation_layer/search/` so entrypoints stay thin "traffic controllers."
 
 ### Domain structs pattern
-Keep aggregate **types** (dataclasses, `NamedTuple`, or similar) in `control_layer/domain_structs/`. Prefer constructing instances in `presentation_layer/search` or in control-layer write modules so `domain_structs/` stays mostly declarative and does not need to import `presentation_layer/search` (avoids cycles).
+Keep aggregate **types** (plain classes, dataclasses, `NamedTuple`, or similar) in `control_layer/domain_structs/`. Prefer constructing instances in `presentation_layer/search` or in control-layer write modules so `domain_structs/` stays mostly declarative and does not need to import `presentation_layer/search` (avoids cycles).
+
+A struct's job is to turn **one id into a cluster of related data** — never a bare filtered list from a single table with nothing composed around it (that belongs in `presentation_layer/search/` as a plain queryset function instead). Example: an asset struct accepts an asset id, then gathers its model, manufacturer, and asset class — one id in, a small graph of related data out.
+
+Base "identity" structs (guarantee one row exists, `select_related` its immediate FKs) are the exception that proves the rule — they exist specifically to be composed into aggregate structs, not to stand alone. See [patterns/domain_structs_cont.md](patterns/domain_structs_cont.md) for construction conventions, composition examples, and a checklist, grounded in the real structs already in this codebase (`AssetStruct`, `AssetThreeSixtyStruct`, `EventDetailStruct`, `PartContext`).
 
 ### Writes vs reads
 - **Control layer** changes system state (writes) and holds adapters plus domain aggregates used by those flows.
@@ -58,7 +69,7 @@ Keep aggregate **types** (dataclasses, `NamedTuple`, or similar) in `control_lay
 If a flow needs both, the entrypoint calls search then the control layer (or the reverse), instead of mixing read and write in one place.
 
 ### HTMX fragments
-Templates used only as HTMX responses (table rows, modals, inline form errors) sit in `templates/<model_or_struct_namespace>/fragments/` so partials stay next to the full pages for that slice. See [htmx_patterns.md](htmx_patterns.md) for request/response conventions.
+Templates used only as HTMX responses (table rows, modals, inline form errors) sit in `templates/<model_or_struct_namespace>/fragments/` so partials stay next to the full pages for that slice. See [patterns/htmx_patterns.md](patterns/htmx_patterns.md) for request/response conventions.
 
 ---
 

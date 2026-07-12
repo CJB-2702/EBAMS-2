@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from app.parts.control_layer.adapters.form_parsing import parse_checkbox
+
 
 class PartCreateAdaptor:
     @staticmethod
@@ -12,10 +14,6 @@ class PartCreateAdaptor:
             "description": (post.get("description") or "").strip(),
             "part_type": (post.get("part_type") or "").strip(),
             "category": (post.get("category") or "").strip(),
-            "is_active": _checkbox(post, "is_active"),
-            "is_domain_limited": _checkbox(post, "is_domain_limited"),
+            "is_active": parse_checkbox(post, "is_active"),
+            "is_domain_limited": parse_checkbox(post, "is_domain_limited"),
         }
-
-
-def _checkbox(post, key: str) -> bool:
-    return post.get(key) in ("on", "true", "True", "1")

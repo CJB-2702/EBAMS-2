@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2a — Asset Plugin Framework"
+description: "The extension seam."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2a-plugin-framework]
+context_tier: 2
+---
+
 # Phase 2a — Asset Plugin Framework
 
 The extension seam. Build the machinery that lets a self-contained **plugin** —

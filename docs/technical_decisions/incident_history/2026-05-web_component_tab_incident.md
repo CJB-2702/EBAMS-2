@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Web Component Tab Incident"
+description: "Three iterations of custom-element web components were tried as the tab switcher for the user edit page."
+tags: [technical-decisions, technical-decision, incident-history]
+context_tier: 2
+---
+
 # Web Component Tab Incident
 
 - **Date:** 2026-05
@@ -22,8 +30,8 @@ Two intertwined HTML/DOM realities:
 
 ## What changed
 
-- HTMX-driven tabs adopted as the default tab implementation. See [../history/2026-05-htmx-driven-tabs.md](../history/2026-05-htmx-driven-tabs.md) and [../../UX_UI/tabs.md](../../UX_UI/tabs.md).
-- Dual-listbox slot containers replaced with real `<ul data-slot="left">` lists in the parser's special category, so `<li>` traversal stops correctly. See [../../UX_UI/dual_listbox.md](../../UX_UI/dual_listbox.md).
+- HTMX-driven tabs adopted as the default tab implementation. See [../history/2026-05-htmx-driven-tabs.md](../history/2026-05-htmx-driven-tabs.md) and [../../UX_UI/components/tabs.md](../../UX_UI/components/tabs.md).
+- Dual-listbox slot containers replaced with real `<ul data-slot="left">` lists in the parser's special category, so `<li>` traversal stops correctly. See [../../UX_UI/components/dual_listbox.md](../../UX_UI/components/dual_listbox.md).
 - Two non-negotiable rules added for any future custom-element tab implementation:
   1. **Defer init past parse.** Either listen for `DOMContentLoaded`, use a `MutationObserver` with `subtree: true` gated on `tabPanels.length > 0`, or call `customElements.define(...)` inside a `DOMContentLoaded` handler so upgrades happen after the full tree is parsed.
   2. **Never put `<li>` children inside a custom element that is itself inside a `<li>`** without a real `<ul>` / `<ol>` between them.

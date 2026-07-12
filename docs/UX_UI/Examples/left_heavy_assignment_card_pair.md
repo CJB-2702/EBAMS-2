@@ -1,3 +1,11 @@
+---
+type: "UX Example"
+title: "Left Heavy Assignment Card Pair"
+description: "A pattern for assigning items from a large pool (left card, 2/3 width) to a target entity (right card, 1/3 width) using local session states before form submission."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # Left Heavy Assignment Card Pair
 
 A pattern for assigning items from a large pool (left card, 2/3 width) to a target entity (right card, 1/3 width) using local session states before form submission. 

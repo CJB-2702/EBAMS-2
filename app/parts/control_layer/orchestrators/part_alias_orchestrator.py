@@ -6,6 +6,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from app.parts.control_layer.factories.alias_factory import AliasFactory
+from app.parts.control_layer.managers.part_activity_manager import PartActivityManager
+from app.parts.control_layer.narrators.alias_narrator import AliasNarrator
 from app.parts.models import AliasSource
 
 if TYPE_CHECKING:
@@ -17,10 +19,14 @@ if TYPE_CHECKING:
 class PartAliasOrchestrator:
     @staticmethod
     def on_part_created(part: "Part", actor: "AbstractUser | None") -> "Alias":
-        return AliasFactory.for_string(
+        alias = AliasFactory.for_string(
             part,
             part.part_number,
             "INTERNAL",
             source=AliasSource.AUTO,
             actor=actor,
         )
+        PartActivityManager.for_part(part, actor).record(
+            AliasNarrator.alias_added(part, alias)
+        )
+        return alias

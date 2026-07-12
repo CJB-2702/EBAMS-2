@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2b — First-Party Plugins"
+description: "Port the remaining concrete details onto the Phase 2a framework as plugin packages."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2b-first-party-plugins]
+context_tier: 2
+---
+
 # Phase 2b — First-Party Plugins
 
 Port the remaining concrete details onto the Phase 2a framework as plugin packages.

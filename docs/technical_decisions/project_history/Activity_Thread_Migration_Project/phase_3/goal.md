@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Goal: Event / ActivityThread Proxy Split"
+description: "After Phase 2, comments and attachments belong to Event directly."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-3]
+context_tier: 2
+---
+
 # Phase 3 — Goal: Event / ActivityThread Proxy Split
 
 ## Problem

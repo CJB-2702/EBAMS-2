@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "Multi-step flows"
+description: "Drafts live under a namespaced dictionary in request.session specific to the feature."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Multi-step flows
 
 **Portals vs steps:** a **portal** is a whole area of the app (events, restocking, etc.). Inside one portal, a **guided flow** is implemented as **one create (or edit) page**, not a chain of different pages for each step.

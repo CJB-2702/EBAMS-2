@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Brainstorming Session — Asset Plugin Framework (2026-06-04)"
+description: "A working narrative of the session that recast Phase 2 from a fixed \"details\"."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Brainstorming Session — Asset Plugin Framework (2026-06-04)
 
 A working narrative of the session that recast Phase 2 from a fixed "details"

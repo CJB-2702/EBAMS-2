@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Architecture Contrast — old `asset_management` vs new `Django-Starter-Kit`"
+description: "Read before building any phase."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Architecture Contrast — old `asset_management` vs new `Django-Starter-Kit`
 
 Read before building any phase. Two kinds of change overlap here: a **framework
@@ -20,7 +28,7 @@ domains, MakeModel → AssetModel, core → assets, single Event → Event/threa
 **Porting rule:** keep the *intent* of old Context/Manager/Factory classes, but
 rename to the strict suffix vocabulary and collapse independent commits into one
 atomic workflow per entry point. See
-[`docs/Architecture/oop_control_patterns.md`](../docs/Architecture/oop_control_patterns.md).
+[`docs/Architecture/patterns/oop_control_patterns.md`](../docs/Architecture/patterns/oop_control_patterns.md).
 
 ## 2. Domain remodel (the substance of the migration)
 

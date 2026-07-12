@@ -1,8 +1,19 @@
-# Events — Tier 1 Anchor
-
-This file is the **concept anchor** for the events sub-application: occurrences, comments, attachments, and files, with shadow history and soft-delete throughout. Detail lives in the Tier 2 files below.
-
 ---
+tier: 1
+type: "Domain Doc"
+title: "Events"
+description: "Concept anchor for the events sub-application: occurrences, comments, attachments, and files, with shadow history and soft-delete throughout."
+tags: [applications, domain-doc, events]
+context_tier: 2
+---
+
+# Events
+
+The events sub-application: occurrences, comments, attachments, and files, with shadow history and soft-delete throughout. Detail lives in the Tier 2 files below.
+
+## Status
+
+Active — nearly every sub-application emits or consumes events.
 
 ## Core ideas
 
@@ -13,20 +24,14 @@ This file is the **concept anchor** for the events sub-application: occurrences,
 - **URLs use hashids on integer PKs.** Events and comments are addressed by 8-character hashid-encoded `BigAutoField` PKs at the URL boundary. Files and attachments keep raw UUID7. The control layer always works in integer PKs and model instances — hashids never leak inward.
 - **Contexts coordinate cross-table writes; handlers own single-row writes.** `EventContext.delete()` cascades into `CommentContext.delete()`, which checks for and cleans up orphaned files. Simple writes (create event, edit event, add comment) go directly to a handler.
 
----
+## Deep specs
 
-## Sub-specifications
+See [events/index.md](events/index.md) for the full, machine-routable index of Tier 2 guides and skeletons (models, event context design, endpoint routing, comment auditing, PK hashing migration).
 
-| Topic | File |
-| :--- | :--- |
-| Models, mixins, status/priority choices, permissions, domain scoping | [Events/events.md](Events/events.md) |
-| Structs and contexts: `BaseEventStruct`, `EventContext`, `CommentContext` | [Events/event_context_design.md](Events/event_context_design.md) |
-| Endpoint-by-endpoint routing: when to call a handler vs a context | [Events/events_endpoints.md](Events/events_endpoints.md) |
-| Comment edit, delete, attachment, and file lifecycle invariants | [Events/comment_auditing.md](Events/comment_auditing.md) |
-| Slug → hashid migration plan and entrypoint pattern | [Events/pk_hashing_migration.md](Events/pk_hashing_migration.md) |
+## Skeleton instructions
 
----
+For task setup (integrating another sub-app with events): [skeleton_instructions.md](events/skeleton_instructions.md).
 
 ## Reference directionality
 
-This anchor references **only** files inside `Events/`. The events application depends on the Data Domain primitive (see [CoreDomain.md](CoreDomain.md)) and on the layered architecture rules (see [Architecture.md](Architecture.md)) — the relevant constraints are summarised in the bullets above so an events task is answerable from this anchor plus its Tier 2 children.
+This anchor references **only** files inside `events/`. The events application depends on the Data Domain primitive (see [core_domain.md](core_domain.md)) and on the layered architecture rules (see [../Architecture.md](../Architecture.md)) — the relevant constraints are summarised in the bullets above so an events task is answerable from this anchor plus its Tier 2 children.

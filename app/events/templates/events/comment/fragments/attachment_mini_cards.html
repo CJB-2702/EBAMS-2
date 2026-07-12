@@ -1,59 +1,61 @@
+{% comment %}
+Attachment mini-cards for a single comment: icon + filename + description
+(Attachment.caption), replacing the old carousel-per-comment display. Same
+fb-tile card look as the file-tile previews in the inline comment-edit card
+(add_comment.js mode="edit"), capped at 250px so several sit side by side
+instead of stacking full-width. When any attachment is an image, a "View as
+gallery" button opens a modal whose gallery content
+(events/fragments/gallery_card.html) is HTMX-loaded on first reveal via
+comments.py:comment_gallery.
+
+Expects: att_list=[{attachment, snippet}], event_hash, comment_hash.
+Optional: action_depth (e.g. "depth-4") — depth for these tiles/buttons when
+the caller's own row sits deeper than the usual "depth-2" comment row (see
+comment_row.html). Defaults to "depth-3".
+{% endcomment %}
 {% load static %}
 {% load hashid_tags %}
 
 {% if att_list %}
-
-{# ── Carousel ── #}
-<div class="box p-3 mt-2">
-  <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
-
-  {% if att_list|has_images %}
-  <image-carousel id="carousel-comment-{{ comment_id }}" preview-height="300" loop>
-    {% for item in att_list %}
-    {% with f=item.attachment.file %}
-    {% if f.is_image %}
-    <img src="{% url 'file_inline' file_id=f.id %}"
-         alt="{{ f.original_filename }}"
-         loading="lazy"
-         title="{{ f.original_filename }} ({{ f.file_size|filesizeformat }})">
-    {% endif %}
-    {% endwith %}
-    {% endfor %}
-  </image-carousel>
-
-  <div class="mt-3">
-    <carousel-preview-items for="carousel-comment-{{ comment_id }}" size="50"></carousel-preview-items>
-  </div>
-  {% endif %}
-
-  {# ── File details and non-image attachments ── #}
+<div class="fb-grid mt-2">
   {% for item in att_list %}
   {% with f=item.attachment.file %}
-  <div class="mt-2 is-size-7">
-    <p class="has-text-grey">
-      {{ f.original_filename }}
-      <span class="has-text-grey-light">({{ f.file_size|filesizeformat }})</span>
-    </p>
-    {% if item.snippet is not None %}
-    <pre class="p-2 mt-1" style="background:#f5f5f5;"><code>{{ item.snippet }}</code></pre>
-    {% endif %}
-  </div>
-  {% endwith %}
-  {% endfor %}
-
-</div>
-
-{# ── Href list ── #}
-<div class="mt-1 is-size-7">
-  {% for item in att_list %}
-  {% with f=item.attachment.file %}
-  <a href="{% url 'file_download' file_id=f.id %}"
-     class="has-text-link mr-3"
-     title="{{ f.original_filename }}">
-    <i class="bi {{ f.get_icon_class }} mr-1"></i>{{ f.original_filename }}
+  <a href="{% url 'file_download' file_id=f.id %}" class="fb-tile {{ action_depth|default:'depth-3' }}" style="max-width:250px;" title="{{ f.original_filename }}">
+    <span class="fb-tile-link">
+      <span class="fb-thumb"><i class="bi {{ f.get_icon_class }}" aria-hidden="true"></i></span>
+      <span class="fb-meta">
+        <span class="fb-name">{{ f.original_filename }}</span>
+        {% if item.attachment.caption %}<span class="fb-caption">{{ item.attachment.caption }}</span>{% endif %}
+        <span class="fb-sub">{{ f.file_size|filesizeformat }}</span>
+      </span>
+    </span>
   </a>
   {% endwith %}
   {% endfor %}
 </div>
 
+{% if att_list|has_images %}
+<script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+
+<div class="mt-1">
+  <button type="button" class="button is-small is-light {{ action_depth|default:'depth-3' }}" commandfor="gallery-modal-{{ comment_hash }}" command="show-modal">
+    <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">photo_library</span></span>
+    <span>View as gallery</span>
+  </button>
+</div>
+
+<dialog id="gallery-modal-{{ comment_hash }}" class="card" style="padding:0; max-width:720px; width:90vw;">
+  <header class="card-header">
+    <p class="card-header-title">Gallery</p>
+    <button type="button" class="delete is-large" aria-label="close"
+            commandfor="gallery-modal-{{ comment_hash }}" command="close"></button>
+  </header>
+  <div class="card-content"
+       hx-get="{% url 'comment_gallery' event_hash=event_hash comment_hash=comment_hash %}"
+       hx-trigger="revealed"
+       hx-swap="innerHTML">
+    <p class="has-text-grey is-size-7">Loading…</p>
+  </div>
+</dialog>
+{% endif %}
 {% endif %}

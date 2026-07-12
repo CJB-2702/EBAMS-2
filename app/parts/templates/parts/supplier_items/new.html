@@ -1,0 +1,190 @@
+{% extends "parts/base.html" %}
+{% load static %}
+{% block title %}Map Supplier Item — {{ part.part_number }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+  <li><a href="{% url 'part_supplier_items' part_id=part_id %}">Supplier Items</a></li>
+  <li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% endblock %}
+
+{% block content %}
+<script src="{% static 'web_components/search_dropdown.js' %}" defer></script>
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+      <div><h1 class="page-title">Map a Supplier Item — {{ part.part_number }}</h1>
+        <p class="page-subtitle">Attach a purchasable vendor item to this Part. Mapping an item auto-indexes its MPN.</p>
+      </div></div>
+  </div>
+</div>
+
+{# All 3 steps render at once; step 2/3 inputs start disabled and are progressively enabled —
+   see docs/UX_UI/components/multi_step_flows.md ("later steps shown but disabled"). #}
+<div class="body-grid full-width">
+  <div class="pc mb-5" id="supplier-item-wizard">
+    <div class="pc-body">
+      <form method="post">
+        {% csrf_token %}
+
+        {# ── Step 1: Manufacturer ── #}
+        <div class="pc depth-2 mb-4" data-step="1">
+          <div class="pc-header"><div class="pc-header-title">1. Manufacturer</div></div>
+          <div class="pc-body" id="supplier-item-manufacturer-slot">
+            {% include "parts/manufacturers/_manufacturer_picker.html" with selected_manufacturer=None %}
+          </div>
+        </div>
+
+        {# ── Step 2: Item identity — disabled until a manufacturer is selected ── #}
+        <div class="pc depth-2 mb-4" data-step="2">
+          <div class="pc-header"><div class="pc-header-title">2. Item</div></div>
+          <div class="pc-body">
+            <label class="label is-small">Manufacturer Part Number</label>
+            <input class="input is-small" type="text" name="manufacturer_part_number" data-gated required disabled>
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="text" name="name" data-gated disabled>
+            <label class="label is-small">Description</label>
+            <textarea class="textarea is-small" name="description" rows="2" data-gated disabled></textarea>
+          </div>
+        </div>
+
+        {# ── Step 3: Compatibility range — disabled until the MPN is filled ── #}
+        <div class="pc depth-2 mb-4" data-step="3">
+          <div class="pc-header"><div class="pc-header-title">3. Compatibility (optional)</div></div>
+          <div class="pc-body">
+            {{ revision_map|json_script:"part-revision-map" }}
+            <p class="help mb-3">Leave any bound blank for "no constraint" on that side.</p>
+
+            <div class="columns is-mobile">
+              <div class="column">
+                <label class="label is-small">Min Major</label>
+                <!-- DEV NOTE (v1 limitation): only majors that already exist as PartRevision rows
+                     on this Part are offered here. A future major not yet created can't be
+                     selected, and there's no typed/custom numeric entry path yet. -->
+                <div class="select is-small is-fullwidth">
+                  <select id="min-major-select" name="min_major_revision_number" data-gated disabled>
+                    <option value="">— none —</option>
+                    {% for major in revision_majors %}<option value="{{ major }}">{{ major }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="column">
+                <label class="label is-small" id="min-minor-label" hidden>Min Minor</label>
+                <p class="help is-size-7" id="min-minor-range-info" hidden></p>
+                <!-- DEV NOTE: leaving this blank after picking a major is valid and intentional —
+                     null minor means "whole major band" (D13). The overall default when nothing
+                     is touched at all is "valid for all revisions" — never force a pick here. -->
+                <div class="select is-small is-fullwidth">
+                  <select id="min-minor-select" name="min_minor_revision_number" hidden>
+                    <option value="">— none —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="columns is-mobile">
+              <div class="column">
+                <label class="label is-small">Max Major</label>
+                <div class="select is-small is-fullwidth">
+                  <select id="max-major-select" name="max_major_revision_number" data-gated disabled>
+                    <option value="">— none —</option>
+                    {% for major in revision_majors %}<option value="{{ major }}">{{ major }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="column">
+                <label class="label is-small" id="max-minor-label" hidden>Max Minor</label>
+                <p class="help is-size-7" id="max-minor-range-info" hidden></p>
+                <div class="select is-small is-fullwidth">
+                  <select id="max-minor-select" name="max_minor_revision_number" hidden>
+                    <option value="">— none —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <a href="{% url 'part_supplier_items' part_id=part_id %}" class="button is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Cancel</span>
+          </a>
+          <button type="submit" class="button is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Map Item</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  const wizard = document.getElementById("supplier-item-wizard");
+  if (!wizard) return;
+
+  function field(name) { return wizard.querySelector(`[name="${name}"]`); }
+
+  function recomputeGating() {
+    const mfr = field("part_manufacturer_id");
+    const mfrSelected = !!(mfr && mfr.value);
+    wizard.querySelectorAll('[data-step="2"] [data-gated]').forEach((el) => { el.disabled = !mfrSelected; });
+
+    const mpn = field("manufacturer_part_number");
+    const mpnFilled = !!(mpn && !mpn.disabled && mpn.value.trim());
+    wizard.querySelectorAll('[data-step="3"] [data-gated]').forEach((el) => { el.disabled = !mpnFilled; });
+  }
+
+  wizard.addEventListener("click", (e) => {
+    if (e.target.closest('[data-action="show-quick-create"]')) {
+      e.preventDefault();
+      document.getElementById("mfr-quick-create-fields").hidden = false;
+    }
+    if (e.target.closest('[data-action="hide-quick-create"]')) {
+      document.getElementById("mfr-quick-create-fields").hidden = true;
+    }
+    recomputeGating(); // covers search-dropdown <li> picks via delegation
+  });
+  wizard.addEventListener("input", recomputeGating); // MPN typing, etc.
+  wizard.addEventListener("htmx:afterSwap", recomputeGating); // manufacturer quick-create / "Change"
+  recomputeGating();
+
+  // ---- Major -> minor cascade (D13: blank stays valid/"unbounded"; never auto-force a pick) ----
+  const revisionMap = JSON.parse(document.getElementById("part-revision-map").textContent);
+
+  function wireCascade(majorId, minorId, labelId, infoId) {
+    const majorSelect = document.getElementById(majorId);
+    const minorSelect = document.getElementById(minorId);
+    const label = document.getElementById(labelId);
+    const info = document.getElementById(infoId);
+
+    majorSelect.addEventListener("change", () => {
+      minorSelect.innerHTML = '<option value="">— none —</option>';
+      if (!majorSelect.value) {
+        minorSelect.hidden = true; label.hidden = true; info.hidden = true;
+        return;
+      }
+      const minors = (revisionMap[majorSelect.value] || []).slice().sort((a, b) => a - b);
+      minors.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = String(m); opt.textContent = String(m);
+        minorSelect.appendChild(opt);
+      });
+      minorSelect.hidden = false; label.hidden = false;
+      if (minors.length) {
+        info.textContent = `minors ${minors[0]}–${minors[minors.length - 1]} exist under major ${majorSelect.value}`;
+        info.hidden = false;
+      } else {
+        info.hidden = true;
+      }
+    });
+  }
+  wireCascade("min-major-select", "min-minor-select", "min-minor-label", "min-minor-range-info");
+  wireCascade("max-major-select", "max-minor-select", "max-minor-label", "max-minor-range-info");
+})();
+</script>
+{% endblock %}

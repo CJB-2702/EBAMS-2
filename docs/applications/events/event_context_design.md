@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Event Context Design"
+description: "This document covers the structs, context classes, and their interactions with existing handlers."
+tags: [events, domain-doc]
+context_tier: 2
+---
+
 # Event Context Design
 
 This document covers the structs, context classes, and their interactions with existing handlers. Endpoint routing decisions live in [events_endpoints.md](events_endpoints.md). The migration from slugs to hashid-encoded integer PKs is documented in [pk_hashing_migration.md](pk_hashing_migration.md). For the file/attachment lifecycle invariants the contexts enforce, see [comment_auditing.md](comment_auditing.md).

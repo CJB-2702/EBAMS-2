@@ -1,0 +1,101 @@
+{% comment %}
+Library section card — the base part or one revision.
+Expected context:
+  section_key  unique slug for element ids (e.g. "base" or "12-rev")
+  title        card heading
+  status       optional status tag value ("" to skip)
+  documents    list of document dicts (id, file_id, filename, caption, is_image)
+  revision_id  "" for the base part, otherwise the revision id (hidden form field)
+  can_manage   bool — show add/remove controls
+  part_id      part id for form actions
+{% endcomment %}
+{% load svg_tags %}
+<div class="pc{% if is_base %} is-base-part{% endif %}">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">{% if is_base %}inventory_2{% else %}folder{% endif %}</span></span>
+      {{ title }}
+      {% if status %}{% include "assets/_status_tag.html" with value=status %}{% endif %}
+    </div>
+    {% if can_manage %}
+    {# Small deliberate JS exception: toggle the inline upload panel in this card's footer. #}
+    <button type="button" class="button is-small is-link"
+            onclick="this.closest('.pc').querySelector('.lib-upload').toggleAttribute('hidden');">
+      <span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span><span>Add Files</span>
+    </button>
+    {% endif %}
+  </div>
+  <div class="pc-body">
+    {% if is_base %}
+    <p class="lib-base-note">The part definition that every revision points to. Files here are shared reference documents for the part as a whole — not tied to any single revision.</p>
+    {% endif %}
+    {% comment %}
+      <file-browser> reads these light-DOM <a> children and repaints them as
+      Tiles or List with filter/sort. With JS off, the links below are the
+      usable fallback (F5 rule).
+    {% endcomment %}
+    <file-browser default-view="tiles" storage-key="lib-file-browser-view">
+      {% for d in documents %}
+      <a class="fb-item" href="{% url 'file_download' file_id=d.file_id %}"
+         data-name="{{ d.filename }}"
+         data-caption="{{ d.caption }}"
+         data-type="{% if d.is_image %}image{% else %}{{ d.attachment_type }}{% endif %}"
+         data-thumb="{% if d.is_image %}{% url 'file_inline' file_id=d.file_id %}{% endif %}"
+         data-size="{{ d.file_size }}"
+         data-date="{{ d.created_at }}"
+         data-date-display="{{ d.created_at_display }}"
+         data-user="{{ d.created_by }}"
+         data-id="{{ d.id }}">
+        <span class="fb-thumb">
+          {% if d.is_image %}
+          <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy">
+          {% else %}
+          <span class="material-icons" aria-hidden="true">description</span>
+          {% endif %}
+        </span>
+        <span class="fb-name">{{ d.filename }}</span>
+        {% if d.caption %}<span class="fb-caption">{{ d.caption }}</span>{% endif %}
+        {% if can_manage %}
+        <span slot="actions">
+          <form method="post" action="{% url 'library_remove_document' part_id=part_id %}"
+                onsubmit="return confirm('Remove {{ d.filename|escapejs }} from the library?');">
+            {% csrf_token %}
+            <input type="hidden" name="revision_id" value="{{ revision_id }}">
+            <input type="hidden" name="attachment_id" value="{{ d.id }}">
+            <button type="submit" class="button is-small is-light" title="Remove file">
+              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+            </button>
+          </form>
+        </span>
+        {% endif %}
+      </a>
+      {% empty %}
+      <p class="has-text-grey is-size-7">No documents yet.</p>
+      {% endfor %}
+    </file-browser>
+  </div>
+
+  {% if can_manage %}
+  <div class="lib-upload" hidden>
+    <form method="post" action="{% url 'library_add_document' part_id=part_id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="revision_id" value="{{ revision_id }}">
+      <p class="has-text-grey is-size-7 mb-3">Technical documents only — model photos, drawings, instruction manuals. Not invoices or receipts.</p>
+      <label class="label is-small">Files</label>
+      <file-upload name="file" multiple fullwidth label="Choose file(s)…"></file-upload>
+      <label class="label is-small">Caption (optional)</label>
+      <input class="input is-small mb-2" type="text" name="caption" placeholder="e.g. Assembly drawing, rev A">
+      <p class="has-text-grey is-size-7 mb-3">A caption, if set, is applied to every file in this upload.</p>
+      <div class="is-flex is-justify-content-flex-end" style="gap:0.5rem;">
+        <button type="button" class="button is-small is-light"
+                onclick="this.closest('.lib-upload').setAttribute('hidden', '');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+        </button>
+        <button type="submit" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span><span>Add Files</span>
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>

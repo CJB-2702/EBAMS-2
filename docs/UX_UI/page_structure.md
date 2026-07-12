@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "Page structure: shell, hero, sidebars, stat bars"
+description: "Every page in the application sits inside the same chrome."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Page structure: shell, hero, sidebars, stat bars
 
 Every page in the application sits inside the same chrome. This document specifies that chrome and the three primary page patterns it supports.
@@ -97,20 +105,6 @@ Every page has a **page hero** at the top containing the page title, subtitle, a
 
 ---
 
-## Scrolling and fixed elements
+## Scrolling, fixed elements, and grid
 
-- **Top nav:** fixed to viewport, always visible, z-index 40.
-- **Portal dropdown:** fixed below top nav, z-index 30.
-- **Main sidebar:** independent scroll within its own column.
-- **In-page nav sidebar:** independent scroll within its own column.
-- **Main content area (scrollarea):** `overflow-y: auto`, contains the max-width container and all body content. The right rail (on work portals) is *inside* the scrollarea so it scrolls together with main content.
-
----
-
-## Container and grid
-
-- **Max-width:** 1200px, centred with auto margins.
-- **Grid columns (dynamic):**
-  - Default (search, index): `220px [main nav] | 1fr [content]`.
-  - Work portal: `220px [main nav] | 180px [in-page nav] | 1fr [content]`.
-  - When sidebar collapsed: `0 | [in-page nav] | 1fr` or `0 | 1fr`.
+Top nav, portal dropdown, and sidebars each scroll/stack independently; the shell's grid columns resize when the main sidebar collapses. Exact z-index stacking order and pixel column widths: [Examples/page_grid_values.md](Examples/page_grid_values.md).

@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: Layer Rules (Reads vs Writes)
+description: Rules governing how the presentation and control layers may read and write data.
+tags: [architecture, layer-rules, control-layer, presentation-layer]
+---
+
 # Layered architecture rules (reads vs writes)
 
 This document tightens how **`presentation_layer/entrypoints`** (HTTP endpoints) and the rest of the presentation layer interact with the database. It complements [overview.md](overview.md).

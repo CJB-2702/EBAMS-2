@@ -1,3 +1,11 @@
+---
+type: "Context Scaling Spec"
+title: "Dynamic Context Tools & Scripts"
+description: "Generates a compact structural summary of a target directory."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Dynamic Context Tools & Scripts
 
 ## Codebase Mapping Script (Tier 4)
@@ -14,12 +22,3 @@ Generates a compact structural summary of a target directory. Designed for low c
 
 ---
 
-## Docs Directory Crawler
-
-Targets the `docs/` folder and regenerates `skeleton.md`. It is the **only mechanism** that writes to `skeleton.md`.
-
-* **Trigger:** Run whenever any file is created or removed under `docs/`.
-* **Rule:** Do not manually edit `skeleton.md` or read it to verify correctness — trust the script output entirely.
-* **Output:** Replaces `skeleton.md` with a freshly generated index of every file under `docs/`, grouped by tier, with one-line descriptions derived from each file's first heading or opening sentence.
-
-See [skeleton_spec.md](skeleton_spec.md) for the expected output format and structure rules.

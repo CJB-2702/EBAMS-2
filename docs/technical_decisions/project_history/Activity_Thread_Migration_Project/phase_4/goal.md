@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Goal: Presentation Layer Repair"
+description: "Phases 1–3 deliberately allow the presentation layer to break."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-4]
+context_tier: 2
+---
+
 # Phase 4 — Goal: Presentation Layer Repair
 
 ## Problem

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 from django.utils import timezone
 
-from app.events.models import Attachment, Comment
+from app.events.models import Comment
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -45,35 +45,42 @@ class CommentHandler:
             )
 
             if uploaded_files:
-                from app.events.control_layer.handlers.file_handler import FileHandler
-                handler = FileHandler(self.actor)
+                from app.events.control_layer.handlers.comment_attachment_handler import (
+                    CommentAttachmentHandler,
+                )
+                handler = CommentAttachmentHandler(self.actor)
                 for uploaded_file in uploaded_files:
-                    result = handler.upload(activity_thread, uploaded_file, comment=comment)
+                    result = handler.attach(comment=comment, uploaded_file=uploaded_file)
                     if not result.ok:
                         transaction.set_rollback(True)
                         return CommentResult(ok=False, errors=result.errors)
 
         return CommentResult(ok=True, comment=comment)
 
-    def edit(self, old_comment: Comment, post_data, files=None) -> CommentResult:
+    def edit(
+        self, old_comment: Comment, post_data, files=None, remove_attachment_ids=None
+    ) -> CommentResult:
         """
         Editing a comment:
           1. Soft-delete the old revision's active Attachment rows.
           2. Soft-delete the old comment.
           3. Create a new comment (new revision) with new Attachment rows
-             pointing to the same File rows.
+             pointing to the same File rows, minus any `remove_attachment_ids`.
         """
         content = post_data.get("content", "").strip()
         if not content:
             return CommentResult(ok=False, errors=["Comment content cannot be blank."])
 
+        from app.events.control_layer.handlers.comment_attachment_handler import (
+            CommentAttachmentHandler,
+        )
+        attachment_handler = CommentAttachmentHandler(self.actor)
+
         with transaction.atomic():
             now = timezone.now()
 
-            # Soft-delete old revision's active attachment rows first.
-            Attachment.objects.filter(
-                comment=old_comment, deleted_at__isnull=True
-            ).update(deleted_at=now, updated_by=self.actor, updated_at=now)
+            # Retire the old revision's link rows, then soft-delete the revision.
+            attachment_handler.supersede(comment=old_comment)
 
             old_comment.deleted_at = now
             old_comment.updated_by = self.actor
@@ -89,43 +96,19 @@ class CommentHandler:
                 updated_by=self.actor,
             )
 
-            self._carry_forward_attachments(old_comment, new_comment)
+            attachment_handler.carry_forward(
+                from_comment=old_comment,
+                to_comment=new_comment,
+                exclude_ids=remove_attachment_ids,
+            )
 
             uploaded_files = [f for f in (files.getlist("files") if files else []) if getattr(f, "name", None)]
-            if uploaded_files:
-                from app.events.control_layer.handlers.file_handler import FileHandler
-                handler = FileHandler(self.actor)
-                for uploaded_file in uploaded_files:
-                    file_result = handler.upload(
-                        new_comment.activity_thread, uploaded_file, comment=new_comment
-                    )
-                    if not file_result.ok:
-                        transaction.set_rollback(True)
-                        return CommentResult(ok=False, errors=file_result.errors)
+            for uploaded_file in uploaded_files:
+                file_result = attachment_handler.attach(
+                    comment=new_comment, uploaded_file=uploaded_file
+                )
+                if not file_result.ok:
+                    transaction.set_rollback(True)
+                    return CommentResult(ok=False, errors=file_result.errors)
 
         return CommentResult(ok=True, comment=new_comment)
-
-    # ------------------------------------------------------------------ #
-    # Private helpers
-    # ------------------------------------------------------------------ #
-
-    def _carry_forward_attachments(
-        self, old_comment: Comment, new_comment: Comment
-    ) -> None:
-        """
-        Duplicate attachment rows from old revision onto the new one.
-        Queries all attachment rows for old_comment (including just-soft-deleted ones)
-        so the same files appear on the new revision.
-        """
-        old_attachments = Attachment.objects.filter(comment=old_comment)
-        for att in old_attachments:
-            Attachment.objects.create(
-                thread_id=new_comment.activity_thread_id,
-                comment=new_comment,
-                file=att.file,
-                attachment_type=att.attachment_type,
-                caption=att.caption,
-                display_order=att.display_order,
-                created_by=self.actor,
-                updated_by=self.actor,
-            )

@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Events Endpoints — Handler vs Context routing"
+description: "This document covers every endpoint in the events app and answers one question for each: should the entrypoint call the handler directly, or route through a context class? For struct and context class descriptions see."
+tags: [events, domain-doc]
+context_tier: 2
+---
+
 # Events Endpoints — Handler vs Context routing
 
 This document covers every endpoint in the events app and answers one question for each: should the entrypoint call the handler directly, or route through a context class? For struct and context class descriptions see [event_context_design.md](event_context_design.md). For the slug-to-hashid migration see [pk_hashing_migration.md](pk_hashing_migration.md).

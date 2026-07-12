@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Goal: Class Name Cleanup"
+description: "The events application uses names tied to a specific entity type (EventComment,."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-1]
+context_tier: 2
+---
+
 # Phase 1 — Goal: Class Name Cleanup
 
 ## Problem

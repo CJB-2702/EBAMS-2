@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Asset Control Layer Starter Kit"
+description: "Pre-implementation planning kit for migrating asset/model control logic from the."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Asset Control Layer Starter Kit
 
 Pre-implementation planning kit for migrating asset/model control logic from the
@@ -66,7 +74,7 @@ and exit criteria.
 2. Read `business_concept.md` (what it does for the user), then
    `data_relational_plan.md` (the already-built models it operates on), then
    `control_layer_plan.md` (the Structs/Contexts/Managers/Handlers/Guards to
-   build, named per `docs/Architecture/oop_control_patterns.md`).
+   build, named per `docs/Architecture/patterns/oop_control_patterns.md`).
 3. Use `old_to_new_migration.md` as the porting checklist against the old Flask
    source — what to keep, what to drop, what changes shape.
 4. Implement against this repo's layer rules; **all writes in the control

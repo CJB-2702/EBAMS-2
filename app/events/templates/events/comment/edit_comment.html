@@ -31,15 +31,16 @@
 
       {% if attachments %}
       <div class="field">
-        <p class="label">Current attachments (carried forward)</p>
+        <p class="label">Current attachments — check to remove</p>
         {% for att in attachments %}
-        <div class="is-flex is-align-items-center mb-1 is-size-7">
-          <span class="material-icons is-size-7 has-text-grey mr-2" aria-hidden="true">attach_file</span>
-          <a href="{% url 'file_download' file_id=att.file.id %}" class="has-text-link mr-2">
+        <label class="is-flex is-align-items-center mb-1 is-size-7" style="gap:0.4rem;">
+          <input type="checkbox" name="remove_attachments" value="{{ att.id }}">
+          <span class="material-icons is-size-7 has-text-grey" aria-hidden="true">attach_file</span>
+          <a href="{% url 'file_download' file_id=att.file.id %}" class="has-text-link" onclick="event.stopPropagation();">
             {{ att.file.original_filename }}
           </a>
           <span class="has-text-grey-light">({{ att.file.file_size|filesizeformat }})</span>
-        </div>
+        </label>
         {% endfor %}
       </div>
       {% endif %}

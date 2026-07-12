@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Blast Radius — Activity Thread / Event Refactor"
+description: "Everything in this document **requires a change** to compile and run correctly after."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project]
+context_tier: 2
+---
+
 > **Superseded.** This doc treats the migration as a single phase. Blast radius is now
 > distributed across the phase docs: [phase_1/](phase_1/), [phase_2/](phase_2/),
 > [phase_3/](phase_3/), [phase_4/](phase_4/). Retained as cross-reference.

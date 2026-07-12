@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Asset & Model Contexts"
+description: "The foundation."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-1-asset-and-model-contexts]
+context_tier: 2
+---
+
 # Phase 1 — Asset & Model Contexts
 
 The foundation. Every later phase plugs into the seams built here: the aggregate

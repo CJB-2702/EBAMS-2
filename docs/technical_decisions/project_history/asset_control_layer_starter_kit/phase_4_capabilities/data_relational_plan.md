@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Data & Relational Plan"
+description: "Plus the cached field **Asset.capability_status** (CharField, built) — a."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-4-capabilities]
+context_tier: 2
+---
+
 # Phase 4 — Data & Relational Plan
 
 *All models below are **built**. No schema added this phase.*

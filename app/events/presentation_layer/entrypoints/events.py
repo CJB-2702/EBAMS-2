@@ -16,6 +16,7 @@ from app.events.control_layer.handlers.event_handler import EventHandler
 from app.events.models import Event, EventPriority, EventStatus, EventType
 from app.events.presentation_layer.search.event_search import list_events_for_user
 from app.events.presentation_layer.tools.file_previews import build_comments_context
+from app.events.presentation_layer.tools.generic_cards import document_dict
 from app.utils.hashids import decode_hash, encode_id
 
 # Cards per page for the expanded (large) infinite-scroll view.
@@ -23,12 +24,13 @@ CARDS_PER_PAGE = 8
 
 
 def build_event_card(event: Event, user) -> dict:
-    """Context for a single expanded event card: metadata + comments."""
-    ctx = EventContext(event.pk, user)
+    """Context for a single expanded event card: metadata + comments (human + system) + standalone attachments."""
+    ctx = EventContext(event.pk, user, include_shadow_comments=True)
     return {
         "event": event,
         "hash": encode_id(event.pk),
         "comments": build_comments_context(ctx.struct),
+        "direct_attachments": [document_dict(a) for a in ctx.struct.standalone_attachments],
     }
 
 

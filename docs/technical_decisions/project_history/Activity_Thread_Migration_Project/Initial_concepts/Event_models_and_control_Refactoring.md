@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Event Models and Control Layer Refactoring"
+description: "The current file, attachment, and event system has grown organically and is now misaligned — names don't match responsibilities, the base file model is domain-scoped when it should be shared, and there is no unified way to attach files."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, initial-concepts]
+context_tier: 2
+---
+
 # Event Models and Control Layer Refactoring
 
 ## Problem Statement

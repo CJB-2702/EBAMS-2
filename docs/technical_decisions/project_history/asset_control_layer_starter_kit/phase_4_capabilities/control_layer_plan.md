@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Control Layer Plan"
+description: "app/assets/control_layer/."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-4-capabilities]
+context_tier: 2
+---
+
 # Phase 4 — Control Layer Plan
 
 ## Target tree (built)

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Domain Summary — Activity Thread / Event Refactor"
+description: "Outline of the **end-state model layer** after the migration."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project]
+context_tier: 2
+---
+
 > **Superseded.** This doc describes the Phase 3 end-state model layer as a single
 > migration. See [phase_3/model_changes.md](phase_3/model_changes.md) for the Phase 3
 > build spec. Retained as detailed model reference.

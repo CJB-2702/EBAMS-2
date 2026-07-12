@@ -1,3 +1,11 @@
+---
+type: "UX Example"
+title: "Page hero markup"
+description: "Canonical HTML for the page-hero container described in [../page_structure.md](../page_structure.md)."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # Page hero markup
 
 Canonical HTML for the page-hero container described in [../page_structure.md](../page_structure.md).
@@ -18,6 +26,6 @@ Canonical HTML for the page-hero container described in [../page_structure.md](.
 ## Notes
 
 - The page hero is **always** the first child of the main content area, immediately under the global breadcrumb / top-nav chrome.
-- Buttons inside the hero may be sized up (`0.95rem` font, `0.55em` padding) so they feel prominent — but they keep the standard semantic colours from [../common_buttons.md](../common_buttons.md).
+- Buttons inside the hero may be sized up (`0.95rem` font, `0.55em` padding) so they feel prominent — but they keep the standard semantic colours from [../components/common_buttons.md](../components/common_buttons.md).
 - If a page needs a stat bar, it sits **immediately below** the page hero, in its own row, before any content cards.
 - Filters belong in a card *below* the hero, never inside it.

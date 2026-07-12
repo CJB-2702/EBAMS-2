@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2a — Control Layer Plan"
+description: "app/assets/plugins/."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2a-plugin-framework]
+context_tier: 2
+---
+
 # Phase 2a — Control Layer Plan
 
 ## Target tree

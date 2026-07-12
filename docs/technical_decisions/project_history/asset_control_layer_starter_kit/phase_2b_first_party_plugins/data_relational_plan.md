@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2b — Data & Relational Plan"
+description: "2a virtual bases and relocated into plugin packages, keeping their db_table names."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2b-first-party-plugins]
+context_tier: 2
+---
+
 # Phase 2b — Data & Relational Plan
 
 *No new framework schema. Three existing detail tables are rebased onto the Phase

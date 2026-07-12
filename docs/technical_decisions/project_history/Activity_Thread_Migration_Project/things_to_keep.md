@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Things to Keep — Activity Thread / Event Refactor"
+description: "Everything in this document **survives the migration**."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project]
+context_tier: 2
+---
+
 > **Superseded.** This doc treats the migration as a single phase. The "keep vs. change"
 > breakdown is now distributed across the phase docs. Retained as cross-reference for
 > what survives each phase.

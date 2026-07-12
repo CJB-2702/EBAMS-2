@@ -1,3 +1,10 @@
+---
+type: Architecture Example
+title: Read vs Write Examples
+description: Side-by-side allowed and disallowed code shapes for the layer read/write rules.
+tags: [architecture, layer-rules, control-layer, examples]
+---
+
 # Read vs write examples
 
 Concrete illustrations of the rules in [../layer_rules.md](../layer_rules.md). Each example shows allowed and not-allowed code shapes side by side.

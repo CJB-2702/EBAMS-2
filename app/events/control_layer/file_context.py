@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
     from app.events.models import File
-    from app.events.control_layer.handlers.file_handler import FileResult
+    from app.events.control_layer.factories.attachment_link_factory import AttachmentResult
 
 
 class FileContext:
     """
     Stateful control object for a single File.
-    Owns the delete cascade: soft-deletes the file and all its attachment rows.
+    Owns the delete cascade: soft-deletes the file and all its attachment rows
+    (delegated to DirectAttachmentHandler, which also narrates standalone links).
 
     No create() method — file creation is handled by FileHandler.
     """
@@ -33,6 +34,8 @@ class FileContext:
         instance.actor = actor
         return instance
 
-    def delete(self) -> "FileResult":
-        from app.events.control_layer.handlers.file_handler import FileHandler
-        return FileHandler(self.actor).soft_delete(self.file)
+    def delete(self) -> "AttachmentResult":
+        from app.events.control_layer.handlers.direct_attachment_handler import (
+            DirectAttachmentHandler,
+        )
+        return DirectAttachmentHandler(self.actor).delete_file(file=self.file)

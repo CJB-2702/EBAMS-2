@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Old → New Migration Notes"
+description: "demote the previous current configuration atomically."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-3-configurations]
+context_tier: 2
+---
+
 # Phase 3 — Old → New Migration Notes
 
 ## Source files

@@ -1,0 +1,105 @@
+{% comment %}
+Direct (thread-level, non-comment) attachments — compact Files mini-card +
+its browse-all and upload dialogs. Extracted out of events/fragments/event_card.html
+so it can also be demoed standalone (kitchen sink "Isolated Components" —
+"embeddable mini browser") — there is only one implementation.
+
+Expects: card={hash, direct_attachments, event.allow_direct_attachments},
+optional attachment_error.
+{% endcomment %}
+{% if card.event.allow_direct_attachments %}
+<div class="pc depth-2">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">folder</span></span>
+      Files ({{ card.direct_attachments|length }})
+    </div>
+    <div class="is-flex" style="gap:0.3rem;">
+      <button type="button" class="button is-small is-light"
+              commandfor="files-upload-dialog-{{ card.hash }}" command="show-modal" title="Add files">
+        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add</span></span>
+      </button>
+      <button type="button" class="button is-small is-light"
+              commandfor="files-dialog-{{ card.hash }}" command="show-modal" title="Browse all files">
+        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">open_in_full</span></span>
+      </button>
+    </div>
+  </div>
+  <div class="pc-body">
+    <div style="max-height:300px; overflow-y:auto;">
+      <table class="table is-fullwidth is-narrow is-hoverable is-size-7 mb-0">
+        <thead><tr><th>Name</th><th>Type</th><th>Size</th></tr></thead>
+        <tbody>
+          {% for d in card.direct_attachments %}
+          <tr>
+            <td><a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">{{ d.filename }}</a></td>
+            <td>{% if d.is_image %}Image{% else %}Document{% endif %}</td>
+            <td>{{ d.file_size|filesizeformat }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="has-text-grey">No direct attachments.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<dialog id="files-dialog-{{ card.hash }}" class="card modal-styled" style="padding:0;">
+  <header class="card-header" style="flex-shrink:0;">
+    <p class="card-header-title">Files</p>
+    <button class="delete is-large" aria-label="close"
+            commandfor="files-dialog-{{ card.hash }}" command="close"></button>
+  </header>
+  <div class="card-content" style="flex:1; overflow-y:auto;">
+    <file-browser default-view="list" storage-key="event-direct-files-{{ card.hash }}">
+      {% for d in card.direct_attachments %}
+      <a class="fb-item" href="{% url 'file_download' file_id=d.file_id %}"
+         data-name="{{ d.filename }}"
+         data-caption="{{ d.caption }}"
+         data-type="{% if d.is_image %}image{% else %}document{% endif %}"
+         data-thumb="{% if d.is_image %}{% url 'file_inline' file_id=d.file_id %}{% endif %}"
+         data-size="{{ d.file_size }}"
+         data-date="{{ d.created_at }}"
+         data-date-display="{{ d.created_at_display }}"
+         data-user="{{ d.created_by }}"
+         data-id="{{ d.id }}"></a>
+      {% empty %}
+      {% endfor %}
+    </file-browser>
+  </div>
+</dialog>
+
+<dialog id="files-upload-dialog-{{ card.hash }}" class="card" style="padding:0; min-width:360px; max-width:480px;">
+  <form method="post"
+        action="{% url 'direct_attachment_add' event_hash=card.hash %}"
+        enctype="multipart/form-data"
+        hx-post="{% url 'direct_attachment_add' event_hash=card.hash %}?format=htmx-event-card"
+        hx-target="#event-card-{{ card.hash }}"
+        hx-swap="outerHTML"
+        hx-encoding="multipart/form-data">
+    {% csrf_token %}
+    <header class="card-header">
+      <p class="card-header-title">Add Files</p>
+      <button type="button" class="delete is-large" aria-label="close"
+              commandfor="files-upload-dialog-{{ card.hash }}" command="close"></button>
+    </header>
+    <div class="card-content">
+      {% if attachment_error %}<p class="help is-danger is-size-7">{{ attachment_error }}</p>{% endif %}
+      <file-upload name="files" multiple fullwidth label="Choose file(s)…"></file-upload>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-light" commandfor="files-upload-dialog-{{ card.hash }}" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-link card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>
+        <span>Upload</span>
+      </button>
+    </footer>
+  </form>
+</dialog>
+{% endif %}

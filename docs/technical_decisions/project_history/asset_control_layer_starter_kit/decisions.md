@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Decisions — Asset Control Layer Starter Kit"
+description: "A running log of architectural decisions made while planning the migration of."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Decisions — Asset Control Layer Starter Kit
 
 A running log of architectural decisions made while planning the migration of
@@ -25,7 +33,7 @@ and runs them inside a **single transaction**. Each subsystem still owns its own
 **not** port the `register_post_create` registry.
 
 **Why.** The pluggable pipeline conflicts with this project's control-layer
-principles (`docs/Architecture/oop_control_patterns.md`): explicit-over-magical,
+principles (`docs/Architecture/patterns/oop_control_patterns.md`): explicit-over-magical,
 no-hidden-side-effects, one-transaction-per-workflow, and greppable tech debt.
 The candidate hooks here are all first-party, so the registry's decoupling
 benefit does not justify losing explicitness or transactional integrity.

@@ -1,3 +1,11 @@
+---
+type: "Context Scaling Spec"
+title: "Technical Decisions System"
+description: "Architectural drift happens when an AI suggests a patterns-compliant alternative that conflicts with locked engineering decisions, or when known debt and past incidents are forgotten between sessions."
+tags: [context-scaling, context-scaling-spec]
+context_tier: 2
+---
+
 # Technical Decisions System
 
 Architectural drift happens when an AI suggests a patterns-compliant alternative that conflicts with locked engineering decisions, or when known debt and past incidents are forgotten between sessions. This system prevents that.

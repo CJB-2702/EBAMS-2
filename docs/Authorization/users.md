@@ -1,3 +1,11 @@
+---
+type: "Authorization Guide"
+title: "Users and administration (concepts)"
+description: "This document describes how users participate in administration: dependency of audited models on a user table, permission group template metadata stored per user, Django group (permission group) membership, and Data Domain assignments."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Users and administration (concepts)
 
 This document describes how **users** participate in **administration**: dependency of audited models on a **user** table, **permission group template** metadata stored per user, **Django group (permission group) membership**, and **Data Domain** assignments used for row-level scope. For Django permission mechanics and templates, see [rbac.md](rbac.md). For the Data Domain primitive and its hierarchy, see [data_ownership.md](data_ownership.md).
@@ -6,7 +14,7 @@ This document describes how **users** participate in **administration**: depende
 
 ## 1. Auditing and the user table
 
-Core and downstream apps use **auditable** models (creator, timestamps, last updater). That pattern assumes a shared **user** model (or compatible FK target) for those references. See [../CoreDomain/core_models.md](../CoreDomain/core_models.md) for which domain models are auditable.
+Core and downstream apps use **auditable** models (creator, timestamps, last updater). That pattern assumes a shared **user** model (or compatible FK target) for those references. See [../applications/core_domain/core_models.md](../applications/core_domain/core_models.md) for which domain models are auditable.
 
 ---
 

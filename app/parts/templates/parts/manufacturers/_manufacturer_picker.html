@@ -1,0 +1,43 @@
+{% if selected_manufacturer %}
+<div class="notification is-light py-2 px-3 is-flex is-justify-content-space-between is-align-items-center">
+  <span><strong>{{ selected_manufacturer.name }}</strong> selected.</span>
+  <button type="button" class="button is-small is-white"
+      hx-get="{% url 'part_manufacturer_create' %}?format=htmx-fragment&reset=1"
+      hx-target="#supplier-item-manufacturer-slot" hx-swap="innerHTML">
+    Change
+  </button>
+</div>
+<input type="hidden" name="part_manufacturer_id" value="{{ selected_manufacturer.id }}">
+{% else %}
+<label class="label is-small">Manufacturer</label>
+<search-dropdown name="part_manufacturer_id" placeholder="search manufacturers…"
+    hx-get="{% url 'part_manufacturer_index' %}?format=htmx-search-results&is_active=1"
+    hx-trigger="keyup changed delay:300ms, search">
+</search-dropdown>
+<p class="is-size-7 mt-1"><a href="#" data-action="show-quick-create">Can't find it? Create a new manufacturer</a></p>
+
+<div id="mfr-quick-create-fields" class="pc depth-2 mt-2 p-3" {% if not show_create_form %}hidden{% endif %}>
+  {% if create_errors %}
+  <div class="notification is-danger is-light py-2 px-3 is-size-7">
+    {% for e in create_errors %}<p>{{ e }}</p>{% endfor %}
+  </div>
+  {% endif %}
+  <label class="label is-small">Name</label>
+  <input class="input is-small" type="text" name="qc_name" value="{{ create_data.name|default:'' }}">
+  <label class="label is-small">Code</label>
+  <input class="input is-small" type="text" name="qc_code" value="{{ create_data.code|default:'' }}">
+  <label class="label is-small">Website</label>
+  <input class="input is-small" type="url" name="qc_website" value="{{ create_data.website|default:'' }}" placeholder="https://">
+  <input type="hidden" name="qc_is_active" value="on">
+  <div class="buttons mt-3">
+    <button type="button" class="button is-small is-link"
+        hx-post="{% url 'part_manufacturer_create' %}?format=htmx-fragment"
+        hx-include="#mfr-quick-create-fields"
+        hx-target="#supplier-item-manufacturer-slot" hx-swap="innerHTML">
+      <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+      <span>Create &amp; use</span>
+    </button>
+    <button type="button" class="button is-small is-light" data-action="hide-quick-create">Cancel</button>
+  </div>
+</div>
+{% endif %}

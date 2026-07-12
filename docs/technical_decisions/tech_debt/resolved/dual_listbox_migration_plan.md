@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Dual listbox migration plan"
+description: "Several detail templates in the administration sub-app still use the old form-submission + page-reload model for dual-listbox UI."
+tags: [technical-decisions, technical-decision, tech-debt, resolved]
+context_tier: 2
+---
+
 # Dual listbox migration plan
 
 **Status:** Ready for implementation.
@@ -6,7 +14,7 @@
 
 ## What this debt is
 
-Several detail templates in the administration sub-app still use the old form-submission + page-reload model for dual-listbox UI. The new HTMX-first light-DOM pattern is documented in [../../UX_UI/dual_listbox.md](../../UX_UI/dual_listbox.md) and [../history/2026-05-dual-listbox-htmx-light-dom.md](../history/2026-05-dual-listbox-htmx-light-dom.md). The user edit page (`users/edit.html` and its `_edit_information.html`, `_edit_data_access.html`) is already migrated and is the canonical reference.
+Several detail templates in the administration sub-app still use the old form-submission + page-reload model for dual-listbox UI. The new HTMX-first light-DOM pattern is documented in [../../UX_UI/components/dual_listbox.md](../../UX_UI/components/dual_listbox.md) and [../history/2026-05-dual-listbox-htmx-light-dom.md](../history/2026-05-dual-listbox-htmx-light-dom.md). The user edit page (`users/edit.html` and its `_edit_information.html`, `_edit_data_access.html`) is already migrated and is the canonical reference.
 
 ## Why deferred
 

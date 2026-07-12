@@ -1,3 +1,11 @@
+---
+type: "Authorization Guide"
+title: "Authorization architecture — design decisions"
+description: "This document outlines critical **trade-offs and operational decisions** for the two-gate authorization system (permissions + domains)."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Authorization architecture — design decisions
 
 This document outlines critical **trade-offs and operational decisions** for the two-gate authorization system (permissions + domains). It complements [architecture_summary.md](architecture_summary.md), which describes *what* the system is. This document addresses the *why* — the constraints and accepted risks behind design choices.

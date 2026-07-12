@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Initial Prompt"
+description: "This kit originates from the following request (captured verbatim, spelling."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Initial Prompt
 
 This kit originates from the following request (captured verbatim, spelling

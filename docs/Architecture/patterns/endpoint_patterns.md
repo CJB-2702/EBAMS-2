@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: Endpoint Patterns
+description: Object-oriented design guidelines for the entrypoint and HTTP surface of the project.
+tags: [architecture, endpoints, presentation-layer, oop]
+---
+
 # Django Object-Oriented Endpoint Design Guidelines
 
 ## 1. Purpose

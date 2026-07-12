@@ -1,5 +1,10 @@
 ---
 tier: 1
+type: "Domain Doc"
+title: "Asset Management"
+description: "Concept doc for the planned Asset Management sub-application: lifecycle, ownership, and part demands."
+tags: [applications, domain-doc, assets]
+context_tier: 2
 ---
 
 # Asset Management

@@ -1,6 +1,8 @@
-{# One page of event cards + infinite-scroll sentinel.
-   Expects: cards, page_obj, base_query. Used both for the first page (included
-   in ev_list_large.html) and for each subsequent htmx-event-cards fragment. #}
+{% comment %}
+One page of event cards + infinite-scroll sentinel.
+Expects: cards, page_obj, base_query. Used both for the first page (included
+in ev_list_large.html) and for each subsequent htmx-event-cards fragment.
+{% endcomment %}
 {% for card in cards %}
   {% include "events/fragments/event_card.html" with card=card %}
 {% empty %}

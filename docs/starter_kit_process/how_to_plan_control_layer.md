@@ -1,3 +1,11 @@
+---
+type: "Process Guide"
+title: "How to Plan the Control Layer Architecture"
+description: "You are acting as a Backend Software Engineer Agent."
+tags: [starter-kit-process, process-guide]
+context_tier: 2
+---
+
 # How to Plan the Control Layer Architecture
 
 **Role & Objective:**

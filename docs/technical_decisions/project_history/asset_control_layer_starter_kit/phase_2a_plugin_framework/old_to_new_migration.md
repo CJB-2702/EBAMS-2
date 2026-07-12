@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2a — Old → New Migration Notes"
+description: "This phase reshapes both the **old Flask detail code** and the **current Django."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2a-plugin-framework]
+context_tier: 2
+---
+
 # Phase 2a — Old → New Migration Notes
 
 This phase reshapes both the **old Flask detail code** and the **current Django

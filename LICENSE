@@ -1,0 +1,64 @@
+Django Starter Kit License
+
+Copyright (c) 2026 C. James Bissett. All rights reserved.
+
+This software and its associated source code, documentation, and assets
+(the "Software") are proprietary. Except for the limited rights expressly
+granted below, all rights are reserved by the copyright holder.
+
+1. Grant of Rights
+
+   Any person or entity who has lawfully obtained a copy of the Software
+   directly or indirectly from the copyright holder ("Licensee") is
+   granted a non-exclusive, non-transferable, royalty-free license to:
+
+   a. Use and run the Software for the Licensee's own internal purposes;
+   b. Modify the Software and develop additional modules, plugins,
+      extensions, or other code that interoperates with the Software
+      ("Extensions"), for the Licensee's own internal purposes.
+
+2. Ownership
+
+   The copyright holder retains all ownership of, and all intellectual
+   property rights in, the Software, including any modifications made to
+   the core Software itself. Extensions that a Licensee independently
+   authors remain the property of that Licensee, but any portion of the
+   Software incorporated into or required to run an Extension remains
+   subject to this License.
+
+3. Restrictions
+
+   Licensee may NOT, without prior written permission from the copyright
+   holder:
+
+   a. Distribute, sublicense, sell, rent, lease, or otherwise make the
+      Software (or any modified version of it) available to any third
+      party, whether alone or bundled with Extensions;
+   b. Remove or alter any copyright, trademark, or other proprietary
+      notices contained in the Software;
+   c. Use the Software or Extensions to provide a competing commercial
+      product or service to third parties.
+
+   Extensions authored solely by the Licensee, containing no substantial
+   portion of the Software's source code, may be used, shared, and
+   distributed freely by that Licensee.
+
+4. No Warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR
+   ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+5. Termination
+
+   This License and the rights granted under it terminate automatically
+   if a Licensee breaches any of its terms. Upon termination, the
+   Licensee must cease all use of the Software and destroy all copies in
+   their possession.
+
+For licensing inquiries outside the scope of this License, contact the
+copyright holder.

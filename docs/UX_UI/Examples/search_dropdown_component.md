@@ -1,6 +1,14 @@
+---
+type: "UX Example"
+title: "`<search-dropdown>` — markup and component source"
+description: "Reference markup and the full web component source for the picker described in [../components/searchbars.md](../components/searchbars.md)."
+tags: [ux-ui, ux-example, examples]
+context_tier: 3
+---
+
 # `<search-dropdown>` — markup and component source
 
-Reference markup and the full web component source for the picker described in [../searchbars.md](../searchbars.md).
+Reference markup and the full web component source for the picker described in [../components/searchbars.md](../components/searchbars.md).
 
 ## Page-level script registration
 

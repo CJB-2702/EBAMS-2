@@ -4,7 +4,8 @@ Integration tests for the core Events write path after the ActivityThread refact
 Covers:
   - EventHandler.create  → Event row created with correct thread_type
   - CommentHandler.add   → Comment linked via activity_thread FK
-  - FileHandler.upload   → File + Attachment rows created and linked to thread
+  - DirectAttachmentHandler.attach  → File + standalone Attachment on the thread
+  - CommentAttachmentHandler.attach → File + Attachment linked to a comment
 """
 
 from __future__ import annotations
@@ -16,9 +17,14 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.test import TestCase
 
 from app.administration.models.data_ownership.domains import Domain
+from app.events.control_layer.handlers.comment_attachment_handler import (
+    CommentAttachmentHandler,
+)
 from app.events.control_layer.handlers.comment_handler import CommentHandler
+from app.events.control_layer.handlers.direct_attachment_handler import (
+    DirectAttachmentHandler,
+)
 from app.events.control_layer.handlers.event_handler import EventHandler
-from app.events.control_layer.handlers.file_handler import FileHandler
 from app.events.models import ActivityThreadType, Attachment, Comment, Event, EventStatus, EventType
 
 User = get_user_model()
@@ -142,14 +148,14 @@ class AddSimpleEventTest(TestCase):
     def test_upload_file_returns_ok(self):
         event = self._make_event()
         uploaded = _make_text_file("report.txt", "some content")
-        result = FileHandler(self.user).upload(event, uploaded)
+        result = DirectAttachmentHandler(self.user).attach(thread=event, uploaded_file=uploaded)
         self.assertTrue(result.ok, result.errors)
         self.assertIsNotNone(result.file)
 
     def test_upload_creates_attachment_linked_to_thread(self):
         event = self._make_event()
         uploaded = _make_text_file("data.csv", "a,b,c")
-        result = FileHandler(self.user).upload(event, uploaded)
+        result = DirectAttachmentHandler(self.user).attach(thread=event, uploaded_file=uploaded)
         self.assertTrue(result.ok)
         attachment = Attachment.objects.filter(thread=event, file=result.file).first()
         self.assertIsNotNone(attachment)
@@ -162,7 +168,7 @@ class AddSimpleEventTest(TestCase):
         comment = comment_result.comment
 
         uploaded = _make_text_file("note.txt", "attached note")
-        result = FileHandler(self.user).upload(event, uploaded, comment=comment)
+        result = CommentAttachmentHandler(self.user).attach(comment=comment, uploaded_file=uploaded)
         self.assertTrue(result.ok)
 
         attachment = Attachment.objects.filter(file=result.file).first()
@@ -173,11 +179,11 @@ class AddSimpleEventTest(TestCase):
     def test_upload_disallowed_extension_fails(self):
         event = self._make_event()
         uploaded = _make_text_file("malware.exe", "bad")
-        result = FileHandler(self.user).upload(event, uploaded)
+        result = DirectAttachmentHandler(self.user).attach(thread=event, uploaded_file=uploaded)
         self.assertFalse(result.ok)
         self.assertTrue(any("not allowed" in e for e in result.errors))
 
     def test_upload_no_file_fails(self):
         event = self._make_event()
-        result = FileHandler(self.user).upload(event, None)
+        result = DirectAttachmentHandler(self.user).attach(thread=event, uploaded_file=None)
         self.assertFalse(result.ok)

@@ -1,6 +1,14 @@
+---
+type: "Concept Anchor"
+title: "Application Goals — Tier 1 Anchor"
+description: "This file is the **concept anchor** for product intent: what the application is for, who uses it, and the user-centric outcomes that shape every other decision."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # Application Goals — Tier 1 Anchor
 
-This file is the **concept anchor** for product intent: what the application is for, who uses it, and the user-centric outcomes that shape every other decision. There are no Tier 2 sub-specifications yet — goals stay at this level until a specific roadmap document needs its own dedicated folder.
+Product intent: what the application is for, who uses it, and the user-centric outcomes that shape every other decision. There are no Tier 2 sub-specifications yet — goals stay at this level until a specific roadmap document needs its own dedicated folder.
 
 ---
 

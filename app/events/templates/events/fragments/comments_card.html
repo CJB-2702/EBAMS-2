@@ -1,0 +1,51 @@
+{% comment %}
+Comments card — canonical implementation for a Comment-model-backed activity
+thread. Expects `card` = {hash, comments, event.allow_comments} (see
+events/presentation_layer/entrypoints/events.py:build_event_card) and an
+optional `comment_error` string.
+
+Used both standalone (kitchen sink "Comments only" demo) and embedded in
+events/fragments/event_card.html — there is only one implementation so the
+two views of comments can never drift apart. Optional `depth` (e.g. "depth-2")
+lets a caller nest this as a sub-card inside another `pc`; optional `row_depth`
+(e.g. "depth-3") escalates the individual comment rows to contrast with it.
+Optional `action_depth` (e.g. "depth-4") must escalate one step past
+`row_depth` too — it's the depth of the row's own nested buttons/attachment
+tiles (see comment_row.html).
+{% endcomment %}
+<div class="pc {{ depth }}">
+  <div class="pc-header">
+    <div class="pc-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>
+      Comments ({{ card.comments|length }})
+    </div>
+    <div class="buttons has-addons comment-filter-group mb-0">
+      <button type="button" class="button is-small is-light comment-filter-item" data-filter="human"
+              onclick="return window.__filterComments(event, this, 'human')">Human</button>
+      <button type="button" class="button is-small is-link is-selected comment-filter-item" data-filter="all"
+              onclick="return window.__filterComments(event, this, 'all')">All</button>
+      <button type="button" class="button is-small is-light comment-filter-item" data-filter="system"
+              onclick="return window.__filterComments(event, this, 'system')">Machine</button>
+    </div>
+  </div>
+  <div class="pc-body">
+    {% for row in card.comments %}
+    {% include "events/fragments/comment_row.html" with row=row event_hash=card.hash row_depth=row_depth action_depth=action_depth %}
+    {% empty %}
+    <p class="is-size-7 has-text-grey mb-2">No comments yet.</p>
+    {% endfor %}
+
+    {% if card.event.allow_comments %}
+    <form method="post"
+          action="{% url 'comment_add' event_hash=card.hash %}"
+          enctype="multipart/form-data"
+          hx-post="{% url 'comment_add' event_hash=card.hash %}?format=htmx-event-card"
+          hx-target="#event-card-{{ card.hash }}"
+          hx-swap="outerHTML"
+          hx-encoding="multipart/form-data">
+      {% csrf_token %}
+      <add-comment placeholder="Write a comment…" error="{{ comment_error|default:'' }}" depth="{{ row_depth|default:'depth-2' }}"></add-comment>
+    </form>
+    {% endif %}
+  </div>
+</div>

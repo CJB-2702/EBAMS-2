@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Asset Application - UI Goals"
+description: "The Assets application provides a comprehensive system for managing physical assets, their hierarchical models, lifecycle configurations, and defined capabilities."
+tags: [applications, domain-doc, assets]
+context_tier: 2
+---
+
 # Asset Application - UI Goals
 
 **Core Value Proposition:**

@@ -16,7 +16,13 @@
   background-color: var(--white) !important;
 }
 
-.depth-2 {
+.depth-2,
+.sidebar-link.is-active {
+  background-color: var(--gray-10) !important;
+}
+
+/* Light mode only — dark mode's existing --bulma-background hover already reads correctly. */
+.sidebar-link:hover {
   background-color: var(--gray-10) !important;
 }
 
@@ -46,12 +52,30 @@
       background-color: var(--gray-100) !important;
     }
 
-    .depth-2 {
+    .depth-2,
+    .sidebar-link.is-active {
       background-color: var(--gray-90) !important;
+    }
+
+    /* Restore the original hover (dark mode already reads correctly with it). */
+    .sidebar-link:hover {
+      background-color: var(--bulma-background) !important;
     }
 
     .depth-3 {
       background-color: var(--gray-80) !important;
+      /* gray-80 sits between gray-90 and itself in lightness, so the default
+         --bulma-border-weak (scheme-wide) can render indistinguishable from
+         this surface. Shadow it here so nested .pc/.card borders stay visible. */
+      --bulma-border-weak: var(--gray-90);
+    }
+
+    .depth-4 {
+      background-color: var(--gray-90) !important;
+    }
+
+    .depth-5 {
+      background-color: var(--gray-100) !important;
     }
 
     .select select,
@@ -71,12 +95,26 @@
     background-color: var(--gray-100) !important;
   }
 
-  .depth-2 {
+  .depth-2,
+  .sidebar-link.is-active {
     background-color: var(--gray-90) !important;
+  }
+
+  .sidebar-link:hover {
+    background-color: var(--bulma-background) !important;
   }
 
   .depth-3 {
     background-color: var(--gray-80) !important;
+    --bulma-border-weak: var(--gray-90);
+  }
+
+  .depth-4 {
+    background-color: var(--gray-90) !important;
+  }
+
+  .depth-5 {
+    background-color: var(--gray-100) !important;
   }
 
   .select select,

@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "Visual language and tokens"
+description: "No pill buttons."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Visual language and tokens
 
 The chrome of the application is Bulma 1.0.x, with a thin project CSS layer that:
@@ -28,7 +36,7 @@ No pill buttons. No rounded cards. No "softened" inputs. The radius pinning is i
 
 ## Material Icons
 
-Icons come from vendored Material Icons (`static/fonts/material-icons/`). Use the `<span class="icon"><span class="material-icons" aria-hidden="true">icon_name</span></span>` shape. Icons paired with text labels follow the master button table in [common_buttons.md](common_buttons.md).
+Icons come from vendored Material Icons (`static/fonts/material-icons/`). Use the `<span class="icon"><span class="material-icons" aria-hidden="true">icon_name</span></span>` shape. Icons paired with text labels follow the master button table in [components/common_buttons.md](components/common_buttons.md).
 
 ## Dark mode
 
@@ -39,4 +47,4 @@ The OS preference is the source of truth. Tests should pass with `prefers-color-
 - **Hardcoded greys** that don't flip in dark mode.
 - **Reintroducing rounded corners** to "soften" a card or a button.
 - **Mixing inline styles with the project CSS layer** — keep theme tokens in CSS, not in templates.
-- **Per-page custom colour scales** — extend the master button table in [common_buttons.md](common_buttons.md) before adding a one-off colour.
+- **Per-page custom colour scales** — extend the master button table in [components/common_buttons.md](components/common_buttons.md) before adding a one-off colour.

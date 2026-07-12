@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 3 — Control Layer Changes"
+description: "The current EventManager returns all non-deleted rows."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-3]
+context_tier: 2
+---
+
 # Phase 3 — Control Layer Changes
 
 ---

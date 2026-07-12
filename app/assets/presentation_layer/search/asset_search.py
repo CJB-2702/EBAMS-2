@@ -21,6 +21,7 @@ from app.assets.control_layer.domain_structs.asset_configuration_struct import (
     AssetConfigurationStruct,
 )
 from app.assets.models import Asset
+from app.events.models import Attachment
 
 
 def search_assets(
@@ -111,9 +112,10 @@ def load_asset_detail(asset_id: int) -> dict | None:
     """The 360 detail bundle: the asset plus computed display collections."""
     asset = (
         Asset.objects.select_related(
-            "asset_class", "model", "domain", "parent_asset", "root_asset"
+            "asset_class", "model", "domain", "parent_asset", "root_asset",
+            "primary_image__file",
         )
-        .prefetch_related("children", "images__attachment")
+        .prefetch_related("children")
         .filter(id=asset_id)
         .first()
     )
@@ -144,8 +146,12 @@ def load_asset_detail(asset_id: int) -> dict | None:
     else:
         configuration = None
 
-    image_rows = list(asset.images.all())
-    primary_image = next((img for img in image_rows if img.is_primary), None)
+    image_rows = list(
+        Attachment.objects.active()
+        .filter(thread_id=asset.photo_gallery_id)
+        .select_related("file")
+    )
+    primary_image = asset.primary_image
     if primary_image is None and image_rows:
         primary_image = image_rows[0]
 

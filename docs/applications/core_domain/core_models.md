@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "Core entities — domain models and dependencies"
+description: "This document describes how the primary **core** domain models relate to one another."
+tags: [core-domain, domain-doc]
+context_tier: 2
+---
+
 # Core entities — domain models and dependencies
 
 This document describes how the primary **core** domain models relate to one another. These models form the foundation of the project: other sub-applications and features should depend on them rather than duplicating parallel concepts.

@@ -10,7 +10,7 @@ from app.events.control_layer.domain_structs.comment_struct import CommentStruct
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
-    from app.events.control_layer.handlers.file_handler import FileResult
+    from app.events.control_layer.factories.attachment_link_factory import AttachmentResult
     from app.events.models import Comment, Event
 
 
@@ -53,19 +53,22 @@ class CommentContext:
             self._domain = self.event.domain
         return self._domain
 
-    def add_files(self, uploaded_files: "list[UploadedFile]") -> "list[FileResult]":
+    def add_files(self, uploaded_files: "list[UploadedFile]") -> "list[AttachmentResult]":
         """
         Attach one or more files to this comment in a single transaction.
         All uploads are rolled back if any file fails validation.
-        Returns one FileResult per input file in the same order.
+        Returns one AttachmentResult per input file in the same order.
         """
-        from app.events.control_layer.handlers.file_handler import FileHandler
+        from app.events.control_layer.handlers.comment_attachment_handler import (
+            CommentAttachmentHandler,
+        )
 
-        results: list[FileResult] = []
+        results: list[AttachmentResult] = []
+        handler = CommentAttachmentHandler(self.actor)
         with transaction.atomic():
             for uploaded_file in uploaded_files:
-                result = FileHandler(self.actor).upload(
-                    self.event, uploaded_file, comment=self.struct.comment
+                result = handler.attach(
+                    comment=self.struct.comment, uploaded_file=uploaded_file
                 )
                 results.append(result)
                 if not result.ok:

@@ -1,6 +1,14 @@
+---
+type: "Authorization Guide"
+title: "Authorization & Scope System — Complete Architecture"
+description: "This document summarizes the complete architecture of how **permissions** and **data scope** work together in this application."
+tags: [authorization, authorization-guide]
+context_tier: 2
+---
+
 # Authorization & Scope System — Complete Architecture
 
-This document summarizes the complete architecture of how **permissions** and **data scope** work together in this application. It serves as a validation checksum: if the system matches this description, the implementation is on track.
+Serves as a validation checksum: if the system matches this description, the implementation is on track.
 
 ---
 
@@ -68,24 +76,7 @@ Row filter in every query
 
 ## Session snapshot (performance critical)
 
-At login (or after any template/domain change), the session is updated with:
-
-```python
-session['user_domain_ids'] = set(
-    UserDomain.objects.filter(
-        user=user,
-        is_active=True,
-    ).values_list('domain_id', flat=True)
-)
-
-session['user_permission_codenames'] = set(
-    Permission.objects.filter(
-        group__user=user
-    ).values_list('codename', flat=True)
-)
-```
-
-Every data-filtered query checks `user_domain_ids` to scope rows. Every permission check uses Django's native `has_perm()` against `user.groups`. Per-request database lookups would be prohibitively slow; the session is updated only on assignment/revocation, not per request.
+At login (or after any template/domain change), the session is updated with `user_domain_ids` (all active domain ids) and `user_permission_codenames` (all resolved permission codenames). Every data-filtered query checks `user_domain_ids` to scope rows; every permission check uses Django's native `has_perm()` against `user.groups`. Per-request database lookups would be prohibitively slow; the session is updated only on assignment/revocation, not per request. Reference code: [Examples/session_snapshot_code.md](Examples/session_snapshot_code.md).
 
 ---
 

@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Tech Debt: Control-layer pattern alignment (capability + event)"
+description: "app/assets/control_layer/capabilities/capability_manager.py (398 lines)."
+tags: [technical-decisions, technical-decision, tech-debt]
+context_tier: 2
+---
+
 # Tech Debt: Control-layer pattern alignment (capability + event)
 
 **Logged:** 2026-06-29

@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: Engineering Standards
+description: Core engineering principles and defaults for building in this project.
+tags: [architecture, standards, principles, conventions]
+---
+
 # Engineering standards
 
 ## Engineering principles
@@ -16,7 +23,7 @@
 | Layer | Question to answer in review |
 | :--- | :--- |
 | Models | Does this row carry the audit FKs? Are constraints declared at the DB level? Any logic on the class needs a `# DELIBERATE ANTI-PATTERN` comment. |
-| Control layer | Does the new class use a vocabulary suffix from [oop_control_patterns.md](oop_control_patterns.md)? Is the transaction boundary clear? |
+| Control layer | Does the new class use a vocabulary suffix from [patterns/oop_control_patterns.md](patterns/oop_control_patterns.md)? Is the transaction boundary clear? |
 | Search | Are filters longer than one line lifted out of the entrypoint? |
 | Entrypoint | Does it create, update, or delete a row? If so, that work belongs in the control layer (see [layer_rules.md](layer_rules.md)). |
 | Templates | Does it follow the `format=` contract and use the canonical card-footer pattern? |

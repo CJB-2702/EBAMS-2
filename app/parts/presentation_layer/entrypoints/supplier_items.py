@@ -13,23 +13,42 @@ from app.parts.control_layer.adapters.supplier_item_create_adaptor import (
     SupplierItemCreateAdaptor,
     VendorRevisionRecordAdaptor,
 )
-from app.parts.control_layer.domain_structs.supplier_item_struct import (
+from app.parts.control_layer.domain_structs.part_structs.part_sourcing_struct import (
+    PartSourcingStruct,
+)
+from app.parts.control_layer.domain_structs.reverse_structs.supplier_item_struct import (
     SupplierItemNotFoundError,
 )
 from app.parts.control_layer.factories.supplier_item_factory import (
     SupplierItemFactory,
     SupplierItemValidationError,
 )
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
 from app.parts.control_layer.managers.supplier_vendor_revision_manager import (
     SupplierVendorRevisionManager,
 )
 from app.parts.control_layer.supplier_item_context import SupplierItemContext
-from app.parts.models import PartManufacturer
+
+
+@require_http_methods(["GET"])
+def part_supplier_items(request: HttpRequest, part_id: int) -> HttpResponse:
+    from app.parts.control_layer.part_context import PartContext
+
+    ctx = PartContext(part_id, actor=request.user)
+    supplier_items = PartSourcingStruct.from_id(part_id, eager_thread=True).supplier_items()
+    return render(
+        request,
+        "parts/supplier_items/by_part.html",
+        {
+            "part": ctx.struct().to_dict(),
+            "part_id": part_id,
+            "supplier_items": supplier_items,
+            "domains": Domain.objects.order_by("name"),
+        },
+    )
 
 
 @require_http_methods(["GET", "POST"])
-def part_supplier_items(request: HttpRequest, part_id: int) -> HttpResponse:
+def supplier_item_create(request: HttpRequest, part_id: int) -> HttpResponse:
     from app.parts.control_layer.part_context import PartContext
 
     ctx = PartContext(part_id, actor=request.user)
@@ -41,27 +60,29 @@ def part_supplier_items(request: HttpRequest, part_id: int) -> HttpResponse:
         except SupplierItemValidationError as exc:
             for error in exc.errors:
                 messages.error(request, error)
-            return redirect(reverse("part_supplier_items", kwargs={"part_id": part_id}))
+            return redirect(reverse("supplier_item_create", kwargs={"part_id": part_id}))
         messages.success(request, f"Supplier item '{item.manufacturer_part_number}' mapped.")
         return redirect(reverse("part_supplier_items", kwargs={"part_id": part_id}))
-    supplier_items = []
-    for s in ctx.supplier_items():
-        data = s.to_dict()
-        thread = PartThreadManager(s.item, request.user)
-        docs = thread.documents()
-        data["image_documents"] = [d for d in docs if d["is_image"]]
-        data["other_documents"] = [d for d in docs if not d["is_image"]]
-        data["comments"] = thread.comments()
-        supplier_items.append(data)
+
+    # DEV NOTE (v1 limitation): only majors/minors that already exist as PartRevision rows on
+    # this Part are offered below. A future major that hasn't been created yet can't be picked,
+    # and there's no custom/typed-number entry path yet. Fix later if this becomes a problem.
+    revision_map: dict[str, list[int]] = {}
+    for rev in ctx.revisions():
+        revision_map.setdefault(str(rev.major_revision_number), []).append(
+            rev.minor_revision_number
+        )
+    for minors in revision_map.values():
+        minors.sort()
+    revision_majors = sorted(revision_map.keys(), key=int)
     return render(
         request,
-        "parts/supplier_items/by_part.html",
+        "parts/supplier_items/new.html",
         {
             "part": ctx.struct().to_dict(),
             "part_id": part_id,
-            "supplier_items": supplier_items,
-            "manufacturers": PartManufacturer.objects.filter(is_active=True).order_by("name"),
-            "domains": Domain.objects.order_by("name"),
+            "revision_map": revision_map,
+            "revision_majors": revision_majors,
         },
     )
 

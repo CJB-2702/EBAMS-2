@@ -1,0 +1,55 @@
+{% comment %}
+Single comment row — one comment bubble: author/timestamp, revision/edit/delete
+actions, body text, and attachment mini-cards. Extracted out of
+comments_card.html's loop so it can also be demoed standalone (kitchen sink
+"Isolated Components" section).
+
+Expects: row={comment, comment_hash, attachments}, event_hash.
+Optional: row_depth (e.g. "depth-3") — lets a caller escalate past whatever
+depth its own wrapping card already sits at. Defaults to "depth-2".
+Optional: action_depth — depth for the row's own nested surfaces (plain
+action buttons, attachment mini-cards): must be one step past row_depth or
+they'll match the row's background and disappear. Defaults to "depth-3"
+(the correct next step when row_depth is left at its own default of
+"depth-2"). Callers that escalate row_depth must escalate action_depth too.
+
+Shares id="comment-row-{hash}" with comment_edit_form.html so the Edit button's
+HTMX outerHTML swap can go in either direction (view <-> inline edit form).
+{% endcomment %}
+<div id="comment-row-{{ row.comment_hash }}" class="pc {{ row_depth|default:'depth-2' }} mb-2" data-comment-kind="{% if row.comment.is_human_made %}human{% else %}system{% endif %}">
+  <div class="pc-body is-size-7">
+    <div class="is-flex is-justify-content-space-between mb-1">
+      <span class="is-italic">
+        {{ row.comment.created_by }} &middot; {{ row.comment.created_at|date:"Y-m-d H:i" }}
+        {% if not row.comment.is_human_made %}<span class="tag is-light is-small ml-1">system</span>{% endif %}
+        {% if row.comment.revision > 1 %}<span class="tag is-light is-small ml-1">rev {{ row.comment.revision }}</span>{% endif %}
+      </span>
+      <div style="display:flex; gap:0.4rem;">
+        {% if row.comment.revision > 1 %}
+        <a href="{% url 'comment_history' event_hash=event_hash comment_hash=row.comment_hash %}"
+          class="button is-small is-light {{ action_depth|default:'depth-3' }}" title="View revision history">
+          <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>
+        </a>
+        {% endif %}
+        {% if row.comment.is_human_made and row.comment.created_by == request.user %}
+        <a href="{% url 'comment_edit' event_hash=event_hash comment_hash=row.comment_hash %}"
+          hx-get="{% url 'comment_edit' event_hash=event_hash comment_hash=row.comment_hash %}?format=htmx-comment-row&row_depth={{ row_depth|default:'' }}&action_depth={{ action_depth|default:'' }}"
+          hx-target="closest [id^='comment-row-']"
+          hx-swap="outerHTML"
+          class="button is-small is-info is-light" title="Edit comment">
+          <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        </a>
+        <form method="post" action="{% url 'comment_soft_delete' event_hash=event_hash comment_hash=row.comment_hash %}">
+          {% csrf_token %}
+          <button class="button is-small is-danger is-light" type="submit" title="Delete comment"
+            onclick="return confirm('Delete this comment?');">
+            <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <p>{{ row.comment.content }}</p>
+    {% include "events/comment/fragments/attachment_mini_cards.html" with att_list=row.attachments event_hash=event_hash comment_hash=row.comment_hash %}
+  </div>
+</div>

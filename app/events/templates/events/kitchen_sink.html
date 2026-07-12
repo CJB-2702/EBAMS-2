@@ -1,0 +1,305 @@
+{% extends "events/ev_base.html" %}
+
+{% block title %}Kitchen Sink{% endblock %}
+{% block sidebar_kitchen_sink_active %}is-active{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">Kitchen Sink</a></li>
+{% endblock %}
+
+{% block extra_css %}
+.ks-usage {
+  background: var(--bulma-scheme-main-bis);
+  border: 1px solid var(--bulma-border-weak);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0 1.5rem;
+  font-family: var(--bulma-family-monospace);
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.ks-section-intro { font-size: 0.82rem; color: var(--bulma-text-weak); margin-bottom: 0.5rem; }
+
+/* ── In-page nav — same inpage-nav-link/-label pattern as the work-portal
+   structural example, adapted for a normal window-scrolled page (no nested
+   .app-scrollarea here) and laid out as a sticky horizontal strip rather than
+   a second sidebar rail. ── */
+.ks-inpage-nav { position: sticky; top: 0.75rem; z-index: 5; }
+.inpage-nav-label {
+  font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--bulma-text-weak); font-weight: 600;
+}
+.inpage-nav-links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; }
+.inpage-nav-link {
+  font-size: 0.78rem; color: var(--bulma-text);
+  border-left: 2px solid transparent; padding-left: 0.5rem;
+}
+.inpage-nav-link:hover { color: var(--bulma-text-strong); border-left-color: var(--bulma-border); }
+.inpage-nav-link.is-active { border-left-color: var(--bulma-primary); color: var(--bulma-link); font-weight: 600; }
+.inpage-nav-link.is-sub { padding-left: 1.5rem; }
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">widgets</span></div>
+      <div>
+        <h1 class="page-title">Kitchen Sink — Thread Cards</h1>
+        <p class="page-subtitle">Reference render of the reusable comment / gallery / files card fragments, driven by one real sample event.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="ks-section-intro">
+  Each section below is sourced independently from whichever real thread in the current
+  database has the richest data for that fragment — a Part's comments, documents, and
+  gallery each live on separate underlying thread rows, so no single sample carries all
+  four at once. This proves the fragments render correctly for real, varied data rather
+  than fixtures built to fit.
+</p>
+
+<nav class="pc ks-inpage-nav mb-4" aria-label="In-page navigation">
+  <div class="pc-body py-2">
+    <p class="inpage-nav-label mb-1">On this page</p>
+    <div class="inpage-nav-links">
+      <a href="#sec-feature-matrix" class="inpage-nav-link">Feature matrix</a>
+      <a href="#sec-event-card" class="inpage-nav-link">1. Event composite card</a>
+      <a href="#sec-comments" class="inpage-nav-link">2. Comments only</a>
+      <a href="#sec-gallery" class="inpage-nav-link">3. Gallery only</a>
+      <a href="#sec-files" class="inpage-nav-link">4. Files only</a>
+      <a href="#sec-isolated" class="inpage-nav-link">Isolated components</a>
+      <a href="#sec-comment-utils" class="inpage-nav-link is-sub">Comment utilities</a>
+      <a href="#sec-file-utils" class="inpage-nav-link is-sub">File utilities</a>
+      <a href="#sec-gallery-utils" class="inpage-nav-link is-sub">Gallery utilities</a>
+    </div>
+  </div>
+</nav>
+
+<div class="body-grid full-width">
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-feature-matrix" class="title is-5 mt-4">Feature matrix</h2>
+  <p class="ks-section-intro">
+    All three surface families share one underlying table (<code>event</code>, via
+    <code>FamilyThreadManager</code> — see <code>events/models/event.py</code>) and differ
+    only in which capabilities are switched on.
+  </p>
+  <div class="pc mb-4">
+    <div class="pc-body">
+      <table class="table is-fullwidth is-hoverable is-size-7 mb-0">
+        <thead>
+          <tr>
+            <th>Thread type</th>
+            <th>Comments</th>
+            <th>Direct attachments</th>
+            <th>Metadata shown to user</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Event</strong></td>
+            <td><span class="tag is-success is-light">Yes</span></td>
+            <td><span class="tag is-light">Optional</span> <span class="has-text-grey">(<code>allow_direct_attachments</code>)</span></td>
+            <td><span class="tag is-success is-light">Yes</span> <span class="has-text-grey">— type, status, priority, start/end, domain, etc.</span></td>
+          </tr>
+          <tr>
+            <td><strong>Activity thread</strong></td>
+            <td><span class="tag is-success is-light">Yes</span></td>
+            <td><span class="tag is-success is-light">Yes</span></td>
+            <td><span class="tag is-danger is-light">No</span> <span class="has-text-grey">— subordinate to the owning item (e.g. a Part); the item's own access rules govern visibility, not this row.</span></td>
+          </tr>
+          <tr>
+            <td><strong>FileSet</strong></td>
+            <td><span class="tag is-danger is-light">No</span> <span class="has-text-grey">— off by construction</span></td>
+            <td><span class="tag is-success is-light">Yes</span></td>
+            <td><span class="tag is-danger is-light">No</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-event-card" class="title is-5 mt-4">1. Event composite card</h2>
+  <p class="ks-section-intro">
+    <code>events/fragments/event_card.html</code> — the full self-contained thread card: event
+    metadata, status/priority tags, inline comment list with attachment carousels, and an
+    HTMX-enhanced add-comment form. This is the existing pattern used on the events list/large
+    view. It expects a <code>card</code> dict built from real <code>Comment</code>/<code>Attachment</code>
+    model objects (see <code>events/presentation_layer/entrypoints/events.py:build_event_card</code>).
+    Sourced from the real event with the most human comments —
+    {% if activity_card %}<strong>{{ activity_card.event.title }}</strong>{% if not activity_card.comments %} (0 comments seeded on any real Event row — this doubles as the empty-state demo){% endif %}{% else %}none exist yet{% endif %}.
+  </p>
+  {% if activity_card %}
+  {% include "events/fragments/event_card.html" with card=activity_card %}
+  {% else %}
+  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  {% endif %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/event_card.html" with card=activity_card {% templatetag closeblock %}</div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-comments" class="title is-5 mt-4">2. Comments only</h2>
+  <p class="ks-section-intro">
+    <code>events/fragments/comments_card.html</code> — the exact same fragment and the exact same
+    <code>activity_card</code> context used inside section 1's composite card above (see
+    <code>events/fragments/event_card.html</code>, which includes this same partial). There is only
+    one comments implementation, so this view and the composite card's Comments section can never
+    drift apart.
+  </p>
+  {% if activity_card %}
+  {% include "events/fragments/comments_card.html" with card=activity_card row_depth="depth-3" action_depth="depth-4" %}
+  {% else %}
+  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  {% endif %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/comments_card.html" with card=activity_card row_depth="depth-3" action_depth="depth-4" {% templatetag closeblock %}</div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-gallery" class="title is-5 mt-4">3. Gallery only (image documents)</h2>
+  <p class="ks-section-intro">
+    <code>events/fragments/gallery_card.html</code> — same generic document-dict contract,
+    filtered to <code>is_image=True</code>. Uses the project's existing gallery pattern —
+    <code>&lt;image-carousel&gt;</code> + <code>&lt;carousel-preview-items&gt;</code>
+    (<code>image_carousel.js</code>) — the same composition already used in
+    <code>parts/detail.html</code> and <code>assets/assets/detail.html</code>.
+  </p>
+  {% include "events/fragments/gallery_card.html" with images=gallery_images %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/gallery_card.html" with images=gallery_images {% templatetag closeblock %}</div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-files" class="title is-5 mt-4">4. Files only (non-image documents)</h2>
+  <p class="ks-section-intro">
+    <code>events/fragments/files_card.html</code> — same contract, the non-image half, rendered via
+    <code>&lt;file-browser&gt;</code> (<code>file_browser.js</code>) as the default card format —
+    the same component used for direct thread attachments in section 1's composite card.
+  </p>
+  {% include "events/fragments/files_card.html" with documents=file_documents %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/files_card.html" with documents=file_documents {% templatetag closeblock %}</div>
+
+  {# ══════════════════════════════════════════════════════════════ #}
+  <h2 id="sec-isolated" class="title is-4 mt-6">Isolated components</h2>
+  <p class="ks-section-intro">
+    The building blocks the composite cards above are assembled from, shown on their own —
+    useful when embedding just a comment, a file browser, or a gallery somewhere that isn't
+    a full event card.
+  </p>
+
+  <h3 id="sec-comment-utils" class="title is-6 mt-4">Comment utilities</h3>
+  <p class="ks-section-intro">
+    <code>events/fragments/comment_row.html</code> — a single comment bubble, extracted out of
+    <code>comments_card.html</code>'s loop so it can be embedded on its own.
+  </p>
+  {% if activity_card.comments %}
+  {% include "events/fragments/comment_row.html" with row=activity_card.comments|first event_hash=activity_card.hash %}
+  {% else %}
+  <div class="pc"><div class="pc-body has-text-grey is-size-7">No comments to sample.</div></div>
+  {% endif %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/comment_row.html" with row=row event_hash=event_hash {% templatetag closeblock %}</div>
+
+  <p class="ks-section-intro mt-4">Condensed comment card.</p>
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">short_text</span></span>
+        Comment — condensed
+      </div>
+    </div>
+    <div class="pc-body has-text-grey is-size-7">Not yet built.</div>
+  </div>
+
+  <h3 id="sec-file-utils" class="title is-6 mt-5">File utilities</h3>
+  <p class="ks-section-intro">
+    <code>events/fragments/files_card.html</code> — full file browser (same fragment and data as section 4 above).
+  </p>
+  {% include "events/fragments/files_card.html" with documents=file_documents title="Full file browser" %}
+
+  <p class="ks-section-intro mt-4">
+    <code>events/fragments/direct_attachments_card.html</code> — the compact "embeddable mini browser"
+    shown in the top-right of the event composite card in section 1, isolated here.
+  </p>
+  {% if activity_card %}
+  {% include "events/fragments/direct_attachments_card.html" with card=activity_card %}
+  {% else %}
+  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  {% endif %}
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/direct_attachments_card.html" with card=activity_card {% templatetag closeblock %}</div>
+
+  <h3 id="sec-gallery-utils" class="title is-6 mt-5">Gallery utilities</h3>
+  <p class="ks-section-intro">
+    <code>events/fragments/gallery_card.html</code> — large gallery (same fragment and data as section 3 above).
+  </p>
+  {% include "events/fragments/gallery_card.html" with images=gallery_images title="Large gallery" dom_id="isolated-large" %}
+
+  <p class="ks-section-intro mt-4">Mini gallery — split-pane image viewer with clickable file list.</p>
+  <div class="pc mb-4">
+    <div class="pc-header">
+      <div class="pc-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">photo_size_select_small</span></span>
+        Gallery — mini
+      </div>
+    </div>
+    <div class="pc-body">
+      {% if gallery_images %}
+      <mini-gallery preview-height="300">
+        {% for img in gallery_images %}
+        <img src="{% url 'file_inline' file_id=img.file_id %}" alt="{{ img.filename }}" data-filename="{{ img.filename }}">
+        {% endfor %}
+      </mini-gallery>
+      {% else %}
+      <div class="has-text-grey is-size-7">No images to sample.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="ks-usage">{% templatetag openblock %} include "events/fragments/gallery_card.html" with images=gallery_images format="mini" {% templatetag closeblock %}</div>
+
+</div>
+
+{% endblock %}
+
+{% block body_scripts %}
+{% load static %}
+<script defer src="{% static 'web_components/file_browser.js' %}"></script>
+<script defer src="{% static 'web_components/file_upload.js' %}"></script>
+<script defer src="{% static 'web_components/image_carousel.js' %}"></script>
+<script defer src="{% static 'web_components/mini_gallery.js' %}"></script>
+<script defer src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script>
+  // Small deliberate JS exception: Human/All/Machine comment-filter buttons,
+  // scoped to the nearest .pc ancestor so multiple comments cards on one page (or
+  // multiple event cards in a list) stay independent of one another.
+  window.__filterComments = function(evt, btn, filter) {
+    evt.preventDefault();
+    var group = btn.closest('.comment-filter-group');
+    var card = btn.closest('.pc');
+    group.querySelectorAll('.comment-filter-item').forEach(function(b) {
+      b.classList.toggle('is-link', b === btn);
+      b.classList.toggle('is-selected', b === btn);
+      b.classList.toggle('is-light', b !== btn);
+    });
+    card.querySelectorAll('[data-comment-kind]').forEach(function(row) {
+      row.style.display = (filter === 'all' || row.dataset.commentKind === filter) ? '' : 'none';
+    });
+    return false;
+  };
+
+  // In-page nav scroll-spy — same inpage-nav-link pattern as the work-portal
+  // structural example, but this page scrolls the window (no .app-scrollarea),
+  // so plain anchor clicks work as-is and we only need to track the active link.
+  (function () {
+    var links = Array.from(document.querySelectorAll('.inpage-nav-link[href^="#"]'));
+    var targets = links
+      .map(function (l) { return { link: l, el: document.getElementById(l.getAttribute('href').slice(1)) }; })
+      .filter(function (t) { return t.el; });
+    function onScroll() {
+      var probe = window.scrollY + 80;
+      var current = targets[0];
+      targets.forEach(function (t) { if (t.el.offsetTop <= probe) current = t; });
+      links.forEach(function (l) { l.classList.remove('is-active'); });
+      if (current) current.link.classList.add('is-active');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+{% endblock %}

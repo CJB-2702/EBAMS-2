@@ -1,6 +1,14 @@
+---
+type: "Concept Anchor"
+title: "Architecture — Tier 1 Anchor"
+description: "This file is the **concept anchor** for project architecture."
+tags: [overview, concept-anchor]
+context_tier: 1
+---
+
 # Architecture — Tier 1 Anchor
 
-This file is the **concept anchor** for project architecture. It states the rules of engagement for backend code: how sub-applications are laid out, how layers depend on one another, where state changes are allowed, and the naming vocabulary that lets a reader predict a class's role from its filename. Detail lives in the Tier 2 files below.
+The rules of engagement for backend code: how sub-applications are laid out, how layers depend on one another, where state changes are allowed, and the naming vocabulary that lets a reader predict a class's role from its filename. Detail lives in the Tier 2 files below.
 
 ---
 
@@ -18,17 +26,7 @@ This file is the **concept anchor** for project architecture. It states the rule
 
 ## Sub-specifications
 
-| Topic | File |
-| :--- | :--- |
-| Sub-app folder layout and layer responsibilities | [Architecture/overview.md](Architecture/overview.md) |
-| Reads vs writes; what may run in an entrypoint | [Architecture/layer_rules.md](Architecture/layer_rules.md) |
-| Class-suffix vocabulary and the new-feature playbook | [Architecture/oop_control_patterns.md](Architecture/oop_control_patterns.md) |
-| Model naming, audit columns, abstract bases, PK choice | [Architecture/model_patterns.md](Architecture/model_patterns.md) |
-| OOP endpoint design, collection vs detail, `format=` contract | [Architecture/endpoint_patterns.md](Architecture/endpoint_patterns.md) |
-| HTMX conventions, F5 rule, CSRF, `hx-select` defaults, session drafts | [Architecture/htmx_patterns.md](Architecture/htmx_patterns.md) |
-| Fixture placement, audit-field handling, prod policy | [Architecture/seeding.md](Architecture/seeding.md) |
-| Engineering principles and stack choices | [Architecture/standards.md](Architecture/standards.md) |
-| Testing conventions | [Architecture/tests.md](Architecture/tests.md) |
+See [Architecture/index.md](Architecture/index.md) for the full, machine-routable index of Tier 2 guides, skeletons, and sub-bundles (layer rules, control-layer/model/endpoint/HTMX patterns, seeding, standards, tests).
 
 ---
 

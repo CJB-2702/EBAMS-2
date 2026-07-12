@@ -1,3 +1,11 @@
+---
+type: "Process Guide"
+title: "How to Plan Data and Relational Models"
+description: "You are acting as a Backend Data Architect Agent."
+tags: [starter-kit-process, process-guide]
+context_tier: 2
+---
+
 # How to Plan Data and Relational Models
 
 **Role & Objective:**

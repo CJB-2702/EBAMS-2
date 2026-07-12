@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 2a — Data & Relational Plan"
+description: "framework."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-2a-plugin-framework]
+context_tier: 2
+---
+
 # Phase 2a — Data & Relational Plan
 
 *Reshapes the existing detail schema (`app/assets/models/details/`) into the plugin

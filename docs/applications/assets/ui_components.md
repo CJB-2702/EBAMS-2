@@ -1,3 +1,11 @@
+---
+type: "Domain Doc"
+title: "UI Components Plan: Asset Management Core"
+description: "Page-by-page layout plan for the Asset Management sub-application's core UI components."
+tags: [applications, domain-doc, assets]
+context_tier: 2
+---
+
 # UI Components Plan: Asset Management Core
 
 ## Asset Hierarchy Portal (`/assets/<id>/hierarchy/edit/`)

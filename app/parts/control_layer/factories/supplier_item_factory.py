@@ -10,8 +10,9 @@ from django.db import transaction
 from app.parts.control_layer.guards.supplier_item_validator_guard import (
     SupplierItemValidator,
 )
+from app.parts.control_layer.managers.part_activity_manager import PartActivityManager
 from app.parts.control_layer.narrators.supplier_item_narrator import SupplierItemNarrator
-from app.parts.models import Part, SupplierItem
+from app.parts.models import SupplierItem
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -50,8 +51,10 @@ class SupplierItemFactory:
                 updated_by=actor,
             )
 
-            part = Part.objects.get(id=item.internal_part_id)
-            SupplierItemNarrator.item_mapped(item, part)
+            # Machine comment onto the base Part's audit feed (§5): the reverse
+            # activity struct resolves the item up to its base Part.
+            activity = PartActivityManager.for_supplier_item(item, actor)
+            activity.record(SupplierItemNarrator.item_mapped(item, activity.part))
 
             # Alias hook (D8): mirrors the MPN into an MPN alias.
             from app.parts.control_layer.orchestrators.supplier_alias_orchestrator import (

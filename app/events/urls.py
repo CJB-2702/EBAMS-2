@@ -10,17 +10,24 @@ from app.events.presentation_layer.entrypoints.events import (
 from app.events.presentation_layer.entrypoints.comments import (
     comment_add,
     comment_edit,
+    comment_gallery,
     comment_history,
     comment_soft_delete,
+    comment_view_row,
 )
 from app.events.presentation_layer.entrypoints.files import (
+    direct_attachment_add,
     file_download,
     file_inline,
     file_soft_delete,
     file_upload,
 )
+from app.events.presentation_layer.entrypoints.kitchen_sink import kitchen_sink
 
 urlpatterns = [
+    # Dev reference (must precede <str:hash>/ so the literal segment wins)
+    path("kitchen-sink/", kitchen_sink, name="events_kitchen_sink"),
+
     # Events
     path("", event_index, name="event_index"),
     path("create/", event_create, name="event_create"),
@@ -31,10 +38,13 @@ urlpatterns = [
     # Comments (scoped to an event)
     path("<str:event_hash>/comments/add/", comment_add, name="comment_add"),
     path("<str:event_hash>/comments/<str:comment_hash>/edit/", comment_edit, name="comment_edit"),
+    path("<str:event_hash>/comments/<str:comment_hash>/view/", comment_view_row, name="comment_view_row"),
     path("<str:event_hash>/comments/<str:comment_hash>/history/", comment_history, name="comment_history"),
+    path("<str:event_hash>/comments/<str:comment_hash>/gallery/", comment_gallery, name="comment_gallery"),
     path("<str:event_hash>/comments/<str:comment_hash>/delete/", comment_soft_delete, name="comment_soft_delete"),
 
     # Files
+    path("<str:event_hash>/attachments/add/", direct_attachment_add, name="direct_attachment_add"),
     path("<str:event_hash>/files/upload/", file_upload, name="file_upload"),
     path("files/<uuid:file_id>/download/", file_download, name="file_download"),
     path("files/<uuid:file_id>/inline/", file_inline, name="file_inline"),

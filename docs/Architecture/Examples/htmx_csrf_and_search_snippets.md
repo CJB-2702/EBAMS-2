@@ -1,6 +1,13 @@
+---
+type: Architecture Example
+title: HTMX CSRF and Search Snippets
+description: Concrete markup for the project's HTMX CSRF token hook and search patterns.
+tags: [architecture, htmx, frontend, csrf, examples]
+---
+
 # HTMX CSRF and search snippets
 
-Concrete markup for the patterns in [../htmx_patterns.md](../htmx_patterns.md).
+Concrete markup for the patterns in [../patterns/htmx_patterns.md](../patterns/htmx_patterns.md).
 
 ## Base template — CSRF token hook
 

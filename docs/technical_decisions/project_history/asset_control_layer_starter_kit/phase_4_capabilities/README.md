@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 4 — Capabilities"
+description: "What an asset *can do*."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit, phase-4-capabilities]
+context_tier: 2
+---
+
 # Phase 4 — Capabilities
 
 What an asset *can do*. A three-layer template/instance system (class → model →

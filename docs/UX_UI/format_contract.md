@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "The `format=` density contract"
+description: "A single query parameter — format= — chooses the visual density of a collection or detail page, **or** an HTMX fragment variant of the same canonical URL."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # The `format=` density contract
 
 A single query parameter — `format=` — chooses the visual density of a collection or detail page, **or** an HTMX fragment variant of the same canonical URL. The same value means the same visual density on list and detail surfaces for that resource type.
@@ -22,7 +30,7 @@ Collection URLs follow the plural-resource pattern in [../Architecture.md](../Ar
 
 The same query parameter selects HTMX-only response variants:
 
-- `format=htmx-search-results` — fragment-only response containing the results list partial (see [searchbars.md](searchbars.md)).
+- `format=htmx-search-results` — fragment-only response containing the results list partial (see [components/searchbars.md](components/searchbars.md)).
 - `format=htmx-focused` — fragment-only response suited to HTMX, with paged rows.
 - `format=htmx-<custom>` — predictable, per-screen custom variants. Document the name in the view or app docs so clients and tests stay aligned.
 

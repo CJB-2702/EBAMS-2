@@ -4,7 +4,7 @@ collapses every alias kind to a Part via the primary `part` anchor directly
 
 from __future__ import annotations
 
-from app.parts.control_layer.domain_structs.part_struct import PartStruct
+from app.parts.control_layer.domain_structs.part_structs.part_struct import PartStruct
 from app.parts.models import Alias
 
 

@@ -26,6 +26,10 @@ class ImageCarousel extends HTMLElement {
     this.prevTranslate = 0;
     this.autoplayTimer = null;
     this._isPaused = false;
+    this._fitMode = "contain";
+    try {
+      this._fitMode = localStorage.getItem("carousel-fit-mode") || "contain";
+    } catch (e) { /* localStorage unavailable */ }
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -119,6 +123,194 @@ class ImageCarousel extends HTMLElement {
           display: block;
         }
 
+        /* Items list button (top-left) */
+        .items-btn {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          background-color: var(--overlay-bg);
+          border: 1px solid var(--bulma-border-weak, rgba(255, 255, 255, 0.1));
+          color: var(--overlay-text);
+          width: 36px;
+          height: 36px;
+          cursor: pointer;
+          z-index: 13;
+          opacity: 0;
+          transition: opacity 0.3s ease, background-color 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .carousel-viewer:hover .items-btn,
+        .items-btn.open {
+          opacity: 1;
+        }
+
+        .items-btn:hover {
+          background-color: var(--primary-color);
+        }
+
+        .items-btn svg {
+          display: block;
+        }
+
+        .items-menu {
+          position: absolute;
+          top: 48px;
+          left: 8px;
+          background-color: var(--overlay-bg);
+          border: 1px solid var(--bulma-border-weak, rgba(255, 255, 255, 0.1));
+          z-index: 14;
+          display: none;
+          flex-direction: column;
+          max-width: 280px;
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .items-menu.open {
+          display: flex;
+        }
+
+        .items-menu-item {
+          background: none;
+          border: none;
+          color: var(--overlay-text);
+          padding: 8px 12px;
+          text-align: left;
+          cursor: pointer;
+          font-size: 13px;
+          font-family: inherit;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          transition: background-color 0.2s ease;
+        }
+
+        .items-menu-item:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .items-menu-item.active {
+          background-color: var(--primary-color);
+          font-weight: bold;
+        }
+
+        /* Display-settings gear (top-right) */
+        .settings-btn {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background-color: var(--overlay-bg);
+          border: 1px solid var(--bulma-border-weak, rgba(255, 255, 255, 0.1));
+          color: var(--overlay-text);
+          width: 36px;
+          height: 36px;
+          cursor: pointer;
+          z-index: 13;
+          opacity: 0;
+          transition: opacity 0.3s ease, background-color 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .carousel-viewer:hover .settings-btn,
+        .settings-btn.open {
+          opacity: 1;
+        }
+
+        .settings-btn:hover {
+          background-color: var(--primary-color);
+        }
+
+        .settings-btn svg {
+          display: block;
+        }
+
+        /* Filename display (left of settings) */
+        .filename-display {
+          position: absolute;
+          top: 8px;
+          right: 52px;
+          background-color: var(--overlay-bg);
+          border: 1px solid var(--bulma-border-weak, rgba(255, 255, 255, 0.1));
+          color: var(--overlay-text);
+          padding: 6px 10px;
+          z-index: 12;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          font-size: 12px;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          max-width: 200px;
+          overflow: hidden;
+        }
+
+        .carousel-viewer:hover .filename-display {
+          opacity: 1;
+        }
+
+        .filename-display a {
+          color: var(--primary-color);
+          text-decoration: none;
+          cursor: pointer;
+        }
+
+        .filename-display a:hover {
+          text-decoration: underline;
+        }
+
+        .settings-menu {
+          position: absolute;
+          top: 48px;
+          right: 8px;
+          background-color: var(--overlay-bg);
+          border: 1px solid var(--bulma-border-weak, rgba(255, 255, 255, 0.1));
+          z-index: 14;
+          display: none;
+          flex-direction: column;
+          min-width: 160px;
+        }
+
+        .settings-menu.open {
+          display: flex;
+        }
+
+        .settings-option {
+          background: none;
+          border: none;
+          color: var(--overlay-text);
+          padding: 8px 12px;
+          text-align: left;
+          cursor: pointer;
+          font-size: 13px;
+          font-family: inherit;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          white-space: nowrap;
+        }
+
+        .settings-option:hover {
+          background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .settings-option.active {
+          color: var(--primary-color);
+          font-weight: bold;
+        }
+
+        .settings-option .check {
+          width: 14px;
+          visibility: hidden;
+        }
+
+        .settings-option.active .check {
+          visibility: visible;
+        }
+
         /* Indicators: dash lines that morph / stretch */
         .indicators {
           position: absolute;
@@ -159,6 +351,17 @@ class ImageCarousel extends HTMLElement {
         <div class="carousel-track">
           <slot></slot>
         </div>
+        <button class="items-btn" id="items-btn" aria-label="Show all items" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+        </button>
+        <div class="items-menu" id="items-menu" role="menu"></div>
         <button class="nav-btn prev-btn" id="prev" aria-label="Previous">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -170,6 +373,18 @@ class ImageCarousel extends HTMLElement {
           </svg>
         </button>
         <div class="indicators" id="indicators"></div>
+        <div class="filename-display" id="filename-display"></div>
+        <button class="settings-btn" id="settings-btn" aria-label="Display settings" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <div class="settings-menu" id="settings-menu" role="menu">
+          <button class="settings-option" data-fit="contain" role="menuitemradio"><span class="check">✓</span>Fit (whole image)</button>
+          <button class="settings-option" data-fit="cover" role="menuitemradio"><span class="check">✓</span>Fill / crop</button>
+          <button class="settings-option" data-fit="fill" role="menuitemradio"><span class="check">✓</span>Stretch</button>
+        </div>
       </div>
     `;
   }
@@ -180,9 +395,50 @@ class ImageCarousel extends HTMLElement {
     this.prevBtn = this.shadowRoot.querySelector('#prev');
     this.nextBtn = this.shadowRoot.querySelector('#next');
     this.indicatorsContainer = this.shadowRoot.querySelector('#indicators');
+    this.itemsBtn = this.shadowRoot.querySelector('#items-btn');
+    this.itemsMenu = this.shadowRoot.querySelector('#items-menu');
+    this.settingsBtn = this.shadowRoot.querySelector('#settings-btn');
+    this.settingsMenu = this.shadowRoot.querySelector('#settings-menu');
+    this.filenameDisplay = this.shadowRoot.querySelector('#filename-display');
     this.slotEl = this.shadowRoot.querySelector('slot');
 
     this._updateDimensions();
+
+    // Items list menu
+    this.itemsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._toggleItemsMenu();
+    });
+
+    // Close the items menu when interacting elsewhere in the viewer
+    this.addEventListener('mousedown', (e) => {
+      if (this.itemsMenu.classList.contains('open') &&
+          !e.composedPath().includes(this.itemsMenu) &&
+          !e.composedPath().includes(this.itemsBtn)) {
+        this._toggleItemsMenu(false);
+      }
+    });
+
+    // Display-settings (object-fit) menu
+    this.settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._toggleSettings();
+    });
+    this.settingsMenu.querySelectorAll('.settings-option').forEach((opt) => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._setFitMode(opt.getAttribute('data-fit'));
+        this._toggleSettings(false);
+      });
+    });
+    // Close the menu when interacting elsewhere in the viewer
+    this.addEventListener('mousedown', (e) => {
+      if (this.settingsMenu.classList.contains('open') &&
+          !e.composedPath().includes(this.settingsMenu) &&
+          !e.composedPath().includes(this.settingsBtn)) {
+        this._toggleSettings(false);
+      }
+    });
 
     this.prevBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -204,6 +460,7 @@ class ImageCarousel extends HTMLElement {
         el.style.height = "100%";
         el.style.boxSizing = "border-box";
       });
+      this._applyFitMode();
       this.renderIndicators();
       this.updateCarousel();
       this._startAutoplay();
@@ -291,6 +548,78 @@ class ImageCarousel extends HTMLElement {
     }
   }
 
+  _toggleItemsMenu(force) {
+    const open = force === undefined ? !this.itemsMenu.classList.contains('open') : force;
+    this.itemsMenu.classList.toggle('open', open);
+    this.itemsBtn.classList.toggle('open', open);
+    this.itemsBtn.setAttribute('aria-expanded', String(open));
+    if (open) {
+      this._renderItemsList();
+    }
+  }
+
+  _renderItemsList() {
+    this.itemsMenu.innerHTML = '';
+    if (!this.items || this.items.length === 0) return;
+
+    this.items.forEach((item, index) => {
+      const btn = document.createElement('button');
+      btn.className = 'items-menu-item';
+      if (index === this.currentIndex) {
+        btn.classList.add('active');
+      }
+      btn.setAttribute('role', 'menuitem');
+
+      let label = `Item ${index + 1}`;
+      if (item.tagName === 'IMG') {
+        label = item.getAttribute('alt') ||
+                item.getAttribute('title') ||
+                item.getAttribute('data-filename') ||
+                label;
+      } else if (item.hasAttribute('data-filename')) {
+        label = item.getAttribute('data-filename');
+      }
+
+      btn.textContent = label;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.goTo(index);
+        this._toggleItemsMenu(false);
+      });
+
+      this.itemsMenu.appendChild(btn);
+    });
+  }
+
+  _toggleSettings(force) {
+    const open = force === undefined ? !this.settingsMenu.classList.contains('open') : force;
+    this.settingsMenu.classList.toggle('open', open);
+    this.settingsBtn.classList.toggle('open', open);
+    this.settingsBtn.setAttribute('aria-expanded', String(open));
+  }
+
+  _setFitMode(mode) {
+    if (!["contain", "cover", "fill"].includes(mode)) return;
+    this._fitMode = mode;
+    try {
+      localStorage.setItem("carousel-fit-mode", mode);
+    } catch (e) { /* localStorage unavailable */ }
+    this._applyFitMode();
+  }
+
+  _applyFitMode() {
+    if (this.items) {
+      this.items.forEach((el) => {
+        if (el.tagName === "IMG") el.style.objectFit = this._fitMode;
+      });
+    }
+    if (this.settingsMenu) {
+      this.settingsMenu.querySelectorAll('.settings-option').forEach((opt) => {
+        opt.classList.toggle('active', opt.getAttribute('data-fit') === this._fitMode);
+      });
+    }
+  }
+
   next() {
     if (this.items && this.items.length > 0) {
       const loop = this.hasAttribute("loop") || this.getAttribute("loop") !== "false";
@@ -318,6 +647,9 @@ class ImageCarousel extends HTMLElement {
       this.currentIndex = index;
       this.updateCarousel();
       this._startAutoplay();
+      if (this.itemsMenu.classList.contains('open')) {
+        this._renderItemsList();
+      }
       this.dispatchEvent(new CustomEvent("carousel-change", { detail: { index: this.currentIndex } }));
     }
   }
@@ -328,7 +660,7 @@ class ImageCarousel extends HTMLElement {
       this.currentTranslate = -this.currentIndex * width;
       this.prevTranslate = this.currentTranslate;
       this.track.style.transform = `translateX(${this.currentTranslate}px)`;
-      
+
       const dots = this.indicatorsContainer.querySelectorAll('.indicator');
       dots.forEach((dot, index) => {
         if (index === this.currentIndex) {
@@ -337,6 +669,48 @@ class ImageCarousel extends HTMLElement {
           dot.classList.remove('active');
         }
       });
+
+      this._updateFilenameDisplay();
+    }
+  }
+
+  _updateFilenameDisplay() {
+    if (!this.filenameDisplay) return;
+
+    const currentItem = this.items[this.currentIndex];
+    if (!currentItem) {
+      this.filenameDisplay.innerHTML = '';
+      return;
+    }
+
+    let filename = null;
+    let srcUrl = null;
+
+    if (currentItem.tagName === 'IMG' && currentItem.src) {
+      srcUrl = currentItem.src;
+
+      filename = currentItem.getAttribute('alt') ||
+                currentItem.getAttribute('title') ||
+                currentItem.getAttribute('data-filename');
+
+      if (!filename) {
+        try {
+          const url = new URL(currentItem.src, window.location.origin);
+          filename = url.pathname.split('/').filter(Boolean).pop();
+        } catch (e) {
+          filename = currentItem.src.split('/').filter(Boolean).pop();
+        }
+      }
+
+      filename = filename?.split('?')[0] || null;
+    } else if (currentItem.hasAttribute('data-filename')) {
+      filename = currentItem.getAttribute('data-filename');
+    }
+
+    if (filename && srcUrl) {
+      this.filenameDisplay.innerHTML = `<a href="${srcUrl}" download="${filename}" title="${filename}">${filename}</a>`;
+    } else {
+      this.filenameDisplay.innerHTML = '';
     }
   }
 

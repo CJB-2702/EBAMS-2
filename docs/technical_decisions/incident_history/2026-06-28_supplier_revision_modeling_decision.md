@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Supplier Item Revision Modeling — Decision Walkthrough"
+description: "the item's events thread; interoperability is a denormalized **compatibility range** on the."
+tags: [technical-decisions, technical-decision, incident-history]
+context_tier: 2
+---
+
 # Supplier Item Revision Modeling — Decision Walkthrough
 
 > **Placement note (author's own):** I don't have a better home for this yet, so it's parked under

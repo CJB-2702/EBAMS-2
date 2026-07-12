@@ -12,22 +12,22 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 ### Tier 1 — concept anchors (read first)
 
 - `docs/Authorization.md` — router into RBAC, ownership, roles, users, password policy
-- `docs/CoreDomain.md` — core entity dependency graph (entry into ownership-FK rules)
+- `docs/applications/core_domain.md` — core entity dependency graph (entry into ownership-FK rules)
 - `docs/Architecture.md` — folder layout and layer responsibilities
 
 ### Tier 2 — load by task
 
 **RBAC, groups, group templates:**
 - `docs/Authorization/rbac.md` — Django permission system, group templates
-- `docs/Authorization/domain_templates_concept.md`
-- `docs/Authorization/domain_templates_models_plan.md`
-- `docs/Authorization/roles_concept.md`, `docs/Authorization/roles_decisions.md`, `docs/Authorization/roles_examples.md`
+- `docs/Authorization/domain_templates/concept.md`
+- `docs/Authorization/domain_templates/models_plan.md`
+- `docs/Authorization/roles/concept.md`, `docs/Authorization/roles/decisions.md`, `docs/Authorization/Examples/roles_examples.md`
 
 **Row-level ownership scoping:**
 - `docs/Authorization/data_ownership.md`
 - `docs/Authorization/data_access_exceptions.md`
-- `docs/CoreDomain/core_models.md` — ownership-group FK rules per scoped table
-- `docs/CoreDomain/divisions.md` — Division → Organization → Ownership Group hierarchy
+- `docs/applications/core_domain/core_models.md` — ownership-group FK rules per scoped table
+- `docs/applications/core_domain/divisions.md` — Division → Organization → Ownership Group hierarchy
 
 **User accounts, auth flow, passwords:**
 - `docs/Authorization/users.md`

@@ -1,3 +1,11 @@
+---
+type: "UX Guide"
+title: "Search bars"
+description: "For verbatim markup and the full <search-dropdown> web component source see [../Examples/search_dropdown_component.md](../Examples/search_dropdown_component.md)."
+tags: [ux-ui, ux-guide]
+context_tier: 2
+---
+
 # Search bars
 
 Two distinct search patterns live in this app, and they are **not interchangeable**:
@@ -5,7 +13,7 @@ Two distinct search patterns live in this app, and they are **not interchangeabl
 1. **`<search-dropdown>`** — a form-associated custom element that pairs an input with an HTMX-loaded dropdown of `<li>` results. **Use this when the search produces a single picked value** that becomes a form field (e.g. picking a permission, a user, an asset).
 2. **Plain HTMX search input** — a vanilla `<input>` with `hx-get` that swaps a results region. **Use this when the search drives a list view** (e.g. filtering a table of assets, the *Available* column of a [dual listbox](dual_listbox.md)).
 
-For verbatim markup and the full `<search-dropdown>` web component source see [Examples/search_dropdown_component.md](Examples/search_dropdown_component.md).
+For verbatim markup and the full `<search-dropdown>` web component source see [../Examples/search_dropdown_component.md](../Examples/search_dropdown_component.md).
 
 ---
 
@@ -77,6 +85,6 @@ For list-filtering use cases, use a plain Bulma input plus `hx-get` to the canon
 
 - **Using `<search-dropdown>` to filter a list.** It is a *picker*, not a *filter*.
 - **Using a plain HTMX input as a picker** when you need a single value to submit with a form.
-- **Two `format=` values in one URL.** The server should reject this (see [format_contract.md](format_contract.md)).
+- **Two `format=` values in one URL.** The server should reject this (see [../format_contract.md](../format_contract.md)).
 - **Server returns a fully-rendered page** to a search request. Search responses are fragments.
 - **No `hx-push-url`** on a list filter — back button is broken, bookmarks don't work.

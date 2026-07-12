@@ -1,6 +1,13 @@
+---
+type: Architecture Example
+title: Control-Layer Class Skeletons
+description: Illustrative class shapes and signatures for the control-layer OOP patterns.
+tags: [architecture, control-layer, oop, examples, skeletons]
+---
+
 # Control-layer class skeletons
 
-Concrete shapes for the patterns described in [../oop_control_patterns.md](../oop_control_patterns.md). These are illustrative, not copy-paste boilerplate — they show the conventional signatures and docstring shapes.
+Concrete shapes for the patterns described in [../patterns/oop_control_patterns.md](../patterns/oop_control_patterns.md). These are illustrative, not copy-paste boilerplate — they show the conventional signatures and docstring shapes.
 
 ## Struct
 

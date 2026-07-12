@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "ActivityThread implemented as a limited proxy of Event"
+description: "ActivityThread is a **Django proxy model** that inherits from Event — not a separate model, and not a parent model that Event extends."
+tags: [technical-decisions, technical-decision, history]
+context_tier: 2
+---
+
 # ActivityThread implemented as a limited proxy of Event
 
 - **Date:** 2026-05-28

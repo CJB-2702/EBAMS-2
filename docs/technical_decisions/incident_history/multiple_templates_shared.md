@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Multiple `templates/shared/` Folders Collide in Django Template Namespace"
+description: "Includes of shared/<something>.html were resolving to the wrong file, or appearing to \"not update\" when the file was edited."
+tags: [technical-decisions, technical-decision, incident-history]
+context_tier: 2
+---
+
 # Multiple `templates/shared/` Folders Collide in Django Template Namespace
 
 - **Date:** 2026-05

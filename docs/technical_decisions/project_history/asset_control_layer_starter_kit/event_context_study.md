@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Event Context Study"
+description: "Old file: app/business/core/event_context.py."
+tags: [technical-decisions, technical-decision, project-history, asset-control-layer-starter-kit]
+context_tier: 2
+---
+
 # Event Context Study
 
 > The user named the event context **"the core of the application"** and asked

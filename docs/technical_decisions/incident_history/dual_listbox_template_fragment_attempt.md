@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Dual Listbox Template Fragment Attempt"
+description: "A single reusable Django template fragment, shared/dual_listbox.html, that every dual-list-box partial would call via {% include %} with keyword args like dlb_id, left_id, right_label, hx_post_url, param_name, available_items,."
+tags: [technical-decisions, technical-decision, incident-history]
+context_tier: 2
+---
+
 # Dual Listbox Template Fragment Attempt
 
 - **Date:** 2026-05

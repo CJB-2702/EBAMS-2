@@ -1,3 +1,10 @@
+---
+type: Architecture Guide
+title: OOP Control-Layer Patterns
+description: The class-suffix vocabulary and shapes that make control-layer roles predictable.
+tags: [architecture, control-layer, oop, vocabulary]
+---
+
 # Object-oriented control layer patterns
 
 This document describes **common shapes** in the control layer so that:
@@ -7,9 +14,9 @@ This document describes **common shapes** in the control layer so that:
 
 **Naming:** Prefer **class suffix vocabulary** (see below) and **long, explicit class and file names** that state what something is. **Do not use acronyms** in type or module names.
 
-For verbatim class shapes and module skeletons see [Examples/control_layer_class_skeletons.md](Examples/control_layer_class_skeletons.md).
+For verbatim class shapes and module skeletons see [../Examples/control_layer_class_skeletons.md](../Examples/control_layer_class_skeletons.md).
 
-**Add-on-demand (Tier 3):** for canonical GoF / Fowler-PoEAA names behind these suffixes, load [vocabulary/](vocabulary/README.md) — a thin cross-walk reference, never scanned by default.
+**Add-on-demand (Tier 3):** for canonical GoF / Fowler-PoEAA names behind these suffixes, load [vocabulary/](../vocabulary/index.md) — a thin cross-walk reference, never scanned by default.
 
 ---
 
@@ -99,4 +106,4 @@ Class names follow a fixed suffix vocabulary. Reading a filename tells you the s
 4. **Guard** — Add a **Policy**, **Validator**, or **StateMachine** in `<name>_guard.py`; gate mutations and sensitive reads.
 5. **Narrator** — Audit and user-visible strings where needed.
 6. **Adaptor** — Map HTTP/portal payloads to structured constructor inputs at the boundary.
-7. **Thin route** — Parse request, call Context, return response; **no writes** outside the control layer (see [layer_rules.md](layer_rules.md)).
+7. **Thin route** — Parse request, call Context, return response; **no writes** outside the control layer (see [../layer_rules.md](../layer_rules.md)).

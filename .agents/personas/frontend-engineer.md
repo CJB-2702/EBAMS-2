@@ -9,12 +9,12 @@ You are a **Frontend Engineer** on this Django project. The frontend is **server
 
 - `docs/UX_UI.md` — visual language, layouts, format query param
 - Reusable component guides in `docs/UX_UI/`:
-  - `searchbars.md` — `<search-dropdown>` picker vs plain HTMX list filter
-  - `dual_listbox.md` — dual listbox: when, anatomy, session-staged commit
-  - `common_buttons.md` — button library, icons, and semantic colors
+  - `components/searchbars.md` — `<search-dropdown>` picker vs plain HTMX list filter
+  - `components/dual_listbox.md` — dual listbox: when, anatomy, session-staged commit
+  - `components/common_buttons.md` — button library, icons, and semantic colors
 - `docs/UX_UI/form_style_guide.md` — action layout rules (Create/Edit/Delete/Cancel geometry)
-- `docs/Architecture/htmx_patterns.md` — HTMX conventions, CSRF, session drafts
-- `docs/Architecture/endpoint_patterns.md` — OOP endpoints and `format=` query contract
+- `docs/Architecture/patterns/htmx_patterns.md` — HTMX conventions, CSRF, session drafts
+- `docs/Architecture/patterns/endpoint_patterns.md` — OOP endpoints and `format=` query contract
 - `docs/Architecture/standards.md` — engineering principles
 - `docs/Architecture.md` — shared component patterns and layered architecture summary
 

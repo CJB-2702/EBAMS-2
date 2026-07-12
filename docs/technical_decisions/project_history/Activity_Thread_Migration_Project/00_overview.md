@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Activity Thread Migration — Project Overview"
+description: "Four sequential phases that move the events application from event-specific naming and a."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project]
+context_tier: 2
+---
+
 # Activity Thread Migration — Project Overview
 
 Four sequential phases that move the events application from event-specific naming and a

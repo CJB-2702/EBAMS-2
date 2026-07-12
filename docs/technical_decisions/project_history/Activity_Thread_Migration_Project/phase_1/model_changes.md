@@ -1,3 +1,11 @@
+---
+type: "Technical Decision"
+title: "Phase 1 — Model Changes"
+description: "No new columns."
+tags: [technical-decisions, technical-decision, project-history, activity-thread-migration-project, phase-1]
+context_tier: 2
+---
+
 # Phase 1 — Model Changes
 
 No new columns. No FK target changes. Only class names, manager names, QuerySet names,
