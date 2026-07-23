@@ -22,8 +22,8 @@
   <form method="post" id="template-edit-form">{% csrf_token %}
 
     {# ── Identity ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Identity</div></div>
+      <div class="card-content">
         <div class="columns">
           <div class="column"><div class="field"><label class="label is-small">Template Name</label><div class="control"><input class="input is-small" type="text" name="name" value="{{ template.name }}" required></div></div></div>
           <div class="column is-2"><div class="field"><label class="label is-small">Revision</label><div class="control"><input class="input is-small is-family-monospace" type="text" name="revision" value="{{ template.revision }}" required></div></div></div>
@@ -45,8 +45,8 @@
     </div>
 
     {# ── Required Modifications ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Required Modifications</div></div>
+      <div class="card-content">
         <p class="is-size-7 has-text-grey mb-3">Select which modifications this template requires. Applicability rules on each modification still apply at assignment time.</p>
         <dual-list-box>
           <list-box slot="left" id="tmpl-mod-avail" label="Available">
@@ -70,8 +70,8 @@
     </div>
 
     {# ── Expected Children (assign models · per-child quantity · child configuration) ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Expected Children</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Expected Children</div></div>
+      <div class="card-content">
         <p class="is-size-7 has-text-grey mb-3">Assign the asset models this template expects as children. Set a quantity per model (e.g. a scuba set needs 2 tanks) and, optionally, the child configuration template each should be built to.</p>
         {{ initial_children|json_script:"cm-initial-data" }}
         <input type="hidden" name="children_json" id="children-json" value="[]">
@@ -79,8 +79,8 @@
 
           {# LEFT — available models pool (2/3) #}
           <div class="column is-8">
-            <div class="pc" style="display:flex;flex-direction:column;height:520px;overflow:hidden">
-              <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Available Models</div><span class="is-size-7 has-text-grey"><span id="cm-avail-count">0</span> shown</span></div>
+            <div class="card" style="display:flex;flex-direction:column;height:520px;overflow:hidden">
+              <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Available Models</div><span class="is-size-7 has-text-grey"><span id="cm-avail-count">0</span> shown</span></div>
               <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
                 <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
                   <div class="control has-icons-left" style="flex:1;min-width:140px">
@@ -117,8 +117,8 @@
 
           {# RIGHT — assigned children with qty / required / child configuration (1/3) #}
           <div class="column">
-            <div class="pc" style="display:flex;flex-direction:column;height:520px;overflow:hidden">
-              <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Expected Children</div><span class="is-size-7 has-text-grey"><span id="cm-assigned-count">0</span> assigned</span></div>
+            <div class="card" style="display:flex;flex-direction:column;height:520px;overflow:hidden">
+              <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Expected Children</div><span class="is-size-7 has-text-grey"><span id="cm-assigned-count">0</span> assigned</span></div>
               <div style="flex:1;overflow-y:auto;min-height:0">
                 <table class="table is-fullwidth is-size-7" style="margin:0">
                   <tbody id="cm-assigned-body">

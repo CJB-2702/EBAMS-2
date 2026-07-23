@@ -60,12 +60,13 @@ class PartSourcingStruct:
     def _item_dict(self, item: SupplierItem) -> dict:
         data = SupplierItemStruct.from_instance(item).to_dict()
         if self.eager_thread:
-            from app.parts.control_layer.managers.part_thread_manager import (
-                PartThreadManager,
+            from app.events.control_layer.managers.activity_thread_manager import (
+                ActivityThreadManager,
             )
 
-            docs = PartThreadManager(item).documents()
+            manager = ActivityThreadManager(item)
+            docs = manager.documents()
             data["image_documents"] = [d for d in docs if d["is_image"]]
             data["other_documents"] = [d for d in docs if not d["is_image"]]
-            data["comments"] = PartThreadManager(item).comments()
+            data["comments_card"] = manager.card(None)
         return data

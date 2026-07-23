@@ -6,9 +6,9 @@ The id="event-card-{hash}" wrapper lets an HTMX outerHTML swap (see comment_add)
 replace the whole card — metadata, files, and comments together — in one shot.
 {% endcomment %}
 <div id="event-card-{{ card.hash }}">
-  <div class="pc depth-1 mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card depth-1 mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>
         <a href="{% url 'event_detail' hash=card.hash %}">{{ card.event.title }}</a>
       </div>
@@ -26,7 +26,7 @@ replace the whole card — metadata, files, and comments together — in one sho
         {% elif card.event.priority %}<span class="tag is-light is-small">{{ card.event.get_priority_display }}</span>{% endif %}
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <div class="columns">
 
         {# ── Base info (2/3) ── #}

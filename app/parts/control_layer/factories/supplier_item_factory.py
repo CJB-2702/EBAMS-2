@@ -10,7 +10,7 @@ from django.db import transaction
 from app.parts.control_layer.guards.supplier_item_validator_guard import (
     SupplierItemValidator,
 )
-from app.parts.control_layer.managers.part_activity_manager import PartActivityManager
+from app.parts.control_layer.narrators.part_activity_narrator import PartActivityNarrator
 from app.parts.control_layer.narrators.supplier_item_narrator import SupplierItemNarrator
 from app.parts.models import SupplierItem
 
@@ -53,7 +53,7 @@ class SupplierItemFactory:
 
             # Machine comment onto the base Part's audit feed (§5): the reverse
             # activity struct resolves the item up to its base Part.
-            activity = PartActivityManager.for_supplier_item(item, actor)
+            activity = PartActivityNarrator.for_supplier_item(item, actor)
             activity.record(SupplierItemNarrator.item_mapped(item, activity.part))
 
             # Alias hook (D8): mirrors the MPN into an MPN alias.

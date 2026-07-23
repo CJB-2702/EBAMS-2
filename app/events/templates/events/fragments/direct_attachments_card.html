@@ -8,9 +8,9 @@ Expects: card={hash, direct_attachments, event.allow_direct_attachments},
 optional attachment_error.
 {% endcomment %}
 {% if card.event.allow_direct_attachments %}
-<div class="pc depth-2">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card depth-2">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">folder</span></span>
       Files ({{ card.direct_attachments|length }})
     </div>
@@ -25,7 +25,7 @@ optional attachment_error.
       </button>
     </div>
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     <div style="max-height:300px; overflow-y:auto;">
       <table class="table is-fullwidth is-narrow is-hoverable is-size-7 mb-0">
         <thead><tr><th>Name</th><th>Type</th><th>Size</th></tr></thead>

@@ -1,8 +1,11 @@
 """Guard type: Validator.
 
 Guards AssetModel uniqueness and base/revision consistency: the natural key
-``(model_name, subtype_name, revision)`` must be unique, and the base-model flag
-must agree with the presence of a base_model link.
+``(model_name, version)`` must be unique, and the base-model flag must agree with
+the presence of a base_model link. ``config_baselines`` is an allow-list, not part
+of identity, so it plays no role here. This validator front-runs the DB-level
+``uq_assetmodel_identity`` constraint to produce a friendly, case-insensitive
+message before the database rejects.
 """
 
 from __future__ import annotations
@@ -18,8 +21,7 @@ class AssetModelUniquenessValidator:
         cls,
         *,
         model_name: str,
-        subtype_name: str | None,
-        revision: str | None,
+        version: str | None,
         is_base_model: bool,
         base_model_id: int | None,
         exclude_model_id: int | None = None,
@@ -30,16 +32,15 @@ class AssetModelUniquenessValidator:
             errors.append("Model name is required.")
 
         qs = AssetModel.objects.filter(
-            model_name=model_name,
-            subtype_name=subtype_name or None,
-            revision=revision or None,
+            model_name__iexact=model_name,
+            version__iexact=version or "",
         )
         if exclude_model_id is not None:
             qs = qs.exclude(id=exclude_model_id)
         if qs.exists():
             errors.append(
-                f"A model with name '{model_name}', subtype '{subtype_name}', "
-                f"revision '{revision}' already exists."
+                f"A model with name '{model_name}' and version '{version or ''}' "
+                f"already exists."
             )
 
         # A base model has no base_model link; a revision must have one.

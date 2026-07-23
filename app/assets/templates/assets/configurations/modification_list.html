@@ -11,7 +11,7 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Modifications ({{ modifications|length }})</div></div>
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Modifications ({{ modifications|length }})</div></div>
     <!-- Filter + Search Bar -->
     <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
       <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Mode</th><th>Applies To</th><th>Template Uses</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
       <tbody id="modifications-table-body">
         {% for m in modifications %}

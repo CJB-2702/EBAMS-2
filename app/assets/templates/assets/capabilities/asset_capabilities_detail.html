@@ -30,9 +30,9 @@
 <div class="body-grid has-rail">
   <div>
     <!-- Capability Status Metrics -->
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title">Capability Status Summary</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Capability Status Summary</div></div>
+      <div class="card-content">
         <div class="columns">
           <div class="column">
             <div class="label is-small has-text-grey mb-0">Overall Status</div>
@@ -51,11 +51,11 @@
     </div>
     
     <!-- Resolved Capabilities Inventory -->
-    <div class="pc">
-      <div class="pc-header">
-        <div class="pc-header-title">Resolved Capabilities Inventory ({{ asset.capabilities|length }})</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Resolved Capabilities Inventory ({{ asset.capabilities|length }})</div>
       </div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-striped is-hoverable is-size-7 mb-0">
           <thead>
             <tr>
@@ -112,9 +112,9 @@
   
   <div class="body-rail">
     <!-- Quick Specs info card -->
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Asset Specifications</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Asset Specifications</div></div>
+      <div class="card-content">
         <dl class="kv">
           <dt>Serial Number</dt>
           <dd class="is-family-monospace">{{ asset.serial_number }}</dd>

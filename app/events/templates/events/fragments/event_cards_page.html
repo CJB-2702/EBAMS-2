@@ -7,7 +7,7 @@ in ev_list_large.html) and for each subsequent htmx-event-cards fragment.
   {% include "events/fragments/event_card.html" with card=card %}
 {% empty %}
   {% if page_obj.number == 1 %}
-  <div class="pc depth-1"><div class="pc-body has-text-centered has-text-grey py-5">No events found.</div></div>
+  <div class="card depth-1"><div class="card-content has-text-centered has-text-grey py-5">No events found.</div></div>
   {% endif %}
 {% endfor %}
 

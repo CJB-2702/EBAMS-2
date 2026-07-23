@@ -37,8 +37,7 @@ class AssetModelFactory:
     def create(cls, *, data: dict, actor: "AbstractUser") -> AssetModel:
         errors = AssetModelUniquenessValidator.validate(
             model_name=data.get("model_name", ""),
-            subtype_name=data.get("subtype_name"),
-            revision=data.get("revision"),
+            version=data.get("version"),
             is_base_model=data.get("is_base_model", True),
             base_model_id=data.get("base_model_id"),
         )
@@ -48,8 +47,9 @@ class AssetModelFactory:
         with transaction.atomic():
             model = AssetModel.objects.create(
                 model_name=data["model_name"],
-                subtype_name=data.get("subtype_name") or None,
-                revision=data.get("revision") or None,
+                version=(data.get("version") or "").strip(),
+                version_rank=data.get("version_rank"),
+                config_baselines=data.get("config_baselines") or [],
                 is_base_model=data.get("is_base_model", True),
                 base_model_id=data.get("base_model_id"),
                 asset_class_id=data["asset_class_id"],

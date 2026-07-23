@@ -22,10 +22,10 @@ from app.assets.control_layer.domain_structs.asset_tree_struct import AssetTreeS
 from app.assets.control_layer.managers.asset_hierarchy_manager import (
     AssetHierarchyManager,
 )
-from app.assets.control_layer.managers.asset_image_manager import AssetImageManager
 from app.assets.control_layer.managers.asset_relationship_manager import (
     AssetRelationshipManager,
 )
+from app.events.control_layer.managers.gallery_manager import GalleryManager
 from app.assets.control_layer.managers.meter_manager import MeterManager
 from app.assets.models import Asset
 
@@ -68,8 +68,15 @@ class AssetContext:
         return AssetRelationshipManager(self.asset, self.actor)
 
     @property
-    def images(self) -> AssetImageManager:
-        return AssetImageManager(self.asset, self.actor)
+    def images(self) -> GalleryManager:
+        # An Asset is built with its photo_gallery, so lazy creation never fires;
+        # the resolver is a safety net that would use the asset's own domain.
+        return GalleryManager(
+            self.asset,
+            self.actor,
+            gallery_attr="photo_gallery",
+            domain_id_resolver=lambda: self.asset.domain_id,
+        )
 
     # ── Domain verbs ─────────────────────────────────────────────────────────
     def update(self, *, data: dict) -> "Asset":
@@ -84,11 +91,14 @@ class AssetContext:
                 raise AssetValidationError(errors)
 
         changed: list[str] = []
-        for field in ("name", "serial_number", "status", "tags"):
+        for field in ("name", "serial_number", "status", "tags", "config_baseline"):
             if field in data:
                 value = data[field]
                 if field in ("name", "serial_number"):
                     value = (value or "").strip()
+                elif field == "config_baseline":
+                    # Stored as-is (soft); UI dropdown is the real constraint.
+                    value = (value or "").strip() or None
                 setattr(a, field, value)
                 changed.append(field)
 

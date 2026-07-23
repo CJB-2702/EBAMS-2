@@ -49,8 +49,8 @@ class SupplierItemActivityStruct:
         return self.item.part_manufacturer
 
     def to_dict(self) -> dict:
-        from app.parts.control_layer.managers.part_thread_manager import (
-            PartThreadManager,
+        from app.events.control_layer.managers.activity_thread_manager import (
+            ActivityThreadManager,
         )
 
         item = self.item
@@ -71,14 +71,14 @@ class SupplierItemActivityStruct:
                 "name": part.name,
             },
             "supplier_item_thread": {
-                "documents": PartThreadManager(item).documents(),
-                "comments": PartThreadManager(item).comments(),
+                "documents": ActivityThreadManager(item).documents(),
+                "comments": ActivityThreadManager(item).comments(),
             },
             "part_thread": {
-                "documents": PartThreadManager(
+                "documents": ActivityThreadManager(
                     part, thread_attr="documents_thread"
                 ).documents(),
-                "comments": PartThreadManager(
+                "comments": ActivityThreadManager(
                     part, thread_attr="documents_thread"
                 ).comments(),
             },

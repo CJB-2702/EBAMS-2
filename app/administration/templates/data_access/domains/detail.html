@@ -39,9 +39,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations linked to this domain ({{ organizations|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations linked to this domain ({{ organizations|length }})</div></div>
+    <div class="card-content">
       {% if organizations %}
       <ul class="is-size-7">
         {% for o in organizations %}
@@ -54,9 +54,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users with access to this domain ({{ user_assignments|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users with access to this domain ({{ user_assignments|length }})</div></div>
+    <div class="card-content is-flush">
       {% if user_assignments %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>User</th><th>Email</th></tr></thead>
@@ -70,7 +70,7 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No users have access yet.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7 mb-0">No users have access yet.</p></div>
       {% endif %}
     </div>
   </div>

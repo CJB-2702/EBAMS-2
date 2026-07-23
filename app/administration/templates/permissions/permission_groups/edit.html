@@ -37,9 +37,9 @@
 <div class="body-grid full-width">
 
   {% if can_rename %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="card-content">
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="rename_group">
@@ -58,16 +58,16 @@
   </div>
   {% endif %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions</div></div>
+    <div class="card-content">
       {% include "permissions/permission_groups/_permissions_dlb_only.html" %}
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members</div></div>
+    <div class="card-content">
       {% include "permissions/permission_groups/_users_dlb_only.html" %}
     </div>
   </div>

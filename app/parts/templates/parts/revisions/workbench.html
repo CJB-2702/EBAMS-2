@@ -21,18 +21,21 @@
 </div>
 
 <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+<script src="{% static 'web_components/file_browser.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
 
 <div class="body-grid full-width">
   {% for rev in revisions %}
-  <div class="pc mb-5">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-5">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">bookmark</span></span>
         <a href="{% url 'revision_detail_by_id' revision_id=rev.id %}">{{ rev.major_revision_number }}.{{ rev.minor_revision_number }}</a>
       </div>
       {% include "assets/_status_tag.html" with value=rev.status %}
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <div class="body-grid has-rail">
         <div>
           <dl class="kv">
@@ -50,9 +53,9 @@
           </form>
 
           {# ── Gallery ── #}
-          <div class="pc depth-2 mt-4">
-            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
-            <div class="pc-body">
+          <div class="card depth-2 mt-4">
+            <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+            <div class="card-content">
               {% if rev.image_documents %}
               <image-carousel id="carousel-rev-{{ rev.id }}" preview-height="240" loop>
                 {% for d in rev.image_documents %}
@@ -65,63 +68,12 @@
           </div>
 
           {# ── Comments ── #}
-          <div class="pc depth-2 mt-4">
-            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ rev.comments|length }})</div></div>
-            <div class="pc-body">
-              {% for c in rev.comments %}
-              <div class="pc mb-3 depth-2">
-                <div class="pc-body is-size-7">
-                  <p class="has-text-grey mb-1"><strong>{{ c.author }}</strong> &middot; {{ c.created_at }}</p>
-                  <p>{{ c.body }}</p>
-                </div>
-              </div>
-              {% empty %}<p class="is-size-7 has-text-grey">No comments yet.</p>{% endfor %}
-
-              <div class="pc depth-2 mt-3">
-                <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div></div>
-                <div class="pc-body">
-                  <form method="post" action="{% url 'revision_add_comment' part_id=part_id revision_id=rev.id %}">
-                    {% csrf_token %}
-                    <div class="field">
-                      <label class="label is-small">Comment</label>
-                      <div class="control">
-                        <textarea class="textarea is-small" name="body" rows="3" placeholder="Write a comment…" required></textarea>
-                      </div>
-                    </div>
-                    <div class="field">
-                      <label class="label is-small">Domain</label>
-                      <div class="control">
-                        <div class="select is-small"><select name="domain">
-                          {% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
-                        </select></div>
-                      </div>
-                    </div>
-                    <div class="buttons mt-3">
-                      <button class="button is-small is-primary" type="submit">
-                        <span class="icon"><span class="material-icons" aria-hidden="true">send</span></span>
-                        <span>Submit Comment</span>
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
+          {% url 'revision_add_comment' part_id=part_id revision_id=rev.id as comment_add_url %}
+          {% include "events/fragments/comments_card.html" with card=rev.comments_card add_url=comment_add_url next=request.get_full_path depth="depth-2 mt-4" row_depth="depth-3" action_depth="depth-4" %}
         </div>
 
         <div class="body-rail">
-          <div class="pc depth-2">
-            <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Files</div></div>
-            <div class="pc-body">
-              {% for d in rev.other_documents %}
-              <p class="is-size-7 mb-1">
-                <a href="{% url 'file_download' file_id=d.file_id %}" title="{{ d.filename }}">
-                  <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">description</span></span>{{ d.filename }}
-                </a>
-              </p>
-              {% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
-            </div>
-          </div>
+          {% include "events/fragments/files_card.html" with documents=rev.other_documents %}
         </div>
       </div>
     </div>

@@ -41,6 +41,8 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 - `docs/UX_UI/components/modals.md`
 - `docs/UX_UI/components/tabs.md`
 - `docs/UX_UI/components/pagination.md`
+- `docs/UX_UI/components/file_upload.md`
+- `docs/UX_UI/components/file_browser.md`
 
 **Engineering principles:**
 - `docs/Architecture/standards.md`
@@ -63,20 +65,11 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 - **Cards as default container:** Main content in `.card` → `.card-content`; actions in `.card-footer`.
 - **Tabs:** `<div class="tabs is-boxed">`, left-justified; skip tabs when only one section.
 - **Fonts:** Monospace inside form inputs (clear `0`, `O`, `I`, `1`, `l` distinction).
+- **Card header/content overrides:** `.card-header` and `.card-content` carry project-specific overrides in `custom_css.css` (flat border instead of Bulma's drop shadow, border-bottom divider instead of box-shadow, denser padding) — don't reintroduce Bulma's stock look with inline styles.
 
 ### Canonical card footer layout
 
-```html
-<footer class="card-footer">
-  <div class="columns is-mobile is-vcentered is-gapless">
-    <div class="column is-3"><!-- Clear/Reset (optional) --></div>
-    <div class="column is-3"><!-- Cancel or empty --></div>
-    <div class="column is-6 is-flex is-justify-content-flex-end">
-      <!-- Primary submit -->
-    </div>
-  </div>
-</footer>
-```
+Don't hand-roll this — see [docs/UX_UI/form_style_guide.md](../../docs/UX_UI/form_style_guide.md) and [docs/UX_UI/Examples/card_footer_markup.md](../../docs/UX_UI/Examples/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
 
 ---
 

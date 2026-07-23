@@ -14,7 +14,7 @@ Modal and dialog components use the native HTML `<dialog>` element styled with B
 
 - **`<dialog>`** — native HTML element for modal behaviour (backdrop, focus trap, Escape to close).
 - **Bulma `.card`** — provides the visual card styling and structure.
-- **`.modal-styled`** (in `custom_css.css`) — the app's recommended modal treatment: centered sizing, square corners, a `.pc-header`-style divider, and a red flush-corner close button. Add this class alongside `.card` on every new dialog.
+- **`.modal-styled`** (in `custom_css.css`) — the app's recommended modal treatment: centered sizing, square corners, and a red flush-corner close button. Add this class alongside `.card` on every new dialog.
 - **`commandfor` & `command`** — declarative control of dialog state.
 
 ## Basic structure
@@ -61,7 +61,7 @@ Reference implementation: the "Browse all files" dialog in [app/events/templates
 | Region | Class | Role |
 | :--- | :--- | :--- |
 | Header | `.card-header` + `.card-header-title` | Title + close button (`.delete`, styled by `.modal-styled` as a red square flush with the top-right corner). |
-| Content | `.card-content` + `.content` | The main body of the dialog. Divided from the header by a solid `border-bottom` (same treatment as `.pc-header`), not Bulma's default box-shadow. |
+| Content | `.card-content` + `.content` | The main body of the dialog. Divided from the header by `.card-header`'s project-wide `border-bottom` (see [../visual_language.md](../visual_language.md)), not Bulma's default box-shadow. |
 | Footer | `.card-footer.custom-card-footer` | Action buttons; follows the same geometry as the canonical card footer (see [../form_style_guide.md](../form_style_guide.md)). |
 
 ## `.modal-styled` — the recommended pattern
@@ -71,7 +71,6 @@ Add `.modal-styled` alongside `.card` on every dialog. It provides:
 - **Centered position** — `position: fixed; top/left: 50%; transform: translate(-50%, -50%)`. Bulma's `.card` sets `position: relative`, which clobbers the browser's built-in `dialog:modal` auto-centering (`position: fixed; margin: auto`) — `.modal-styled` restores centering explicitly.
 - **Sizing** — `width: 80vw`, capped at `max-width: 800px`, `max-height: 80vh`.
 - **Square corners** — `border-radius: 0 !important`, consistent with the rest of the app's sharp-corner rule.
-- **Header/body divider** — replaces the default card-header box-shadow with a `1px solid var(--bulma-border-weak)` border-bottom, matching `.pc-header`.
 - **Close button** — repositions `.delete` to `position: absolute; top: 0; right: 0`, flush with the dialog's corner, square (`border-radius: 0`) and colored `var(--bulma-danger)` (red) instead of Bulma's default translucent circle.
 - **Correct closed state** — `.modal-styled { display: none; }` by default, with `.modal-styled[open] { display: flex; flex-direction: column; }` restoring layout only once the dialog is actually open.
 

@@ -1,14 +1,14 @@
 <div>
 
   <!-- Roles -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
         Roles (capability gate)
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Roles bundle permission groups. Use this list to assign or remove a role; relationship type and notes can be edited per-row below.</p>
       {% include "users/_roles_dlb_only.html" %}
 
@@ -63,28 +63,28 @@
   </div>
 
   <!-- Direct permission group membership -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>
         Direct permission group membership
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Adds the user to a Django <code>auth.Group</code> directly, bypassing the role system. Prefer roles unless there is a specific reason.</p>
       {% include "users/_groups_dlb_only.html" %}
     </div>
   </div>
 
   <!-- Direct permissions -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>
         Direct permissions
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Permissions already covered by an assigned permission group are shown with a grey row in the available list.</p>
       {% include "users/_permissions_dlb_only.html" %}
     </div>

@@ -10,7 +10,11 @@ from app.assets.control_layer.domain_structs.asset_model_struct import AssetMode
 from app.assets.control_layer.handlers.model_asset_class_propagation_handler import (
     ModelAssetClassPropagationHandler,
 )
+from app.assets.control_layer.thread_domain import default_domain_id_for
 from app.assets.models import ModelCapability, ModelManufacturer
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
+from app.events.control_layer.managers.gallery_manager import GalleryManager
+from app.events.models import ActivityThread, FileSet
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -19,14 +23,18 @@ if TYPE_CHECKING:
 
 _METADATA_FIELDS = (
     "model_name",
-    "subtype_name",
-    "revision",
+    "version",
+    "version_rank",
+    "config_baselines",
     "meter1_unit",
     "meter2_unit",
     "meter3_unit",
     "meter4_unit",
 )
-_NULLABLE_FIELDS = frozenset(_METADATA_FIELDS) - {"model_name"}
+# Meters coerce blank → None; identity strings (model_name, version) coerce blank → "".
+_NULLABLE_FIELDS = frozenset(
+    ("meter1_unit", "meter2_unit", "meter3_unit", "meter4_unit")
+)
 
 
 class AssetModelContext:
@@ -44,6 +52,28 @@ class AssetModelContext:
         ctx.struct = struct
         ctx.model = struct.model
         return ctx
+
+    # ── Activity surfaces ─────────────────────────────────────────────────────
+    @property
+    def documents(self) -> ActivityThreadManager:
+        return ActivityThreadManager(
+            self.model,
+            self.actor,
+            thread_attr="documentation",
+            domain_id_resolver=lambda: default_domain_id_for(ActivityThread),
+        )
+
+    @property
+    def images(self) -> GalleryManager:
+        # A model line spans domains, so its gallery FileSet is created lazily with
+        # a bootstrap domain on first upload.
+        return GalleryManager(
+            self.model,
+            self.actor,
+            gallery_attr="photo_gallery",
+            gallery_thread_cls=FileSet,
+            domain_id_resolver=lambda: default_domain_id_for(FileSet),
+        )
 
     # ── Domain verbs ─────────────────────────────────────────────────────────
     def set_asset_class(self, asset_class_id: int) -> int:
@@ -63,8 +93,10 @@ class AssetModelContext:
             for field in _METADATA_FIELDS:
                 if field in data:
                     value = data[field]
-                    if field == "model_name":
+                    if field in ("model_name", "version"):
                         value = (value or "").strip()
+                    elif field == "config_baselines":
+                        value = list(value or [])
                     elif field in _NULLABLE_FIELDS:
                         value = (value or None)
                     setattr(m, field, value)
@@ -83,6 +115,27 @@ class AssetModelContext:
                     primary_id=data.get("primary_manufacturer_id"),
                 )
         return m
+
+    def move_manufacturers(self, *, manufacturer_ids: list[int], direction: str) -> None:
+        """Add or remove manufacturers from the linked set, one HTMX move at a time.
+
+        Reconciles through :meth:`_sync_manufacturers`, which preserves exactly one
+        primary link (falling back to the first remaining link if the current primary
+        is removed)."""
+        current = set(
+            ModelManufacturer.objects.filter(model=self.model).values_list(
+                "manufacturer_id", flat=True
+            )
+        )
+        primary_id = (
+            ModelManufacturer.objects.filter(model=self.model, is_primary=True)
+            .values_list("manufacturer_id", flat=True)
+            .first()
+        )
+        moved = set(manufacturer_ids)
+        desired = current - moved if direction == "remove" else current | moved
+        with transaction.atomic():
+            self._sync_manufacturers(desired_ids=list(desired), primary_id=primary_id)
 
     def set_capabilities(self, *, capability_ids: list[int]) -> None:
         """Reconcile declared model capabilities to the desired definition set."""
@@ -104,6 +157,23 @@ class AssetModelContext:
             to_remove = [rid for did, rid in existing.items() if did not in desired]
             if to_remove:
                 ModelCapability.objects.filter(id__in=to_remove).delete()
+
+    def add_config_baseline(self, value: str) -> "AssetModel":
+        """Append a new accepted baseline to this model's allow-list (case-insensitive
+        dedup). No-op when blank or already present. Backs the asset form's
+        "add new baseline" escape hatch."""
+        value = (value or "").strip()
+        m = self.model
+        if not value:
+            return m
+        existing = {str(v).strip().lower() for v in (m.config_baselines or [])}
+        if value.lower() in existing:
+            return m
+        m.config_baselines = [*(m.config_baselines or []), value]
+        m.updated_by = self.actor
+        with transaction.atomic():
+            m.save(update_fields=["config_baselines", "updated_at", "updated_by"])
+        return m
 
     # ── Internals ────────────────────────────────────────────────────────────
     def _sync_manufacturers(self, *, desired_ids: list[int], primary_id) -> None:

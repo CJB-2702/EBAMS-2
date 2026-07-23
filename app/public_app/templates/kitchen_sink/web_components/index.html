@@ -38,15 +38,15 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
 
   <!-- collapsable-side-bar -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span>
         collapsable-side-bar
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         Collapsible application sidebar shell. Toggles a <code>[collapsed]</code> attribute
         observed by the parent grid via CSS <code>:has()</code>.
@@ -61,15 +61,15 @@
   </div>
 
   <!-- dual-listbox -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">compare_arrows</span></span>
         dual-listbox
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         Two-panel assign/remove widget for M2M fields. Left panel = available,
         right panel = chosen. Arrow buttons move items between panels.
@@ -84,15 +84,15 @@
   </div>
 
   <!-- image-carousel -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>
         image-carousel
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         Horizontal scrollable image carousel with left/right navigation.
         Images provided via default slot. Configurable preview dimensions via attributes.
@@ -107,15 +107,15 @@
   </div>
 
   <!-- list-box -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
         list-box
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         Single-panel listbox used as one half of the dual-listbox. Also usable standalone
         for single-select or multi-select filtered lists.
@@ -130,15 +130,15 @@
   </div>
 
   <!-- search-dropdown -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
         search-dropdown
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         HTMX-powered search input that renders a dropdown of results and sets a hidden
         form field on selection. Used for FK pickers (permission, owner, domain).
@@ -153,15 +153,15 @@
   </div>
 
   <!-- toast-alert -->
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span>
         toast-alert
       </div>
       <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}">view page</a>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
         Dismissible, overlay toast notification container. Supports slide-down and fade-out animations.
         Can be triggered via backend response or client-side DOM insertions.

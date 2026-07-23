@@ -19,8 +19,11 @@ from app.parts.control_layer.domain_structs.reverse_structs.part_revision_struct
     PartRevisionNotFoundError,
     PartRevisionStruct,
 )
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
+from app.events.models import ActivityThread
 from app.parts.control_layer.part_context import PartContext
+from app.parts.control_layer.thread_domain import default_domain_id_for
+from app.utils.safe_redirect import safe_next_url
 
 
 @require_http_methods(["GET", "POST"])
@@ -98,12 +101,15 @@ def revision_add_comment(request: HttpRequest, part_id: int, revision_id: int) -
     from app.parts.models import PartRevision
 
     revision = PartRevision.objects.get(id=revision_id, part_id=part_id)
-    body = request.POST.get("body", "").strip()
-    domain_id = request.POST.get("domain")
-    if body and domain_id:
-        PartThreadManager(revision, request.user).add_comment(body, domain_id=int(domain_id))
+    body = request.POST.get("content", "").strip()
+    if body:
+        ActivityThreadManager(
+            revision,
+            request.user,
+            domain_id_resolver=lambda: default_domain_id_for(ActivityThread),
+        ).add_comment(body)
         messages.success(request, "Comment added.")
-    return redirect(reverse("part_revisions", kwargs={"part_id": part_id}))
+    return redirect(safe_next_url(request, reverse("part_revisions", kwargs={"part_id": part_id})))
 
 
 @require_http_methods(["POST"])
@@ -114,7 +120,7 @@ def revision_attach_document(request: HttpRequest, part_id: int, revision_id: in
     uploaded = request.FILES.get("file")
     domain_id = request.POST.get("domain")
     if uploaded and domain_id:
-        result = PartThreadManager(revision, request.user).attach_document(
+        result = ActivityThreadManager(revision, request.user).attach_document(
             uploaded, domain_id=int(domain_id), caption=request.POST.get("caption", "")
         )
         if result.ok:

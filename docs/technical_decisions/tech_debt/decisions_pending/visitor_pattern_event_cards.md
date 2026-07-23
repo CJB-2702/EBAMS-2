@@ -214,7 +214,7 @@ class EventCardVisitResult(NamedTuple):
 `event_card.html` becomes a thin dispatcher that `{% include result.template
 with card=result.context %}`, falling back to the current generic body for
 unregistered types. Each app's template extends/includes the shared
-`pc`/`pc-header`/`pc-body` card shell so density (`format=`) and HTMX
+`card`/`card-header`/`card-content` shell so density (`format=`) and HTMX
 swap-target conventions stay uniform — only the body content varies.
 
 ## Trade-offs, applied to this codebase

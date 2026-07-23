@@ -27,11 +27,11 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>Log New Reading</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>Log New Reading</div>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
         <form method="post">
           {% csrf_token %}
           <div class="columns is-multiline">
@@ -75,11 +75,11 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Reading History</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Reading History</div>
       </div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-striped">
           <thead>
             <tr>
@@ -107,11 +107,11 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assessment</span></span>Current Meters</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assessment</span></span>Current Meters</div>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
         {% if meters %}
         <div class="columns is-multiline is-mobile">
           {% for m in meters %}

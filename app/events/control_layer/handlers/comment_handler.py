@@ -27,7 +27,7 @@ class CommentHandler:
     def __init__(self, actor: "AbstractUser") -> None:
         self.actor = actor
 
-    def add(self, activity_thread, post_data, files=None) -> CommentResult:
+    def add(self, activity_thread, post_data, files=None, *, is_human_made: bool = True) -> CommentResult:
         content = post_data.get("content", "").strip()
         if not content:
             return CommentResult(ok=False, errors=["Comment content is required."])
@@ -38,7 +38,7 @@ class CommentHandler:
             comment = Comment.objects.create(
                 activity_thread=activity_thread,
                 content=content,
-                is_human_made=True,
+                is_human_made=is_human_made,
                 revision=1,
                 created_by=self.actor,
                 updated_by=self.actor,

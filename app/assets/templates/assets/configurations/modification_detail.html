@@ -20,9 +20,9 @@
 <div class="body-grid has-rail">
   <div>
     {# ── Identity ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div>
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div>
         <a href="{% url 'defined_modification_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit details"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
-      <div class="pc-body"><dl class="kv">
+      <div class="card-content"><dl class="kv">
         <dt>Code</dt><dd class="is-family-monospace">{{ modification.code }}</dd>
         <dt>Name</dt><dd>{{ modification.name }}</dd>
         <dt>Category</dt><dd>{{ modification.category|default:"—" }}</dd>
@@ -32,11 +32,11 @@
     </div>
 
     {# ── Applicability ── #}
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Applicability</div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Applicability</div>
         <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit applicability"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
         <div class="mb-2">{% include "assets/_applicability_tag.html" with applicability=modification.applicability %}
           <span class="is-size-7 has-text-grey ml-1">{{ modification.applicability.summary }}</span></div>
         <p class="is-size-7 has-text-grey">{{ modification.applicability.mode_help }}</p>
@@ -44,13 +44,13 @@
     </div>
 
     {# ── Asset Classes ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Asset Classes
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Asset Classes
         {% if modification.applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
         {% elif modification.applicability.class_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
         {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
       </div>
       <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit asset classes"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
-      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
+      <div class="card-content is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
         <thead><tr><th>Class</th><th>Category</th></tr></thead>
         <tbody>
           {% for c in modification.applicability.classes %}
@@ -61,12 +61,12 @@
     </div>
 
     {# ── Asset Models ── #}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Asset Models
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Asset Models
         {% if modification.applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
         {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
       </div>
       <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit asset models"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
-      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
+      <div class="card-content is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;">
         <thead><tr><th>Model</th><th>Asset Class</th></tr></thead>
         <tbody>
           {% for m in modification.applicability.models %}
@@ -79,8 +79,8 @@
 
   {# ── Rail: usage stats ── #}
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Usage</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Usage</div></div>
+      <div class="card-content">
         <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
           <span class="is-size-7 has-text-grey">Asset Assignments</span>
           <a href="{% url 'asset_index' %}?modification={{ modification.id }}" class="tag is-light" title="View assets with this modification">{{ asset_count }}</a>

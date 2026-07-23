@@ -44,8 +44,8 @@ class RevisionActivityStruct:
         return self.revision.part
 
     def to_dict(self) -> dict:
-        from app.parts.control_layer.managers.part_thread_manager import (
-            PartThreadManager,
+        from app.events.control_layer.managers.activity_thread_manager import (
+            ActivityThreadManager,
         )
 
         rev = self.revision
@@ -63,14 +63,14 @@ class RevisionActivityStruct:
                 "name": part.name,
             },
             "revision_thread": {
-                "documents": PartThreadManager(rev).documents(),
-                "comments": PartThreadManager(rev).comments(),
+                "documents": ActivityThreadManager(rev).documents(),
+                "comments": ActivityThreadManager(rev).comments(),
             },
             "part_thread": {
-                "documents": PartThreadManager(
+                "documents": ActivityThreadManager(
                     part, thread_attr="documents_thread"
                 ).documents(),
-                "comments": PartThreadManager(
+                "comments": ActivityThreadManager(
                     part, thread_attr="documents_thread"
                 ).comments(),
             },

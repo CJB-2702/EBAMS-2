@@ -7,13 +7,13 @@ Generic contract (see app/events/presentation_layer/tools/generic_cards.py):
   documents   list of document dicts: {file_id, filename, icon, file_size, ...}
   title       optional, default "Files"
 {% endcomment %}
-<div class="pc">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>{{ title|default:"Files" }} ({{ documents|length }})
     </div>
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     <file-browser default-view="list" storage-key="files-card-view">
       {% for d in documents %}
       <a class="fb-item" href="{% url 'file_download' file_id=d.file_id %}"

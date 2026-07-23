@@ -10,8 +10,10 @@ from app.parts.control_layer.managers.part_domain_manager import PartDomainManag
 from app.parts.control_layer.managers.part_image_manager import PartImageManager
 from app.parts.control_layer.managers.part_manager import PartManager
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.parts.control_layer.thread_domain import default_domain_id_for
 from app.parts.models import Part, PartRevision
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
+from app.events.models import ActivityThread
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -51,13 +53,13 @@ class PartContext:
         owner = revision or self.current_revision()
         if owner is None:
             return []
-        return PartThreadManager(owner, self.actor).documents()
+        return ActivityThreadManager(owner, self.actor).documents()
 
     def comments(self, revision: PartRevision | None = None) -> list[dict]:
         # Revision comments live on the revision's own thread; base-Part comments
         # (human comments + the machine audit feed) live on documents_thread.
         if revision is not None:
-            return PartThreadManager(revision, self.actor).comments()
+            return ActivityThreadManager(revision, self.actor).comments()
         return self.documents_thread.comments()
 
     def supplier_items(self) -> list:
@@ -75,16 +77,26 @@ class PartContext:
         return PartRevisionManager(self.part, self.actor)
 
     @property
-    def documents_thread(self) -> PartThreadManager:
+    def documents_thread(self) -> ActivityThreadManager:
         """The Part's technical library thread: base documents, human comments,
         and the machine audit feed."""
-        return PartThreadManager(self.part, self.actor, thread_attr="documents_thread")
+        return ActivityThreadManager(
+            self.part,
+            self.actor,
+            thread_attr="documents_thread",
+            domain_id_resolver=lambda: default_domain_id_for(ActivityThread),
+        )
 
     @property
-    def gallery(self) -> PartThreadManager:
+    def gallery(self) -> ActivityThreadManager:
         """The Part's gallery thread (image attachments + backend-only audit
         comments). Prefer ``images`` for add/remove/set-primary flows."""
-        return PartThreadManager(self.part, self.actor, thread_attr="gallery_thread")
+        return ActivityThreadManager(
+            self.part,
+            self.actor,
+            thread_attr="gallery_thread",
+            domain_id_resolver=lambda: default_domain_id_for(ActivityThread),
+        )
 
     @property
     def images(self) -> PartImageManager:

@@ -39,9 +39,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions in this group ({{ permissions|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Permissions in this group ({{ permissions|length }})</div></div>
+    <div class="card-content is-flush">
       {% if permissions %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>App</th><th>Model</th><th>Codename</th><th>Label</th></tr></thead>
@@ -57,14 +57,14 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No permissions in this group.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7 mb-0">No permissions in this group.</p></div>
       {% endif %}
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members ({{ members|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Members ({{ members|length }})</div></div>
+    <div class="card-content is-flush">
       {% if members %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>User</th><th>Email</th></tr></thead>
@@ -78,7 +78,7 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No members.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7 mb-0">No members.</p></div>
       {% endif %}
     </div>
   </div>

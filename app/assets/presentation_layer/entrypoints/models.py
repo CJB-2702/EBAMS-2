@@ -24,7 +24,7 @@ from app.assets.control_layer.factories.asset_model_factory import (
     AssetModelFactory,
     AssetModelValidationError,
 )
-from app.assets.models import AssetClass, CapabilityDefinition, Manufacturer
+from app.assets.models import AssetClass, AssetModel, CapabilityDefinition, Manufacturer
 from app.assets.presentation_layer.search.asset_model_search import (
     load_model_detail,
     search_models,
@@ -36,6 +36,29 @@ def _form_choices() -> dict:
         "classes": AssetClass.objects.order_by("name"),
         "manufacturers": Manufacturer.objects.order_by("name"),
         "domains": Domain.objects.order_by("name"),
+    }
+
+
+def _parse_id_list(post, key: str) -> list[int]:
+    out: list[int] = []
+    for raw in post.getlist(key):
+        try:
+            out.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _manufacturer_dlb_context(model) -> dict:
+    """Split all manufacturers into (available, assigned) for the dual-listbox."""
+    assigned_ids = set(model.manufacturers.values_list("id", flat=True))
+    all_manufacturers = Manufacturer.objects.order_by("name")
+    return {
+        "model": model,
+        "manufacturers_assigned": [m for m in all_manufacturers if m.id in assigned_ids],
+        "manufacturers_available": [
+            m for m in all_manufacturers if m.id not in assigned_ids
+        ],
     }
 
 
@@ -94,7 +117,12 @@ def model_create(request: HttpRequest) -> HttpResponse:
             return render(
                 request,
                 "assets/models/form.html",
-                {"mode": "create", "model": data, **_form_choices()},
+                {
+                    "mode": "create",
+                    "model": data,
+                    "selected_manufacturer_ids": set(data.get("manufacturer_ids") or []),
+                    **_form_choices(),
+                },
             )
         try:
             model = AssetModelFactory.create(data=data, actor=request.user)
@@ -104,14 +132,44 @@ def model_create(request: HttpRequest) -> HttpResponse:
             return render(
                 request,
                 "assets/models/form.html",
-                {"mode": "create", "model": data, **_form_choices()},
+                {
+                    "mode": "create",
+                    "model": data,
+                    "selected_manufacturer_ids": set(data.get("manufacturer_ids") or []),
+                    **_form_choices(),
+                },
             )
         messages.success(request, f"Model '{model}' created.")
         return redirect(reverse("model_detail", kwargs={"model_id": model.id}))
+
+    # Optional prefill: ?copy_from=<id> loads an existing model's fields into the
+    # form as a starting point. mode stays "create", so POST still makes a new row.
+    prefill = None
+    selected_manufacturer_ids: set[int] = set()
+    copy_from = request.GET.get("copy_from", "").strip()
+    if copy_from.isdigit():
+        prefill = (
+            AssetModel.objects.select_related("asset_class")
+            .prefetch_related("manufacturers")
+            .filter(id=int(copy_from))
+            .first()
+        )
+        if prefill is not None:
+            selected_manufacturer_ids = set(
+                prefill.manufacturers.values_list("id", flat=True)
+            )
+
     return render(
         request,
         "assets/models/form.html",
-        {"mode": "create", "model": None, **_form_choices()},
+        {
+            "mode": "create",
+            "model": prefill,
+            "selected_manufacturer_ids": selected_manufacturer_ids,
+            "all_models": AssetModel.objects.order_by("model_name", "version_rank", "version"),
+            "copy_from": copy_from,
+            **_form_choices(),
+        },
     )
 
 
@@ -145,6 +203,32 @@ def model_edit(request: HttpRequest, model_id: int) -> HttpResponse:
             "selected_manufacturer_ids": selected_manufacturer_ids,
             "assigned_capabilities": assigned_capabilities,
             "available_capabilities": available_capabilities,
+            **_manufacturer_dlb_context(model),
             **_form_choices(),
         },
     )
+
+
+@require_http_methods(["POST"])
+def model_move_manufacturers(request: HttpRequest, model_id: int) -> HttpResponse:
+    """Live add/remove of a manufacturer on the model edit page — persists the move
+    and returns a toast plus the refreshed dual-listbox fragment (HTMX outerHTML)."""
+    model = _get_or_404(model_id)
+    ids = _parse_id_list(request.POST, "manufacturer_ids")
+    direction = request.POST.get("direction", "add")
+
+    if not ids:
+        return HttpResponse("Select at least one manufacturer.", status=400)
+
+    context = AssetModelContext(model_id, actor=request.user)
+    context.move_manufacturers(manufacturer_ids=ids, direction=direction)
+
+    model = _get_or_404(model_id)
+    msg = "Manufacturers linked." if direction != "remove" else "Manufacturers unlinked."
+    alert_html = f'<toast-alert type="success" dismiss-delay="3000">{msg}</toast-alert>'
+    dlb_html = render(
+        request,
+        "assets/models/_manufacturers_dlb_only.html",
+        _manufacturer_dlb_context(model),
+    ).content.decode("utf-8")
+    return HttpResponse(alert_html + dlb_html)

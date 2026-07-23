@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
   <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/kitchen_sink_chamfer.css' %}">
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
   <style>
@@ -230,6 +231,23 @@
         <p class="page-subtitle">All visual components and patterns in one reference page.</p>
       </div>
       <div class="page-hero-actions">
+        <div class="field has-addons mb-0" id="corner-style-toggle" role="group" aria-label="Corner style">
+          <div class="control">
+            <button type="button" class="button is-small" data-corner-style-option="sharp" title="Sharp corners (default)">
+              <span>Sharp</span>
+            </button>
+          </div>
+          <div class="control">
+            <button type="button" class="button is-small" data-corner-style-option="rounded" title="10px rounded corners">
+              <span>Rounded</span>
+            </button>
+          </div>
+          <div class="control">
+            <button type="button" class="button is-small" data-corner-style-option="chamfered" title="10px 45° chamfered corners">
+              <span>Chamfered</span>
+            </button>
+          </div>
+        </div>
         <button id="theme-toggle" class="button is-small is-light" style="font-family: var(--app-font-mono-input); font-size: 0.72rem;" title="Toggle light / dark mode">
           <span class="icon"><span class="material-icons" aria-hidden="true">brightness_6</span></span>
           <span id="theme-toggle-label">dark</span>
@@ -259,6 +277,32 @@
           var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
           localStorage.setItem('ks-theme', next);
           apply(next);
+        });
+      })();
+    </script>
+
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var group = document.getElementById('corner-style-toggle');
+        var buttons = group.querySelectorAll('[data-corner-style-option]');
+
+        function applyCornerStyle(style) {
+          root.setAttribute('data-corner-style', style);
+          buttons.forEach(function (b) {
+            b.classList.toggle('is-primary', b.getAttribute('data-corner-style-option') === style);
+          });
+        }
+
+        var stored = localStorage.getItem('ks-corner-style') || 'sharp';
+        applyCornerStyle(stored);
+
+        buttons.forEach(function (b) {
+          b.addEventListener('click', function () {
+            var style = b.getAttribute('data-corner-style-option');
+            localStorage.setItem('ks-corner-style', style);
+            applyCornerStyle(style);
+          });
         });
       })();
     </script>
@@ -561,6 +605,51 @@
     ════════════════════════════════════════════════════════════ -->
     <section id="forms" class="ks-section">
       <h2 class="title is-5 mb-4">Forms</h2>
+
+      <p class="ks-label">Input corner-style preview</p>
+      <div class="field has-addons mb-4" id="input-style-toggle" role="group" aria-label="Input corner style">
+        <div class="control">
+          <button type="button" class="button is-small" data-input-style-option="square" title="Square corners (default)">
+            <span>Square</span>
+          </button>
+        </div>
+        <div class="control">
+          <button type="button" class="button is-small" data-input-style-option="rounded" title="8px rounded corners">
+            <span>Rounded</span>
+          </button>
+        </div>
+        <div class="control">
+          <button type="button" class="button is-small" data-input-style-option="chamfered" title="8px 45° chamfered corners">
+            <span>Chamfered</span>
+          </button>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          var section = document.getElementById('forms');
+          var group = document.getElementById('input-style-toggle');
+          var buttons = group.querySelectorAll('[data-input-style-option]');
+
+          function applyInputStyle(style) {
+            section.setAttribute('data-input-style', style);
+            buttons.forEach(function (b) {
+              b.classList.toggle('is-primary', b.getAttribute('data-input-style-option') === style);
+            });
+          }
+
+          var stored = localStorage.getItem('ks-input-style') || 'square';
+          applyInputStyle(stored);
+
+          buttons.forEach(function (b) {
+            b.addEventListener('click', function () {
+              var style = b.getAttribute('data-input-style-option');
+              localStorage.setItem('ks-input-style', style);
+              applyInputStyle(style);
+            });
+          });
+        })();
+      </script>
 
       <div class="columns">
         <div class="column is-7">

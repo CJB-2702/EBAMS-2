@@ -64,6 +64,8 @@ class AssetFactory:
             domain_id=data["domain_id"],
             model_id=model.id,
             asset_class_id=model.asset_class_id,
+            # Stored as-is (soft): the acceptable-value constraint is UI-only.
+            config_baseline=data.get("config_baseline") or None,
             photo_gallery=photo_gallery,
             documentation=documentation,
             status=data.get("status", "Active"),

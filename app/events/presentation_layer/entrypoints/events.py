@@ -14,9 +14,10 @@ from django.views.decorators.http import require_http_methods
 from app.events.control_layer.event_context import EventContext
 from app.events.control_layer.handlers.event_handler import EventHandler
 from app.events.models import Event, EventPriority, EventStatus, EventType
+from app.events.models.event import ActivityThreadType
 from app.events.presentation_layer.search.event_search import list_events_for_user
 from app.events.presentation_layer.tools.file_previews import build_comments_context
-from app.events.presentation_layer.tools.generic_cards import document_dict
+from app.events.presentation_layer.tools.generic_cards import build_activity_card
 from app.utils.hashids import decode_hash, encode_id
 
 # Cards per page for the expanded (large) infinite-scroll view.
@@ -25,13 +26,7 @@ CARDS_PER_PAGE = 8
 
 def build_event_card(event: Event, user) -> dict:
     """Context for a single expanded event card: metadata + comments (human + system) + standalone attachments."""
-    ctx = EventContext(event.pk, user, include_shadow_comments=True)
-    return {
-        "event": event,
-        "hash": encode_id(event.pk),
-        "comments": build_comments_context(ctx.struct),
-        "direct_attachments": [document_dict(a) for a in ctx.struct.standalone_attachments],
-    }
+    return build_activity_card(event, user)
 
 
 def _resolve_event(hash_str: str) -> Event:
@@ -42,6 +37,13 @@ def _resolve_event(hash_str: str) -> Event:
 
 
 def _check_domain_access(request, event: Event) -> bool:
+    # ActivityThread/FileSet rows carry no meaningful domain of their own — the
+    # value at thread-creation time is an incidental bootstrap default, never
+    # access control (see the ActivityThread model docstring). Access to those
+    # threads is gated by the owning object's own rules before the caller ever
+    # reaches a comment view, so only real Event rows get the domain check.
+    if event.thread_type != ActivityThreadType.EVENT:
+        return True
     return event.domain_id in request.user.get_all_domain_ids() or event.created_by == request.user
 
 

@@ -23,7 +23,7 @@ from django.views.decorators.http import require_http_methods
 from app.parts.control_layer.domain_structs.part_structs.part_struct import (
     PartNotFoundError,
 )
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
 from app.parts.control_layer.part_context import PartContext
 
 # Managing the library (adding/removing technical documents) is gated behind the
@@ -55,7 +55,7 @@ def part_library(request: HttpRequest, part_id: int) -> HttpResponse:
     ctx = _ctx_or_404(request, part_id)
     can_manage = request.user.has_perm(LIBRARY_MANAGE_PERM)
 
-    base_documents = PartThreadManager(
+    base_documents = ActivityThreadManager(
         ctx.part, request.user, thread_attr="documents_thread"
     ).documents()
     revision_sections = [
@@ -64,7 +64,7 @@ def part_library(request: HttpRequest, part_id: int) -> HttpResponse:
             "label": f"{revision.major_revision_number}.{revision.minor_revision_number}",
             "name": revision.major_revision_name,
             "status": revision.status,
-            "documents": PartThreadManager(revision, request.user).documents(),
+            "documents": ActivityThreadManager(revision, request.user).documents(),
         }
         for revision in ctx.revisions()
     ]
@@ -96,7 +96,7 @@ def library_add_document(request: HttpRequest, part_id: int) -> HttpResponse:
         return redirect(reverse("part_library", kwargs={"part_id": part_id}))
 
     caption = request.POST.get("caption", "").strip()
-    manager = PartThreadManager(owner, request.user, thread_attr=thread_attr)
+    manager = ActivityThreadManager(owner, request.user, thread_attr=thread_attr)
     added = 0
     for uploaded in uploaded_files:
         result = manager.attach_document(uploaded, caption=caption)
@@ -126,7 +126,7 @@ def library_remove_document(request: HttpRequest, part_id: int) -> HttpResponse:
         messages.error(request, "No document specified.")
         return redirect(reverse("part_library", kwargs={"part_id": part_id}))
 
-    if PartThreadManager(owner, request.user, thread_attr=thread_attr).detach_document(
+    if ActivityThreadManager(owner, request.user, thread_attr=thread_attr).detach_document(
         attachment_id
     ):
         # Removing the current hero image must not leave the part pointing at a

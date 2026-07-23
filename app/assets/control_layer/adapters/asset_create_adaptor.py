@@ -21,6 +21,9 @@ class AssetCreateAdaptor:
             "model_id": _to_int(post.get("model") or post.get("model_id")),
             "status": post.get("status") or "Active",
             "parent_asset_id": _to_int(post.get("parent_id") or post.get("parent_asset_id")),
+            # Baseline of this unit + the "add new baseline…" escape from the dropdown.
+            "config_baseline": (post.get("config_baseline") or "").strip() or None,
+            "add_baseline_to_model": post.get("add_baseline_to_model") in ("1", "true", "on", "True"),
         }
 
 

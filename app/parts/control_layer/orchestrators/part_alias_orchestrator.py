@@ -6,8 +6,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from app.parts.control_layer.factories.alias_factory import AliasFactory
-from app.parts.control_layer.managers.part_activity_manager import PartActivityManager
 from app.parts.control_layer.narrators.alias_narrator import AliasNarrator
+from app.parts.control_layer.narrators.part_activity_narrator import PartActivityNarrator
 from app.parts.models import AliasSource
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ class PartAliasOrchestrator:
             source=AliasSource.AUTO,
             actor=actor,
         )
-        PartActivityManager.for_part(part, actor).record(
+        PartActivityNarrator.for_part(part, actor).record(
             AliasNarrator.alias_added(part, alias)
         )
         return alias

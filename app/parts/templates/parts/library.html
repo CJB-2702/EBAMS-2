@@ -10,7 +10,7 @@
 .lib-intro { background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak); border-left: 4px solid var(--bulma-info); padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; }
 .lib-upload { border-top: 1px solid var(--bulma-border-weak); background: var(--bulma-scheme-main-bis); padding: 1rem; }
 .lib-upload[hidden] { display: none; }
-.pc.is-base-part { border-left: 4px solid var(--bulma-primary); }
+.card.is-base-part { border-left: 4px solid var(--bulma-primary); }
 .lib-base-note { font-size: 0.78rem; color: var(--bulma-text-weak); background: var(--bulma-scheme-main-bis); border-left: 3px solid var(--bulma-primary); padding: 0.5rem 0.7rem; margin-bottom: 0.85rem; }
 {% endblock %}
 
@@ -48,7 +48,7 @@
   {% for rev in revision_sections %}
   {% include "parts/_library_section.html" with section_key=rev.id|stringformat:"s"|add:"-rev" title="Revision "|add:rev.label documents=rev.documents status=rev.status revision_id=rev.id can_manage=can_manage part_id=part_id %}
   {% empty %}
-  <div class="pc"><div class="pc-body"><p class="has-text-grey is-size-7">This part has no revisions yet.</p></div></div>
+  <div class="card"><div class="card-content"><p class="has-text-grey is-size-7">This part has no revisions yet.</p></div></div>
   {% endfor %}
 </div>
 {% endblock %}

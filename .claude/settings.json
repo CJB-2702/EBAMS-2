@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv *)",
+      "Bash(python manage.py check)",
+      "Bash(python dev_tools/delete_database_rebuild_models.py --seed)"
+    ]
+  }
+}

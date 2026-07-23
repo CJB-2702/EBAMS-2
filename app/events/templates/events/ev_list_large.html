@@ -29,11 +29,11 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       {% if asset %}
       <div class="notification is-info is-light is-small py-2 px-3 mb-3 is-flex is-align-items-center is-justify-content-space-between">
         <span class="is-size-7">
@@ -101,23 +101,5 @@
 <script defer src="{% static 'web_components/file_browser.js' %}"></script>
 <script defer src="{% static 'web_components/file_upload.js' %}"></script>
 <script defer src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
-<script>
-  // Small deliberate JS exception: Human/All/Machine comment-filter buttons,
-  // scoped to the nearest .pc ancestor so multiple event cards on one page
-  // stay independent of one another.
-  window.__filterComments = function(evt, btn, filter) {
-    evt.preventDefault();
-    var group = btn.closest('.comment-filter-group');
-    var card = btn.closest('.pc');
-    group.querySelectorAll('.comment-filter-item').forEach(function(b) {
-      b.classList.toggle('is-link', b === btn);
-      b.classList.toggle('is-selected', b === btn);
-      b.classList.toggle('is-light', b !== btn);
-    });
-    card.querySelectorAll('[data-comment-kind]').forEach(function(row) {
-      row.style.display = (filter === 'all' || row.dataset.commentKind === filter) ? '' : 'none';
-    });
-    return false;
-  };
-</script>
+<script defer src="{% static 'web_components/app_specific/comment_filter.js' %}"></script>
 {% endblock %}

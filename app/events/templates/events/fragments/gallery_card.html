@@ -12,13 +12,13 @@ Generic contract (see app/events/presentation_layer/tools/generic_cards.py):
   dom_id      optional, unique suffix for the carousel id if this fragment appears
               more than once on one page (default "gallery")
 {% endcomment %}
-<div class="pc">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>{{ title|default:"Gallery" }} ({{ images|length }})
     </div>
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     {% if images %}
     <image-carousel id="carousel-gallery-{{ dom_id|default:'gallery' }}" preview-height="280" loop>
       {% for d in images %}

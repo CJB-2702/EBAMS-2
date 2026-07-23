@@ -15,9 +15,12 @@ they'll match the row's background and disappear. Defaults to "depth-3"
 
 Shares id="comment-row-{hash}" with comment_edit_form.html so the Edit button's
 HTMX outerHTML swap can go in either direction (view <-> inline edit form).
+
+Optional: next — redirect target for the delete form's plain-POST fallback,
+threaded down from comments_card.html for callers outside the events app.
 {% endcomment %}
-<div id="comment-row-{{ row.comment_hash }}" class="pc {{ row_depth|default:'depth-2' }} mb-2" data-comment-kind="{% if row.comment.is_human_made %}human{% else %}system{% endif %}">
-  <div class="pc-body is-size-7">
+<div id="comment-row-{{ row.comment_hash }}" class="card {{ row_depth|default:'depth-2' }} mb-2" data-comment-kind="{% if row.comment.is_human_made %}human{% else %}system{% endif %}">
+  <div class="card-content is-size-7">
     <div class="is-flex is-justify-content-space-between mb-1">
       <span class="is-italic">
         {{ row.comment.created_by }} &middot; {{ row.comment.created_at|date:"Y-m-d H:i" }}
@@ -41,6 +44,7 @@ HTMX outerHTML swap can go in either direction (view <-> inline edit form).
         </a>
         <form method="post" action="{% url 'comment_soft_delete' event_hash=event_hash comment_hash=row.comment_hash %}">
           {% csrf_token %}
+          {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
           <button class="button is-small is-danger is-light" type="submit" title="Delete comment"
             onclick="return confirm('Delete this comment?');">
             <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>

@@ -25,11 +25,11 @@ A pattern for assigning items from a large pool (left card, 2/3 width) to a targ
 
   <!-- LEFT Card (2/3) — Available Pool -->
   <div class="column is-8">
-    <div class="pc" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
+    <div class="card" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
       
       <!-- Card Header -->
-      <div class="pc-header">
-        <div class="pc-header-title">
+      <div class="card-header">
+        <div class="card-header-title">
           <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
           Available Items
         </div>
@@ -93,11 +93,11 @@ A pattern for assigning items from a large pool (left card, 2/3 width) to a targ
 
   <!-- RIGHT Card (1/3) — Assigned Items -->
   <div class="column">
-    <div class="pc" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
+    <div class="card" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
       
       <!-- Card Header -->
-      <div class="pc-header">
-        <div class="pc-header-title">
+      <div class="card-header">
+        <div class="card-header-title">
           <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
           Applied / Assigned
         </div>

@@ -1,14 +1,14 @@
 <div>
 
   <!-- Set password -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
         Set password
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <div class="notification is-warning is-light is-size-7 mb-3">
         <p class="mb-2"><strong>Password requirements (OWASP-compliant):</strong></p>
         <ul style="margin-left: 1.5rem; list-style-type: disc;">
@@ -49,28 +49,28 @@
   </div>
 
   <!-- Organization assignments -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>
         Organization assignments (informational)
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system on the user detail page.</p>
       {% include "users/_organizations_dlb_only.html" %}
     </div>
   </div>
 
   <!-- Division assignments -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">domain</span></span>
         Division assignments (informational)
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Does not grant access. Used by the warning system.</p>
       {% include "users/_divisions_dlb_only.html" %}
     </div>

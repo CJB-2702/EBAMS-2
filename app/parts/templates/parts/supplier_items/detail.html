@@ -1,4 +1,5 @@
 {% extends "parts/base.html" %}
+{% load static %}
 {% block title %}{{ item.mpn }}{% endblock %}
 {% block breadcrumb %}
   <li><a href="{% url 'part_detail' part_id=item.internal_part.id %}">{{ item.internal_part.part_number }}</a></li>
@@ -6,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
 <div class="page-hero"><div class="page-header">
   <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
     <div><h1 class="page-title">{{ item.mpn }} ({{ item.manufacturer.name }})</h1>
@@ -14,8 +17,8 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
-      <div class="pc-body"><dl class="kv">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="card-content"><dl class="kv">
         <dt>Name</dt><dd>{{ item.name|default:"—" }}</dd>
         <dt>Description</dt><dd>{{ item.description|default:"—" }}</dd>
         <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}</dd>
@@ -26,8 +29,8 @@
       </dl></div>
     </div>
 
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">update</span></span>Vendor Revision History</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">update</span></span>Vendor Revision History</div></div>
+      <div class="card-content">
         {% for v in vendor_revisions %}
           <p class="is-size-7"><strong>{{ v.vendor_revision_id }}</strong> — {{ v.note }} <span class="has-text-grey">({{ v.created_at }})</span></p>
         {% empty %}<p class="has-text-grey is-size-7">None logged.</p>{% endfor %}
@@ -43,16 +46,13 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents</div></div>
+      <div class="card-content">
         {% for d in documents %}<p class="is-size-7">{{ d.filename }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
       </div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">comment</span></span>Comments</div></div>
-      <div class="pc-body">
-        {% for c in comments %}<p class="is-size-7"><strong>{{ c.author }}</strong> — {{ c.body }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
-      </div>
-    </div>
+    {% url 'supplier_item_add_comment' item_id=item_id as comment_add_url %}
+    {% include "events/fragments/comments_card.html" with card=comments_card add_url=comment_add_url next=request.get_full_path row_depth="depth-3" action_depth="depth-4" %}
   </div>
 </div>
 {% endblock %}

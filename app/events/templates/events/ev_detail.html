@@ -54,14 +54,14 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
   <div>
 
     {# ── Event details card ── #}
-    <div class="pc depth-1">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Event Details</div>
+    <div class="card depth-1">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Event Details</div>
         <div>
           <span class="tag is-light">{{ event.get_event_type_display }}</span>
         </div>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
 
         {% if event.description %}
         <div class="depth-2 p-3 mb-4 is-size-7" style="white-space: pre-wrap; min-height: 100px; max-height: 350px; overflow-y: auto;">{{ event.description }}</div>
@@ -124,15 +124,15 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
     </div>
 
     {# ── Comments ── #}
-    <div class="pc depth-1">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ comments_context|length }})</div>
+    <div class="card depth-1">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ comments_context|length }})</div>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
 
         {% for row in comments_context %}
-        <div class="pc mb-3 depth-2">
-          <div class="pc-body is-size-7">
+        <div class="card mb-3 depth-2">
+          <div class="card-content is-size-7">
             <div class="is-flex is-justify-content-space-between mb-2">
               <span class="has-text-grey">
                 {{ row.comment.created_by }} &middot; {{ row.comment.created_at|date:"Y-m-d H:i" }}
@@ -174,11 +174,11 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
     </div>
 
     {# ── Add comment ── #}
-    <div class="pc depth-1">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div>
+    <div class="card depth-1">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div>
       </div>
-      <div class="pc-body">
+      <div class="card-content">
         <form method="post" action="{% url 'comment_add' event_hash=event_hash %}" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="field">
@@ -220,11 +220,11 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
 
   {# ── Rail ── #}
   <div class="body-rail">
-    <div class="pc depth-1">
-      <div class="pc-header">
-        <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info_outline</span></span>Meta</div>
+    <div class="card depth-1">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info_outline</span></span>Meta</div>
       </div>
-      <div class="pc-body is-size-7">
+      <div class="card-content is-size-7">
         <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Domain</p>
         <p class="mb-3"><strong>{{ event.domain.name }}</strong></p>
         <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Created</p>

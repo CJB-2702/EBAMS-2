@@ -47,8 +47,8 @@
 <form method="post" class="body-grid full-width">{% csrf_token %}
   <div class="columns is-variable is-4 mb-0">
     <div class="column is-8">
-      <div class="pc" style="display: flex; flex-direction: column; height: 100%;"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Definition Details</div></div>
-        <div class="pc-body" style="flex: 1;"><div class="columns is-multiline">
+      <div class="card" style="display: flex; flex-direction: column; height: 100%;"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Definition Details</div></div>
+        <div class="card-content" style="flex: 1;"><div class="columns is-multiline">
           <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ definition.name|default:'' }}"></div>
           <div class="column is-3"><label class="label is-small">Code</label><input class="input is-small is-family-monospace" name="code" value="{{ definition.code|default:'' }}"></div>
           <div class="column is-3"><label class="checkbox is-small mt-5"><input type="checkbox" name="is_active" {% if definition.is_active or create %}checked{% endif %}> Active</label></div>
@@ -67,8 +67,8 @@
     </div>
     {% if not create %}
     <div class="column is-4">
-      <div class="pc" style="height: 100%; display: flex; flex-direction: column;"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
-        <div class="pc-body" style="flex: 1;"><dl class="kv"><dt>Class uses</dt><dd>{{ definition.class_uses }}</dd><dt>Model uses</dt><dd>{{ definition.model_uses }}</dd><dt>Asset uses</dt><dd>{{ definition.asset_uses }}</dd></dl></div>
+      <div class="card" style="height: 100%; display: flex; flex-direction: column;"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
+        <div class="card-content" style="flex: 1;"><dl class="kv"><dt>Class uses</dt><dd>{{ definition.class_uses }}</dd><dt>Model uses</dt><dd>{{ definition.model_uses }}</dd><dt>Asset uses</dt><dd>{{ definition.asset_uses }}</dd></dl></div>
       </div>
     </div>
     {% endif %}
@@ -81,9 +81,9 @@
   <div class="columns is-variable is-4" id="class-assignment-row">
     <!-- LEFT Card (2/3) — Available Classes -->
     <div class="column is-8">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
             Available Asset Classes
           </div>
@@ -131,9 +131,9 @@
 
     <!-- RIGHT Card (1/3) — Assigned Classes -->
     <div class="column">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
             Assigned Classes
           </div>
@@ -178,9 +178,9 @@
   <div class="columns is-variable is-4 mt-5" id="model-assignment-row">
     <!-- LEFT Card (2/3) — Available Models -->
     <div class="column is-8">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
             Available Make Models
           </div>
@@ -245,9 +245,9 @@
 
     <!-- RIGHT Card (1/3) — Assigned Models -->
     <div class="column">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
             Assigned Models
           </div>

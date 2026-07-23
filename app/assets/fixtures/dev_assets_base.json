@@ -147,8 +147,7 @@
   "pk": 1,
   "fields": {
    "model_name": "8FGCU25",
-   "subtype_name": "Cushion Tire",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 1,
@@ -157,7 +156,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Cushion Tire"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -165,8 +168,7 @@
   "pk": 2,
   "fields": {
    "model_name": "320",
-   "subtype_name": "GC Hydraulic",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 2,
@@ -176,7 +178,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "GC Hydraulic"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -184,8 +190,7 @@
   "pk": 3,
   "fields": {
    "model_name": "Z-45",
-   "subtype_name": "Articulating Boom",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 3,
@@ -194,7 +199,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Articulating Boom"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -476,8 +485,7 @@
   "pk": 4,
   "fields": {
    "model_name": "Corolla",
-   "subtype_name": "LE Sedan",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 4,
@@ -486,7 +494,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "LE Sedan"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -494,8 +506,7 @@
   "pk": 5,
   "fields": {
    "model_name": "F-150",
-   "subtype_name": "XLT",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 4,
@@ -504,7 +515,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "XLT"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -512,8 +527,7 @@
   "pk": 6,
   "fields": {
    "model_name": "F-250",
-   "subtype_name": "Super Duty",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 4,
@@ -522,7 +536,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Super Duty"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -841,8 +859,7 @@
   "pk": 7,
   "fields": {
    "model_name": "35SA",
-   "subtype_name": "Single Axle Utility",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 5,
@@ -850,7 +867,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Single Axle Utility"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -858,8 +879,7 @@
   "pk": 8,
   "fields": {
    "model_name": "170 Montauk",
-   "subtype_name": "Center Console",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 6,
@@ -868,7 +888,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Center Console"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -876,8 +900,7 @@
   "pk": 9,
   "fields": {
    "model_name": "Pro HD",
-   "subtype_name": "BCD Package",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 7,
@@ -885,7 +908,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "BCD Package"
+   ],
+   "version_rank": null
   }
  },
  {
@@ -893,8 +920,7 @@
   "pk": 10,
   "fields": {
    "model_name": "S80",
-   "subtype_name": "Aluminum 80 cu ft",
-   "revision": null,
+   "version": "",
    "is_base_model": true,
    "base_model": null,
    "asset_class": 7,
@@ -902,7 +928,11 @@
    "created_at": "2024-01-01T00:00:00Z",
    "updated_at": "2024-01-01T00:00:00Z",
    "created_by": 1,
-   "updated_by": 1
+   "updated_by": 1,
+   "config_baselines": [
+    "Aluminum 80 cu ft"
+   ],
+   "version_rank": null
   }
  },
  {

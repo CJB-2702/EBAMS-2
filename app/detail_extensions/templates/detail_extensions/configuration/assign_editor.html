@@ -31,14 +31,14 @@
   {% csrf_token %}
 
   {# ── Asset Class assignments ─────────────────────────────────────────── #}
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <span class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>
         Asset Classes
       </span>
     </div>
-    <div class="pc-body is-flush">
+    <div class="card-content is-flush">
       {% if ctx.asset_classes %}
       <table class="table is-fullwidth" style="margin:0;">
         <thead>
@@ -74,9 +74,9 @@
 
   {# ── Per-model override (ASSET-target only) ──────────────────────────── #}
   {% if ctx.descriptor.target.value == "asset" and ctx.asset_models %}
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <span class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
         Per-Model Overrides
       </span>
@@ -84,7 +84,7 @@
         Individual model enablement (in addition to class-level assignment)
       </span>
     </div>
-    <div class="pc-body is-flush">
+    <div class="card-content is-flush">
       <table class="table is-fullwidth" style="margin:0;">
         <thead>
           <tr>

@@ -18,8 +18,8 @@
 
 <div class="body-grid full-width">
   <form method="post">{% csrf_token %}
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Details</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Details</div></div>
+      <div class="card-content">
         <div class="columns">
           <div class="column is-4"><div class="field"><label class="label is-small">Code</label><div class="control"><input class="input is-small is-family-monospace" type="text" name="code" value="{{ modification.code }}" required {% if not create %}readonly{% endif %}></div></div></div>
           <div class="column"><div class="field"><label class="label is-small">Name</label><div class="control"><input class="input is-small" type="text" name="name" value="{{ modification.name }}" required></div></div></div>

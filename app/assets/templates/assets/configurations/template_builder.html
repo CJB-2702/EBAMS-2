@@ -19,8 +19,8 @@
 <div class="body-grid has-rail">
   <div>
     <form method="post" id="template-builder-form">{% csrf_token %}
-      <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity & Scope</div></div>
-        <div class="pc-body">
+      <div class="card"><div class="card-header"><div class="card-header-title">Identity & Scope</div></div>
+        <div class="card-content">
           <div class="field"><label class="label is-small">Template Name</label><div class="control"><input class="input is-small" type="text" name="name" required placeholder="e.g. Cold Storage Forklift"></div></div>
           <div class="columns">
             <div class="column"><div class="field"><label class="label is-small">Revision</label><div class="control"><input class="input is-small" type="text" name="revision" value="A"></div></div></div>
@@ -29,8 +29,8 @@
           <div class="field"><label class="label is-small">Description</label><div class="control"><textarea class="textarea is-small" name="description" rows="2"></textarea></div></div>
         </div>
       </div>
-      <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications</div></div>
-        <div class="pc-body">
+      <div class="card"><div class="card-header"><div class="card-header-title">Required Modifications</div></div>
+        <div class="card-content">
           <p class="is-size-7 has-text-grey mb-3">Select the defined modifications that must be applied to assets matching this template.</p>
           <dual-list-box>
             <list-box slot="left" id="tmpl-mod-avail" label="Available">
@@ -50,8 +50,8 @@
           </dual-list-box>
         </div>
       </div>
-      <div class="pc"><div class="pc-header"><div class="pc-header-title">Child Components (BOM)</div></div>
-        <div class="pc-body">
+      <div class="card"><div class="card-header"><div class="card-header-title">Child Components (BOM)</div></div>
+        <div class="card-content">
           <p class="is-size-7 has-text-grey mb-3">Mock Builder UI — Normally would dynamically add rows.</p>
           <div class="columns is-vcentered">
             <div class="column"><label class="label is-small">Child Model</label><div class="select is-small is-fullwidth"><select><option value="">Select component model...</option>{% for m in models %}<option value="{{ m.id }}">{{ m.model_name }}</option>{% endfor %}</select></div></div>
@@ -67,8 +67,8 @@
     </form>
   </div>
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Help</div></div>
-      <div class="pc-body is-size-7 content">
+    <div class="card"><div class="card-header"><div class="card-header-title">Help</div></div>
+      <div class="card-content is-size-7 content">
         <p>A configuration template defines the <strong>as-designed</strong> state for an asset.</p>
         <p>Assets are verified against this template during commissioning.</p>
       </div>

@@ -39,9 +39,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations in this division ({{ organizations|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Organizations in this division ({{ organizations|length }})</div></div>
+    <div class="card-content">
       {% if organizations %}
       <ul class="is-size-7">
         {% for org in organizations %}
@@ -54,9 +54,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users assigned to this division ({{ user_assignments|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users assigned to this division ({{ user_assignments|length }})</div></div>
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Division assignments are <strong>informational only</strong> — they do not grant data access. They control the audit warning system on user portals.</p>
       {% if user_assignments %}
       <table class="table is-fullwidth is-narrow is-size-7" style="margin:0;">

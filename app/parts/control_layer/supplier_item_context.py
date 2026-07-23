@@ -9,10 +9,12 @@ from typing import TYPE_CHECKING
 from app.parts.control_layer.domain_structs.reverse_structs.supplier_item_struct import (
     SupplierItemStruct,
 )
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
 from app.parts.control_layer.managers.supplier_vendor_revision_manager import (
     SupplierVendorRevisionManager,
 )
+from app.parts.control_layer.thread_domain import default_domain_id_for
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
+from app.events.models import ActivityThread
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -63,5 +65,9 @@ class SupplierItemContext:
         return self.thread.comments()
 
     @property
-    def thread(self) -> PartThreadManager:
-        return PartThreadManager(self.item, self.actor)
+    def thread(self) -> ActivityThreadManager:
+        return ActivityThreadManager(
+            self.item,
+            self.actor,
+            domain_id_resolver=lambda: default_domain_id_for(ActivityThread),
+        )

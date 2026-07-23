@@ -15,16 +15,16 @@
 
 <div class="body-grid has-rail">
   <div class="body-grid-main">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Identity</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Identity</div></div>
+      <div class="card-content">
         <div class="columns is-multiline">
           <div class="column is-12"><div class="label is-small has-text-grey mb-0">Description</div><div>{{ template.description|default:"—" }}</div></div>
           <div class="column is-6"><div class="label is-small has-text-grey mb-0">Status</div><div>{% include "assets/_status_tag.html" with value=template.is_active|yesno:"Active,Inactive" %}</div></div>
         </div>
       </div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Required Modifications ({{ template.modifications|length }})</div></div>
-      <div class="pc-body is-flush">
+    <div class="card"><div class="card-header"><div class="card-header-title">Required Modifications ({{ template.modifications|length }})</div></div>
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-size-7 mb-0">
           <thead><tr><th>Code</th><th>Name</th><th>Category</th></tr></thead>
           <tbody>
@@ -35,8 +35,8 @@
         </table>
       </div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Child Components ({{ template.children|length }})</div></div>
-      <div class="pc-body is-flush">
+    <div class="card"><div class="card-header"><div class="card-header-title">Child Components ({{ template.children|length }})</div></div>
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-size-7 mb-0">
           <thead><tr><th>Model</th><th>Qty</th><th>Required?</th></tr></thead>
           <tbody>
@@ -49,8 +49,8 @@
     </div>
   </div>
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Usage</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Usage</div></div>
+      <div class="card-content">
         <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
           <span class="is-size-7 has-text-grey">Asset Assignments</span>
           <a href="{% url 'asset_index' %}?template={{ template.id }}" class="tag is-light" title="View assets using this template">{{ asset_stats.total }}</a>

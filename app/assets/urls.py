@@ -76,6 +76,16 @@ from app.assets.presentation_layer.entrypoints.models import (
     model_detail,
     model_edit,
     model_index,
+    model_move_manufacturers,
+)
+from app.assets.presentation_layer.entrypoints.model_library import (
+    library_add_comment,
+    library_add_document,
+    library_add_image,
+    library_remove_document,
+    library_remove_image,
+    library_set_primary_image,
+    model_library,
 )
 
 urlpatterns = [
@@ -111,6 +121,16 @@ urlpatterns = [
     path("models/create/", model_create, name="model_create"),
     path("models/<int:model_id>/", model_detail, name="model_detail"),
     path("models/<int:model_id>/edit/", model_edit, name="model_edit"),
+    path("models/<int:model_id>/move-manufacturers/", model_move_manufacturers, name="model_move_manufacturers"),
+    # Model library — composed view across all versions of a model line, plus its
+    # version-scoped write endpoints (keyed by model_id, redirect to the library).
+    path("models/<int:model_id>/library/add-document/", library_add_document, name="model_library_add_document"),
+    path("models/<int:model_id>/library/remove-document/", library_remove_document, name="model_library_remove_document"),
+    path("models/<int:model_id>/library/add-image/", library_add_image, name="model_library_add_image"),
+    path("models/<int:model_id>/library/remove-image/", library_remove_image, name="model_library_remove_image"),
+    path("models/<int:model_id>/library/set-primary-image/", library_set_primary_image, name="model_library_set_primary_image"),
+    path("models/<int:model_id>/library/add-comment/", library_add_comment, name="model_library_add_comment"),
+    path("models/<str:model_name>/library/", model_library, name="model_library"),
 
     # Core — Classes
     path("classes/", class_index, name="class_index"),

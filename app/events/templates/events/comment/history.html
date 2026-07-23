@@ -29,9 +29,9 @@
 
 <div style="max-width: 760px;">
   {% for row in rows %}
-  <div class="pc mb-3 depth-1">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-3 depth-1">
+    <div class="card-header">
+      <div class="card-header-title">
         Revision {{ row.comment.revision }}
         {% if row.is_current %}
         <span class="tag is-success is-light ml-2">Current</span>
@@ -44,7 +44,7 @@
         <span class="is-family-monospace">{{ row.comment.created_at|date:"Y-m-d H:i" }}</span>
       </span>
     </div>
-    <div class="pc-body is-size-7">
+    <div class="card-content is-size-7">
       <p style="white-space: pre-wrap;">{{ row.comment.content }}</p>
 
       {% if row.attachments %}

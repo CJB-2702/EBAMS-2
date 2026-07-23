@@ -3,14 +3,14 @@
    F5-safe full-page wrapper is panel.html. #}
 <div id="ext-panel-strip" style="display:flex; flex-wrap:wrap; gap:0.75rem;">
   {% for descriptor in descriptors %}
-  <div class="pc" style="min-width:180px; flex:1 1 180px; margin-bottom:0;">
-    <div class="pc-header">
-      <span class="pc-header-title">
+  <div class="card" style="min-width:180px; flex:1 1 180px; margin-bottom:0;">
+    <div class="card-header">
+      <span class="card-header-title">
         <span class="icon"><span class="material-icons" style="font-size:1rem;" aria-hidden="true">extension</span></span>
         {{ descriptor.label }}
       </span>
     </div>
-    <div class="pc-body" style="padding:0.6rem 1rem;">
+    <div class="card-content" style="padding:0.6rem 1rem;">
       <a href="{% url 'extension_owner_detail' descriptor.key owner_type owner.pk %}"
          class="button is-small is-light is-fullwidth">
         View

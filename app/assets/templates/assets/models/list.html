@@ -11,8 +11,30 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
-    <div class="pc-body"><form method="get"><div class="columns is-vcentered">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span>Reading a model's identity</div>
+      <info-popover direction="bottom" hover="true">
+        <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span></detail>
+        <summary>
+          <p class="mb-2">A model is uniquely identified by <strong>Model + Version</strong>. <strong>Manufacturer</strong> is a separate resource, linked to the model.</p>
+          <p><strong>Config Baselines</strong> is <em>not</em> part of identity — it's the set of acceptable trims/specs (e.g. <code>LE, EX, SE</code>) an individual asset may declare. One model row spans every baseline; each asset records which one it is.</p>
+        </summary>
+      </info-popover>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">Identity is <strong>Model + Version</strong> (unique). <strong>Config Baselines</strong> is a set of acceptable trims on the model; the asset picks one. Manufacturer is linked separately.</p>
+      <table class="table is-fullwidth is-narrow is-size-7" style="margin:0;">
+        <thead><tr><th>Manufacturer</th><th>Model</th><th>Version</th><th>Config Baselines <span class="has-text-grey has-text-weight-normal">(accepted set)</span></th><th>An asset is…</th></tr></thead>
+        <tbody>
+          <tr><td>Toyota</td><td>Corolla</td><td>2016</td><td>LE, EX, SE</td><td>Corolla 2016 · <span class="tag is-light is-small">LE</span></td></tr>
+          <tr><td>Apple</td><td>MacBook Air</td><td>M5</td><td>13-inch, 15-inch</td><td>MacBook Air M5 · <span class="tag is-light is-small">15-inch</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content"><form method="get"><div class="columns is-vcentered">
       <div class="column is-3"><input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search models…"></div>
       <div class="column is-2"><div class="select is-small is-fullwidth"><select name="asset_class"><option value="">All classes</option>{% for c in classes %}<option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
       <div class="column is-2"><div class="select is-small is-fullwidth"><select name="manufacturer"><option value="">All manufacturers</option>{% for m in manufacturers %}<option value="{{ m.id }}">{{ m.name }}</option>{% endfor %}</select></div></div>
@@ -22,8 +44,8 @@
     </div></form></div>
   </div>
 
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Models ({{ models|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Models ({{ models|length }})</div></div>
+    <div class="card-content is-flush">
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>Model</th><th>Class</th><th>Manufacturer(s)</th><th>Base?</th><th>Auth Domains</th><th>Active</th><th>Assets</th><th class="has-text-right">Actions</th></tr></thead>
         <tbody>

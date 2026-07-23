@@ -15,8 +15,8 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
-      <div class="pc-body"><form method="get"><div class="columns is-vcentered">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+      <div class="card-content"><form method="get"><div class="columns is-vcentered">
         {% if scope == 'Asset' %}
         <div class="column is-3"><input class="input is-small is-family-monospace" type="search" name="q" placeholder="Asset Name or Serial…" value="{{ q }}"></div>
         <div class="column is-2">
@@ -84,8 +84,8 @@
         <div class="column is-1"><button class="button is-small is-info" type="submit">Apply</button></div>
       </div></form></div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assignments ({{ rows|length }})</div></div>
-      <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assignments ({{ rows|length }})</div></div>
+      <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>{{ target_label }}</th><th>Capability</th><th>Code</th>{% if show_qty %}<th>Qty</th><th>Notes</th>{% endif %}<th>Active</th><th class="has-text-right"></th></tr></thead>
         <tbody>
           {% for r in rows %}
@@ -104,8 +104,8 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_link</span></span>Assign</div></div>
-      <div class="pc-body"><form method="post">{% csrf_token %}
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_link</span></span>Assign</div></div>
+      <div class="card-content"><form method="post">{% csrf_token %}
         <label class="label is-small">{{ target_label }}</label>
         <div class="select is-small is-fullwidth mb-2"><select name="target">{% for t in targets %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select></div>
         <label class="label is-small">Capability</label>

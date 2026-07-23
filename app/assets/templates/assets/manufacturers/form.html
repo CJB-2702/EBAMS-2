@@ -12,8 +12,8 @@
   <div><h1 class="page-title">{% if mode == 'edit' %}Edit Manufacturer{% else %}New Manufacturer{% endif %}</h1></div></div></div></div>
 
 <form method="post" class="body-grid full-width">{% csrf_token %}
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturer</div></div>
-    <div class="pc-body"><div class="columns is-multiline">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturer</div></div>
+    <div class="card-content"><div class="columns is-multiline">
       <div class="column is-6"><label class="label is-small">Name</label><input class="input is-small" name="name" value="{{ manufacturer.name|default:'' }}"></div>
       <div class="column is-3"><label class="label is-small">Code</label><input class="input is-small is-family-monospace" name="code" value="{{ manufacturer.code|default:'' }}"></div>
       <div class="column is-3"><label class="checkbox is-small mt-5"><input type="checkbox" name="is_active" {% if manufacturer.is_active or mode == 'create' %}checked{% endif %}> Active</label></div>

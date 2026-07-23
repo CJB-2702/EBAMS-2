@@ -16,13 +16,25 @@ from app.events.control_layer.handlers.comment_handler import CommentHandler
 from app.events.models import Comment, Event
 from app.events.presentation_layer.entrypoints.events import _check_domain_access
 from app.utils.hashids import decode_hash, encode_id
+from app.utils.safe_redirect import safe_next_url
 
 
 def _resolve_event(event_hash: str) -> Event:
+    """Resolve any row in the shared event table by hash — an Event, or a
+    non-Event activity thread (Part/AssetModel/…). ``Event.threads`` resolves
+    any thread type; comment management is done through these base events
+    views regardless of which app's thread it lives on."""
     event_id = decode_hash(event_hash)
     if event_id is None:
         raise Http404
-    return get_object_or_404(Event.objects.active().select_related("domain", "created_by"), pk=event_id)
+    return get_object_or_404(Event.threads.select_related("domain", "created_by"), pk=event_id)
+
+
+def _redirect_after(request: HttpRequest, event_hash: str) -> HttpResponse:
+    """Return to the caller-supplied ``next`` (e.g. a Part or AssetModel page)
+    when it is a safe same-host URL; otherwise fall back to the event detail
+    page — today's behavior for the events app itself."""
+    return redirect(safe_next_url(request, reverse("event_detail", kwargs={"hash": event_hash})))
 
 
 def _resolve_comment(comment_hash: str, event: Event) -> Comment:
@@ -71,7 +83,7 @@ def comment_add(request: HttpRequest, event_hash: str) -> HttpResponse:
             messages.success(request, "Comment added.")
         else:
             messages.error(request, " ".join(result.errors))
-        return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
+        return _redirect_after(request, event_hash)
 
     return render(request, "events/comment/add_comment.html", {
         "event": event,
@@ -138,7 +150,7 @@ def comment_edit(request: HttpRequest, event_hash: str, comment_hash: str) -> Ht
             messages.success(request, "Comment updated.")
         else:
             messages.error(request, " ".join(result.errors))
-        return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
+        return _redirect_after(request, event_hash)
 
     from app.events.models import Attachment
     attachments = list(
@@ -245,8 +257,8 @@ def comment_soft_delete(request: HttpRequest, event_hash: str, comment_hash: str
     )
     if not can_delete:
         messages.error(request, "You may not delete this comment.")
-        return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
+        return _redirect_after(request, event_hash)
 
     CommentContext(comment.pk, request.user).delete()
     messages.success(request, "Comment deleted.")
-    return redirect(reverse("event_detail", kwargs={"hash": event_hash}))
+    return _redirect_after(request, event_hash)

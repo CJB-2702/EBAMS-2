@@ -60,8 +60,8 @@
   than fixtures built to fit.
 </p>
 
-<nav class="pc ks-inpage-nav mb-4" aria-label="In-page navigation">
-  <div class="pc-body py-2">
+<nav class="card ks-inpage-nav mb-4" aria-label="In-page navigation">
+  <div class="card-content py-2">
     <p class="inpage-nav-label mb-1">On this page</p>
     <div class="inpage-nav-links">
       <a href="#sec-feature-matrix" class="inpage-nav-link">Feature matrix</a>
@@ -86,8 +86,8 @@
     <code>FamilyThreadManager</code> — see <code>events/models/event.py</code>) and differ
     only in which capabilities are switched on.
   </p>
-  <div class="pc mb-4">
-    <div class="pc-body">
+  <div class="card mb-4">
+    <div class="card-content">
       <table class="table is-fullwidth is-hoverable is-size-7 mb-0">
         <thead>
           <tr>
@@ -135,7 +135,7 @@
   {% if activity_card %}
   {% include "events/fragments/event_card.html" with card=activity_card %}
   {% else %}
-  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  <div class="card"><div class="card-content has-text-grey is-size-7">No events exist yet.</div></div>
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/event_card.html" with card=activity_card {% templatetag closeblock %}</div>
 
@@ -151,7 +151,7 @@
   {% if activity_card %}
   {% include "events/fragments/comments_card.html" with card=activity_card row_depth="depth-3" action_depth="depth-4" %}
   {% else %}
-  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  <div class="card"><div class="card-content has-text-grey is-size-7">No events exist yet.</div></div>
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/comments_card.html" with card=activity_card row_depth="depth-3" action_depth="depth-4" {% templatetag closeblock %}</div>
 
@@ -193,19 +193,19 @@
   {% if activity_card.comments %}
   {% include "events/fragments/comment_row.html" with row=activity_card.comments|first event_hash=activity_card.hash %}
   {% else %}
-  <div class="pc"><div class="pc-body has-text-grey is-size-7">No comments to sample.</div></div>
+  <div class="card"><div class="card-content has-text-grey is-size-7">No comments to sample.</div></div>
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/comment_row.html" with row=row event_hash=event_hash {% templatetag closeblock %}</div>
 
   <p class="ks-section-intro mt-4">Condensed comment card.</p>
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">short_text</span></span>
         Comment — condensed
       </div>
     </div>
-    <div class="pc-body has-text-grey is-size-7">Not yet built.</div>
+    <div class="card-content has-text-grey is-size-7">Not yet built.</div>
   </div>
 
   <h3 id="sec-file-utils" class="title is-6 mt-5">File utilities</h3>
@@ -221,7 +221,7 @@
   {% if activity_card %}
   {% include "events/fragments/direct_attachments_card.html" with card=activity_card %}
   {% else %}
-  <div class="pc"><div class="pc-body has-text-grey is-size-7">No events exist yet.</div></div>
+  <div class="card"><div class="card-content has-text-grey is-size-7">No events exist yet.</div></div>
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/direct_attachments_card.html" with card=activity_card {% templatetag closeblock %}</div>
 
@@ -232,14 +232,14 @@
   {% include "events/fragments/gallery_card.html" with images=gallery_images title="Large gallery" dom_id="isolated-large" %}
 
   <p class="ks-section-intro mt-4">Mini gallery — split-pane image viewer with clickable file list.</p>
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">photo_size_select_small</span></span>
         Gallery — mini
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       {% if gallery_images %}
       <mini-gallery preview-height="300">
         {% for img in gallery_images %}
@@ -264,25 +264,8 @@
 <script defer src="{% static 'web_components/image_carousel.js' %}"></script>
 <script defer src="{% static 'web_components/mini_gallery.js' %}"></script>
 <script defer src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script defer src="{% static 'web_components/app_specific/comment_filter.js' %}"></script>
 <script>
-  // Small deliberate JS exception: Human/All/Machine comment-filter buttons,
-  // scoped to the nearest .pc ancestor so multiple comments cards on one page (or
-  // multiple event cards in a list) stay independent of one another.
-  window.__filterComments = function(evt, btn, filter) {
-    evt.preventDefault();
-    var group = btn.closest('.comment-filter-group');
-    var card = btn.closest('.pc');
-    group.querySelectorAll('.comment-filter-item').forEach(function(b) {
-      b.classList.toggle('is-link', b === btn);
-      b.classList.toggle('is-selected', b === btn);
-      b.classList.toggle('is-light', b !== btn);
-    });
-    card.querySelectorAll('[data-comment-kind]').forEach(function(row) {
-      row.style.display = (filter === 'all' || row.dataset.commentKind === filter) ? '' : 'none';
-    });
-    return false;
-  };
-
   // In-page nav scroll-spy — same inpage-nav-link pattern as the work-portal
   // structural example, but this page scrolls the window (no .app-scrollarea),
   // so plain anchor clicks work as-is and we only need to track the active link.

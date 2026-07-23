@@ -27,23 +27,101 @@
   <div class="page-header-icon"><span class="material-icons" aria-hidden="true">{% if mode == 'edit' %}edit{% else %}add{% endif %}</span></div>
   <div><h1 class="page-title">{% if mode == 'edit' %}Edit Model{% else %}New Model{% endif %}</h1></div></div></div></div>
 
-<form method="post" class="body-grid full-width">{% csrf_token %}
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Model</div></div>
-    <div class="pc-body"><div class="columns is-multiline">
-      <div class="column is-5"><label class="label is-small">Model Name</label><input class="input is-small" name="model_name" value="{{ model.model_name|default:'' }}"></div>
-      <div class="column is-4"><label class="label is-small">Subtype</label><input class="input is-small" name="subtype_name" value="{{ model.subtype_name|default:'' }}"></div>
-      <div class="column is-3"><label class="label is-small">Revision</label><input class="input is-small" name="revision" value="{{ model.revision|default:'' }}"></div>
-      <div class="column is-6"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
-      <div class="column is-6"><label class="label is-small">Manufacturers</label><div class="select is-small is-multiple is-fullwidth"><select name="manufacturers" multiple size="3">{% for mf in manufacturers %}<option value="{{ mf.id }}"{% if mf.id in selected_manufacturer_ids %} selected{% endif %}>{{ mf.name }}</option>{% endfor %}</select></div></div>
+{% if mode == 'create' and all_models %}
+<div class="body-grid full-width">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">content_copy</span></span>Prefill from existing model</div></div>
+    <div class="card-content"><div class="field has-addons">
+      <div class="control is-expanded"><div class="select is-small is-fullwidth">
+        <select id="prefill-source" aria-label="Copy fields from an existing model">
+          <option value="">Start blank…</option>
+          {% for m in all_models %}<option value="{{ m.id }}" {% if copy_from == m.id|stringformat:'s' %}selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+      </div></div>
+      <div class="control"><button type="button" id="prefill-go" class="button is-small is-light">Copy fields</button></div>
+    </div>
+    <p class="help">Loads another model's fields as a starting point. Saving still creates a new model.</p>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var sel = document.getElementById('prefill-source');
+  var go = document.getElementById('prefill-go');
+  if (!sel || !go) return;
+  var base = "{% url 'model_create' %}";
+  go.addEventListener('click', function () {
+    window.location.href = sel.value ? base + '?copy_from=' + encodeURIComponent(sel.value) : base;
+  });
+})();
+</script>
+{% endif %}
+
+<form method="post" id="model-form" data-mode="{{ mode }}" class="body-grid full-width">{% csrf_token %}
+  <div class="card"><div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Model</div>
+    <div class="is-flex is-align-items-center" style="gap:0.5rem;">
+      <span id="model-dirty-flag" class="tag is-warning is-hidden"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">edit_note</span></span><span>Unsaved changes</span></span>
+      <button type="submit" id="model-save-btn" class="button is-small is-link"{% if mode == 'edit' %} disabled{% endif %}><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button>
+      <a href="{% if mode == 'edit' %}{% url 'model_detail' model_id=model.id %}{% else %}{% url 'model_index' %}{% endif %}" class="button is-small is-light">Cancel</a>
+    </div>
+  </div>
+    <div class="card-content"><div class="columns is-multiline">
+      <div class="column is-4"><label class="label is-small">Model Name</label><input class="input is-small" name="model_name" value="{{ model.model_name|default:'' }}"></div>
+      <div class="column is-2"><label class="label is-small">Version</label><input class="input is-small" name="version" value="{{ model.version|default:'' }}" placeholder="e.g. 2016, M5"></div>
+      <div class="column is-2"><label class="label is-small">Version Rank
+        <info-popover direction="top" hover="true">
+          <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span></detail>
+          <summary><p>Optional integer to order versions of this model line (older/base = lower). Drives display order where the version string can't sort meaningfully.</p></summary>
+        </info-popover>
+      </label><input class="input is-small" type="number" min="0" name="version_rank" value="{{ model.version_rank|default_if_none:'' }}" placeholder="e.g. 1"></div>
+      <div class="column is-4"><label class="label is-small">Accepted Config Baselines
+        <info-popover direction="top" hover="true">
+          <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span></detail>
+          <summary><p>The acceptable trim/spec baselines for this model (e.g. <code>LE</code>, <code>EX</code>, <code>SE</code>). Type one and press Enter or Add; remove with the × on each chip. An asset built to this model picks one of these; the list is a soft UI guide, not part of the model's identity.</p></summary>
+        </info-popover>
+      </label>
+        <tag-list-editor name="config_baselines" placeholder="Add a baseline…" empty-text="No baselines yet.">
+          {% for b in model.config_baselines %}<input type="hidden" name="config_baselines" value="{{ b }}">{% endfor %}
+        </tag-list-editor>
+      </div>
+      <div class="column is-12"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
+
+      <div class="column is-12"><hr class="my-1"><label class="label is-small mb-2"><span class="icon-text"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">speed</span></span><span>Meter Units</span></span></label>
+        <div class="columns is-variable is-2 mb-0">
+          <div class="column"><input class="input is-small" name="meter1_unit" value="{{ model.meter1_unit|default:'' }}" placeholder="Meter 1 (e.g. Hours)"></div>
+          <div class="column"><input class="input is-small" name="meter2_unit" value="{{ model.meter2_unit|default:'' }}" placeholder="Meter 2"></div>
+          <div class="column"><input class="input is-small" name="meter3_unit" value="{{ model.meter3_unit|default:'' }}" placeholder="Meter 3"></div>
+          <div class="column"><input class="input is-small" name="meter4_unit" value="{{ model.meter4_unit|default:'' }}" placeholder="Meter 4"></div>
+        </div>
+      </div>
     </div></div>
   </div>
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Meter Units</div></div>
-    <div class="pc-body"><div class="columns">
-      <div class="column"><label class="label is-small">Meter 1</label><input class="input is-small" name="meter1_unit" value="{{ model.meter1_unit|default:'' }}" placeholder="Hours"></div>
-      <div class="column"><label class="label is-small">Meter 2</label><input class="input is-small" name="meter2_unit" value="{{ model.meter2_unit|default:'' }}"></div>
-      <div class="column"><label class="label is-small">Meter 3</label><input class="input is-small" name="meter3_unit" value="{{ model.meter3_unit|default:'' }}"></div>
-      <div class="column"><label class="label is-small">Meter 4</label><input class="input is-small" name="meter4_unit" value="{{ model.meter4_unit|default:'' }}"></div>
-    </div></div>
+
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturers</div></div>
+    <div class="card-content">
+      {% if mode == 'edit' %}
+      {% include "assets/models/_manufacturers_dlb_only.html" %}
+      <p class="help">Filter either side, then use the arrows to move manufacturers. Changes save immediately. The first linked manufacturer is treated as primary.</p>
+      {% else %}
+      <dual-list-box id="mfr-dlb">
+        <list-box slot="left" id="mfr-available-lb" label="Available">
+          <select id="mfr-available" slot="options" multiple aria-label="Available manufacturers">
+            {% for mf in manufacturers %}{% if mf.id not in selected_manufacturer_ids %}<option value="{{ mf.id }}">{{ mf.name }}{% if mf.code %} ({{ mf.code }}){% endif %}</option>{% endif %}{% endfor %}
+          </select>
+        </list-box>
+        <div slot="controls">
+          <button type="button" id="mfr-add" class="button is-small is-light" title="Link selected"><span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span></button>
+          <button type="button" id="mfr-remove" class="button is-small is-light" title="Unlink selected"><span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span></button>
+        </div>
+        <list-box slot="right" id="mfr-linked-lb" label="Linked to this model">
+          <select id="mfr-linked" name="manufacturers" slot="options" multiple aria-label="Linked manufacturers">
+            {% for mf in manufacturers %}{% if mf.id in selected_manufacturer_ids %}<option value="{{ mf.id }}">{{ mf.name }}{% if mf.code %} ({{ mf.code }}){% endif %}</option>{% endif %}{% endfor %}
+          </select>
+        </list-box>
+      </dual-list-box>
+      <p class="help">Filter either side, then double-click or use the arrows to move manufacturers. The first linked manufacturer is treated as primary.</p>
+      {% endif %}
+    </div>
   </div>
 
   {% if mode == 'edit' %}
@@ -53,9 +131,9 @@
   <div class="columns is-variable is-4" id="capability-assignment-row">
     <!-- LEFT Card (2/3) — Available Capabilities -->
     <div class="column is-8">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
             Available Capabilities
           </div>
@@ -103,9 +181,9 @@
 
     <!-- RIGHT Card (1/3) — Assigned Capabilities -->
     <div class="column">
-      <div class="pc" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
             Assigned Capabilities
           </div>
@@ -146,11 +224,6 @@
     </div>
   </div>
   {% endif %}
-
-  <div class="field is-grouped mt-4">
-    <p class="control"><button type="submit" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button></p>
-    <p class="control"><a href="{% if mode == 'edit' %}{% url 'model_detail' model_id=model.id %}{% else %}{% url 'model_index' %}{% endif %}" class="button is-small is-light">Cancel</a></p>
-  </div>
 </form>
 {% endblock %}
 
@@ -305,6 +378,82 @@
   filterCapabilities();
   updateCapCounts();
 
+})();
+
+/* Manufacturers dual-listbox: client-side move between Available and Linked.
+   A <select multiple> only submits its *selected* options, so on submit we
+   select every option in the Linked box to post the full linked set. */
+(function () {
+  var avail  = document.getElementById('mfr-available');
+  var linked = document.getElementById('mfr-linked');
+  if (!avail || !linked) return;
+
+  function move(from, to) {
+    Array.from(from.selectedOptions).forEach(function (o) {
+      o.selected = false;
+      // Clear any filter-driven hidden state so the option is visible in its
+      // new list regardless of the destination's current search query.
+      o.hidden = false;
+      to.appendChild(o);
+    });
+  }
+  var addBtn = document.getElementById('mfr-add');
+  var remBtn = document.getElementById('mfr-remove');
+  if (addBtn) addBtn.addEventListener('click', function () { move(avail, linked); });
+  if (remBtn) remBtn.addEventListener('click', function () { move(linked, avail); });
+  avail.addEventListener('dblclick', function () { move(avail, linked); });
+  linked.addEventListener('dblclick', function () { move(linked, avail); });
+
+  var form = linked.closest('form');
+  if (form) {
+    form.addEventListener('submit', function () {
+      Array.from(linked.options).forEach(function (o) { o.selected = true; });
+    });
+  }
+})();
+
+/* Dirty tracking: watch every named field (model identity, meters, baselines,
+   manufacturers, capabilities). On edit, Save starts disabled and the "Unsaved
+   changes" flag is hidden; either flips on the first real change and back if the
+   user reverts to the original values. */
+(function () {
+  var form    = document.getElementById('model-form');
+  var saveBtn = document.getElementById('model-save-btn');
+  var flag    = document.getElementById('model-dirty-flag');
+  if (!form || !saveBtn) return;
+  var editMode = form.dataset.mode === 'edit';
+
+  function signature() {
+    var parts = [];
+    form.querySelectorAll('input, select, textarea').forEach(function (el) {
+      if (!el.name || el.type === 'submit' || el.type === 'button') return;
+      if (el.multiple) {
+        parts.push(el.name + '=[' + Array.from(el.options).map(function (o) { return o.value; }).sort().join(',') + ']');
+      } else if (el.type === 'checkbox' || el.type === 'radio') {
+        parts.push(el.name + '=' + (el.checked ? '1' : '0'));
+      } else {
+        parts.push(el.name + '=' + el.value);
+      }
+    });
+    return parts.join('|');
+  }
+
+  var baseline = signature();
+
+  function refresh() {
+    var dirty = editMode ? (signature() !== baseline) : true;
+    saveBtn.disabled = !dirty;
+    // The "Unsaved changes" flag is an edit-mode affordance only.
+    if (flag) flag.classList.toggle('is-hidden', !(editMode && dirty));
+  }
+
+  form.addEventListener('input', refresh);
+  form.addEventListener('change', refresh);
+  // Widgets (tag chips, manufacturer moves) mutate the DOM instead of firing
+  // input/change on tracked fields — observe the subtree to catch those.
+  new MutationObserver(refresh).observe(form, { subtree: true, childList: true });
+
+  refresh();
 })();
 </script>
 {% endblock %}

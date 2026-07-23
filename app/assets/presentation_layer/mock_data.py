@@ -53,22 +53,22 @@ ASSET_CLASSES = [
 ]
 
 ASSET_MODELS = [
-    {"id": 1, "model_name": "8FGCU25", "subtype_name": "Cushion Tire", "revision": "C",
+    {"id": 1, "model_name": "8FGCU25", "version": "C", "version_rank": 1, "config_baselines": ["Cushion Tire", "Pneumatic Tire"],
      "is_base_model": True, "base_model": None, "asset_class": 1,
      "manufacturers": [1], "domains": [1, 2],
      "meter1_unit": "Hours", "meter2_unit": "Miles", "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
-    {"id": 2, "model_name": "320 GX", "subtype_name": None, "revision": None,
+    {"id": 2, "model_name": "320 GX", "version": "", "version_rank": None, "config_baselines": [],
      "is_base_model": True, "base_model": None, "asset_class": 2,
      "manufacturers": [2], "domains": [3],
      "meter1_unit": "Hours", "meter2_unit": None, "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
-    {"id": 3, "model_name": "S60XL", "subtype_name": None, "revision": "B",
+    {"id": 3, "model_name": "S60XL", "version": "B", "version_rank": 1, "config_baselines": ["Standard", "XL Cab"],
      "is_base_model": True, "base_model": None, "asset_class": 3,
      "manufacturers": [4], "domains": [1, 2, 3],
      "meter1_unit": "Hours", "meter2_unit": None, "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
-    {"id": 4, "model_name": "8FGCU25", "subtype_name": "Cushion Tire", "revision": "D",
+    {"id": 4, "model_name": "8FGCU25", "version": "D", "version_rank": 2, "config_baselines": ["Cushion Tire"],
      "is_base_model": False, "base_model": 1, "asset_class": 1,
      "manufacturers": [1], "domains": [1, 2],
      "meter1_unit": "Hours", "meter2_unit": "Miles", "meter3_unit": None, "meter4_unit": None,
@@ -296,7 +296,7 @@ def _model_ns(mid, deep=False):
     obj.manufacturers = [manufacturer_ns(x) for x in m["manufacturers"]]
     obj.domains = [domain_ns(d) for d in m["domains"]]
     obj.display_name = " ".join(
-        p for p in [m["model_name"], m["subtype_name"], (f"Rev {m['revision']}" if m["revision"] else None)] if p
+        p for p in [m["model_name"], m["version"]] if p
     )
     obj.meter_units = [u for u in [m["meter1_unit"], m["meter2_unit"], m["meter3_unit"], m["meter4_unit"]] if u]
     if deep:

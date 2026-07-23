@@ -28,9 +28,9 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
+      <div class="card-content">
         <dl class="kv">
           <dt>Name</dt><dd>{{ definition.name }}</dd>
           <dt>Code</dt><dd class="is-family-monospace">{{ definition.code }}</dd>
@@ -40,9 +40,9 @@
       </div>
     </div>
     
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Assigned Classes</div></div>
-      <div class="pc-body is-flush">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Assigned Classes</div></div>
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
           <thead>
             <tr>
@@ -68,9 +68,9 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Assigned Make Models</div></div>
-      <div class="pc-body is-flush">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Assigned Make Models</div></div>
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
           <thead>
             <tr>
@@ -104,9 +104,9 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Usage Metrics</div></div>
+      <div class="card-content">
         <dl class="kv">
           <dt>Class uses</dt><dd>{{ definition.class_uses }}</dd>
           <dt>Model uses</dt><dd>{{ definition.model_uses }}</dd>

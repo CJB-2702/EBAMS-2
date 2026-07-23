@@ -31,11 +31,11 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recent Assets</div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recent Assets</div>
         <a href="{% url 'asset_index' %}" class="button is-small is-light">View all</a>
       </div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
           <thead><tr><th>Asset</th><th>Class</th><th>Model</th><th>Domain</th><th>Status</th><th>Capability</th></tr></thead>
           <tbody>
@@ -56,9 +56,9 @@
   </div>
 
   <div class="body-rail">
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">monitor_heart</span></span>Capability Status</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">monitor_heart</span></span>Capability Status</div></div>
+      <div class="card-content">
         <dl class="kv">
           <dt>Operational</dt><dd><span class="tag is-success is-light is-small">{{ stats.operational }}</span></dd>
           <dt>Limited</dt><dd><span class="tag is-warning is-light is-small">{{ stats.limited }}</span></dd>
@@ -66,17 +66,17 @@
         </dl>
       </div>
     </div>
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>By Data Domain</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>By Data Domain</div></div>
+      <div class="card-content">
         <dl class="kv">
           {% for row in stats.by_domain %}<dt>{{ row.domain.name }}</dt><dd>{{ row.count }}</dd>{% endfor %}
         </dl>
       </div>
     </div>
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick Links</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick Links</div></div>
+      <div class="card-content">
         <div class="buttons are-small">
           <a href="{% url 'model_index' %}" class="button is-light is-fullwidth">Models</a>
           <a href="{% url 'class_index' %}" class="button is-light is-fullwidth">Classes</a>

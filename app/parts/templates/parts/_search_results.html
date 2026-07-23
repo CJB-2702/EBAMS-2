@@ -1,6 +1,6 @@
 {% if term %}
-<div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Results for "{{ term }}" ({{ results|length }})</div></div>
-  <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+<div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Results for "{{ term }}" ({{ results|length }})</div></div>
+  <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
     <thead><tr><th>Part Number</th><th>Name</th><th>Current Revision</th></tr></thead>
     <tbody>
       {% for p in results %}

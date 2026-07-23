@@ -1,8 +1,8 @@
 {% comment %}"Applies to" preview card. Server-renders the verdict for the saved
 lists (F5 path); JS in editor.html updates rows live as the author edits.{% endcomment %}
-<div class="pc" id="applies-preview">
-  <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>Applies to</div></div>
-  <div class="pc-body is-flush">
+<div class="card" id="applies-preview">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>Applies to</div></div>
+  <div class="card-content is-flush">
     <table class="table is-fullwidth is-size-7" style="margin:0;"><tbody id="preview-rows">
       {% for row in preview %}
       <tr>

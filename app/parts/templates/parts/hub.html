@@ -11,8 +11,8 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc">
-    <div class="pc-body">
+  <div class="card sharp-corners">
+    <div class="card-content">
       <input
         class="input"
         type="search"
@@ -32,8 +32,8 @@
     {% include "parts/_search_results.html" %}
   </div>
 
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently Added Parts</div></div>
-    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently Added Parts</div></div>
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead><tr><th>Part Number</th><th>Name</th><th>Active</th></tr></thead>
       <tbody>
         {% for p in recent_parts %}

@@ -1,14 +1,14 @@
 <div>
 
   <!-- Domain template -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span>
         Domain template (scope gate)
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       {% if current_domain_template_assignment %}
       <p class="mb-3 is-size-7">
         <strong>Currently assigned:</strong>
@@ -70,14 +70,14 @@
   </div>
 
   <!-- Direct data domain assignments -->
-  <div class="pc mb-4">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>
         Direct data domain assignments
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Direct user-domain rows. Domains held via the active template are managed by the template; this list adds or removes domains independently.</p>
       {% include "users/_domains_dlb_only.html" %}
     </div>

@@ -43,15 +43,15 @@
 <div class="body-grid full-width">
 
   {% if template.description %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
-    <div class="pc-body">{{ template.description|linebreaks }}</div>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
+    <div class="card-content">{{ template.description|linebreaks }}</div>
   </div>
   {% endif %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template ({{ domains|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template ({{ domains|length }})</div></div>
+    <div class="card-content">
       {% if domains %}
       <ul class="is-size-7">
         {% for d in domains %}
@@ -64,9 +64,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
+    <div class="card-content is-flush">
       {% if assignees %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>User</th><th>Email</th></tr></thead>
@@ -80,7 +80,7 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No users currently hold this template.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7 mb-0">No users currently hold this template.</p></div>
       {% endif %}
     </div>
   </div>

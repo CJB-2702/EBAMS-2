@@ -11,7 +11,7 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Definitions ({{ definitions|length }})</div></div>
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Definitions ({{ definitions|length }})</div></div>
     
     <!-- Filter + Search Bar -->
     <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
@@ -78,7 +78,7 @@
       </div>
     </div>
 
-    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead><tr><th>Name</th><th>Code</th><th>Description</th><th>Class uses</th><th>Model uses</th><th>Asset uses</th><th>Active</th><th class="has-text-right"></th></tr></thead>
       <tbody id="definitions-table-body">
         {% for d in definitions %}

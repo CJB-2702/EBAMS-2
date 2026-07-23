@@ -37,9 +37,9 @@
 <div class="body-grid full-width">
 
   {% if can_edit_metadata %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="card-content">
       <form method="post" class="mb-4">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_metadata">
@@ -81,16 +81,16 @@
   </div>
   {% endif %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Linked data domains</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Linked data domains</div></div>
+    <div class="card-content">
       {% include "organizational/organizations/_domains_dlb_only.html" %}
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>User assignments</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>User assignments</div></div>
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Informational — does not grant data access.</p>
       {% include "organizational/organizations/_users_dlb_only.html" %}
     </div>

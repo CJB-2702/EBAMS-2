@@ -1,0 +1,49 @@
+{% extends "assets/asset_base.html" %}
+{% load static %}
+{% block title %}{{ model_name }} — Library{% endblock %}
+{% block nav_models %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'model_index' %}">Models</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ model_name }} — Library</a></li>
+{% endblock %}
+
+{% block extra_css %}
+.lib-intro { background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak); border-left: 4px solid var(--bulma-info); padding: 0.9rem 1.1rem; margin-bottom: 1.25rem; }
+.card.is-base-version { border-left: 4px solid var(--bulma-primary); }
+.lib-subhead { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; color: var(--bulma-text-weak); margin-bottom: 0.5rem; }
+.lib-subhead .icon { color: var(--bulma-text-weak); }
+.lib-inline-form { border-top: 1px solid var(--bulma-border-weak); background: var(--bulma-scheme-main-bis); padding: 0.75rem; margin-top: 0.75rem; }
+{% endblock %}
+
+{% block content %}
+<script src="{% static 'web_components/file_browser.js' %}" defer></script>
+<script src="{% static 'web_components/file_upload.js' %}" defer></script>
+<script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
+
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">collections_bookmark</span></div>
+    <div><h1 class="page-title">{{ model_name }} — Library</h1>
+      <p class="page-subtitle">Galleries, documents and comments across every version of this model.</p>
+    </div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'model_index' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Models</span></a>
+  </div>
+</div></div>
+
+<div class="lib-intro">
+  <p class="is-size-7">
+    <span class="icon-text"><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span>
+    <span><strong>This library spans every version</strong> of <strong>{{ model_name }}</strong>, ordered by version rank. Each card holds that version's image gallery, technical documents and comments.</span></span>
+  </p>
+</div>
+
+<div class="body-grid full-width">
+  {% for s in sections %}
+  {% include "assets/models/_library_section.html" with s=s can_manage=can_manage %}
+  {% empty %}
+  <div class="card"><div class="card-content"><p class="has-text-grey is-size-7">No versions found for this model.</p></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

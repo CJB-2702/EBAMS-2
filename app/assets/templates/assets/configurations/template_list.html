@@ -16,14 +16,14 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
         Filters
       </div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <form method="get">
         <div class="columns is-variable is-2">
           <div class="column is-4">
@@ -63,8 +63,8 @@
       </form>
     </div>
   </div>
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Templates ({{ templates|length }})</div></div>
-    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Templates ({{ templates|length }})</div></div>
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead><tr><th>Template Name</th><th>Revision</th><th>Target Asset Model</th><th>Child Assets Required</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
       <tbody>
         {% for t in templates %}

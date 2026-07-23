@@ -1,0 +1,125 @@
+{% comment %}
+Model library section — one version of a model line.
+Expected context:
+  s            section dict: id, version, version_rank, is_base_model, asset_class,
+               documents, images, comments
+  can_manage   bool — show add/remove controls
+{% endcomment %}
+{% load static %}
+<div class="card{% if s.is_base_model %} is-base-version{% endif %}">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+      {% if s.version %}Version {{ s.version }}{% else %}Version — (base){% endif %}
+      {% if s.version_rank is not None %}<span class="tag is-light is-small">rank {{ s.version_rank }}</span>{% endif %}
+      {% if s.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% endif %}
+    </div>
+    <a href="{% url 'model_detail' model_id=s.id %}" class="button is-small is-light" title="Open this version">
+      <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span><span>Detail</span>
+    </a>
+  </div>
+  <div class="card-content">
+    {# ── Image gallery ─────────────────────────────────────────────── #}
+    <p class="lib-subhead"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Image Gallery</p>
+    {% if s.images %}
+    <image-carousel id="carousel-model-{{ s.id }}" preview-height="240" loop>
+      {% for img in s.images %}
+      <img src="{% url 'file_inline' file_id=img.file_id %}" alt="{{ img.filename }}" loading="lazy" title="{{ img.filename }}">
+      {% endfor %}
+    </image-carousel>
+    <div class="mt-2">
+      <carousel-preview-items for="carousel-model-{{ s.id }}" size="46"></carousel-preview-items>
+    </div>
+    {% if can_manage %}
+    <div class="mt-2">
+      {% for img in s.images %}
+      <div class="is-flex is-justify-content-space-between is-align-items-center py-1">
+        <span class="is-size-7 has-text-weight-medium">{{ img.filename }}
+          {% if img.is_primary %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
+        <div class="buttons are-small has-addons mb-0">
+          {% if not img.is_primary %}
+          <form method="post" action="{% url 'model_library_set_primary_image' model_id=s.id %}">{% csrf_token %}
+            <input type="hidden" name="attachment" value="{{ img.id }}">
+            <button class="button is-small is-light" title="Set as primary"><span class="icon"><span class="material-icons" aria-hidden="true">star</span></span></button>
+          </form>
+          {% endif %}
+          <form method="post" action="{% url 'model_library_remove_image' model_id=s.id %}"
+                onsubmit="return confirm('Remove this image from the gallery?');">{% csrf_token %}
+            <input type="hidden" name="attachment" value="{{ img.id }}">
+            <button class="button is-small is-light" title="Remove from gallery"><span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">delete</span></span></button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+
+    {% if can_manage %}
+    <form method="post" action="{% url 'model_library_add_image' model_id=s.id %}" enctype="multipart/form-data" class="lib-inline-form">
+      {% csrf_token %}
+      <file-upload name="file" multiple fullwidth label="Add image(s)…"></file-upload>
+      <input class="input is-small mt-2" type="text" name="caption" placeholder="Caption (optional)">
+      <button type="submit" class="button is-small is-link mt-2"><span class="icon"><span class="material-icons" aria-hidden="true">add_photo_alternate</span></span><span>Add Images</span></button>
+    </form>
+    {% endif %}
+
+    {# ── Document library ──────────────────────────────────────────── #}
+    <p class="lib-subhead mt-4"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span>Documents</p>
+    <file-browser default-view="tiles" storage-key="model-lib-file-browser-view">
+      {% for d in s.documents %}
+      <a class="fb-item" href="{% url 'file_download' file_id=d.file_id %}"
+         data-name="{{ d.filename }}"
+         data-caption="{{ d.caption }}"
+         data-type="{% if d.is_image %}image{% else %}{{ d.attachment_type }}{% endif %}"
+         data-thumb="{% if d.is_image %}{% url 'file_inline' file_id=d.file_id %}{% endif %}"
+         data-size="{{ d.file_size }}"
+         data-date="{{ d.created_at }}"
+         data-date-display="{{ d.created_at_display }}"
+         data-user="{{ d.created_by }}"
+         data-id="{{ d.id }}">
+        <span class="fb-thumb">
+          {% if d.is_image %}
+          <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy">
+          {% else %}
+          <span class="material-icons" aria-hidden="true">description</span>
+          {% endif %}
+        </span>
+        <span class="fb-name">{{ d.filename }}</span>
+        {% if d.caption %}<span class="fb-caption">{{ d.caption }}</span>{% endif %}
+        {% if can_manage %}
+        <span slot="actions">
+          <form method="post" action="{% url 'model_library_remove_document' model_id=s.id %}"
+                onsubmit="return confirm('Remove {{ d.filename|escapejs }} from the library?');">
+            {% csrf_token %}
+            <input type="hidden" name="attachment_id" value="{{ d.id }}">
+            <button type="submit" class="button is-small is-light" title="Remove file">
+              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+            </button>
+          </form>
+        </span>
+        {% endif %}
+      </a>
+      {% empty %}
+      <p class="has-text-grey is-size-7">No documents yet.</p>
+      {% endfor %}
+    </file-browser>
+
+    {% if can_manage %}
+    <form method="post" action="{% url 'model_library_add_document' model_id=s.id %}" enctype="multipart/form-data" class="lib-inline-form">
+      {% csrf_token %}
+      <file-upload name="file" multiple fullwidth label="Add document(s)…"></file-upload>
+      <input class="input is-small mt-2" type="text" name="caption" placeholder="Caption (optional)">
+      <button type="submit" class="button is-small is-link mt-2"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span><span>Add Documents</span></button>
+    </form>
+    {% endif %}
+
+    {# ── Comments ──────────────────────────────────────────────────── #}
+    {% if can_manage %}
+    {% url 'model_library_add_comment' model_id=s.id as comment_add_url %}
+    {% include "events/fragments/comments_card.html" with card=s.comments_card add_url=comment_add_url next=request.get_full_path depth="mt-4" row_depth="depth-2" action_depth="depth-3" %}
+    {% else %}
+    {% include "events/fragments/comments_card.html" with card=s.comments_card readonly=True depth="mt-4" row_depth="depth-2" action_depth="depth-3" %}
+    {% endif %}
+  </div>
+</div>

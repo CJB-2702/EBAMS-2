@@ -29,11 +29,11 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       {% if asset %}
       <div class="notification is-info is-light is-small py-2 px-3 mb-3 is-flex is-align-items-center is-justify-content-space-between">
         <span class="is-size-7">
@@ -89,14 +89,14 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_agenda</span></span>Events ({{ events_with_hash|length }})</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_agenda</span></span>Events ({{ events_with_hash|length }})</div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       {% for row in events_with_hash %}
-      <div class="pc depth-2 mb-2">
-        <div class="pc-body">
+      <div class="card depth-2 mb-2">
+        <div class="card-content">
           <div class="is-flex is-justify-content-space-between is-align-items-flex-start">
             <div style="min-width:0;">
               <a href="{% url 'event_detail' hash=row.hash %}" class="has-text-weight-semibold">{{ row.event.title }}</a>

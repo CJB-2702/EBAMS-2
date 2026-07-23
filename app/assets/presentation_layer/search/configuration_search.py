@@ -113,7 +113,7 @@ def applicability_view(defined_mod: DefinedModification, mode: str | None = None
         _decorate_model(m)
         for m in AssetModel.objects.filter(id__in=raw_model_ids)
         .select_related("asset_class")
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version")
     ]
     label, tag, helptext = MODE_META.get(mode, MODE_META["unrestricted"])
 
@@ -224,7 +224,7 @@ def load_applicability_editor(modification_id: int, mode: str | None = None) -> 
     model_options = [
         SimpleNamespace(id=m.id, label=str(m), asset_class=m.asset_class_id)
         for m in AssetModel.objects.select_related("asset_class").order_by(
-            "model_name", "subtype_name"
+            "model_name", "version"
         )
     ]
 
@@ -342,7 +342,7 @@ def load_config_template_editor(template_id: int) -> dict | None:
         _decorate_model(m)
         for m in AssetModel.objects.select_related("asset_class")
         .exclude(id=template.model_id)
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version")
     ]
     return {
         "template": template,

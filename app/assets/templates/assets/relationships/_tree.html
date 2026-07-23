@@ -1,13 +1,13 @@
 {% comment %}Shared structure panel: ancestors strip + subject + child tree.
 Context: asset, tree (AssetTreeStruct), ancestors, mode.{% endcomment %}
-<div class="pc">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
       Structure
     </div>
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     {% if ancestors %}
     <p class="is-size-7 has-text-grey mb-3">
       <span class="has-text-grey-light">Part of:</span>

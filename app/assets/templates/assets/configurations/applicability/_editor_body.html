@@ -5,8 +5,8 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
   {{ preview_assets|json_script:"preview-assets" }}
 
   {# ── Mode selector ── #}
-  <div class="pc">
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-content">
       <label class="label is-small">Applicability mode</label>
       <div class="buttons has-addons mb-1">
         {% for value, label in mode_choices %}
@@ -22,13 +22,13 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
   <div class="body-grid has-rail">
     <div>
       {# ── Asset Classes panel ── #}
-      <div class="pc">
-        <div class="pc-header"><div class="pc-header-title">Asset Classes
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">Asset Classes
           {% if applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
           {% elif applicability.class_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
           {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
         </div></div>
-        <div class="pc-body">
+        <div class="card-content">
           {% if applicability.class_derived %}
             <p class="is-size-7 has-text-grey mb-2">Computed from the selected models — not editable in this mode.</p>
             <div class="tags">
@@ -58,12 +58,12 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
       </div>
 
       {# ── Asset Models panel ── #}
-      <div class="pc">
-        <div class="pc-header"><div class="pc-header-title">Asset Models
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">Asset Models
           {% if applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
           {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
         </div></div>
-        <div class="pc-body">
+        <div class="card-content">
           {% if not applicability.model_binding %}<p class="is-size-7 has-text-grey mb-2">Not enforced in this mode — kept as search hints.</p>{% endif %}
           <div id="dead-model-error"></div>
           <dual-list-box>
@@ -90,7 +90,7 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
     {# ── Rail: preview + combine reminder ── #}
     <div class="body-rail">
       {% include "assets/configurations/applicability/_preview.html" %}
-      <div class="pc"><div class="pc-body">
+      <div class="card"><div class="card-content">
         <p class="is-size-7 has-text-grey"><strong>Combine rule:</strong> when both class and model are enforced
         (<em>Strict</em>), an asset must satisfy <strong>both</strong> (AND). A model whose parent class
         isn't allowed is a <em>dead model</em> and is refused here.</p>

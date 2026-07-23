@@ -25,15 +25,14 @@ def search_models(
         AssetModel.objects.select_related("asset_class", "base_model")
         .prefetch_related("manufacturers", "domains")
         .annotate(asset_count=Count("assets", distinct=True))
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version_rank", "version")
     )
 
     q = (q or "").strip()
     if q:
         qs = (
             qs.filter(model_name__icontains=q)
-            | qs.filter(subtype_name__icontains=q)
-            | qs.filter(revision__icontains=q)
+            | qs.filter(version__icontains=q)
         )
         qs = qs.distinct()
     if asset_class:
@@ -46,6 +45,17 @@ def search_models(
         qs = qs.filter(is_base_model=(is_base_model == "True"))
 
     return qs
+
+
+def load_model_versions(model_name: str) -> QuerySet[AssetModel]:
+    """Every version row sharing one model line, ordered low→high by version_rank
+    (the manual ordering for versions; the ``version`` string does not sort). Backs
+    the composed model library, which spans all versions of the same model."""
+    return (
+        AssetModel.objects.select_related("asset_class")
+        .filter(model_name=model_name)
+        .order_by("version_rank", "version")
+    )
 
 
 def load_model_detail(model_id: int) -> AssetModel | None:

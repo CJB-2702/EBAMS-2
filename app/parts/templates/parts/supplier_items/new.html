@@ -22,23 +22,23 @@
 {# All 3 steps render at once; step 2/3 inputs start disabled and are progressively enabled —
    see docs/UX_UI/components/multi_step_flows.md ("later steps shown but disabled"). #}
 <div class="body-grid full-width">
-  <div class="pc mb-5" id="supplier-item-wizard">
-    <div class="pc-body">
+  <div class="card mb-5" id="supplier-item-wizard">
+    <div class="card-content">
       <form method="post">
         {% csrf_token %}
 
         {# ── Step 1: Manufacturer ── #}
-        <div class="pc depth-2 mb-4" data-step="1">
-          <div class="pc-header"><div class="pc-header-title">1. Manufacturer</div></div>
-          <div class="pc-body" id="supplier-item-manufacturer-slot">
+        <div class="card depth-2 mb-4" data-step="1">
+          <div class="card-header"><div class="card-header-title">1. Manufacturer</div></div>
+          <div class="card-content" id="supplier-item-manufacturer-slot">
             {% include "parts/manufacturers/_manufacturer_picker.html" with selected_manufacturer=None %}
           </div>
         </div>
 
         {# ── Step 2: Item identity — disabled until a manufacturer is selected ── #}
-        <div class="pc depth-2 mb-4" data-step="2">
-          <div class="pc-header"><div class="pc-header-title">2. Item</div></div>
-          <div class="pc-body">
+        <div class="card depth-2 mb-4" data-step="2">
+          <div class="card-header"><div class="card-header-title">2. Item</div></div>
+          <div class="card-content">
             <label class="label is-small">Manufacturer Part Number</label>
             <input class="input is-small" type="text" name="manufacturer_part_number" data-gated required disabled>
             <label class="label is-small">Name</label>
@@ -49,9 +49,9 @@
         </div>
 
         {# ── Step 3: Compatibility range — disabled until the MPN is filled ── #}
-        <div class="pc depth-2 mb-4" data-step="3">
-          <div class="pc-header"><div class="pc-header-title">3. Compatibility (optional)</div></div>
-          <div class="pc-body">
+        <div class="card depth-2 mb-4" data-step="3">
+          <div class="card-header"><div class="card-header-title">3. Compatibility (optional)</div></div>
+          <div class="card-content">
             {{ revision_map|json_script:"part-revision-map" }}
             <p class="help mb-3">Leave any bound blank for "no constraint" on that side.</p>
 

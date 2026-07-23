@@ -17,16 +17,16 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">collections</span></span>Images ({{ images|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">collections</span></span>Images ({{ images|length }})</div></div>
+    <div class="card-content">
       {% if images %}
       <div class="columns is-multiline">
         {% for img in images %}
         <div class="column is-4">
-          <div class="pc" style="margin:0;">
+          <div class="card" style="margin:0;">
             <figure class="image is-4by3" style="background:var(--bulma-background);"><img src="{{ img.file.url }}" alt="{{ img.file.original_filename }}" style="object-fit:contain;"></figure>
-            <div class="pc-body" style="padding:0.5rem 0.75rem;">
+            <div class="card-content" style="padding:0.5rem 0.75rem;">
               <div class="is-flex is-justify-content-space-between is-align-items-center">
                 <span class="is-size-7">Order {{ img.display_order }} {% if img.id == primary_id %}<span class="tag is-primary is-small">primary</span>{% endif %}</span>
                 <form method="post" style="display:inline;">{% csrf_token %}
@@ -43,9 +43,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>Upload</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>Upload</div></div>
+    <div class="card-content">
       <form method="post" enctype="multipart/form-data">{% csrf_token %}
         <file-upload name="image" accept="image/*" multiple fullwidth label="Choose image(s)…"></file-upload>
         <button class="button is-small is-link is-fullwidth" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Upload</span></button>

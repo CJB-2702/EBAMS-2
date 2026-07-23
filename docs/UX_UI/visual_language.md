@@ -30,9 +30,12 @@ No pill buttons. No rounded cards. No "softened" inputs. The radius pinning is i
 
 ## Cards as the default container
 
-- **Portals and primary forms:** wrap the main content in a `.card`. Put copy and fields in `.card-content`. Put actions in `.card-footer` (see [form_style_guide.md](form_style_guide.md)).
+- **Every self-contained content block — portals, primary forms, list items, thread/comment cards — wraps in `.card`.** Put copy and fields in `.card-content`. Put actions in `.card-footer` (see [form_style_guide.md](form_style_guide.md)).
+- **`.card`, `.card-header`, and `.card-content` are overridden project-wide** in `custom_css.css` to look different from stock Bulma: a flat `1px solid var(--bulma-border-weak)` border instead of Bulma's drop shadow, a `border-bottom` divider under `.card-header` instead of its default box-shadow, tighter header/content padding, and `font-weight: 600` (not Bulma's bold) on the header. This is one global override, not a per-page or per-app choice — never re-add Bulma's stock shadow/padding locally to "restore the default look."
 - **Card footer geometry** is documented in [form_style_guide.md](form_style_guide.md). Do not invent ad-hoc footer rows.
-- **Card overflow:** `overflow: hidden` on the card root so any rounded-button-corner relic is clipped by the (now-zero) radius regardless of theme.
+- **Card overflow:** `overflow: hidden` on the card root clips content that overflows its (now-zero-radius) box. Dark mode's Bulma vendor CSS also sets `border-*-radius` directly on `.card-header:first-child` / `.card-content` / `.card-footer:last-child` from a non-zero `--bulma-card-radius`, which is its own corner paint rather than overflow — `custom_css.css` zeroes those selectors literally so no theme reintroduces a rounded corner.
+
+There used to be a second, hand-rolled card component (`.pc`/`.pc-header`/`.pc-body`) duplicated inline across several apps' base templates, doing the same job as `.card` with slightly different styling. It has been folded into `.card` — if you see `.pc` referenced anywhere (old docs, old branches), treat it as the same thing `.card` now does.
 
 ## Material Icons
 

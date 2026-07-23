@@ -25,11 +25,11 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div>
     </div>
-    <div class="pc-body">
+    <div class="card-content">
       <form method="get">
         <div class="columns is-multiline is-variable is-3">
           <div class="column is-8">
@@ -51,11 +51,11 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header">
-      <div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Permissions{% if page.paginator %} ({{ page.paginator.count }}){% endif %}</div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Permissions{% if page.paginator %} ({{ page.paginator.count }}){% endif %}</div>
     </div>
-    <div class="pc-body is-flush">
+    <div class="card-content is-flush">
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
@@ -87,7 +87,7 @@
     </div>
 
     {% if page.has_other_pages %}
-    <div class="pc-body" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--bulma-border-weak);">
+    <div class="card-content" style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--bulma-border-weak);">
       <span class="has-text-grey is-size-7">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</span>
       <nav class="pagination is-small" role="navigation" aria-label="pagination">
         {% if page.has_previous %}

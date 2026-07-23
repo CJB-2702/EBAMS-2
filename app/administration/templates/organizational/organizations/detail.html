@@ -42,9 +42,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Linked data domains ({{ domains|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Linked data domains ({{ domains|length }})</div></div>
+    <div class="card-content">
       {% if domains %}
       <ul class="is-size-7">
         {% for d in domains %}
@@ -57,9 +57,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users assigned to this organization ({{ user_assignments|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Users assigned to this organization ({{ user_assignments|length }})</div></div>
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Organization assignments are <strong>informational only</strong> — they do not grant data access.</p>
       {% if user_assignments %}
       <table class="table is-fullwidth is-narrow is-size-7" style="margin:0;">

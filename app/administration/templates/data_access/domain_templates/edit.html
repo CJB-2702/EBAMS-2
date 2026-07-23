@@ -39,9 +39,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="card-content">
       <form method="post" class="mb-4">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_metadata">
@@ -82,9 +82,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Domains in this template</div></div>
+    <div class="card-content">
       {% include "data_access/domain_templates/_domains_dlb_only.html" %}
     </div>
   </div>

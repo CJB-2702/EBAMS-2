@@ -71,9 +71,9 @@ class AddComment extends HTMLElement {
     const buttonDepth = `depth-${Math.min(depthNum + 1, 4)}`;
 
     this.innerHTML = `
-      <div class="pc ${this._attr(depth)} ${margin}">
-        <div class="pc-header">
-          <div class="pc-header-title">
+      <div class="card ${this._attr(depth)} ${margin}">
+        <div class="card-header">
+          <div class="card-header-title">
             <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">${headerIcon}</span></span>
             ${headerTitle}
           </div>
@@ -83,7 +83,7 @@ class AddComment extends HTMLElement {
             <span>Cancel</span>
           </button>` : ``}
         </div>
-        <div class="pc-body">
+        <div class="card-content">
           <p class="help is-danger is-size-7 ac-error"${error ? "" : " hidden"}>${this._esc(error)}</p>
           <div class="field">
             <div class="control">
@@ -97,8 +97,8 @@ class AddComment extends HTMLElement {
         </div>
         <footer class="card-footer custom-card-footer">
           <div class="card-footer-secondaries">
-            <button type="button" class="button is-small ${buttonDepth} ac-clear">Clear</button>
-            <button type="button" class="button is-small ${buttonDepth} ac-attach">
+            <button type="button" class="button is-small is-link is-light ac-clear">Clear</button>
+            <button type="button" class="button is-small is-link is-light ac-attach">
               <span class="icon"><span class="material-icons" aria-hidden="true">attach_file</span></span>
               <span>Attach Files</span>
             </button>

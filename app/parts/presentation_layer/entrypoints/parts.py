@@ -22,6 +22,7 @@ from app.parts.control_layer.factories.part_factory import PartFactory
 from app.parts.control_layer.managers.part_image_manager import PartImageError
 from app.parts.control_layer.part_context import PartContext
 from app.parts.models import Part
+from app.utils.safe_redirect import safe_next_url
 
 
 @require_http_methods(["GET"])
@@ -61,7 +62,7 @@ def part_detail(request: HttpRequest, part_id: int) -> HttpResponse:
             "base_documents": base_documents,
             "image_documents": image_documents,
             "other_documents": other_documents,
-            "comments": ctx.comments(),
+            "comments_card": ctx.documents_thread.card(request.user),
             "supplier_items": part["supplier_items"],
             "domains": Domain.objects.order_by("name"),
         },
@@ -159,14 +160,11 @@ def part_set_primary_image(request: HttpRequest, part_id: int) -> HttpResponse:
 
 @require_http_methods(["POST"])
 def part_add_comment(request: HttpRequest, part_id: int) -> HttpResponse:
-    body = request.POST.get("body", "").strip()
-    domain_id = request.POST.get("domain")
-    if body and domain_id:
-        PartContext(part_id, actor=request.user).documents_thread.add_comment(
-            body, domain_id=int(domain_id)
-        )
+    body = request.POST.get("content", "").strip()
+    if body:
+        PartContext(part_id, actor=request.user).documents_thread.add_comment(body)
         messages.success(request, "Comment added.")
-    return redirect(reverse("part_detail", kwargs={"part_id": part_id}))
+    return redirect(safe_next_url(request, reverse("part_detail", kwargs={"part_id": part_id})))
 
 
 def _struct_or_404(part_id: int) -> PartStruct:

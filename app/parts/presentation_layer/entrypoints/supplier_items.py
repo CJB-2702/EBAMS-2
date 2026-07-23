@@ -27,6 +27,7 @@ from app.parts.control_layer.managers.supplier_vendor_revision_manager import (
     SupplierVendorRevisionManager,
 )
 from app.parts.control_layer.supplier_item_context import SupplierItemContext
+from app.utils.safe_redirect import safe_next_url
 
 
 @require_http_methods(["GET"])
@@ -102,7 +103,7 @@ def supplier_item_detail(request: HttpRequest, item_id: int) -> HttpResponse:
             "compatibility_range": ctx.compatibility_range(),
             "vendor_revisions": ctx.vendor_revisions(),
             "documents": ctx.documents(),
-            "comments": ctx.comments(),
+            "comments_card": ctx.thread.card(request.user),
             "domains": Domain.objects.order_by("name"),
         },
     )
@@ -114,13 +115,15 @@ def supplier_item_add_comment(request: HttpRequest, item_id: int) -> HttpRespons
         ctx = SupplierItemContext(item_id, actor=request.user)
     except SupplierItemNotFoundError:
         raise Http404
-    body = request.POST.get("body", "").strip()
-    domain_id = request.POST.get("domain")
-    if body and domain_id:
-        ctx.thread.add_comment(body, domain_id=int(domain_id))
+    body = request.POST.get("content", "").strip()
+    if body:
+        ctx.thread.add_comment(body)
         messages.success(request, "Comment added.")
     return redirect(
-        reverse("part_supplier_items", kwargs={"part_id": ctx.item.internal_part_id})
+        safe_next_url(
+            request,
+            reverse("part_supplier_items", kwargs={"part_id": ctx.item.internal_part_id}),
+        )
     )
 
 

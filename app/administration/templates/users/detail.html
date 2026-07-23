@@ -50,9 +50,9 @@
   <!-- Main column -->
   <div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Roles ({{ role_assignments|length }})</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Roles ({{ role_assignments|length }})</div></div>
+      <div class="card-content">
         {% if role_assignments %}
         <ul class="is-size-7">
           {% for ra in role_assignments %}
@@ -70,9 +70,9 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups (effective)</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups (effective)</div></div>
+      <div class="card-content">
         {% if perm_struct.group_names %}
         <ul class="is-size-7">{% for n in perm_struct.group_names %}<li>{{ n }}</li>{% endfor %}</ul>
         {% else %}
@@ -81,9 +81,9 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Direct permissions ({{ perm_struct.direct_permission_keys|length }})</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">vpn_key</span></span>Direct permissions ({{ perm_struct.direct_permission_keys|length }})</div></div>
+      <div class="card-content">
         {% if perm_struct.direct_permission_keys %}
         <ul class="is-size-7">{% for k in perm_struct.direct_permission_keys %}<li><code>{{ k }}</code></li>{% endfor %}</ul>
         {% else %}
@@ -92,9 +92,9 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data access</div></div>
-      <div class="pc-body">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data access</div></div>
+      <div class="card-content">
 
         <h3 class="title is-6 mb-2">Domain template</h3>
         {% if domain_template_assignment %}
@@ -151,9 +151,9 @@
   <!-- Right rail -->
   <div class="body-rail">
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
-      <div class="pc-body is-size-7">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
+      <div class="card-content is-size-7">
         <div class="mb-2"><strong>Username:</strong> {{ target_user.username }}</div>
         <div class="mb-2"><strong>Email:</strong> {{ target_user.email|default:"—" }}</div>
         <div class="mb-2"><strong>Last login:</strong> {% if target_user.last_login %}{{ target_user.last_login }}{% else %}Never{% endif %}</div>
@@ -161,9 +161,9 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified_user</span></span>Status</div></div>
-      <div class="pc-body is-size-7">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified_user</span></span>Status</div></div>
+      <div class="card-content is-size-7">
         <div class="mb-2">
           <strong>Active:</strong>
           {% if target_user.is_active %}<span class="tag is-success is-light">yes</span>{% else %}<span class="tag is-light">no</span>{% endif %}

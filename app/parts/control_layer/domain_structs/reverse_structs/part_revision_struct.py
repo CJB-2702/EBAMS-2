@@ -23,12 +23,12 @@ class PartRevisionStruct:
             ) from exc
 
     def to_dict(self) -> dict:
-        from app.parts.control_layer.managers.part_thread_manager import (
-            PartThreadManager,
+        from app.events.control_layer.managers.activity_thread_manager import (
+            ActivityThreadManager,
         )
 
         rev = self.revision
-        thread_manager = PartThreadManager(rev)
+        thread_manager = ActivityThreadManager(rev)
         return {
             "id": rev.id,
             "sequence": rev.sequence,
@@ -41,5 +41,5 @@ class PartRevisionStruct:
             "summary": rev.summary,
             "notes": rev.notes,
             "documents": thread_manager.documents(),
-            "comments": thread_manager.comments(),
+            "comments_card": thread_manager.card(None),
         }

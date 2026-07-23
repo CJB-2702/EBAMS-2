@@ -113,7 +113,7 @@ def load_definition_assignment_editor(definition_id: int) -> dict:
         _decorate_model(m)
         for m in AssetModel.objects.select_related("asset_class", "base_model")
         .prefetch_related("manufacturers")
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version")
     ]
 
     return {
@@ -188,15 +188,14 @@ def search_models_with_capabilities(
             "manufacturers", "domains", "capability_links__capability_definition"
         )
         .annotate(asset_count=Count("assets", distinct=True))
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version")
     )
 
     q = (q or "").strip()
     if q:
         qs = (
             qs.filter(model_name__icontains=q)
-            | qs.filter(subtype_name__icontains=q)
-            | qs.filter(revision__icontains=q)
+            | qs.filter(version__icontains=q)
         ).distinct()
     if asset_class:
         qs = qs.filter(asset_class_id=asset_class)
@@ -390,7 +389,7 @@ def load_asset_bulk_management(definition_id: int) -> dict:
         _decorate_model(m)
         for m in AssetModel.objects.select_related("asset_class")
         .prefetch_related("manufacturers")
-        .order_by("model_name", "subtype_name")
+        .order_by("model_name", "version")
     ]
 
     assigned_assets: list[Asset] = []
@@ -426,7 +425,7 @@ def reference_lists() -> dict:
         "all_models": [
             _decorate_model(m)
             for m in AssetModel.objects.select_related("asset_class").order_by(
-                "model_name", "subtype_name"
+                "model_name", "version"
             )
         ],
         "all_manufacturers": list(Manufacturer.objects.order_by("name")),

@@ -6,13 +6,13 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
 from app.parts.models import SupplierItem
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
 
-    from app.events.models import Comment
+    from app.events.control_layer.handlers.comment_handler import CommentResult
 
 
 class SupplierVendorRevisionManager:
@@ -20,7 +20,7 @@ class SupplierVendorRevisionManager:
         self.item = SupplierItem.objects.get(id=item_id)
         self.actor = actor
 
-    def record(self, *, vendor_revision_id: str, note: str = "", domain_id: int) -> "Comment":
+    def record(self, *, vendor_revision_id: str, note: str = "", domain_id: int) -> "CommentResult":
         body = json.dumps(
             {
                 "vendor_revision_history": {
@@ -29,12 +29,12 @@ class SupplierVendorRevisionManager:
                 }
             }
         )
-        return PartThreadManager(self.item, self.actor).add_comment(
+        return ActivityThreadManager(self.item, self.actor).add_comment(
             body, domain_id=domain_id
         )
 
     def list(self) -> list[dict]:
-        comments = PartThreadManager(self.item, self.actor).comments()
+        comments = ActivityThreadManager(self.item, self.actor).comments()
         history = []
         for c in comments:
             try:

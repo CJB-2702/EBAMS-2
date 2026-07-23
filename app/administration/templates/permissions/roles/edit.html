@@ -39,9 +39,9 @@
 
 <div class="body-grid full-width">
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Details</div></div>
+    <div class="card-content">
       <form method="post" class="mb-4">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_metadata">
@@ -111,9 +111,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups</div></div>
+    <div class="card-content">
       {% if role.parent_role %}
       <p class="is-size-7 has-text-grey mb-3">This role inherits its parent's permission groups automatically. Add only the groups that this role adds <em>on top of</em> the parent (rule: no overlap).</p>
       {% endif %}
@@ -121,9 +121,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Assignees</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Assignees</div></div>
+    <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">Direct user assignment uses the default <strong>primary</strong> relationship type. To set a different relationship or add notes, use the user-portal edit page.</p>
       {% include "permissions/roles/_users_dlb_only.html" %}
     </div>

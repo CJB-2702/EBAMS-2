@@ -11,16 +11,16 @@
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
-    <div class="pc-body"><form method="get"><div class="columns is-vcentered">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content"><form method="get"><div class="columns is-vcentered">
       <div class="column is-4"><input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search classes…"></div>
       <div class="column is-3"><div class="select is-small is-fullwidth"><select name="category"><option value="">All categories</option>{% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select></div></div>
       <div class="column is-3"><div class="select is-small is-fullwidth"><select name="domain"><option value="">All domains</option>{% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div></div>
       <div class="column is-2"><button class="button is-small is-info" type="submit">Apply</button></div>
     </div></form></div>
   </div>
-  <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Classes ({{ classes|length }})</div></div>
-    <div class="pc-body is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Classes ({{ classes|length }})</div></div>
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead><tr><th>Name</th><th>Category</th><th>Domains</th><th>Models</th><th>Assets</th><th>Restricted?</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
       <tbody>
         {% for c in classes %}

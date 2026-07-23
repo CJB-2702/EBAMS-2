@@ -1,21 +1,38 @@
 {% comment %}
 Comments card — canonical implementation for a Comment-model-backed activity
 thread. Expects `card` = {hash, comments, event.allow_comments} (see
-events/presentation_layer/entrypoints/events.py:build_event_card) and an
+events.presentation_layer.tools.generic_cards.build_activity_card) and an
 optional `comment_error` string.
 
-Used both standalone (kitchen sink "Comments only" demo) and embedded in
-events/fragments/event_card.html — there is only one implementation so the
-two views of comments can never drift apart. Optional `depth` (e.g. "depth-2")
-lets a caller nest this as a sub-card inside another `pc`; optional `row_depth`
+Used standalone (kitchen sink "Comments only" demo), embedded in
+events/fragments/event_card.html, and by every other app's activity thread
+(Part, PartRevision, SupplierItem, AssetModel — via
+ActivityThreadManager.card()) — there is only one implementation so no app
+ever grows its own comments UI. Optional `depth` (e.g. "depth-2") lets a
+caller nest this as a sub-card inside another `card`; optional `row_depth`
 (e.g. "depth-3") escalates the individual comment rows to contrast with it.
 Optional `action_depth` (e.g. "depth-4") must escalate one step past
 `row_depth` too — it's the depth of the row's own nested buttons/attachment
 tiles (see comment_row.html).
+
+Optional `add_url`: where the add-comment form posts. Defaults to this app's
+own `comment_add` view (keyed by `card.hash`), which requires the thread to
+already exist. Callers whose owner may not have created its thread yet (any
+Part/AssetModel activity surface — the thread is lazily created on first
+write) must pass their own app-specific add-comment URL instead, since
+`card.hash` is `None` until that first write; that view still delegates the
+actual write to the same `ActivityThreadManager`/`CommentHandler`, it's just
+the one entrypoint that can also lazily create the thread. Optional `next`:
+where to redirect after add/edit/delete outside the events app, where
+`event_detail` (today's default target) doesn't apply. Optional `readonly`:
+hides the add-comment form even when `card.event.allow_comments` is true —
+for callers gating comment-writing on a permission the viewer lacks. Existing
+rows still show, still filterable, and edit/delete still render per-row for
+whoever authored them.
 {% endcomment %}
-<div class="pc {{ depth }}">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card {{ depth }}">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>
       Comments ({{ card.comments|length }})
     </div>
@@ -28,24 +45,33 @@ tiles (see comment_row.html).
               onclick="return window.__filterComments(event, this, 'system')">Machine</button>
     </div>
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     {% for row in card.comments %}
-    {% include "events/fragments/comment_row.html" with row=row event_hash=card.hash row_depth=row_depth action_depth=action_depth %}
+    {% include "events/fragments/comment_row.html" with row=row event_hash=card.hash row_depth=row_depth action_depth=action_depth next=next %}
     {% empty %}
     <p class="is-size-7 has-text-grey mb-2">No comments yet.</p>
     {% endfor %}
 
-    {% if card.event.allow_comments %}
-    <form method="post"
-          action="{% url 'comment_add' event_hash=card.hash %}"
-          enctype="multipart/form-data"
-          hx-post="{% url 'comment_add' event_hash=card.hash %}?format=htmx-event-card"
-          hx-target="#event-card-{{ card.hash }}"
-          hx-swap="outerHTML"
-          hx-encoding="multipart/form-data">
-      {% csrf_token %}
-      <add-comment placeholder="Write a comment…" error="{{ comment_error|default:'' }}" depth="{{ row_depth|default:'depth-2' }}"></add-comment>
-    </form>
+    {% if card.event.allow_comments and not readonly %}
+      {% if add_url %}
+      <form method="post" action="{{ add_url }}" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <add-comment placeholder="Write a comment…" error="{{ comment_error|default:'' }}" depth="{{ row_depth|default:'depth-2' }}"></add-comment>
+      </form>
+      {% else %}
+      <form method="post"
+            action="{% url 'comment_add' event_hash=card.hash %}"
+            enctype="multipart/form-data"
+            hx-post="{% url 'comment_add' event_hash=card.hash %}?format=htmx-event-card"
+            hx-target="#event-card-{{ card.hash }}"
+            hx-swap="outerHTML"
+            hx-encoding="multipart/form-data">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <add-comment placeholder="Write a comment…" error="{{ comment_error|default:'' }}" depth="{{ row_depth|default:'depth-2' }}"></add-comment>
+      </form>
+      {% endif %}
     {% endif %}
   </div>
 </div>

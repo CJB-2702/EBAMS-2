@@ -30,7 +30,7 @@ from app.parts.control_layer.factories.part_manufacturer_factory import (
 from app.parts.control_layer.factories.supplier_item_factory import SupplierItemFactory
 from app.parts.control_layer.managers.part_image_manager import PartImageManager
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
-from app.parts.control_layer.managers.part_thread_manager import PartThreadManager
+from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
 from app.parts.control_layer.thread_domain import (
     default_domain_id_for,
     ensure_default_domains,
@@ -191,7 +191,7 @@ class Command(BaseCommand):
             part.revisions.order_by("-major_revision_number", "-minor_revision_number").first()
         )
         if current is not None:
-            thread_mgr = PartThreadManager(current, actor)
+            thread_mgr = ActivityThreadManager(current, actor)
             thread_mgr.add_comment(
                 f"Initial engineering notes for {part.part_number} rev "
                 f"{current.major_revision_number}.{current.minor_revision_number}.",
@@ -210,7 +210,7 @@ class Command(BaseCommand):
         # Part-level threads (decoupled from revisions): a base library document
         # and a gallery photo. The gallery add auto-selects the hero and logs a
         # backend audit comment on the gallery thread.
-        PartThreadManager(part, actor, thread_attr="documents_thread").attach_document(
+        ActivityThreadManager(part, actor, thread_attr="documents_thread").attach_document(
             SimpleUploadedFile(
                 f"{part.part_number}_specification.txt",
                 b"placeholder part specification / work instruction content",

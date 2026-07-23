@@ -24,7 +24,7 @@
  *   • the entire <dual-list-box>      (hx-target="#groups-mgr" outerHTML)
  *   • a single <list-box>             (hx-target="#groups-avail" outerHTML)
  *   • just the <select> inside one    (hx-target="#groups-avail" find select)
- *   • the parent card                 (hx-target="closest .pc-body")
+ *   • the parent card                 (hx-target="closest .card-content")
  * …all from the same markup.
  *
  * Slots (light-DOM, slot attribute on direct children)

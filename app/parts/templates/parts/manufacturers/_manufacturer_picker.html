@@ -16,7 +16,7 @@
 </search-dropdown>
 <p class="is-size-7 mt-1"><a href="#" data-action="show-quick-create">Can't find it? Create a new manufacturer</a></p>
 
-<div id="mfr-quick-create-fields" class="pc depth-2 mt-2 p-3" {% if not show_create_form %}hidden{% endif %}>
+<div id="mfr-quick-create-fields" class="card depth-2 mt-2 p-3" {% if not show_create_form %}hidden{% endif %}>
   {% if create_errors %}
   <div class="notification is-danger is-light py-2 px-3 is-size-7">
     {% for e in create_errors %}<p>{{ e }}</p>{% endfor %}

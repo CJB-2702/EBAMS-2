@@ -52,9 +52,9 @@
     <div class="columns is-variable is-4">
       <!-- LEFT Card: Available Capabilities (6/12 width) -->
       <div class="column is-6">
-        <div class="pc" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
-          <div class="pc-header">
-            <div class="pc-header-title">
+        <div class="card" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
+          <div class="card-header">
+            <div class="card-header-title">
               <span class="icon"><span class="material-icons" aria-hidden="true">add_circle_outline</span></span>
               Available Capabilities
             </div>
@@ -103,9 +103,9 @@
 
       <!-- RIGHT Card: Direct Capability Assignments (6/12 width) -->
       <div class="column is-6">
-        <div class="pc" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
-          <div class="pc-header">
-            <div class="pc-header-title">
+        <div class="card" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
+          <div class="card-header">
+            <div class="card-header-title">
               <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
               Direct Asset Assignments
             </div>
@@ -171,15 +171,15 @@
     </div>
 
     <!-- Inherited Capabilities Reference (Read-only bottom info) -->
-    <div class="pc mt-4">
-      <div class="pc-header">
-        <div class="pc-header-title">
+    <div class="card mt-4">
+      <div class="card-header">
+        <div class="card-header-title">
           <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
           Inherited Capabilities (Class &amp; Model)
         </div>
         <span class="is-size-7 has-text-grey">{{ capabilities_inherited|length }} inherited</span>
       </div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-striped is-size-7 mb-0">
           <thead>
             <tr>

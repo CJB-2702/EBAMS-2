@@ -34,8 +34,9 @@ class AssetModelStruct:
         return {
             "id": m.id,
             "model_name": m.model_name,
-            "subtype_name": m.subtype_name,
-            "revision": m.revision,
+            "version": m.version,
+            "version_rank": m.version_rank,
+            "config_baselines": m.config_baselines,
             "is_base_model": m.is_base_model,
             "base_model_id": m.base_model_id,
             "asset_class_id": m.asset_class_id,

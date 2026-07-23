@@ -44,16 +44,16 @@
 <div class="body-grid full-width">
 
   {% if role.description %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
-    <div class="pc-body">{{ role.description|linebreaks }}</div>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
+    <div class="card-content">{{ role.description|linebreaks }}</div>
   </div>
   {% endif %}
 
   {% if role.parent_role %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Inherited from <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a> ({{ parent_groups|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Inherited from <a href="{% url 'role_detail' role.parent_role.slug %}">{{ role.parent_role.name }}</a> ({{ parent_groups|length }})</div></div>
+    <div class="card-content">
       {% if parent_groups %}
       <ul class="is-size-7">
         {% for g in parent_groups %}
@@ -67,9 +67,9 @@
   </div>
   {% endif %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups defined directly on this role ({{ permission_groups|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">group_work</span></span>Permission groups defined directly on this role ({{ permission_groups|length }})</div></div>
+    <div class="card-content">
       {% if permission_groups %}
       <ul class="is-size-7">
         {% for g in permission_groups %}
@@ -83,9 +83,9 @@
   </div>
 
   {% if child_roles %}
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">workspaces</span></span>Specialized roles ({{ child_roles|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">workspaces</span></span>Specialized roles ({{ child_roles|length }})</div></div>
+    <div class="card-content">
       <ul class="is-size-7">
         {% for c in child_roles %}
         <li><a href="{% url 'role_detail' c.slug %}">{{ c.name }}</a></li>
@@ -95,9 +95,9 @@
   </div>
   {% endif %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
-    <div class="pc-body is-flush">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">people</span></span>Currently assigned to ({{ assignees|length }})</div></div>
+    <div class="card-content is-flush">
       {% if assignees %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>User</th><th>Relationship</th><th>Notes</th></tr></thead>
@@ -112,7 +112,7 @@
         </tbody>
       </table>
       {% else %}
-      <div class="pc-body"><p class="has-text-grey is-size-7 mb-0">No assignees yet.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7 mb-0">No assignees yet.</p></div>
       {% endif %}
     </div>
   </div>

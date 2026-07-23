@@ -16,8 +16,8 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Configuration Status</div></div>
-      <div class="pc-body">
+    <div class="card"><div class="card-header"><div class="card-header-title">Configuration Status</div></div>
+      <div class="card-content">
         <div class="columns">
           <div class="column"><div class="label is-small has-text-grey mb-0">Template</div><div>{% if configuration.template %}<a href="{% url 'config_template_detail' template_id=configuration.template.id %}">{{ configuration.template.name }}</a> Rev {{ configuration.template.revision }}{% else %}<span class="has-text-grey">No template assigned</span>{% endif %}</div></div>
           <div class="column"><div class="label is-small has-text-grey mb-0">Verification Status</div><div>{% if configuration.verification_status %}{% include "assets/_status_tag.html" with value=configuration.verification_status %}{% else %}<span class="has-text-grey">—</span>{% endif %}</div></div>
@@ -27,8 +27,8 @@
       </div>
     </div>
 
-    <div class="pc"><div class="pc-header"><div class="pc-header-title">Actual Modifications ({{ configuration.actual_modifications|length }})</div></div>
-      <div class="pc-body is-flush">
+    <div class="card"><div class="card-header"><div class="card-header-title">Actual Modifications ({{ configuration.actual_modifications|length }})</div></div>
+      <div class="card-content is-flush">
         <table class="table is-fullwidth is-size-7 mb-0">
           <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Applied At</th><th>Applicability</th><th>Active</th></tr></thead>
           <tbody>
@@ -47,12 +47,12 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
         Child Assets &amp; Configurations ({{ children_configurations|length }})
       </div></div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">Direct children only (one layer deep).</p>
         <table class="table is-fullwidth is-size-7 mb-0">
           <thead><tr><th>Child Asset</th><th>Class</th><th>Configuration Template</th><th>Verification</th><th class="has-text-right">Mods</th><th></th></tr></thead>
@@ -80,12 +80,12 @@
   </div>
   <div class="body-rail">
     {% if configuration.template %}
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
         Expected Modifications ({{ configuration.expected_modifications|length }})
       </div></div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">From template <strong>{{ configuration.template.name }}</strong>.</p>
         <table class="table is-fullwidth is-size-7 mb-0">
           <tbody>
@@ -106,12 +106,12 @@
       </div>
     </div>
 
-    <div class="pc">
-      <div class="pc-header"><div class="pc-header-title">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>
         Expected Children ({{ configuration.expected_children|length }})
       </div></div>
-      <div class="pc-body is-flush">
+      <div class="card-content is-flush">
         <p class="is-size-7 has-text-grey px-3 pt-2 mb-0">Child models the template expects.</p>
         <table class="table is-fullwidth is-size-7 mb-0">
           <tbody>

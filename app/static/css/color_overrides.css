@@ -4,7 +4,7 @@
 /* ── Depth utility classes ────────────────────────────────────────────────────
    Light mode: layers alternate white / gray-10, with gray-20 at depth-3.
    Dark mode:  layers step lighter by one Carbon stop per level.
-   Use !important so these override component backgrounds (e.g. .pc) regardless
+   Use !important so these override component backgrounds (e.g. .card) regardless
    of which stylesheet block declares them. */
 
 /* Light mode (default) */
@@ -66,7 +66,7 @@
       background-color: var(--gray-80) !important;
       /* gray-80 sits between gray-90 and itself in lightness, so the default
          --bulma-border-weak (scheme-wide) can render indistinguishable from
-         this surface. Shadow it here so nested .pc/.card borders stay visible. */
+         this surface. Shadow it here so nested .card borders stay visible. */
       --bulma-border-weak: var(--gray-90);
     }
 
@@ -121,6 +121,53 @@
   .input,
   .textarea {
     background-color: var(--gray-90) !important;
+  }
+}
+
+/* ── Dark mode: cards — no glow, grey-80 dividers ────────────────────────────
+   custom_css.css already zeroes --bulma-card-shadow/-header-shadow globally,
+   but restate it explicitly here (dark-mode-scoped) so the card's drop
+   shadow can never read as a glow against a dark surface. Also repoint the
+   header/footer divider borders at gray-80 (rather than the scheme-wide
+   --bulma-border-weak) so they stay a deliberate, muted line instead of a
+   bright hairline against dark backgrounds. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    .card,
+    .card-header {
+      box-shadow: none !important;
+    }
+
+    .card-header {
+      border-bottom-color: var(--gray-80);
+    }
+
+    .card-footer {
+      border-top-color: var(--gray-80);
+    }
+
+    .card-footer-item:not(:last-child) {
+      border-inline-end-color: var(--gray-80);
+    }
+  }
+}
+
+:root[data-theme="dark"] {
+  .card,
+  .card-header {
+    box-shadow: none !important;
+  }
+
+  .card-header {
+    border-bottom-color: var(--gray-80);
+  }
+
+  .card-footer {
+    border-top-color: var(--gray-80);
+  }
+
+  .card-footer-item:not(:last-child) {
+    border-inline-end-color: var(--gray-80);
   }
 }
 

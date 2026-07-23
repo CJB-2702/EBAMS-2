@@ -32,6 +32,13 @@ class Asset(AuditFieldsMixin):
         related_name="assets",
     )
 
+    # The trim/spec baseline this individual unit is built to (e.g. "LE").
+    # CONSTRAINT IS UI-ONLY: interactive components MUST render this as a dropdown
+    # sourced from the owning AssetModel.config_baselines allow-list. The DB and
+    # control layer intentionally do NOT hard-reject off-list values (soft), so
+    # imports / API writes / bulk ingestion never fail on an unknown baseline.
+    config_baseline = models.CharField(max_length=200, null=True, blank=True)
+
     root_asset = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,

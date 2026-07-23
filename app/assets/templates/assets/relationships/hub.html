@@ -20,9 +20,9 @@
 <div class="body-grid full-width">
   {% include "assets/relationships/_disclaimer.html" %}
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
       <form method="get">
         <div class="columns is-vcentered is-multiline is-variable is-3">
           <div class="column is-5">
@@ -51,9 +51,9 @@
     </div>
   </div>
 
-  <div class="pc">
-    <div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assets ({{ assets|length }})</div></div>
-    <div class="pc-body">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assets ({{ assets|length }})</div></div>
+    <div class="card-content">
       {% for a in assets %}
       <div class="card mb-2" style="display:flex;flex-direction:row;align-items:stretch;overflow:hidden;border-radius:0;box-shadow:var(--bulma-card-shadow);">
         <div style="flex-grow:1;border-right:1px solid var(--bulma-border-light);padding:0.6rem 1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;min-width:0;">

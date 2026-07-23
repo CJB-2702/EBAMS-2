@@ -22,6 +22,7 @@ from app.assets.control_layer.domain_structs.asset_configuration_struct import (
 )
 from app.assets.models import Asset
 from app.events.models import Attachment
+from app.events.presentation_layer.tools.generic_cards import document_dict
 
 
 def search_assets(
@@ -33,6 +34,7 @@ def search_assets(
     manufacturer: str = "",
     status: str = "",
     capability_status: str = "",
+    config_baseline: str = "",
 ) -> QuerySet[Asset]:
     qs = (
         Asset.objects.select_related("asset_class", "model", "domain")
@@ -42,8 +44,14 @@ def search_assets(
 
     q = (q or "").strip()
     if q:
-        qs = qs.filter(name__icontains=q) | qs.filter(serial_number__icontains=q)
+        qs = (
+            qs.filter(name__icontains=q)
+            | qs.filter(serial_number__icontains=q)
+            | qs.filter(config_baseline__icontains=q)
+        )
         qs = qs.distinct()
+    if config_baseline:
+        qs = qs.filter(config_baseline__icontains=config_baseline)
     if domain:
         qs = qs.filter(domain_id=domain)
     if asset_class:
@@ -161,5 +169,6 @@ def load_asset_detail(asset_id: int) -> dict | None:
         "capabilities": capabilities,
         "configuration": configuration,
         "images": image_rows,
+        "image_documents": [document_dict(a) for a in image_rows],
         "primary_image": primary_image,
     }

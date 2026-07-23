@@ -1,0 +1,74 @@
+/*
+ * Kitchen Sink playground only — corner-style toggles.
+ * Toggled via [data-corner-style] on <html> and [data-input-style] on the
+ * #forms section, both set by the toggle controls in kitchen_sink/index.html.
+ *
+ * Uses `corner-shape: bevel` (not clip-path) so the chamfer keeps each
+ * container's existing border/outline along the diagonal — matching the
+ * app-wide default now defined in custom_css.css. Not linked elsewhere.
+ */
+
+/* ── Container corner-style toggle (cards, boxes, notifications, hero) ── */
+
+:root[data-corner-style="chamfered"] .card,
+:root[data-corner-style="chamfered"] .box,
+:root[data-corner-style="chamfered"] .ks-demo-box {
+  corner-shape: bevel;
+  border-radius: 20px;
+}
+:root[data-corner-style="chamfered"] .notification {
+  corner-shape: bevel;
+  border-radius: 10px;             /* smaller cut, matches app default */
+}
+:root[data-corner-style="chamfered"] .page-hero {
+  corner-shape: bevel;
+  border-radius: 0 20px 20px 0;   /* right two corners only */
+}
+
+:root[data-corner-style="rounded"] .card,
+:root[data-corner-style="rounded"] .box,
+:root[data-corner-style="rounded"] .notification,
+:root[data-corner-style="rounded"] .ks-demo-box {
+  corner-shape: round;
+  border-radius: 20px;
+}
+:root[data-corner-style="rounded"] .page-hero {
+  corner-shape: round;
+  border-radius: 0 20px 20px 0;
+}
+
+:root[data-corner-style="sharp"] .card,
+:root[data-corner-style="sharp"] .box,
+:root[data-corner-style="sharp"] .notification,
+:root[data-corner-style="sharp"] .ks-demo-box,
+:root[data-corner-style="sharp"] .page-hero {
+  border-radius: 0;               /* square — corner-shape is moot at 0 */
+}
+
+/* ── Forms-section input corner-style toggle (scoped to #forms) ── */
+
+#forms[data-input-style="chamfered"] .input,
+#forms[data-input-style="chamfered"] .textarea,
+#forms[data-input-style="chamfered"] .select select,
+#forms[data-input-style="chamfered"] .file-cta,
+#forms[data-input-style="chamfered"] .file-name {
+  corner-shape: bevel;
+  border-radius: 8px;
+}
+
+#forms[data-input-style="rounded"] .input,
+#forms[data-input-style="rounded"] .textarea,
+#forms[data-input-style="rounded"] .select select,
+#forms[data-input-style="rounded"] .file-cta,
+#forms[data-input-style="rounded"] .file-name {
+  corner-shape: round;
+  border-radius: 8px;
+}
+
+#forms[data-input-style="square"] .input,
+#forms[data-input-style="square"] .textarea,
+#forms[data-input-style="square"] .select select,
+#forms[data-input-style="square"] .file-cta,
+#forms[data-input-style="square"] .file-name {
+  border-radius: 0;
+}

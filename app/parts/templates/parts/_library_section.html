@@ -10,9 +10,9 @@ Expected context:
   part_id      part id for form actions
 {% endcomment %}
 {% load svg_tags %}
-<div class="pc{% if is_base %} is-base-part{% endif %}">
-  <div class="pc-header">
-    <div class="pc-header-title">
+<div class="card{% if is_base %} is-base-part{% endif %}">
+  <div class="card-header">
+    <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">{% if is_base %}inventory_2{% else %}folder{% endif %}</span></span>
       {{ title }}
       {% if status %}{% include "assets/_status_tag.html" with value=status %}{% endif %}
@@ -20,12 +20,12 @@ Expected context:
     {% if can_manage %}
     {# Small deliberate JS exception: toggle the inline upload panel in this card's footer. #}
     <button type="button" class="button is-small is-link"
-            onclick="this.closest('.pc').querySelector('.lib-upload').toggleAttribute('hidden');">
+            onclick="this.closest('.card').querySelector('.lib-upload').toggleAttribute('hidden');">
       <span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span><span>Add Files</span>
     </button>
     {% endif %}
   </div>
-  <div class="pc-body">
+  <div class="card-content">
     {% if is_base %}
     <p class="lib-base-note">The part definition that every revision points to. Files here are shared reference documents for the part as a whole — not tied to any single revision.</p>
     {% endif %}

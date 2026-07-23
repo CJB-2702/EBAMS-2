@@ -18,8 +18,8 @@
 
 <div class="body-grid has-rail">
   <div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
-      <div class="pc-body"><dl class="kv">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
+      <div class="card-content"><dl class="kv">
         <dt>Name</dt><dd>{{ klass.name }}</dd>
         <dt>Category</dt><dd>{{ klass.category|default:"—" }}</dd>
         <dt>Description</dt><dd>{{ klass.description|default:"—" }}</dd>
@@ -27,24 +27,24 @@
         <dt>Active</dt><dd>{{ klass.is_active|yesno:"Yes,No" }}</dd>
       </dl></div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>
       <a href="{% url 'class_capability_index' %}" class="button is-small is-light">Manage</a></div>
-      <div class="pc-body is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;"><thead><tr><th>Capability</th><th>Code</th><th>Active</th></tr></thead><tbody>
+      <div class="card-content is-flush"><table class="table is-fullwidth is-size-7" style="margin:0;"><thead><tr><th>Capability</th><th>Code</th><th>Active</th></tr></thead><tbody>
         {% for c in klass.capability_links.all %}<tr><td>{{ c.capability_definition.name }}</td><td class="is-family-monospace">{{ c.capability_definition.code }}</td><td>{{ c.is_active|yesno:"Yes,No" }}</td></tr>
         {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-4">None declared.</td></tr>{% endfor %}
       </tbody></table></div>
     </div>
   </div>
   <div class="body-rail">
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span>Metrics</div></div>
-      <div class="pc-body"><dl class="kv">
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span>Metrics</div></div>
+      <div class="card-content"><dl class="kv">
         <dt>Models</dt><dd>{{ klass.model_count }}</dd>
         <dt>Data Domains</dt><dd>{{ klass.domains.all|length }}</dd>
       </dl></div>
     </div>
-    <div class="pc"><div class="pc-header"><div class="pc-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Extension Configuration</div>
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Extension Configuration</div>
       <a href="{% url 'extension_config_landing' %}" class="button is-small is-light">Configure</a></div>
-      <div class="pc-body"><p class="has-text-grey is-size-7">Manage extension assignments in the <a href="{% url 'extension_config_landing' %}">Extension Configuration portal</a>.</p></div>
+      <div class="card-content"><p class="has-text-grey is-size-7">Manage extension assignments in the <a href="{% url 'extension_config_landing' %}">Extension Configuration portal</a>.</p></div>
     </div>
   </div>
 </div>
