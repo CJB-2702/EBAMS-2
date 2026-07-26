@@ -6,8 +6,8 @@ Read [.claude/agents/admin-engineer.md](.claude/agents/admin-engineer.md) and ad
 
 Apply:
 - Django authorization (permissions, groups, group templates)
-- RBAC concepts and the Django/row-level boundary (`docs/DOMAIN/admin/RBAC.md`)
-- Data ownership and organizational hierarchy (`docs/DOMAIN/admin/DATA_OWNERSHIP.md`)
+- RBAC concepts and the Django/row-level boundary (`harness/Authorization/rbac.md`)
+- Data ownership and organizational hierarchy (`harness/Authorization/data_ownership.md`)
 - Django admin panel construction patterns
 
 Announce activation: _"Admin Engineer persona active. Applying Django authorization, RBAC, ownership scoping, and admin panel patterns."_

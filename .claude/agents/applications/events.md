@@ -22,10 +22,10 @@ It lists every model and control-layer class with docstrings. Only open individu
 
 ## Reference docs (load by need)
 
-- `docs/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
-- `docs/applications/events.md` and `docs/applications/events/` — events domain: comments, files, shadow history, contexts
-- `docs/applications/core_domain.md` — shared entities + ownership/division hierarchy events attach to
-- `docs/Authorization.md` — two-gate access model (capability + Data Domain scope)
+- `harness/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
+- `docs/events.md` and `docs/events/` — events domain: comments, files, shadow history, contexts
+- `docs/core_domain.md` — shared entities + ownership/division hierarchy events attach to
+- `harness/Authorization.md` — two-gate access model (capability + Data Domain scope)
 
 ## Scope
 

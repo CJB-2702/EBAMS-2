@@ -23,23 +23,46 @@ python dev_tools/generate_env.py
 
 ## Project layout
 
+Documentation is split across two top-level folders with deliberately different audiences:
+
+- **`harness/`** — instructions on how to build and do work: architecture, UX/UI law, authorization design, planning-process methodology, dev-tools reference. Durable, process-facing, rarely app-specific.
+- **`docs/`** — specific items relating to the project: per-application knowledge (`docs/<app-name>/`, `docs/<app-name>.md`), context-loader bundles, and technical-decision history (per-app, plus a small cross-cutting bucket). Authorization is the one exception that stays in `harness/` rather than becoming a `docs/authorization/` app folder — every sub-app depends on it, so it's load-bearing enough to live at the top.
+
 ```
 app/
   administration/       ← admin sub-app (RBAC, ownership groups, user assignments)
   events/               ← event tracking sub application for event standardization and file managment
-  <applications>/       ← various core applications see domain folder for descriptions
+  <applications>/       ← various core applications, documented per-app under docs/
   media/                ← built in django file storage location
   config/               ← settings, root urls
   public_app/           ← unauthenticated routes only (login, signup, etc.)
   static/
+harness/
+  Architecture/         ← layer rules, patterns, standards (source of truth)
+  Authorization/        ← RBAC, data ownership, roles, users, password policy
+  UX_UI/                ← visual language, component patterns, format contract
+  Context_Scaling/       ← tiered context-loading model
+  Development_Tools/    ← dev-tool reference docs
+  starter_kit_process/  ← how to write each starter-kit document
+  front_end_kit_process/ ← how to write each front-end-kit document
 docs/
-  ARCHITECTURE/         ← layer rules, patterns, standards (source of truth)
-  DOMAIN/admin/         ← RBAC, DATA_OWNERSHIP, USERS
-  DOMAIN/core/          ← CORE_MODELS
+  <app-name>.md, <app-name>/   ← per-application knowledge (assets, events, core_domain, administration, parts, ...)
+  context_bundles/      ← per-application quick context loaders
+  technical_decisions/  ← cross-cutting decisions/tech debt + the master project_history.md index
 dev_tools/              ← scripts (db rebuild, env gen, memory log)
 .claude/
   agents/               ← persona sub-agents (Admin, Backend, Frontend, Business, Code Architect)
   commands/             ← slash commands (persona activators + ops)
+```
+
+Each application under `docs/` carries its own technical-decision history in a standard shape:
+
+```
+docs/<app-name>/
+  incidents/            ← postmortems for bugs and failed approaches
+  project_history/      ← archived starter kits and major work initiatives for this app
+  tech_debt/            ← known deferred work items
+  decisions_pending/    ← not-yet-resolved decisions
 ```
 
 Each sub-app under `app/` follows the layered structure:
@@ -55,33 +78,47 @@ Each sub-app under `app/` follows the layered structure:
 
 Read these when in doubt — they are authoritative:
 
-### Architecture
+### Architecture (harness)
 
-- [docs/ARCHITECTURE/ARCHITECTURE.md](docs/ARCHITECTURE/ARCHITECTURE.md) — folder layout and layer responsibilities
-- [docs/ARCHITECTURE/LAYER_RULES.md](docs/ARCHITECTURE/LAYER_RULES.md) — reads vs writes
-- [docs/ARCHITECTURE/OOP_CONTROL_PATTERNS.md](docs/ARCHITECTURE/OOP_CONTROL_PATTERNS.md) — class suffix vocabulary
-- [docs/ARCHITECTURE/MODEL_PATTERNS.md](docs/ARCHITECTURE/MODEL_PATTERNS.md) — model rules
-- [docs/ARCHITECTURE/ENDPOINT_PATTERNS.md](docs/ARCHITECTURE/ENDPOINT_PATTERNS.md) — OOP endpoint design
-- [docs/ARCHITECTURE/HTMX_PATTERNS.md](docs/ARCHITECTURE/HTMX_PATTERNS.md) — HTMX conventions
-- [docs/ARCHITECTURE/STANDARDS.md](docs/ARCHITECTURE/STANDARDS.md) — engineering principles
-- [docs/ARCHITECTURE/COMMON_UI_COMPONENTS.md](docs/ARCHITECTURE/COMMON_UI_COMPONENTS.md) — shared UI component patterns
-- [docs/ARCHITECTURE/SEEDING.md](docs/ARCHITECTURE/SEEDING.md) — dev seed strategy
-- [docs/ARCHITECTURE/TESTS.md](docs/ARCHITECTURE/TESTS.md) — testing conventions
+- [harness/Architecture.md](harness/Architecture.md) — router into layer rules, patterns, standards
+- [harness/Architecture/overview.md](harness/Architecture/overview.md) — folder layout and layer responsibilities
+- [harness/Architecture/layer_rules.md](harness/Architecture/layer_rules.md) — reads vs writes
+- [harness/Architecture/patterns/oop_control_patterns.md](harness/Architecture/patterns/oop_control_patterns.md) — class suffix vocabulary
+- [harness/Architecture/patterns/model_patterns.md](harness/Architecture/patterns/model_patterns.md) — model rules
+- [harness/Architecture/patterns/endpoint_patterns.md](harness/Architecture/patterns/endpoint_patterns.md) — OOP endpoint design
+- [harness/Architecture/patterns/htmx_patterns.md](harness/Architecture/patterns/htmx_patterns.md) — HTMX conventions
+- [harness/Architecture/standards.md](harness/Architecture/standards.md) — engineering principles
+- [harness/Architecture/seeding.md](harness/Architecture/seeding.md) — dev seed strategy
+- [harness/Architecture/tests.md](harness/Architecture/tests.md) — testing conventions
 
-### UX / UI
+### UX / UI (harness)
 
-- [docs/UX_UI/UX_UI.md](docs/UX_UI/UX_UI.md) — visual language, density (`format=`)
-- [docs/UX_UI/form_style_guide.md](docs/UX_UI/form_style_guide.md) — action layout rules for forms and cards
-- [docs/UX_UI/component_library/](docs/UX_UI/component_library/) — component guides: `common_buttons`, `dual_listbox_guide`, `image carosel`, `modals_dialogs_usage`, `searchbars`
+- [harness/UX_UI.md](harness/UX_UI.md) — visual language, density (`format=`)
+- [harness/UX_UI/form_style_guide.md](harness/UX_UI/form_style_guide.md) — action layout rules for forms and cards
+- [harness/UX_UI/components/](harness/UX_UI/components/) — component guides: `common_buttons`, `dual_listbox`, `modals`, `searchbars`, `multi_step_flows`, `tabs`, `pagination`, `file_upload`, `file_browser`
+- [harness/UX_UI/components/multi_step_flows.md](harness/UX_UI/components/multi_step_flows.md) — the multi-card wizard trigger rule and session-draft pattern
+- [harness/UX_UI/components/modals.md](harness/UX_UI/components/modals.md) — when a modal is appropriate, and why assignment never goes in one
 
-### Domain
+### Planning process (harness)
 
-- [docs/DOMAIN/admin/](docs/DOMAIN/admin/) — RBAC, data ownership, users, roles, domain templates, password policy
-  - [docs/DOMAIN/admin/RBAC.md](docs/DOMAIN/admin/RBAC.md) — Django permission system, group templates
-- [docs/DOMAIN/core/](docs/DOMAIN/core/) — core entity dependency graph
-- [docs/DOMAIN/events/](docs/DOMAIN/events/) — events domain
-- [docs/DOMAIN/orgchart/](docs/DOMAIN/orgchart/) — divisions, org hierarchy
-- [docs/DOMAIN/tech_debt/](docs/DOMAIN/tech_debt/) — known tech debt notes
+- [harness/starter_kit_process/](harness/starter_kit_process/index.md) — how to write each starter-kit document (backend only)
+- [harness/front_end_kit_process/](harness/front_end_kit_process/index.md) — how to write each front-end-kit document (routes, navigation, workflows, stager)
+
+### Authorization (harness)
+
+- [harness/Authorization.md](harness/Authorization.md) — router into RBAC, ownership, roles, users, password policy
+  - [harness/Authorization/rbac.md](harness/Authorization/rbac.md) — Django permission system, group templates
+  - [harness/Authorization/data_ownership.md](harness/Authorization/data_ownership.md) — the Data Domain primitive
+  - [harness/Authorization/roles/](harness/Authorization/roles/) — role concept and decisions
+  - [harness/Authorization/domain_templates/](harness/Authorization/domain_templates/) — domain template concept and plan
+
+### Applications and domain (docs)
+
+- [docs/index.md](docs/index.md) — per-application knowledge index (assets, events, core_domain, administration, parts)
+- [docs/core_domain.md](docs/core_domain.md) — core entity dependency graph
+- [docs/events.md](docs/events.md) — events domain
+- [docs/assets.md](docs/assets.md) — assets domain
+- [docs/technical_decisions/index.md](docs/technical_decisions/index.md) — cross-cutting tech debt notes and the master project-history index
 
 ## Personas (slash commands)
 
@@ -98,12 +135,37 @@ These same agents are also spawnable via the Task/Agent tool when you want to de
 ## Operational slash commands
 
 - `/db-rebuild` — clears project migrations + DB, regenerates and applies migrations, optionally seeds.
-- `/kit-builder` — initiates the Kit Builder agent: interrogates the problem, proposes a phase breakdown, then generates a full `<topic>_starter_kit/` folder following the `docs/starter_kit_process/` methodology.
-- `/kit-complete <kit-name> "<summary>"` — archives a completed starter kit to `docs/technical_decisions/project_history/` and logs it with a completion date and summary.
+- `/kit-builder` — initiates the Kit Builder agent: seeds `<topic>_starter_kit/` with a pre-filled [20-question questionnaire](harness/starter_kit_process/kit_questionnaire_template.md) and **stops** until you answer it, then interrogates the answers, proposes a phase breakdown, and generates the kit following the `harness/starter_kit_process/` methodology.
+- `/front-end-kit <topic>` — initiates the Front-End Kit agent: turns a finished starter kit into a `front-end-kit/<topic>/` folder — route skeleton, navigation map, workflow verdicts, key workflows — following `harness/front_end_kit_process/`.
+- `/front-end-kit-build <topic>` — builds the optional throwaway Flask stager for an already-staged front-end kit.
+- `/kit-complete <app-name> <kit-name> "<summary>"` — archives a completed **starter** kit to `docs/<app-name>/project_history/` and logs it with a completion date and summary in the shared `docs/technical_decisions/project_history.md` index.
+
+## The two-kit split
+
+Planning is split across two kits with deliberately different lifespans. Do not merge them, and do not let either take the other's job.
+
+| | **Starter kit** — `<topic>_starter_kit/` | **Front-end kit** — `front-end-kit/<topic>/` |
+| :--- | :--- | :--- |
+| Command | `/kit-builder` | `/front-end-kit` |
+| Covers | Problem, business rules, domain data, control layer | Routes, page goals, navigation, workflows, wizard decisions |
+| Stops at | "The backend could theoretically perform these tasks" | The UI exists |
+| Lifespan | **Durable** — maintained as focused context for future updates | **Disposable** — deleted once the UI is built |
+| Drift | Business-rule changes are corrected here and back-propagated | Never resynced; after first build the application is the truth |
+| End of life | `/kit-complete` archives it to project history | Deleted; git history preserves it |
+| Process guides | `harness/starter_kit_process/` | `harness/front_end_kit_process/` |
+
+**Why:** business rules and domain relationships barely move, so the starter kit stays valid long after the build. UI does not — the developer reshapes it by taste once it is visible, and maintaining a parallel UI spec is not worth the hassle. The front-end kit is scaffolding: committed to git so it can be reviewed and diffed, then thrown away.
+
+**Consequences:**
+
+- A starter kit contains **no** page inventory, route list, or UI plan. If one appears, it is in the wrong kit.
+- `functionality_and_roles.md` and `model_diagram.md` are the front-end kit's primary inputs — vague capabilities there become undesignable screens.
+- The front-end kit reads the **starter kit first, code second**, so the plan can be corrected before anything is built.
+- `/kit-complete` archives starter kits only. Never archive a front-end kit — archiving something declared disposable is a contradiction.
 
 ## Project History Convention
 
-Completed starter kits and major work initiatives are archived in [docs/technical_decisions/project_history/](docs/technical_decisions/project_history/) using the `/kit-complete` command. This provides a traceable record of what has been built, when, and for what purpose. The project_history.md index tracks all archived work chronologically.
+Completed starter kits and major work initiatives are archived under the owning application's own `docs/<app-name>/project_history/` using the `/kit-complete` command. This provides a traceable record of what has been built, when, and for what purpose. [docs/technical_decisions/project_history.md](docs/technical_decisions/project_history.md) is the master chronological index across every app.
 
 ---
 
@@ -156,13 +218,14 @@ The user often gets folder paths wrong — wrong order, wrong casing, partial na
 Before acting on a path:
 1. Check if the exact path exists.
 2. If not, find the closest matching real path by comparing segments (in any order) against the project tree.
-3. Proceed with the corrected path; briefly note the assumption (_"Treating `docs/DOMAIN/ARCHITECTURE` as `docs/ARCHITECTURE` — closest match."_).
+3. Proceed with the corrected path; briefly note the assumption (_"Treating `docs/ARCHITECTURE` as `harness/Architecture` — closest match."_).
 
 Common mistakes:
-- `docs/DOMAIN/ARCHITECTURE` → `docs/ARCHITECTURE/`
-- `docs/admin/RBAC` → `docs/DOMAIN/admin/RBAC.md`
-- `ARCHITECTURE/UX` → `docs/UX_UI/UX_UI.md`
+- `docs/ARCHITECTURE`, `docs/DOMAIN/ARCHITECTURE` → `harness/Architecture/`
+- `docs/admin/RBAC`, `docs/DOMAIN/admin/RBAC` → `harness/Authorization/rbac.md`
+- `ARCHITECTURE/UX`, `docs/UX_UI` → `harness/UX_UI.md`
 - `skills/backend` → `.claude/agents/backend-engineer.md`
+- Any `docs/Architecture`, `docs/Authorization`, `docs/UX_UI`, `docs/Context_Scaling`, `docs/starter_kit_process`, `docs/front_end_kit_process` → same path under `harness/` instead — these moved wholesale in the harness/docs split.
 
 ## 5. UI cards render even when empty
 
@@ -192,6 +255,8 @@ This keeps page layout stable and signals to the user that the section was check
 - **No business logic on models** — schema and constraints only. Mark intentional exceptions with `# DELIBERATE ANTI-PATTERN`.
 - **Suffix vocabulary** (see OOP_CONTROL_PATTERNS): `Struct`, `Context`, `Factory`, `BulkFactory`, `Handler`, `Manager`, `Policy`, `Validator`, `StateMachine`, `Narrator`, `Adaptor`, `Orchestrator`. Guard files end in `_guard.py`.
 - **Sharp corners everywhere** — Bulma radius variables set to `0`. No pill buttons, no rounded cards.
+- **Assignment never lives in a modal** — attaching items from a pool to the record being edited uses an in-page left-heavy assignment card pair or a dual listbox. Modals are for destructive confirmations, read-only browsing, and single-field captures. See [harness/UX_UI/components/modals.md](harness/UX_UI/components/modals.md).
+- **Creation flows are one long scrolling page** — a multi-card wizard on a single route with progressive enablement and a session-backed draft, not a chain of `/step-1`, `/step-2` URLs. An entity with more than one reverse FK a user would populate in the same sitting is a wizard, not a form. See [harness/UX_UI/components/multi_step_flows.md](harness/UX_UI/components/multi_step_flows.md).
 - **HTMX F5 rule** — every page/state must work via a plain full-page reload; HTMX layers interactivity on top.
 - **Single canonical URL per resource** with a `format=` query parameter for density (`condensed`/`medium`/`large`) and HTMX fragments (`htmx-*`). Never combine density and `htmx-*` in one request.
 

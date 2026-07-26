@@ -22,9 +22,9 @@ It lists every model and control-layer class with docstrings. Only open individu
 
 ## Reference docs (load by need)
 
-- `docs/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
-- `docs/Authorization.md` and `docs/Authorization/` — **this app owns the two-gate model**: Django capability permissions, group templates, and Data Domain (ownership-group) scoping
-- `docs/applications/core_domain.md` — shared entities + organization/division hierarchy this app administers
+- `harness/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
+- `harness/Authorization.md` and `harness/Authorization/` — **this app owns the two-gate model**: Django capability permissions, group templates, and Data Domain (ownership-group) scoping
+- `docs/core_domain.md` — shared entities + organization/division hierarchy this app administers
 
 ## Scope
 

@@ -7,42 +7,42 @@ You are a **Backend Engineer** on this Django project. Apply this persona's know
 
 ## Context files
 
-This agent follows the tiered context model in `docs/Context_Scaling.md`. Always read the Tier 1 anchor first; pull Tier 2 specs on demand by task; reach for Tier 3 examples only when actively writing code in that area.
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Always read the Tier 1 anchor first; pull Tier 2 specs on demand by task; reach for Tier 3 examples only when actively writing code in that area.
 
 ### Tier 1 — concept anchor (read first)
 
-- `docs/Architecture.md` — router into layer rules, patterns, standards
+- `harness/Architecture.md` — router into layer rules, patterns, standards
 
 ### Tier 2 — load by task
 
 **Sub-app structure / new module:**
-- `docs/Architecture/overview.md` — folder layout, layer responsibilities
-- `docs/Architecture/layer_rules.md` — reads vs writes boundary
+- `harness/Architecture/overview.md` — folder layout, layer responsibilities
+- `harness/Architecture/layer_rules.md` — reads vs writes boundary
 
 **Control layer classes (Context, Handler, Manager, Policy, …):**
-- `docs/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary
-- `docs/Architecture/standards.md` — engineering principles
+- `harness/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary
+- `harness/Architecture/standards.md` — engineering principles
 
 **Models:**
-- `docs/Architecture/patterns/model_patterns.md`
-- `docs/applications/core_domain/core_models.md` — ownership-FK rules for scoped tables
+- `harness/Architecture/patterns/model_patterns.md`
+- `docs/core_domain/core_models.md` — ownership-FK rules for scoped tables
 
 **Entrypoints and view logic:**
-- `docs/Architecture/patterns/endpoint_patterns.md`
-- `docs/Architecture/patterns/htmx_patterns.md` — when handlers must be HTMX-aware
+- `harness/Architecture/patterns/endpoint_patterns.md`
+- `harness/Architecture/patterns/htmx_patterns.md` — when handlers must be HTMX-aware
 
 **Seed data and dev fixtures:**
-- `docs/Architecture/seeding.md`
-- `docs/Development_Tools/seed_dev.md`
+- `harness/Architecture/seeding.md`
+- `harness/Development_Tools/seed_dev.md`
 
 **Tests:**
-- `docs/Architecture/tests.md`
+- `harness/Architecture/tests.md`
 
 ### Tier 3 — only when actively writing code
 
-- `docs/Architecture/Examples/control_layer_class_skeletons.md`
-- `docs/Architecture/Examples/read_vs_write_examples.md`
-- `docs/Architecture/Examples/sub_application_tree.md`
+- `harness/Architecture/Examples/control_layer_class_skeletons.md`
+- `harness/Architecture/Examples/read_vs_write_examples.md`
+- `harness/Architecture/Examples/sub_application_tree.md`
 
 ---
 

@@ -22,8 +22,8 @@ It lists every model and control-layer class with docstrings. Only open individu
 
 ## Reference docs (load by need)
 
-- `docs/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
-- `docs/Authorization.md` — two-gate access model; note how public routes sit *outside* it
+- `harness/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
+- `harness/Authorization.md` — two-gate access model; note how public routes sit *outside* it
 - **Public-route rule (project law):** unauthenticated pages belong **only** here, and their views must be marked `login_not_required` so `LoginRequiredMiddleware` does not redirect guests. Flag any public route defined outside `public_app`, or any view here missing `login_not_required`.
 
 ## Scope

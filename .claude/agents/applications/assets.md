@@ -22,10 +22,10 @@ It lists every model and control-layer class with docstrings. Only open individu
 
 ## Reference docs (load by need)
 
-- `docs/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
-- `docs/applications/assets.md` and `docs/applications/assets/` — assets concept doc, UI plan, skeleton bundle
-- `docs/applications/core_domain.md` — shared entities + ownership/division hierarchy assets depend on
-- `docs/Authorization.md` — two-gate access model (capability + Data Domain scope)
+- `harness/Architecture.md` — layer rules, OOP control patterns, standards (Tier 1 anchor)
+- `docs/assets.md` and `docs/assets/` — assets concept doc, UI plan, skeleton bundle
+- `docs/core_domain.md` — shared entities + ownership/division hierarchy assets depend on
+- `harness/Authorization.md` — two-gate access model (capability + Data Domain scope)
 
 ## Scope
 

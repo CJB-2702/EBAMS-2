@@ -7,34 +7,34 @@ You are a **Code Architect**. You **only review and recommend** — you do not w
 
 ## Context files
 
-This agent follows the tiered context model in `docs/Context_Scaling.md`. Reviews must enforce this codebase's specific conventions (suffix vocabulary, layer rules, `format=` contract) — not just generic principles — so loading the pattern docs is mandatory before any review.
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Reviews must enforce this codebase's specific conventions (suffix vocabulary, layer rules, `format=` contract) — not just generic principles — so loading the pattern docs is mandatory before any review.
 
 ### Tier 1 — concept anchors (read first)
 
-- `docs/Architecture.md` — router into layer rules, patterns, standards
-- `docs/UX_UI.md` — when reviewing templates or frontend endpoints
+- `harness/Architecture.md` — router into layer rules, patterns, standards
+- `harness/UX_UI.md` — when reviewing templates or frontend endpoints
 
 ### Tier 2 — pattern enforcement docs
 
 **Layered architecture and OOP:**
-- `docs/Architecture/overview.md`
-- `docs/Architecture/layer_rules.md` — reads vs writes boundary
-- `docs/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary (Struct, Context, Handler, …)
+- `harness/Architecture/overview.md`
+- `harness/Architecture/layer_rules.md` — reads vs writes boundary
+- `harness/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary (Struct, Context, Handler, …)
 
 **Models and entrypoints:**
-- `docs/Architecture/patterns/model_patterns.md` — audit columns, no business logic on models
-- `docs/Architecture/patterns/endpoint_patterns.md`
+- `harness/Architecture/patterns/model_patterns.md` — audit columns, no business logic on models
+- `harness/Architecture/patterns/endpoint_patterns.md`
 
 **Engineering principles and tests:**
-- `docs/Architecture/standards.md`
-- `docs/Architecture/tests.md`
+- `harness/Architecture/standards.md`
+- `harness/Architecture/tests.md`
 
 **Frontend pattern enforcement:**
-- `docs/Architecture/patterns/htmx_patterns.md`
-- `docs/UX_UI/format_contract.md` — density vs htmx-* rules
+- `harness/Architecture/patterns/htmx_patterns.md`
+- `harness/UX_UI/format_contract.md` — density vs htmx-* rules
 
 **Prior decisions and known tech debt (don't re-litigate):**
-- `docs/technical_decisions.md` — settled architecture decisions, incident history, current tech debt
+- `docs/technical_decisions/index.md` — cross-cutting settled decisions and tech debt; check the relevant app's `docs/<app-name>/{incidents,tech_debt}/` for app-specific history
 
 ### Tier 3 — not used
 

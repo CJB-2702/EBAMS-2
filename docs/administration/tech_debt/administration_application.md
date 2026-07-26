@@ -13,7 +13,7 @@ context_tier: 2
 Two related pending changes for the administration sub-app:
 
 1. **A `Departments` model is likely needed between organizations and domains.** The current hierarchy is `Division → Organization → Domain`. Several real-world use cases want a department-level grouping inside an organization (e.g. an Auditor that covers all departments of one organization but only one specific facility). Today this requires either an awkward custom domain or many manual `UserDomain` grants.
-2. **Data-access exceptions should become a `.claude` rule.** Today the [data_access_exceptions log](../../Authorization/data_access_exceptions.md) is hand-maintained. As routes that deviate from the Golden Rule accumulate, the log should be enforced by an agent rule that flags any new route filtering by organization or division without a corresponding entry.
+2. **Data-access exceptions should become a `.claude` rule.** Today the [data_access_exceptions log](../../../harness/Authorization/data_access_exceptions.md) is hand-maintained. As routes that deviate from the Golden Rule accumulate, the log should be enforced by an agent rule that flags any new route filtering by organization or division without a corresponding entry.
 
 ## Why deferred
 

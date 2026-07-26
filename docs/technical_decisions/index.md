@@ -2,7 +2,7 @@
 okf_version: "0.1"
 type: "Index"
 title: "Technical Decisions Knowledge Bundle"
-description: "Locked engineering decisions, tech debt, incident takeaways, and archived starter-kit project history."
+description: "Cross-cutting engineering decisions and tech debt that don't belong to a single application, plus the master project-history index."
 tags: [technical-decisions, index, okf]
 context_tier: 1
 personas: [backend]
@@ -10,24 +10,18 @@ personas: [backend]
 
 # Technical Decisions
 
-Per-event detail for the locked decisions, tech debt, and incident takeaways summarized in [../technical_decisions.md](../technical_decisions.md). Format specification: [../Context_Scaling/technical_decisions_system.md](../Context_Scaling/technical_decisions_system.md).
+Most technical-decision content now lives **per application** — see `docs/<app-name>/{incidents,project_history,tech_debt,decisions_pending}/`. This folder holds only the items that are genuinely cross-cutting: spanning multiple applications, or about harness-side (dev-process) patterns rather than one app's business behavior. Format specification: [../../harness/Context_Scaling/technical_decisions_system.md](../../harness/Context_Scaling/technical_decisions_system.md).
 
 ```
 technical_decisions/
 ├── index.md              ← this file
-├── history/               ← one file per significant design decision (event log)
-├── tech_debt/             ← one file per known deferred work item
-├── incident_history/      ← one file per notable bug / post-mortem
-└── project_history/       ← archived starter kits and major work initiatives
+├── project_history.md    ← master chronological index of every archived kit, across all apps
+└── tech_debt/             ← cross-cutting deferred work items (not tied to one app)
 ```
 
-When an incident produces a lasting constraint, that constraint must also be surfaced in the base [../technical_decisions.md](../technical_decisions.md) summary so it is always in context.
+## Contents
 
-## Sub-directories
+- `tech_debt/` — cross-cutting tech debt notes, dated by discovery. App-specific tech debt lives under that app's own `tech_debt/` instead.
+- `project_history.md` — the chronological log of every kit archived via `/kit-complete`, regardless of which app it belongs to. The archived kit folders themselves live under `docs/<app-name>/project_history/<kit-name>/`, not here.
 
-- `history/` — dated records of past architectural renames and migrations (e.g. ownership → Data Domain).
-- `incident_history/` — postmortems for bugs and failed approaches (e.g. the web component tab incident).
-- `tech_debt/` — open (and `resolved/`, `decisions_pending/`) tech debt notes, dated by discovery.
-- `project_history/` — archived starter kits and major work initiatives, logged via `/kit-complete`. See [project_history/project_history.md](project_history/project_history.md) for the chronological index.
-
-This index intentionally does not enumerate every file in `project_history/` — each archived kit is a self-contained folder of phase docs; use `project_history/project_history.md` to find a specific one.
+App-specific incidents, decisions pending, and project history live under each application's own folder, not in this one.

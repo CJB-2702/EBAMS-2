@@ -11,7 +11,7 @@ context_tier: 1
 This file is the **concept anchor** for the three semantic surface classes that
 sit over the shared `event` table. They are central to the application: nearly
 every record that needs discussion or files reaches for one of them. Detail and
-the underlying model live in the Tier 2 files under [applications/events/](applications/events/events.md).
+the underlying model live in the Tier 2 files under [events/](events/events.md).
 
 ---
 
@@ -80,9 +80,9 @@ does **not** need a new class — give it a `thread_type` and let it be a FileSe
 
 | Topic | File |
 | :--- | :--- |
-| Models, the shared `event` table, sentinel contract, status/priority choices, domain scoping | [applications/events/events.md](applications/events/events.md) |
-| Structs and contexts that read these surfaces | [applications/events/event_context_design.md](applications/events/event_context_design.md) |
-| Comment, attachment, and file lifecycle invariants | [applications/events/comment_auditing.md](applications/events/comment_auditing.md) |
+| Models, the shared `event` table, sentinel contract, status/priority choices, domain scoping | [events/events.md](events/events.md) |
+| Structs and contexts that read these surfaces | [events/event_context_design.md](events/event_context_design.md) |
+| Comment, attachment, and file lifecycle invariants | [events/comment_auditing.md](events/comment_auditing.md) |
 
 ---
 

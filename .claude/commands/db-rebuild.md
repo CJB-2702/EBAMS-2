@@ -15,7 +15,7 @@ What this does:
 1. Walks each `app/<application>/migrations/` directory and deletes every file except `__init__.py` (and removes `__pycache__`).
 2. Clears the database — deletes `db.sqlite3` for SQLite, or `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` for PostgreSQL via `DATABASE_URL`.
 3. Runs `python manage.py makemigrations` then `python manage.py migrate`.
-4. With `--seed`: runs `python manage.py seed_dev` (dev users + sample division/org/ownership data; see `docs/users_and_passwords.md` and `SEED_USER_PASSWORD`).
+4. With `--seed`: runs `python manage.py seed_dev` (dev users + sample division/org/ownership data; see `harness/Development_Tools/users_and_passwords.md` and `SEED_USER_PASSWORD`).
 
 After completion, report:
 - Which migration directories were cleared

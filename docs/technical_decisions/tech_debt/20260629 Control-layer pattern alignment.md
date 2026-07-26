@@ -9,7 +9,7 @@ context_tier: 2
 # Tech Debt: Control-layer pattern alignment (capability + event)
 
 **Logged:** 2026-06-29
-**Source:** architecture-vocabulary kit review (`docs/Architecture/vocabulary/`) — naming/pattern pass over the control layers. Deferred, none blocking.
+**Source:** architecture-vocabulary kit review (`harness/Architecture/vocabulary/`) — naming/pattern pass over the control layers. Deferred, none blocking.
 
 ## 1. `CapabilityManager` spans all four capability layers — decomposition candidate
 
@@ -39,7 +39,7 @@ inline-validation hold-out.)*
 ## 2. Event lifecycle has no `StateMachine` — reserved guard with an obvious home
 
 The `StateMachine` guard suffix exists in the vocabulary but is unimplemented
-project-wide (marked *reserved* in `docs/Architecture/vocabulary/crosswalk.md`).
+project-wide (marked *reserved* in `harness/Architecture/vocabulary/crosswalk.md`).
 `Event` is status-driven (`EventStatus`), yet transition logic currently lives split
 across `EventHandler` (*"all state-changing operations"*,
 `app/events/control_layer/handlers/event_handler.py`) and `ThreadPolicy` (*"inspects

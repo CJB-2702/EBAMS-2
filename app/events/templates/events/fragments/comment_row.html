@@ -18,8 +18,16 @@ HTMX outerHTML swap can go in either direction (view <-> inline edit form).
 
 Optional: next — redirect target for the delete form's plain-POST fallback,
 threaded down from comments_card.html for callers outside the events app.
+
+Carries `sharp-corners` (see docs/UX_UI/components/chamfers.md): a comment row
+is a small repeated bubble inside an already-chamfered thread card, and stacking
+20px cuts inside 20px cuts reads as noise. The composing surfaces around it —
+the Comments card itself and the Add/Edit Comment card (<add-comment>) — keep
+the app-wide bevel, so the chamfer marks "container" and the square rows read as
+the content inside it. Every app's activity thread renders through this one
+fragment, so the class belongs here rather than on any caller.
 {% endcomment %}
-<div id="comment-row-{{ row.comment_hash }}" class="card {{ row_depth|default:'depth-2' }} mb-2" data-comment-kind="{% if row.comment.is_human_made %}human{% else %}system{% endif %}">
+<div id="comment-row-{{ row.comment_hash }}" class="card sharp-corners {{ row_depth|default:'depth-2' }} mb-2" data-comment-kind="{% if row.comment.is_human_made %}human{% else %}system{% endif %}">
   <div class="card-content is-size-7">
     <div class="is-flex is-justify-content-space-between mb-1">
       <span class="is-italic">

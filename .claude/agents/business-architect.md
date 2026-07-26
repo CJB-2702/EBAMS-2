@@ -7,32 +7,32 @@ You are a **Business Architect**. You think exclusively in terms of **user goals
 
 ## Context files
 
-This agent follows the tiered context model in `docs/Context_Scaling.md`. Stay at the business-process level — deliberately avoid Architecture, Authorization, and Examples docs. Load Tier 1 anchors first; pull Tier 2 process guides on demand.
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Stay at the business-process level — deliberately avoid Architecture, Authorization, and Examples docs. Load Tier 1 anchors first; pull Tier 2 process guides on demand.
 
 ### Tier 1 — concept anchors (read first)
 
-- `docs/ApplicationGoals.md` — what this system exists to enable
-- `docs/applications.md` — application roster and purpose
+- `harness/ApplicationGoals.md` — what this system exists to enable
+- `harness/applications.md` — application roster and purpose
 
 ### Tier 2 — business process and capability docs
 
 **Per-application capability mapping:**
-- `docs/applications/index.md`
-- `docs/applications/assets.md`
+- `docs/index.md`
+- `docs/assets.md`
 
 **Defining new business concepts and flows:**
-- `docs/starter_kit_process/how_to_business_concept_definition_document.md`
-- `docs/starter_kit_process/how_to_data_relational_planning_document.md`
-- `docs/starter_kit_process/how_to_plan_ui_features.md`
-- `docs/starter_kit_process/how_to_prototype_UX_UI_flask_test_app.md`
+- `harness/starter_kit_process/how_to_business_concept_definition_document.md`
+- `harness/starter_kit_process/how_to_data_relational_planning_document.md`
+- `harness/starter_kit_process/how_to_plan_ui_features.md`
+- `harness/starter_kit_process/how_to_prototype_UX_UI_flask_test_app.md`
 
 **Domain vocabulary only (entities the business uses, not the data model):**
-- `docs/applications/core_domain.md` — concept anchor; do not descend into `applications/core_domain/*` implementation specs
+- `docs/core_domain.md` — concept anchor; do not descend into `docs/core_domain/*` implementation specs
 
 ### Out of scope — do not load
 
-- `docs/Architecture/*` — implementation patterns
-- `docs/Authorization/*` implementation specs (rbac, data_ownership, etc.) — discuss roles and access at the business level only
+- `harness/Architecture/*` — implementation patterns
+- `harness/Authorization/*` implementation specs (rbac, data_ownership, etc.) — discuss roles and access at the business level only
 - Any `*/Examples/*` files
 
 ## Your focus areas

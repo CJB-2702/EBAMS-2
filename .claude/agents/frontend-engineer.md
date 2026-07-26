@@ -7,54 +7,54 @@ You are a **Frontend Engineer** on this Django project. The frontend is **server
 
 ## Context files
 
-This agent follows the tiered context model in `docs/Context_Scaling.md`. Always read the Tier 1 anchors first; pull Tier 2 specs on demand by task; reach for Tier 3 markup examples only when actively writing templates.
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Always read the Tier 1 anchors first; pull Tier 2 specs on demand by task; reach for Tier 3 markup examples only when actively writing templates.
 
 ### Tier 1 — concept anchors (read first)
 
-- `docs/UX_UI.md` — router into visual language, format contract, component guides
-- `docs/Architecture.md` — for HTMX, endpoints, engineering standards
+- `harness/UX_UI.md` — router into visual language, format contract, component guides
+- `harness/Architecture.md` — for HTMX, endpoints, engineering standards
 
 ### Tier 2 — load by task
 
 **Visual style and page layout:**
-- `docs/UX_UI/visual_language.md` — Bulma conventions, sharp corners, fonts
-- `docs/UX_UI/page_structure.md` — global chrome, breadcrumbs, hero
-- `docs/UX_UI/accessibility.md`
+- `harness/UX_UI/visual_language.md` — Bulma conventions, sharp corners, fonts
+- `harness/UX_UI/page_structure.md` — global chrome, breadcrumbs, hero
+- `harness/UX_UI/accessibility.md`
 
 **URL contract and density (`format=` query):**
-- `docs/UX_UI/format_contract.md`
-- `docs/Architecture/patterns/endpoint_patterns.md`
+- `harness/UX_UI/format_contract.md`
+- `harness/Architecture/patterns/endpoint_patterns.md`
 
 **HTMX interactions (F5 rule, CSRF, swaps, session drafts):**
-- `docs/Architecture/patterns/htmx_patterns.md`
+- `harness/Architecture/patterns/htmx_patterns.md`
 
 **Forms and action buttons:**
-- `docs/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
-- `docs/UX_UI/components/common_buttons.md`
+- `harness/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
+- `harness/UX_UI/components/common_buttons.md`
 
 **Multi-step / wizard flows:**
-- `docs/UX_UI/components/multi_step_flows.md`
+- `harness/UX_UI/components/multi_step_flows.md`
 
 **Specific components:**
-- `docs/UX_UI/components/searchbars.md`
-- `docs/UX_UI/components/dual_listbox.md`
-- `docs/UX_UI/components/modals.md`
-- `docs/UX_UI/components/tabs.md`
-- `docs/UX_UI/components/pagination.md`
-- `docs/UX_UI/components/file_upload.md`
-- `docs/UX_UI/components/file_browser.md`
+- `harness/UX_UI/components/searchbars.md`
+- `harness/UX_UI/components/dual_listbox.md`
+- `harness/UX_UI/components/modals.md`
+- `harness/UX_UI/components/tabs.md`
+- `harness/UX_UI/components/pagination.md`
+- `harness/UX_UI/components/file_upload.md`
+- `harness/UX_UI/components/file_browser.md`
 
 **Engineering principles:**
-- `docs/Architecture/standards.md`
+- `harness/Architecture/standards.md`
 
 ### Tier 3 — only when actively writing markup
 
-- `docs/UX_UI/Examples/button_markup.md`
-- `docs/UX_UI/Examples/card_footer_markup.md`
-- `docs/UX_UI/Examples/dual_listbox_markup.md`
-- `docs/UX_UI/Examples/page_hero_markup.md`
-- `docs/UX_UI/Examples/search_dropdown_component.md`
-- `docs/Architecture/Examples/htmx_csrf_and_search_snippets.md`
+- `harness/UX_UI/Examples/button_markup.md`
+- `harness/UX_UI/Examples/card_footer_markup.md`
+- `harness/UX_UI/Examples/dual_listbox_markup.md`
+- `harness/UX_UI/Examples/page_hero_markup.md`
+- `harness/UX_UI/Examples/search_dropdown_component.md`
+- `harness/Architecture/Examples/htmx_csrf_and_search_snippets.md`
 
 ---
 
@@ -69,7 +69,7 @@ This agent follows the tiered context model in `docs/Context_Scaling.md`. Always
 
 ### Canonical card footer layout
 
-Don't hand-roll this — see [docs/UX_UI/form_style_guide.md](../../docs/UX_UI/form_style_guide.md) and [docs/UX_UI/Examples/card_footer_markup.md](../../docs/UX_UI/Examples/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
+Don't hand-roll this — see [harness/UX_UI/form_style_guide.md](../../harness/UX_UI/form_style_guide.md) and [harness/UX_UI/Examples/card_footer_markup.md](../../harness/UX_UI/Examples/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
 
 ---
 
