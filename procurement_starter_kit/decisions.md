@@ -1024,3 +1024,20 @@ JS package pipeline) and rendered client-side from a small edge-list the view se
 page. This is the only page in the app that visualizes `GraphSummary` membership directly; every
 other page keeps using the entity's own `graph_id`-scoped rollup numbers (D81), never a rendered
 graph.
+
+**D86 — Implementation notes from the D79-D85 build session (2026-08-13), folding in judgment
+calls the spec above left open.**
+
+- The FK field is named `graph` (Django convention), not literally `graph_id` — the physical column
+  is `graph_id` either way; D81/D82's prose used `graph_id` loosely to mean "the FK," not a literal
+  field-name requirement.
+- `GraphSummary.status` derivation precedence (D81 named the four labels, not their order):
+  purchase → shipment → acceptance → balanced, checked in that order, first match wins. Documented
+  inline on `GraphSummaryManager._derive_status`.
+- `GraphSummaryManager.merge` tie-break when both graphs have equal membership count: the lower
+  `graph_id` survives. Deterministic, arbitrary, undocumented reasoning beyond "must pick one."
+- `shipment_number`'s generated prefix changed from `PKG-` to `SHP-` as part of D83's rename, for
+  consistency with the renamed concept — not explicitly specified in D83 but clearly in its spirit.
+- `dev_auth_groups.json` referenced the old `procurement.package`/`packageline` content types and
+  needed a fixture fix as part of the rename (caught by `refresh_project.py`, not a design decision,
+  noted here only because it's a real gotcha for the next person touching this fixture).
