@@ -1,0 +1,116 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}mini-gallery{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/mini_gallery.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">photo_library</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;mini-gallery&gt;</h1>
+        <p class="page-subtitle">Split-pane image viewer — large preview on the left, clickable file list on the right. Shadow-DOM encapsulated.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-9">
+
+    {# Live Demo #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Live Demo</div>
+      </div>
+      <div class="card-content">
+        <mini-gallery preview-height="320" style="max-width: 100%;">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%2310b981'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>widget_prime_front.png</text></svg>" alt="widget_prime_front.png" data-size="102 KB">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%233b82f6'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>widget_prime_side.png</text></svg>" alt="widget_prime_side.png" data-size="98 KB">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23ef4444'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>widget_prime_top.png</text></svg>" alt="widget_prime_top.png" data-size="110 KB">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='500'><rect width='100%' height='100%' fill='%23f59e0b'/><text x='50%' y='50%' font-family='monospace' font-weight='bold' font-size='32' fill='%23fff' text-anchor='middle'>widget_prime_detail.png</text></svg>" alt="widget_prime_detail.png" data-size="88 KB">
+        </mini-gallery>
+      </div>
+    </div>
+
+    {# API & Documentation #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">API & Properties</div>
+      </div>
+      <div class="card-content content is-size-7">
+        <p>
+          Accepts files via the default slot — same slot format as <code>&lt;image-carousel&gt;</code>: one
+          <code>&lt;img&gt;</code> per item, or an item with a <code>data-filename</code> attribute for a non-image
+          placeholder entry. Clicking a row in the right-hand list swaps the left-hand preview.
+        </p>
+        <h4 class="title is-6">Attributes</h4>
+        <ul>
+          <li><code>preview-height</code> — CSS height of the preview pane (default <code>300</code>, unit-less values are treated as px).</li>
+        </ul>
+        <h4 class="title is-6">Settings menu</h4>
+        <p>Hover the preview pane to reveal a gear icon offering <strong>Fit</strong> (whole image), <strong>Fill / crop</strong>, and <strong>Stretch</strong> — persisted to <code>localStorage</code>.</p>
+        <h4 class="title is-6">Custom events</h4>
+        <ul>
+          <li><code>mini-gallery-change</code> — fired when the selected item changes; <code>event.detail.index</code>.</li>
+        </ul>
+      </div>
+    </div>
+
+    {# Code Snippet #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Template Code</div>
+      </div>
+      <div class="card-content">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;mini-gallery preview-height="300"&gt;
+  &lt;img src="{% templatetag openbrace %}{% templatetag openbrace %} file.url {% templatetag closebrace %}{% templatetag closebrace %}" alt="{% templatetag openbrace %}{% templatetag openbrace %} file.name {% templatetag closebrace %}{% templatetag closebrace %}" data-size="{% templatetag openbrace %}{% templatetag openbrace %} file.size_display {% templatetag closebrace %}{% templatetag closebrace %}"&gt;
+  ...
+&lt;/mini-gallery&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

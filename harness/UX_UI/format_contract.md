@@ -30,7 +30,7 @@ Collection URLs follow the plural-resource pattern in [../Architecture.md](../Ar
 
 The same query parameter selects HTMX-only response variants:
 
-- `format=htmx-search-results` — fragment-only response containing the results list partial (see [components/searchbars.md](components/searchbars.md)).
+- `format=htmx-search-results` — fragment-only response containing the results list partial (see [search/searchbars.md](search/searchbars.md)).
 - `format=htmx-focused` — fragment-only response suited to HTMX, with paged rows.
 - `format=htmx-<custom>` — predictable, per-screen custom variants. Document the name in the view or app docs so clients and tests stay aligned.
 

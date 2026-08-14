@@ -24,11 +24,8 @@ from app.administration.models import Domain
 from app.events.models import ActivityThread
 from app.parts.control_layer.factories.alias_factory import AliasFactory
 from app.parts.control_layer.factories.part_factory import PartFactory
-from app.parts.control_layer.factories.part_manufacturer_factory import (
-    PartManufacturerFactory,
-)
-from app.parts.control_layer.factories.supplier_item_factory import SupplierItemFactory
 from app.parts.control_layer.managers.part_image_manager import PartImageManager
+from app.parts.control_layer.managers.supplier_item_manager import SupplierItemManager
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
 from app.events.control_layer.managers.activity_thread_manager import ActivityThreadManager
 from app.parts.control_layer.thread_domain import (
@@ -238,7 +235,7 @@ class Command(BaseCommand):
             if not SupplierItem.objects.filter(
                 part_manufacturer=mfr, manufacturer_part_number=mpn
             ).exists():
-                item = SupplierItemFactory.create(
+                item = SupplierItemManager.create(
                     data={
                         "part_manufacturer_id": mfr.id,
                         "internal_part_id": part.id,

@@ -1,0 +1,165 @@
+{% extends "procurement/base.html" %}
+{% block title %}Purchase Orders{% endblock %}
+{% block nav_po_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Purchase Orders</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">receipt_long</span></div>
+        <div>
+          <h1 class="page-title">Purchase Orders</h1>
+          <p class="page-subtitle">Commercial orders placed with vendors, and how much of each is claimed by demand</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        {% if can_buy %}
+        <a href="{% url 'purchase_order_create' %}" class="button is-primary is-small">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
+          <span>New Purchase Order</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% comment %}
+    Counts reflect the filters currently applied below — this card is inside
+    the hx-select target, so submitting the filter form refreshes it too.
+    {% endcomment %}
+    <div class="page-hero-metrics">
+      <table class="hero-metrics-table">
+        <thead><tr>
+          <th>Draft</th><th>Placed</th><th>Partially received</th><th>Received</th>
+        </tr></thead>
+        <tbody><tr>
+          <td>{{ stats.draft }}</td>
+          <td>{{ stats.placed }}</td>
+          <td>{{ stats.partially_received }}</td>
+          <td>{{ stats.received }}</td>
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>Filters
+  </div></div>
+  {% comment %}
+  Plain GET form: every filter state is a bookmarkable URL, so F5 reproduces
+  the list exactly. HTMX only smooths the swap on top of that.
+  {% endcomment %}
+  <form method="get" action="{% url 'purchase_order_index' %}"
+        hx-get="{% url 'purchase_order_index' %}"
+        hx-target="#procurement-main-content"
+        hx-select="#procurement-main-content"
+        hx-push-url="true">
+    <div class="card-content">
+      <div class="columns is-variable is-2 is-multiline">
+        <div class="column is-4">
+          <label class="label is-small" for="filter-q">Search</label>
+          <input id="filter-q" class="input is-small is-family-monospace" type="search" name="q"
+                 value="{{ filters.q }}" placeholder="PO number, vendor, vendor's own number…">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="filter-approval">Approval state</label>
+          <div class="select is-small is-fullwidth"><select id="filter-approval" name="approval_state">
+            <option value="">Any</option>
+            {% for value, label in approval_choices %}
+              <option value="{{ value }}" {% if filters.approval_state == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="filter-status">Status</label>
+          <div class="select is-small is-fullwidth"><select id="filter-status" name="status">
+            <option value="">Any</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="filter-vendor">Vendor</label>
+          <div class="select is-small is-fullwidth"><select id="filter-vendor" name="vendor_id">
+            <option value="">Any</option>
+            {% for vendor in vendors %}
+              <option value="{{ vendor.pk }}" {% if filters.vendor_id == vendor.pk %}selected{% endif %}>{{ vendor.name }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="filter-domain">Domain</label>
+          <div class="select is-small is-fullwidth"><select id="filter-domain" name="domain_id">
+            <option value="">All mine</option>
+            {% for domain in domains %}
+              <option value="{{ domain.pk }}" {% if filters.domain_id == domain.pk %}selected{% endif %}>{{ domain.name }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="filter-date-from">Ordered on or after</label>
+          <input id="filter-date-from" class="input is-small" type="date" name="date_from" value="{{ raw_filters.date_from }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="filter-date-to">Ordered on or before</label>
+          <input id="filter-date-to" class="input is-small" type="date" name="date_to" value="{{ raw_filters.date_to }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="filter-part">Part id</label>
+          <input id="filter-part" class="input is-small is-family-monospace" type="number" name="part_id" value="{{ raw_filters.part_id }}">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'purchase_order_index' %}" class="button is-small is-light">Clear</a>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Apply filters</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+      Results
+    </div>
+    <span class="is-size-7 has-text-grey pr-3">{{ purchase_orders|length }} shown</span>
+  </div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr>
+        <th>PO number</th><th>Vendor</th><th>Vendor's number</th>
+        <th>Approval</th><th>Status</th><th>Linkage</th>
+        <th>Order date</th><th class="has-text-right">Total cost</th>
+      </tr></thead>
+      <tbody>
+        {% for po in purchase_orders %}
+        <tr>
+          <td><a class="is-family-monospace" href="{% url 'purchase_order_detail' po.pk %}">{{ po.po_number }}</a></td>
+          <td>{{ po.vendor.name }}</td>
+          <td class="is-family-monospace">{{ po.vendor_po_id|default:"—" }}</td>
+          <td><span class="tag is-small">{{ po.approval_state|default:"unsubmitted" }}</span></td>
+          <td>{% include "assets/_status_tag.html" with value=po.get_status_display %}</td>
+          {# Read off the search's annotations — never a per-row query. #}
+          <td><span class="tag is-small {{ po.linkage_tag_class }}">{{ po.linkage_label }}</span></td>
+          <td>{{ po.order_date }}</td>
+          <td class="has-text-right is-family-monospace">{{ po.total_cost|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="has-text-grey has-text-centered py-5">
+          No purchase orders match these filters.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

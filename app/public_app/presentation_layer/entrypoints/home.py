@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 
 SESSION_NOTE_KEY = "public_app_note"
 NOTE_MAX_LEN = 2000
@@ -24,6 +25,11 @@ def public_home(request: HttpRequest) -> HttpResponse:
             if form.is_valid():
                 user = form.get_user()
                 login(request, user)
+                next_url = request.POST.get("next")
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url, allowed_hosts={request.get_host()}
+                ):
+                    return redirect(next_url)
                 return redirect("public_home")
             _style_login_form(form)
             return render(

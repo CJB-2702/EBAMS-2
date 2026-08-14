@@ -4,5 +4,8 @@ default_users_passwords.json
 *.sqlite3
 *.pyc
 *__pycache__
+.server.pid
 
 .claude/projects/*
+
+app/media

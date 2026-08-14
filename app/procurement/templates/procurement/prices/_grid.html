@@ -1,0 +1,138 @@
+{% load procurement_tags %}
+<div class="card" id="price-grid">
+  <div class="card-header"><p class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>&nbsp;Record prices</p></div>
+  <div class="card-content">
+
+    {% include "procurement/prices/_recent_banner.html" %}
+
+    <form method="post" action="{% url 'price_bulk_grid' %}"
+          hx-post="{% url 'price_bulk_grid' %}" hx-trigger="change"
+          hx-target="#procurement-main-content" hx-select="#procurement-main-content">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="sync">
+      <input type="hidden" name="row_count" value="{{ row_count }}">
+
+      {% if errors %}
+      <div class="notification is-danger is-light py-2 px-3 is-size-7">
+        {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+      </div>
+      {% endif %}
+      {% if result %}
+      <div class="notification is-success is-light py-2 px-3 is-size-7">
+        {{ result.created_ids|length }} observation{{ result.created_ids|length|pluralize }} recorded{% if selected_vendor %} for {{ selected_vendor.name }}{% endif %}.
+      </div>
+      {% if result.warnings %}
+      <div class="notification is-warning is-light py-2 px-3 is-size-7">
+        {% for w in result.warnings %}<p>{{ w.message }}</p>{% endfor %}
+      </div>
+      {% endif %}
+      {% if result.dropped_part_ids %}
+      <div class="notification is-light py-2 px-3 is-size-7">
+        <p>Skipped — no price entered: {{ result.dropped_part_ids|join:", " }}</p>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-4" id="vendor-picker-slot">
+          {% include "procurement/prices/_vendor_picker.html" with selected_vendor=selected_vendor field_name="vendor_id" target_id="vendor-picker-slot" %}
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="grid-domain">Domain <span class="has-text-danger">*</span></label>
+          <div class="select is-small is-fullwidth"><select id="grid-domain" name="domain_id" required>
+            <option value="">Choose a domain…</option>
+            {% for domain in domains %}
+              <option value="{{ domain.pk }}" {% if draft.domain_id == domain.pk %}selected{% endif %}>{{ domain.name }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="grid-observed-at">Observed on</label>
+          <input id="grid-observed-at" class="input is-small" type="date" name="observed_at" value="{{ draft.observed_at|default:'' }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="grid-source-type">Source</label>
+          <div class="select is-small is-fullwidth"><select id="grid-source-type" name="source_type">
+            <option value="">Choose…</option>
+            {% for value, label in source_types %}
+              <option value="{{ value }}" {% if draft.source_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="grid-confidence">Confidence <span class="has-text-danger">*</span></label>
+          <div class="select is-small is-fullwidth"><select id="grid-confidence" name="confidence" required>
+            <option value="">Choose…</option>
+            {% for value, label in confidences %}
+              <option value="{{ value }}" {% if draft.confidence == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        {% if can_establish %}
+        <div class="column is-3 is-flex is-align-items-flex-end">
+          <label class="checkbox is-size-7">
+            <input type="checkbox" name="record_as_verified" {% if draft.record_as_verified %}checked{% endif %}>
+            Record as verified
+          </label>
+        </div>
+        {% endif %}
+        <div class="column is-12">
+          <label class="label is-small" for="grid-notes">Notes</label>
+          <input id="grid-notes" class="input is-small" type="text" name="notes" value="{{ draft.notes }}">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="table is-fullwidth is-narrow">
+          <thead>
+            <tr><th>Part</th><th style="width:8rem;">Qty</th><th style="width:10rem;">Unit cost</th><th style="width:3rem;"></th></tr>
+          </thead>
+          <tbody id="price-grid-rows">
+            {% for row in rows %}
+            <tr>
+              <td class="is-family-monospace is-size-7">
+                {{ row.part_number }}<br><span class="has-text-grey">{{ row.part_name }}</span>
+                <input type="hidden" name="rows-{{ forloop.counter0 }}-part_id" value="{{ row.part_id }}">
+              </td>
+              <td><input class="input is-small is-family-monospace" type="number" step="0.001" min="0" name="rows-{{ forloop.counter0 }}-quantity" value="{{ row.quantity }}"></td>
+              <td><input class="input is-small is-family-monospace" type="number" step="0.01" min="0" name="rows-{{ forloop.counter0 }}-unit_cost" value="{{ row.unit_cost }}"></td>
+              <td><button type="submit" class="button is-small is-white" name="remove_part_id" value="{{ row.part_id }}" title="Remove this row">
+                <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              </button></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="has-text-grey is-size-7">No parts in the grid yet — use the doors below to add some.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="card-footer custom-card-footer mt-3">
+        <div class="card-footer-secondaries">
+          <span class="is-size-7 has-text-grey">{{ row_count }} row{{ row_count|pluralize }} · {{ priced_count }} priced</span>
+          <a href="#add-parts-doors" class="button is-small is-light">Add parts</a>
+        </div>
+        <button type="submit" name="action" value="save_all" class="button is-primary card-footer-primary">Save all</button>
+      </footer>
+    </form>
+
+    <div id="add-parts-doors" class="mt-5">
+      <p class="label is-small">Add parts</p>
+      <p class="is-size-7 mb-2"><a href="{% url 'unpriced_parts' %}">Browse the unpriced-parts queue →</a></p>
+      <form method="post" action="{% url 'price_bulk_grid' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_row">
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <search-dropdown name="part_id" placeholder="search parts to add…"
+                hx-get="{% url 'price_bulk_grid' %}?format=htmx-part-results"
+                hx-trigger="keyup changed delay:300ms, search"></search-dropdown>
+          </div>
+          <div class="control">
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

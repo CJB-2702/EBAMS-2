@@ -36,7 +36,7 @@ Reach for `<file-browser>` when **all** of these hold:
 
 Do **not** use it when:
 
-- The set is large or must be **paginated / server-filtered** — use a normal table + HTMX (see [pagination.md](pagination.md), [searchbars.md](searchbars.md)).
+- The set is large or must be **paginated / server-filtered** — use a normal table + HTMX (see [../navigation/pagination.md](../navigation/pagination.md), [../search/searchbars.md](../search/searchbars.md)).
 - You only ever need one fixed layout of two or three files — a plain grid is lighter.
 
 ---

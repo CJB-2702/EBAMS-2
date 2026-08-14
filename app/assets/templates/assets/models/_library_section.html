@@ -19,7 +19,7 @@ Expected context:
     </a>
   </div>
   <div class="card-content">
-    {# ── Image gallery ─────────────────────────────────────────────── #}
+    {# Image gallery #}
     <p class="lib-subhead"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Image Gallery</p>
     {% if s.images %}
     <image-carousel id="carousel-model-{{ s.id }}" preview-height="240" loop>
@@ -64,7 +64,7 @@ Expected context:
     </form>
     {% endif %}
 
-    {# ── Document library ──────────────────────────────────────────── #}
+    {# Document library #}
     <p class="lib-subhead mt-4"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span>Documents</p>
     <file-browser default-view="tiles" storage-key="model-lib-file-browser-view">
       {% for d in s.documents %}
@@ -114,7 +114,7 @@ Expected context:
     </form>
     {% endif %}
 
-    {# ── Comments ──────────────────────────────────────────────────── #}
+    {# Comments #}
     {% if can_manage %}
     {% url 'model_library_add_comment' model_id=s.id as comment_add_url %}
     {% include "events/fragments/comments_card.html" with card=s.comments_card add_url=comment_add_url next=request.get_full_path depth="mt-4" row_depth="depth-2" action_depth="depth-3" %}

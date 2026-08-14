@@ -1,0 +1,119 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}file-browser{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/file_browser.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">folder</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;file-browser&gt;</h1>
+        <p class="page-subtitle">Progressive-enhancement browser over a light-DOM set of file links — tiles/list view, search, type and uploader filters, sort.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-9">
+
+    {# Live Demo #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Live Demo</div>
+      </div>
+      <div class="card-content">
+        <file-browser storage-key="ks-demo-file-browser" default-view="tiles">
+          <a class="fb-item" href="#" data-name="assembly_drawing.pdf" data-caption="Rev C" data-type="document"
+             data-size="284119" data-date="2026-07-20T09:32:00Z" data-date-display="Jul 20, 2026" data-user="Alice Chen" data-id="1"></a>
+          <a class="fb-item" href="#" data-name="widget_prime.png" data-caption="Hero shot" data-type="image"
+             data-thumb="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%2310b981'/></svg>"
+             data-size="102400" data-date="2026-07-18T14:02:00Z" data-date-display="Jul 18, 2026" data-user="Bob Reyes" data-id="2"></a>
+          <a class="fb-item" href="#" data-name="spec_sheet.txt" data-caption="" data-type="document"
+             data-size="8192" data-date="2026-07-15T11:00:00Z" data-date-display="Jul 15, 2026" data-user="Alice Chen" data-id="3"></a>
+          <a class="fb-item" href="#" data-name="site_walkthrough.mp4" data-caption="30s clip" data-type="video"
+             data-size="5242880" data-date="2026-07-10T08:00:00Z" data-date-display="Jul 10, 2026" data-user="Carol Diaz" data-id="4"></a>
+          <a class="fb-item" href="#" data-name="model_render.png" data-caption="Isometric" data-type="image"
+             data-thumb="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%233b82f6'/></svg>"
+             data-size="204800" data-date="2026-06-30T16:45:00Z" data-date-display="Jun 30, 2026" data-user="Bob Reyes" data-id="5"></a>
+        </file-browser>
+      </div>
+    </div>
+
+    {# API & Documentation #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Design Intent & API</div>
+      </div>
+      <div class="card-content content is-size-7">
+        <p>
+          The server renders one plain <code>&lt;a class="fb-item"&gt;</code> per file as a light-DOM child, with metadata
+          on <code>data-*</code> attributes — that markup is the F5-safe fallback with JS off. With JS on, the component
+          hides the raw links and paints a toolbar (search, type/uploader filters, sort, tiles/list toggle) over a
+          re-rendered grid or table. All filtering/sorting happens client-side over the child nodes; no server round trips.
+        </p>
+        <h4 class="title is-6">Expected child markup</h4>
+        <pre class="ks-code" style="display:block; white-space:pre; overflow-x:auto;">&lt;a class="fb-item" href="/download/..."
+   data-name="spec.pdf" data-caption="Rev A" data-type="document"
+   data-thumb="/inline/..." (optional, images only)
+   data-size="284119" data-date="2026-05-14T09:32:00Z"
+   data-user="Jane Doe" data-date-display="May 14, 2026" data-id="..."&gt;
+  &lt;span slot="actions"&gt; ...server-rendered per-item actions... &lt;/span&gt;
+&lt;/a&gt;</pre>
+        <h4 class="title is-6">Attributes</h4>
+        <ul>
+          <li><code>default-view</code> — <code>tiles</code> (default) or <code>list</code>.</li>
+          <li><code>storage-key</code> — localStorage key the chosen view is persisted under.</li>
+        </ul>
+        <h4 class="title is-6">Public methods</h4>
+        <ul>
+          <li><code>el.setView("tiles"|"list")</code> — programmatic view switch (used by a page-level "toggle all" control).</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

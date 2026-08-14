@@ -1,0 +1,125 @@
+{% extends "procurement/base.html" %}
+{% block title %}Packages{% endblock %}
+{% block nav_package_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Packages</a></li>{% endblock %}
+
+{% comment %}
+The receiving queue. Two of these filters are first-class rather than tucked
+into an "advanced" drawer, because each one IS a standing job someone does:
+
+  · Mixed POs      — the drift review queue. mixed_po_assignments is a flag,
+                     never a constraint, so this is the only place the
+                     condition gets looked at deliberately.
+  · Shipment ID    — how a receiver holding a box finds its record. They search
+                     by what is printed on the label, not by our package number.
+  · No PO          — the reactive-receipt backlog (D71/D73). Not an error queue;
+                     a to-do list.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+        <div>
+          <h1 class="page-title">Packages</h1>
+          <p class="page-subtitle">What the vendors actually shipped — in transit, delivered, and inspected.</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        {% if can_receive %}
+        <a href="{% url 'package_receive' %}" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span><span>Receive a Shipment</span>
+        </a>
+        <a href="{% url 'package_create' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Package</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="page-hero-metrics" id="package-hero-metrics">
+      {% include "procurement/packages/_hero_metrics.html" %}
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'package_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#package-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#package-results-region">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small" for="pkg-q">Search</label>
+            <input id="pkg-q" class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="package no., carrier, PO, notes…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small" for="pkg-shipment">Shipment / tracking ID</label>
+            <input id="pkg-shipment" class="input is-small is-family-monospace" type="search" name="shipment_id" value="{{ filters.shipment_id }}" placeholder="as printed on the box" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small" for="pkg-status">Status</label>
+            <div class="select is-small is-fullwidth">
+              <select id="pkg-status" name="status">
+                <option value="">Any</option>
+                {% for value, label in statuses %}
+                <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small" for="pkg-vendor">Vendor</label>
+            <div class="select is-small is-fullwidth">
+              <select id="pkg-vendor" name="vendor_id">
+                <option value="">Any</option>
+                {% for vendor in vendors %}
+                <option value="{{ vendor.pk }}" {% if filters.vendor_id == vendor.pk|stringformat:"s" %}selected{% endif %}>{{ vendor.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small" for="pkg-from">Expected from</label>
+            <input id="pkg-from" class="input is-small" type="date" name="arrived_from" value="{{ filters.arrived_from }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small" for="pkg-to">Expected to</label>
+            <input id="pkg-to" class="input is-small" type="date" name="arrived_to" value="{{ filters.arrived_to }}">
+          </div>
+          <div class="column is-4 is-flex is-align-items-flex-end">
+            <label class="checkbox is-size-7 mr-4">
+              <input type="checkbox" name="mixed_only" value="1" {% if filters.mixed_only %}checked{% endif %}>
+              Drift-flagged only <span class="has-text-grey">(mixed POs)</span>
+            </label>
+            <label class="checkbox is-size-7">
+              <input type="checkbox" name="unattached_only" value="1" {% if filters.unattached_only %}checked{% endif %}>
+              No purchase order
+            </label>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="package-results-region" class="is-relative">
+    {# Overlay, not a flow sibling — see .htmx-indicator-overlay in custom_css.css. #}
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+      <div class="skeleton-block"></div>
+    </div>
+    {% include "procurement/packages/_results_card.html" %}
+  </div>
+</div>
+{% endblock %}

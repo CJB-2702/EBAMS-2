@@ -1,0 +1,58 @@
+{% extends "pub_base.html" %}
+{% block title %}Pricing - EBAMS{% endblock %}
+{% block container_max_width %}100%{% endblock %}
+
+{% block content %}
+<section class="pub-page-hero">
+  <h1>Pricing</h1>
+  <p>Start with the latest source, or move up to hosted and supported options. Text below for quotes and the most updated repository—then compare service tiers on this page.</p>
+</section>
+
+<section class="pub-cta-banner">
+  <div class="pub-section-wrap" style="text-align:center;">
+    <h2>Get in touch</h2>
+    <p style="margin: 0 auto 1rem;">
+      Pricing is discussed directly—no rate card on this page. For the most updated repository, contact us the same way.
+      You can also text for a temporary username and password to try a demo on this website.
+    </p>
+    <a href="sms:+14242417643" class="button is-primary is-medium">
+      <span class="icon"><span class="material-icons" aria-hidden="true">sms</span></span>
+      <span>Text me at 4242417643</span>
+    </a>
+  </div>
+</section>
+
+<section class="pub-section">
+  <div class="pub-section-wrap">
+    <h2 class="pub-section-headline">Service tiers</h2>
+
+    <p class="pub-pricing-tier-label" style="text-align:center;">Most teams start here</p>
+    <div class="pub-pricing-row pub-pricing-row--featured">
+      <div class="pub-pricing-tier pub-pricing-tier--featured">
+        <span class="material-icons" aria-hidden="true">handyman</span>
+        <h3>Recommended tier</h3>
+        <p>Full setup consultation, and support for bugs.</p>
+      </div>
+      <div class="pub-pricing-tier pub-pricing-tier--featured">
+        <span class="material-icons" aria-hidden="true">trending_up</span>
+        <h3>Premium tier</h3>
+        <p>A support engineer embeds consults with your team and provides custom solutions for your specific needs.</p>
+      </div>
+    </div>
+
+    <p class="pub-pricing-tier-label" style="text-align:center;">Self-serve &amp; hosted entry</p>
+    <div class="pub-pricing-row pub-pricing-row--secondary">
+      <div class="pub-pricing-tier">
+        <span class="material-icons" aria-hidden="true">download</span>
+        <h3>Free tier</h3>
+        <p>Self-host from source. Contact for the most updated repository.</p>
+      </div>
+      <div class="pub-pricing-tier">
+        <span class="material-icons" aria-hidden="true">cloud_done</span>
+        <h3>Minimum tier</h3>
+        <p>We host an instance for you and occasionally do updates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

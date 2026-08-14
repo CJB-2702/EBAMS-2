@@ -85,6 +85,32 @@ class PartRevisionManager:
             )
         return revision
 
+    def update(self, revision_id: int, *, data: dict) -> PartRevision:
+        revision = PartRevision.objects.select_for_update().get(
+            id=revision_id, part=self.part
+        )
+        revision.major_revision_name = data["major_name"]
+        revision.minor_revision_name = data["minor_name"]
+        revision.summary = data["summary"]
+        revision.notes = data["notes"]
+        revision.date_of_release = data["date_of_release"]
+        revision.updated_by = self.actor
+        revision.save(
+            update_fields=[
+                "major_revision_name",
+                "minor_revision_name",
+                "summary",
+                "notes",
+                "date_of_release",
+                "updated_at",
+                "updated_by",
+            ]
+        )
+        PartActivityNarrator.for_revision(revision, self.actor).record(
+            PartRevisionNarrator.metadata_updated(self.part, revision)
+        )
+        return revision
+
     def set_status(self, revision_id: int, status: str) -> PartRevision:
         revision = PartRevision.objects.select_for_update().get(
             id=revision_id, part=self.part

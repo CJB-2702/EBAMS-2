@@ -6,43 +6,59 @@
 {% block content %}
 <div class="page-hero"><div class="page-header">
   <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">search</span></div>
-    <div><h1 class="page-title">Find a Part</h1><p class="page-subtitle">Type any number — internal, legacy, NSN, or a vendor's MPN — and land on the definitive Part.</p></div></div>
-  <div class="page-header-actions"><a href="{% url 'part_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Part</span></a></div>
+    <div><h1 class="page-title">Find a Part</h1><p class="page-subtitle">Filter by number, name, description, manufacturer, or revision name.</p></div></div>
+  <div class="page-header-actions">
+    <a href="{% url 'part_bulk_upload' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span><span>Bulk Upload</span></a>
+    <a href="{% url 'part_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Part</span></a>
+  </div>
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="card sharp-corners">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
     <div class="card-content">
-      <input
-        class="input"
-        type="search"
-        name="term"
-        placeholder="Part number, NSN, legacy code, or vendor MPN…"
-        value="{{ term|default:'' }}"
-        hx-get="{% url 'part_search' %}"
-        hx-trigger="keyup changed delay:300ms, search"
-        hx-target="#search-results"
-        hx-vals='{"format": "htmx-results"}'
-        hx-push-url="false"
-      >
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Part Number</label>
+            <input class="input is-small is-family-monospace" type="search" name="part_number" value="{{ part_number }}" placeholder="Internal, legacy, NSN, or vendor MPN…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="search" name="name" value="{{ name }}" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Description</label>
+            <input class="input is-small" type="search" name="description" value="{{ description }}" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Manufacturer</label>
+            <input class="input is-small" type="search" name="manufacturer" value="{{ manufacturer }}" autocomplete="off">
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span></button>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Revision Name</label>
+            <input class="input is-small" type="search" name="revision_name" value="{{ revision_name }}" autocomplete="off">
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 
-  <div id="search-results">
-    {% include "parts/_search_results.html" %}
-  </div>
-
-  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently Added Parts</div></div>
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Parts ({{ parts|length }})</div></div>
     <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-      <thead><tr><th>Part Number</th><th>Name</th><th>Active</th></tr></thead>
+      <thead><tr><th>Part Number</th><th>Name</th><th>Current Revision</th><th>Active</th></tr></thead>
       <tbody>
-        {% for p in recent_parts %}
+        {% for p in parts %}
         <tr>
           <td><a href="{% url 'part_detail' part_id=p.id %}">{{ p.part_number }}</a></td>
           <td>{{ p.name }}</td>
+          <td>{% with rev=p.revisions.first %}{% if rev %}{{ rev.major_revision_number }}.{{ rev.minor_revision_number }}{% else %}—{% endif %}{% endwith %}</td>
           <td>{% include "assets/_status_tag.html" with value=p.is_active|yesno:"Active,Inactive" %}</td>
         </tr>
-        {% empty %}<tr><td colspan="3" class="has-text-grey has-text-centered py-5">No parts yet.</td></tr>{% endfor %}
+        {% empty %}<tr><td colspan="4" class="has-text-grey has-text-centered py-5">No parts match your filters.</td></tr>{% endfor %}
       </tbody>
     </table></div>
   </div>

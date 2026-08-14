@@ -46,7 +46,7 @@ If either fails, say so and stop.
 
 3. **Every navigation edge must work.** This is the point of the exercise. Every link in `navigation_map.md` is clickable and lands somewhere real. A stager with dead links validates nothing.
 
-4. **Use the project's real styling.** Bulma with the project theme layer, sharp corners, the actual component markup from [../UX_UI/Examples/index.md](../UX_UI/Examples/index.md). Copy the markup — do not approximate it. The stager's value is that it looks like the app; a generic mockup answers no question worth asking.
+4. **Use the project's real styling.** Bulma with the project theme layer, sharp corners, the actual component markup from [../UX_UI/index.md](../UX_UI/index.md) (components, navigation, search, file_management, and design_patterns guides). Copy the markup — do not approximate it. The stager's value is that it looks like the app; a generic mockup answers no question worth asking.
 
 5. **Render wizards at full scroll length.** Every card, in order, with realistic dummy content. Show the progressive-enablement states — disabled later cards — even though the gating is faked. Feeling the scroll length *is* the deliverable for a wizard.
 

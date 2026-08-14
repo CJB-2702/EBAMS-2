@@ -1,0 +1,333 @@
+{% extends "procurement/base.html" %}
+{% load static procurement_tags %}
+{% block title %}{{ po.po_number }}{% endblock %}
+{% block nav_po_index %}is-active{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'purchase_order_index' %}">Purchase Orders</a></li>
+  <li class="is-active"><a href="#" aria-current="page">{{ po.po_number }}</a></li>
+{% endblock %}
+
+{% comment %}
+PO DETAIL — read-mostly overview. Line/allocation editing (add a line, edit a
+line's fields, allocate, de-link) all live on Edit & Linkage instead; this page
+is display plus the status transition itself.
+
+D57 still governs the status transition: editing a placed order is a SOFT
+WARNING, never a block.
+{% endcomment %}
+
+{% block content %}
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
+
+<div class="page-hero" style="align-items:flex-start;">
+  <div style="flex:1;">
+    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <h1 class="page-title" style="margin:0;">{{ po.po_number }}</h1>
+      {% include "procurement/purchase_orders/_status_tags.html" %}
+    </div>
+    <p class="page-subtitle">
+      {{ po.vendor.name }}{% if po.vendor_contact %} · {{ po.vendor_contact }}{% endif %}
+      · ordered {{ po.order_date }}
+    </p>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; justify-content:flex-end; flex-shrink:0;">
+    {% if can_buy %}
+    <a href="{% url 'purchase_order_edit' po.pk %}" class="button is-small is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+      <span>Edit &amp; Linkage</span>
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{# D57's soft warning. It sits above everything and disables nothing. #}
+{% if show_placed_warning %}
+<article class="message is-warning">
+  <div class="message-body is-size-7">
+    <strong>This order is {{ po.get_status_display }}.</strong>
+    Its lines stay fully editable from Edit &amp; Linkage — vendors substitute, short-ship and
+    re-price after an order goes out, and the record should say what actually happened. Every
+    change made there posts a snapshot of the row as it stood to the activity thread.
+  </div>
+</article>
+{% endif %}
+
+{# ================= Row 1: PO information, full width ================= #}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+      Status, quick facts &amp; cost
+    </div>
+    <div class="is-flex is-align-items-center pr-3" style="gap:0.5rem; flex-wrap:wrap;">
+      {% if self_approval and can_approve %}
+      <span class="is-size-7 has-text-grey" title="You created this order — approving it yourself is permitted and will be recorded on the activity thread as a self-approval.">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">info</span></span>
+        Self-approval
+      </span>
+      {% endif %}
+      {% if available_actions %}
+      <form method="post" style="margin:0; display:flex; align-items:center; gap:0.5rem;"
+            onsubmit="return poHeroSubmit(this);">
+        {% csrf_token %}
+        <div class="select is-small">
+          <select name="action" id="po-status-action" onchange="poHeroToggleReason()">
+            {% for act in available_actions %}
+            <option value="{{ act.value }}"
+                    data-confirm="{{ act.confirm|default:'' }}"
+                    data-needs-reason="{{ act.needs_reason|yesno:'1,' }}">{{ act.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <input type="text" id="po-status-reason" name="reason" class="input is-small"
+               placeholder="Reason" style="display:none; width:10rem;" aria-label="Reason">
+        <button type="submit" class="button is-small is-primary">
+          <span class="icon"><span class="material-icons" aria-hidden="true">sync</span></span>
+          <span>Update status</span>
+        </button>
+      </form>
+      {% elif can_buy and place_blocked_reason %}
+      <span class="is-size-7 has-text-grey">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">lock</span></span>
+        {{ place_blocked_reason }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-content">
+    <div class="columns is-variable is-5">
+      <div class="column is-8">
+        <dl class="kv is-size-7">
+          <dt>Status</dt><dd>{{ po.get_status_display }}</dd>
+          <dt>Approval</dt><dd>{{ approval_label }}</dd>
+          <dt>Vendor's number</dt><dd class="is-family-monospace">{{ po.vendor_po_id|default:"—" }}</dd>
+          <dt>Order date</dt><dd>{{ po.order_date }}</dd>
+          <dt>Expected delivery</dt><dd>{{ po.expected_delivery_date|default:"—" }}</dd>
+          <dt>Domain</dt><dd>{{ po.domain.name }}</dd>
+          <dt>Vendor contact</dt><dd>{{ po.vendor_contact|default:"—" }}</dd>
+          <dt>Notes</dt><dd>{{ po.notes|default:"—" }}</dd>
+        </dl>
+        <a href="{% url 'procurement_graph_visualizer' %}?po_id={{ po.pk }}" class="button is-small is-light mt-3">
+          <span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span>
+          <span>View full association network</span>
+        </a>
+      </div>
+      <div class="column is-4">
+        <dl class="kv is-size-7">
+          <dt>Shipping</dt><dd class="is-family-monospace">{{ po.shipping_cost|default:"—" }}</dd>
+          <dt>Tax</dt><dd class="is-family-monospace">{{ po.tax_amount|default:"—" }}</dd>
+          <dt>Other</dt><dd class="is-family-monospace">{{ po.other_amount|default:"—" }}</dd>
+          <dt><strong>Total</strong></dt><dd class="is-family-monospace"><strong>{{ po.total_cost|default:"—" }}</strong></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ================= Main body: lines + activity (2/3), related items (1/3) ================= #}
+<div class="columns is-variable is-4">
+  <div class="column is-8">
+
+    {# Lines — display only. Add / edit / allocate all live on Edit & Linkage. #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+          Lines
+        </div>
+        <span class="is-size-7 has-text-grey pr-3">{{ lines|length }}</span>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>#</th><th>Part</th>
+            <th class="has-text-right">Ordered</th><th class="has-text-right">Allocated</th>
+            <th class="has-text-right">Accepted</th><th>Attribution</th>
+            <th class="has-text-right">Unit cost</th><th class="has-text-right">Line total</th>
+          </tr></thead>
+          <tbody>
+            {% for line in lines %}
+            <tr {% if line.struct.over_received %}class="has-background-warning-light"{% endif %}>
+              <td class="is-family-monospace">{{ line.struct.line_number }}</td>
+              <td>{{ line.struct.part_number }}{% if line.part %} <span class="has-text-grey">{{ line.part.name }}</span>{% endif %}</td>
+              <td class="has-text-right is-family-monospace">{{ line.struct.qty_ordered }}</td>
+              <td class="has-text-right is-family-monospace">
+                {{ line.struct.qty_allocated }}{% if line.unallocated > 0 %}<span class="has-text-grey"> ({{ line.unallocated }} unclaimed)</span>{% endif %}
+              </td>
+              <td class="has-text-right is-family-monospace">
+                {{ line.struct.qty_from_accepted_packages }}
+                {% if line.struct.over_received %}<span class="tag is-small is-warning ml-1">over</span>{% endif %}
+              </td>
+              <td>
+                {% comment %}
+                The attribution rule (D55/D60). A shared session yields a
+                SENTENCE, never a per-demand number — the system must never
+                divide session_arrived among its members, not even as an
+                estimate.
+                {% endcomment %}
+                {% if line.struct.attribution_mode == 'unlinked' %}
+                  <span class="tag is-small is-light" title="Proactive stock — not claimed by any demand.">Unlinked</span>
+                {% elif line.struct.attribution_mode == 'attributable' %}
+                  <span class="tag is-small is-info is-light"
+                        title="{{ line.struct.qty_arrived_for_demand }} of {{ line.struct.qty_ordered }} has arrived for demand #{{ line.struct.demand_id }}.">
+                    Attributable
+                  </span>
+                {% else %}
+                  <span class="tag is-small is-warning is-light"
+                        title="A shared session of {{ line.struct.session_allocated }} units across {{ line.struct.member_count }} demands, of which {{ line.struct.session_arrived }} have arrived. No per-demand figure exists.">
+                    Shared session ({{ line.struct.member_count }})
+                  </span>
+                {% endif %}
+              </td>
+              <td class="has-text-right is-family-monospace">{{ line.unit_cost|default:"—" }}</td>
+              <td class="has-text-right is-family-monospace">{{ line.line_total|floatformat:2|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="has-text-grey has-text-centered py-5">
+              No lines on this order.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% comment %}
+    ---- Composite event card (events kitchen sink §1) — metadata, comments,
+    and the thread's own Files mini-card together. ----
+    {% endcomment %}
+    {% if comments_card %}
+      {% include "events/fragments/event_card.html" with card=comments_card %}
+    {% else %}
+      <div class="card"><div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Activity
+      </div></div>
+      <div class="card-content"><p class="has-text-grey is-size-7">
+        This order has no activity thread. That should not happen — the factory creates one in
+        the same transaction as the order.
+      </p></div></div>
+    {% endif %}
+  </div>
+
+  {# Related items (1/3) #}
+  <div class="column is-4">
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>
+        Part demands
+      </div></div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>Demand</th><th>Line</th>
+            <th class="has-text-right">Allocated</th><th>State</th>
+          </tr></thead>
+          <tbody>
+            {% for entry in part_demands %}
+            <tr>
+              <td>
+                {% if entry.linkable %}
+                  <a class="is-family-monospace" href="{% url 'demand_detail' entry.demand.pk %}">#{{ entry.demand.pk }}</a>
+                {% else %}
+                  <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">#{{ entry.demand.pk }}</span>
+                {% endif %}
+              </td>
+              <td class="is-family-monospace">{{ entry.line_number }} · {{ entry.part_number }}</td>
+              <td class="has-text-right is-family-monospace">{{ entry.link.quantity_allocated }}</td>
+              <td>{{ entry.demand.get_demand_state_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="has-text-grey has-text-centered py-5">
+              No demands linked to this order.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+          Packages
+        </div>
+        <a href="{% url 'basic_package_manager' po.pk %}" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>
+          <span>Manage</span>
+        </a>
+      </div>
+      <div class="card-content">
+        {% for package in packages %}
+        <div class="card depth-2 mb-3">
+          <div class="card-header">
+            <div class="card-header-title is-size-7">
+              <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">local_shipping</span></span>
+              {{ package.package_number }}
+            </div>
+            <div class="is-flex is-align-items-center pr-3" style="gap:0.35rem;">
+              {% include "assets/_status_tag.html" with value=package.status %}
+              {% if package.mixed_po_assignments %}<span class="tag is-small is-warning">Mixed POs</span>{% endif %}
+            </div>
+          </div>
+          <div class="card-content is-flush">
+            <table class="table is-fullwidth is-narrow is-size-7 mb-0">
+              <thead><tr>
+                <th>Part</th><th class="has-text-right">Shipped</th><th class="has-text-right">Accepted</th>
+              </tr></thead>
+              <tbody>
+                {% for pline in package_lines_by_package|dict_get:package.package_id %}
+                <tr>
+                  <td>{{ pline.part.part_number }}{% if pline.purchase_order_line %} <span class="has-text-grey">→ line {{ pline.purchase_order_line.line_number }}</span>{% endif %}</td>
+                  <td class="has-text-right is-family-monospace">{{ pline.quantity }}</td>
+                  <td class="has-text-right is-family-monospace">{{ pline.quantity_accepted|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="has-text-grey has-text-centered py-3">No line items.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7">Nothing has arrived against this order yet.</p>
+        {% endfor %}
+
+        {% if unassigned_package_line_ids %}
+        <article class="message is-warning is-small mb-0"><div class="message-body is-size-7">
+          {{ unassigned_package_line_ids|length }} arrived package line(s) are not pointed at any
+          line of this order. They are surfaced, never dropped — resolve them in the package manager.
+        </div></article>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include "procurement/purchase_orders/_cap_decision_modal.html" %}
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+function poHeroToggleReason() {
+  var select = document.getElementById("po-status-action");
+  var reason = document.getElementById("po-status-reason");
+  if (!select || !reason) return;
+  var opt = select.options[select.selectedIndex];
+  reason.style.display = (opt && opt.dataset.needsReason) ? "" : "none";
+}
+function poHeroSubmit(form) {
+  var select = form.querySelector("#po-status-action");
+  var opt = select.options[select.selectedIndex];
+  var confirmText = opt ? opt.dataset.confirm : "";
+  if (confirmText) {
+    return confirm(confirmText);
+  }
+  return true;
+}
+document.addEventListener("DOMContentLoaded", poHeroToggleReason);
+</script>
+{% endblock %}

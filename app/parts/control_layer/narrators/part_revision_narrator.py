@@ -21,6 +21,13 @@ class PartRevisionNarrator:
         )
 
     @staticmethod
+    def metadata_updated(part: "Part", rev: "PartRevision") -> str:
+        return (
+            f"{part.part_number} rev "
+            f"{rev.major_revision_number}.{rev.minor_revision_number} details updated"
+        )
+
+    @staticmethod
     def status_changed(part: "Part", rev: "PartRevision", old: str, new: str) -> str:
         return (
             f"{part.part_number} rev "

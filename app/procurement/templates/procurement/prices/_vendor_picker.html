@@ -1,0 +1,43 @@
+{% if selected_vendor %}
+<div class="notification is-light py-2 px-3 is-flex is-justify-content-space-between is-align-items-center">
+  <span><strong>{{ selected_vendor.name }}</strong> selected.</span>
+  <button type="button" class="button is-small is-white"
+      hx-get="{% url 'vendor_create' %}?format=htmx-fragment&reset=1&field_name={{ field_name|default:"vendor_id" }}&target_id={{ target_id|default:"vendor-picker-slot" }}"
+      hx-target="#{{ target_id|default:"vendor-picker-slot" }}" hx-swap="innerHTML">
+    Change
+  </button>
+</div>
+<input type="hidden" name="{{ field_name|default:"vendor_id" }}" value="{{ selected_vendor.id }}">
+{% else %}
+<div class="vendor-picker">
+  <label class="label is-small">Vendor</label>
+  <search-dropdown name="{{ field_name|default:"vendor_id" }}" placeholder="search vendors…"
+      hx-get="{% url 'vendor_index' %}?format=htmx-search-results&is_active=1"
+      hx-trigger="keyup changed delay:300ms, search">
+  </search-dropdown>
+  <p class="is-size-7 mt-1"><a href="#" data-action="show-quick-create">Can't find it? Create a new vendor</a></p>
+
+  <div id="vendor-quick-create-fields-{{ target_id|default:"vendor-picker-slot" }}" class="vendor-quick-create-fields card depth-2 mt-2 p-3" {% if not show_create_form %}hidden{% endif %}>
+    {% if create_errors %}
+    <div class="notification is-danger is-light py-2 px-3 is-size-7">
+      {% for e in create_errors %}<p>{{ e }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <label class="label is-small">Name</label>
+    <input class="input is-small" type="text" name="qc_name" value="{{ create_data.name|default:'' }}">
+    <input type="hidden" name="qc_is_active" value="on">
+    <input type="hidden" name="field_name" value="{{ field_name|default:"vendor_id" }}">
+    <input type="hidden" name="target_id" value="{{ target_id|default:"vendor-picker-slot" }}">
+    <div class="buttons mt-3">
+      <button type="button" class="button is-small is-link"
+          hx-post="{% url 'vendor_create' %}?format=htmx-fragment"
+          hx-include="#vendor-quick-create-fields-{{ target_id|default:"vendor-picker-slot" }}"
+          hx-target="#{{ target_id|default:"vendor-picker-slot" }}" hx-swap="innerHTML">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Create &amp; use</span>
+      </button>
+      <button type="button" class="button is-small is-light" data-action="hide-quick-create">Cancel</button>
+    </div>
+  </div>
+</div>
+{% endif %}

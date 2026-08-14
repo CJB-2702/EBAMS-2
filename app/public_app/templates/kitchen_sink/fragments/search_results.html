@@ -1,5 +1,5 @@
 {% for item in items %}
-  <li data-value="{{ item.id }}" class="is-family-monospace">
+  <li data-value="{{ item.id }}" data-label="{{ item.label }}" data-description="{{ item.description }}" class="is-family-monospace">
     {{ item.label }}
     <span class="has-text-grey is-size-7"> — {{ item.description }}</span>
   </li>

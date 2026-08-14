@@ -19,7 +19,7 @@
 
 <div class="body-grid has-rail">
   <div>
-    {# ── Identity ── #}
+    {# Identity #}
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div>
         <a href="{% url 'defined_modification_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit details"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a></div>
       <div class="card-content"><dl class="kv">
@@ -31,7 +31,7 @@
       </dl></div>
     </div>
 
-    {# ── Applicability ── #}
+    {# Applicability #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Applicability</div>
         <a href="{% url 'modification_applicability_edit' modification_id=modification.id %}" class="button is-light is-small" title="Edit applicability"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span></a>
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    {# ── Asset Classes ── #}
+    {# Asset Classes #}
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Asset Classes
         {% if modification.applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
         {% elif modification.applicability.class_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
@@ -60,7 +60,7 @@
       </table></div>
     </div>
 
-    {# ── Asset Models ── #}
+    {# Asset Models #}
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Asset Models
         {% if modification.applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
         {% else %}<span class="tag is-light is-small ml-2 has-text-grey">suggestions only</span>{% endif %}
@@ -77,7 +77,7 @@
     </div>
   </div>
 
-  {# ── Rail: usage stats ── #}
+  {# Rail: usage stats #}
   <div class="body-rail">
     <div class="card"><div class="card-header"><div class="card-header-title">Usage</div></div>
       <div class="card-content">

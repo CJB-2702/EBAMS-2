@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Procurement{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script src="{% static 'web_components/info_popover.js' %}"></script>
+  <style>
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% include "shared/topnav.html" with current_app_group="Procurement" %}
+
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav hx-boost="true" hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Demands</p>
+      <a href="{% url 'demand_index' %}" class="sidebar-link {% block nav_demand_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
+      <a href="{% url 'demand_create' %}" class="sidebar-link {% block nav_demand_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Purchasing</p>
+      <a href="{% url 'purchase_order_index' %}" class="sidebar-link {% block nav_po_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span> Purchase Orders</a>
+      <a href="{% url 'purchase_order_create' %}" class="sidebar-link {% block nav_po_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> New Purchase Order</a>
+      <a href="{% url 'vendor_index' %}" class="sidebar-link {% block nav_vendor_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">storefront</span></span> Vendors</a>
+      <a href="{% url 'price_hub' %}" class="sidebar-link {% block nav_price_hub %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span> Prices</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Receiving</p>
+      <a href="{% url 'package_index' %}" class="sidebar-link {% block nav_package_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Packages</a>
+      <a href="{% url 'package_receive' %}" class="sidebar-link {% block nav_package_receive %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a Shipment</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Parts</a>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="procurement-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'procurement_hub' %}">Procurement</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+<script>
+// The price chip's "Use this" — copies a suggested price into the sibling
+// cost field, stamping unit_cost_source/unit_cost_asserted_at from the
+// observation's own date, never today's (front_end_build_plan.md §7.1).
+document.body.addEventListener("click", function (event) {
+  var button = event.target.closest("[data-price-use]");
+  if (!button) return;
+  var targetId = button.dataset.targetInput;
+  if (!targetId) return;
+  var input = document.getElementById(targetId);
+  if (input) {
+    input.value = button.dataset.priceUse;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  var sourceInput = document.getElementById(targetId + "-source");
+  if (sourceInput) sourceInput.value = button.dataset.priceSource || "";
+  var dateInput = document.getElementById(targetId + "-asserted-at");
+  if (dateInput) dateInput.value = button.dataset.priceDate || "";
+});
+
+// Typing directly into a cost field invalidates whatever stamp "Use this"
+// left there — the stamp describes where THAT number came from, and a
+// manual retype is a different number with no provenance.
+// Re-fetches a price chip for a part chosen client-side (no page reload),
+// e.g. a search-dropdown selection on an "add a line" form. urlTemplate is a
+// url-tag reversal with a placeholder part id, substituted at call time —
+// keeps the URL DRY without needing the part id at template-render time.
+function refreshPriceChip(chipId, urlTemplate, partId, vendorId, handle) {
+  var chip = document.getElementById(chipId);
+  if (!chip) return;
+  if (!partId || !vendorId) { chip.innerHTML = ""; return; }
+  var url = urlTemplate.replace("999999999", partId) +
+    "?format=htmx-chip&vendor_id=" + vendorId + "&handle=" + encodeURIComponent(handle);
+  htmx.ajax("GET", url, { target: "#" + chipId, swap: "innerHTML" });
+}
+
+document.body.addEventListener("input", function (event) {
+  var input = event.target;
+  if (!input.id || input.tagName !== "INPUT") return;
+  var sourceInput = document.getElementById(input.id + "-source");
+  var dateInput = document.getElementById(input.id + "-asserted-at");
+  if (sourceInput || dateInput) {
+    if (sourceInput) sourceInput.value = "";
+    if (dateInput) dateInput.value = "";
+  }
+});
+</script>
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

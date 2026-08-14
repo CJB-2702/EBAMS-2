@@ -1,14 +1,14 @@
 ---
 type: "UX Example"
 title: "HTMX tabs markup"
-description: "Canonical markup for Approach 1 (HTMX tabs) in [../components/tabs.md](../components/tabs.md)."
+description: "Canonical markup for Approach 1 (HTMX tabs) in tabs.md."
 tags: [ux-ui, ux-example, examples]
 context_tier: 3
 ---
 
 # HTMX tabs markup
 
-Canonical markup for Approach 1 (HTMX tabs) in [../components/tabs.md](../components/tabs.md).
+Canonical markup for Approach 1 (HTMX tabs) in [tabs.md](tabs.md).
 
 ```html
 <div class="tabs">

@@ -1,0 +1,171 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}Design Patterns{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link is-active" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">dashboard_customize</span>
+      </div>
+      <div>
+        <h1 class="page-title">Design Patterns</h1>
+        <p class="page-subtitle">Full-page layout and behavior patterns — how multiple components and structural conventions compose into a real screen.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 class="title is-5 mb-4">Page Examples</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;" class="mb-6">
+
+  {# work-portal-example #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span>
+        Work Portal Example
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Full work-item detail page: hero + stat bar, in-page nav rail, main column of anchor-target cards,
+        and a right-hand quick-actions rail. Demonstrates the <code>has-inpage-nav</code> shell layout.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>kitchen_sink/design_patterns/work_portal_example.html</code>
+      </p>
+    </div>
+  </div>
+
+  {# search-page-example #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        Search Page Example
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Search/results layout — filter sidebar, searchbar, and a results table/list. Demonstrates how the
+        searchbar and pagination components combine into a full listing screen.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>kitchen_sink/design_patterns/search_page_example.html</code>
+      </p>
+    </div>
+  </div>
+
+  {# index-example #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span>
+        Index / Portal Hub Example
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        A portal's landing/hub page — card-grid navigation into a sub-application's major sections.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>kitchen_sink/design_patterns/index_example.html</code>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="title is-5 mb-4">Top Bar</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+
+  {# popovers #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">web</span></span>
+        Popovers API
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Zero-JavaScript top-bar portal dropdowns using <code>popover="auto"</code>, the HTML Invoker Commands
+        API (<code>commandfor</code>/<code>command="toggle-popover"</code>), and CSS <code>:has()</code> for the
+        active-tab highlight.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>kitchen_sink/design_patterns/popovers.html</code>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="title is-5 mb-4">List Management</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+
+  {# list-management #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span>
+        List Management
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Four ways to select, assign, or build a list of items — dual listbox, left-heavy assignment card
+        pair, top/bottom selection pair, and a search-to-mini-card combo. Modeled around adding parts and
+        supplier items to a new Part record.
+      </p>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>kitchen_sink/design_patterns/list_management.html</code>
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

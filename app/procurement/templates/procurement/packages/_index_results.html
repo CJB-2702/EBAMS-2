@@ -1,0 +1,13 @@
+{% comment %}
+htmx response body for the packages live search only.
+The hero metrics table lives outside the live-search target, so it is
+refreshed as an out-of-band swap keyed to the hero's own id. Never include
+this file from index.html — `hx-swap-oob` is inert on a full page load, so
+the metrics would render a second time under a duplicate id. Include
+_results_card.html there instead.
+{% endcomment %}
+<div id="package-hero-metrics" hx-swap-oob="true">
+  {% include "procurement/packages/_hero_metrics.html" %}
+</div>
+
+{% include "procurement/packages/_results_card.html" %}

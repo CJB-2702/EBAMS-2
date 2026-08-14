@@ -1,0 +1,225 @@
+{% extends "pub_base.html" %}
+{% load static %}
+{% block title %}Features - EBAMS{% endblock %}
+{% block container_max_width %}100%{% endblock %}
+
+{% block content %}
+<section class="pub-page-hero">
+  <h1>Features &amp; modules</h1>
+  <p>Explore what EBAMS does at a glance, then scroll into each area for screenshots and detail. Use the cards below to jump straight to a module.</p>
+</section>
+
+{# Six jump cards (same pillars as the landing page) #}
+<section class="pub-section">
+  <div class="pub-section-wrap">
+    <h2 class="pub-section-headline">Explore by area</h2>
+    <div class="pub-pillar-grid">
+      <a href="#module-maintenance" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+          <h3>Maintenance Hub</h3>
+          <p>Planned maintenance runs on automated scheduling and clear priorities. Standardize work with reusable procedure templates, and give every role an intuitive portal from assignment through sign-off.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+      <a href="#module-dispatching" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+          <h3>Dispatching</h3>
+          <p>Dispatch sits on the same platform as maintenance and configuration, so coordinators see open work, asset state, and constraints together—supporting confident assignments and outcomes for each mission.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+      <a href="#module-part-demands" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+          <h3>Part Demand Hub</h3>
+          <p>One pipeline ties maintenance and dispatch demand to approval, purchasing, and visibility end to end.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+      <a href="#module-inventory" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">grid_view</span></div>
+          <h3>Inventory Control</h3>
+          <p>Graphical stocking and picking experiences mirror how product actually lives in the storeroom. Follow each line from work-originated demand through purchase, receipt, placement, and issue without losing the trail.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+      <a href="#module-assets" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">layers</span></div>
+          <h3>Asset Lifecycle</h3>
+          <p>Modular detail tables capture what each asset needs—by type, make, model, and your own fields—without rigid one-size-fits-all records.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+      <a href="#module-configuration" class="pub-fcard-link">
+        <div class="pub-fcard">
+          <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+          <h3>Configuration Management</h3>
+          <p>Record how assets are built from components and subassemblies, then attach capabilities and operational limits. Planners and dispatchers draw on that structure when matching equipment to the job.</p>
+          <span class="pub-fcard-action">Jump to <strong>preview</strong> ↓</span>
+        </div>
+      </a>
+    </div>
+    <p class="has-text-centered mt-5"><a href="#module-core" class="pub-spotlight-more">Event timeline &amp; core platform</a> — unified history for every asset.</p>
+  </div>
+</section>
+
+<section class="pub-section pub-spotlights">
+  <div class="pub-section-wrap">
+
+    <article id="module-core" class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image11.png' %}" alt="EBAMS Event Timeline showing chronological asset history" loading="lazy">
+          <figcaption>Event Timeline — Complete asset history in context</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Core</h3>
+          <p class="pub-spotlight-tagline">Event-based record of everything that happens to an asset</p>
+          <p>Major asset events—dispatches, maintenance, part arrivals, installations, and more—roll into a single timeline so leaders read a story, not scattered logs. Comments and attachments sit alongside automated history, with clear separation between human context and system-generated audit entries.</p>
+          <ul>
+            <li>Chronological narrative view for informed decisions</li>
+            <li>Comments, attachments, and human vs. automated differentiation</li>
+            <li>Foundation for users, locations, assets, and shared event infrastructure</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-maintenance" class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image22.png' %}" alt="EBAMS Maintenance work portal showing action items and progress" loading="lazy">
+          <figcaption>Maintenance Work Portal — Technician-focused execution interface</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Maintenance</h3>
+          <p class="pub-spotlight-tagline">Intuitive execution, templates, and automated planning</p>
+          <p>The work experience is built for technicians to record outcomes reliably, including temporary changes and capability or limitation tracking. Planning can run on time, usage, or both. The module spans the work portal, template design, scheduled scans that surface overdue work, and integration with a technical library.</p>
+          <ul>
+            <li>Visual, workflow-oriented work platform with action checklists</li>
+            <li>Automatic maintenance planning with conditional logic (time/usage)</li>
+            <li>Template builder for reusable procedures and proto-action libraries</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-dispatching" class="pub-spotlight">
+      <div class="pub-module-showcase pub-module-showcase--reverse">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image39.png' %}" alt="EBAMS Dispatch detail screen showing assets, personnel, and request information" loading="lazy">
+          <figcaption>Dispatch Detail — Assets, capabilities, personnel, and request workflow</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Dispatching</h3>
+          <p class="pub-spotlight-tagline">Requirements, matching, reservation, and outcomes in one flow</p>
+          <p>The process supports capability profiles for people and equipment, reusable requirement templates, and matching availability to mission needs before reserving assets and issuing equipment. The system ties together capabilities, skills, assets, parts, manifests, and outcomes such as alternatives or rejections through a consolidated dispatch experience.</p>
+          <ul>
+            <li>Build and reuse requirement and capability profiles</li>
+            <li>Match personnel and equipment to mission constraints</li>
+            <li>Reserve, dispatch, and record structured outcomes from a focused UI</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-part-demands" class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image30.png' %}" alt="EBAMS Purchase Order linkage portal connecting PO lines to part demands" loading="lazy">
+          <figcaption>Purchase Order linkage — Connect demand from maintenance to purchasing lines</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Part Demand Hub</h3>
+          <p class="pub-spotlight-tagline">One pipeline ties shop and field demand to purchasing</p>
+          <p>Maintenance and dispatch activities raise part demands that can be matched to purchase order lines, allocated, and tracked through approval and fulfillment. Linkage tools enforce part-level consistency so buyers and maintainers share the same truth from request through receipt.</p>
+          <ul>
+            <li>Link PO lines to maintenance events and part demands by part ID</li>
+            <li>Filter and select demands against open purchase activity</li>
+            <li>Same demand thread for maintenance-driven and dispatch-driven needs</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-inventory" class="pub-spotlight">
+      <div class="pub-module-showcase pub-module-showcase--reverse">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image33.png' %}" alt="EBAMS Move Inventory GUI with graphical warehouse layout" loading="lazy">
+          <figcaption>Move Inventory GUI — Visual warehouse layout and location selector</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Inventory</h3>
+          <p class="pub-spotlight-tagline">From demand to PO, stocking, and issue—with honest status</p>
+          <p>Maintenance or dispatch drives part demand; demands connect to purchase orders; arrivals are received, stocked, and ultimately issued against demand. Visual tools expose how records link, including advance POs tied back to events as they appear. Multi-dimensional status covers approval, purchasing, and physical issue so informal picks can be detected and corrected. Layout imagery can be parsed into locations and bins for graphical stocking and finding parts.</p>
+          <ul>
+            <li>Demand → PO → arrival → stocking → issue loop</li>
+            <li>Portal-style linkage and truth tracking for stock reality</li>
+            <li>Visual warehouse layout with graphical location assignment</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-assets" class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image8.png' %}" alt="EBAMS asset detail view with meters, events, and media" loading="lazy">
+          <figcaption>Asset detail — Meters, recent events, and rich asset-specific data</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Asset Lifecycle</h3>
+          <p class="pub-spotlight-tagline">Modular detail tables for what each asset actually needs</p>
+          <p>Assets carry type, make, model, location, and status while modular detail tables and media capture the fields your operation cares about—without forcing every fleet into the same fixed schema. Recent events and meter readings stay on the same record so lifecycle context is always one click away.</p>
+          <ul>
+            <li>Configurable detail and imagery per asset</li>
+            <li>Event history and capability or configuration changes in context</li>
+            <li>Extensible structure aligned to asset type and model</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <article id="module-configuration" class="pub-spotlight">
+      <div class="pub-module-showcase pub-module-showcase--reverse">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image37.png' %}" alt="EBAMS Capabilities Portal for asset and model capability management" loading="lazy">
+          <figcaption>Capabilities Portal — Definitions, type associations, models, and assets</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Configuration Management</h3>
+          <p class="pub-spotlight-tagline">Structure, capabilities, and limits for planning and dispatch</p>
+          <p>Configuration templates describe expected build and child relationships; capabilities inherit from definitions through asset type and make/model down to individual assets. That hierarchy supports dispatch and maintenance decisions with meaningful capability data—not an unstructured list of every possible attribute.</p>
+          <ul>
+            <li>Templates for configuration shape and recursive child expectations</li>
+            <li>Capability definitions, type associations, and model-level assignments</li>
+            <li>Event-tracked changes with audit-friendly history</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="pub-cta-banner">
+  <div class="pub-section-wrap" style="text-align:center;">
+    <h2>See EBAMS in action</h2>
+    <p style="margin: 0 auto 1.25rem;">Ready to streamline maintenance, inventory, and dispatch around a single asset story?</p>
+    <div class="pub-cta-actions" style="justify-content:center;">
+      <a href="{% url 'public_get_started' %}" class="button is-primary is-medium">
+        <span class="icon"><span class="material-icons" aria-hidden="true">rocket_launch</span></span>
+        <span>Get started</span>
+      </a>
+      <button type="button" class="button is-light is-medium" commandfor="public-login-modal" command="show-modal">
+        <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+        <span>Login</span>
+      </button>
+    </div>
+  </div>
+</section>
+{% endblock %}

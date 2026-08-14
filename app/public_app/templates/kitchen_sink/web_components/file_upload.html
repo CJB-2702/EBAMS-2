@@ -1,0 +1,128 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}file-upload{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/file_upload.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">upload_file</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;file-upload&gt;</h1>
+        <p class="page-subtitle">Bulma-styled file field. Renders a real &lt;input type="file"&gt; into the light DOM so it submits natively with the enclosing form.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+
+    {# Live Demo #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Live Demo</div>
+      </div>
+      <div class="card-content">
+        <p class="is-size-7 has-text-grey mb-3">
+          This demo form does not submit anywhere — it only shows the component's selection UI. No files leave your browser.
+        </p>
+        <form onsubmit="return false;" enctype="multipart/form-data">
+          <div class="field">
+            <label class="label">Single file</label>
+            <file-upload name="demo_file" label="Choose a file…"></file-upload>
+          </div>
+          <div class="field">
+            <label class="label">Multiple files, fullwidth</label>
+            <file-upload name="demo_files" label="Choose files…" multiple fullwidth empty-text="No files selected"></file-upload>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# API & Documentation #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">API & Properties</div>
+      </div>
+      <div class="card-content content is-size-7">
+        <h4 class="title is-6">Deliberate anti-pattern</h4>
+        <p>
+          Same rationale as <code>&lt;search-dropdown&gt;</code>: a file field's chrome and interaction are uniform and
+          simple enough that reproducing Bulma's <code>.file.has-name</code> markup inside the component is easier than
+          any alternative. The real <code>&lt;input type="file"&gt;</code> lives in the light DOM (no shadow root), so it
+          participates natively in the enclosing <code>&lt;form&gt;</code> and submits with
+          <code>request.FILES.getlist(name)</code> exactly like a hand-written field.
+        </p>
+        <h4 class="title is-6">Attributes</h4>
+        <ul>
+          <li><code>name</code> — form field name (default <code>file</code>).</li>
+          <li><code>accept</code> — passed through to the native input.</li>
+          <li><code>multiple</code> — allow multiple file selection.</li>
+          <li><code>label</code> — button text (default "Choose file…").</li>
+          <li><code>size</code> — Bulma size class, e.g. <code>is-small</code> (default), <code>is-medium</code>, <code>is-large</code>.</li>
+          <li><code>fullwidth</code> — the choose CTA spans the whole card width.</li>
+          <li><code>empty-text</code> — text shown when no file is selected.</li>
+        </ul>
+        <h4 class="title is-6">Guardrail</h4>
+        <p>Logs a console warning if the enclosing form is missing <code>enctype="multipart/form-data"</code> — otherwise files silently never reach the server.</p>
+      </div>
+    </div>
+
+    {# Code Snippet #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Template Code</div>
+      </div>
+      <div class="card-content">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;form method="post" enctype="multipart/form-data"&gt;
+  {% templatetag openblock %} csrf_token {% templatetag closeblock %}
+  &lt;file-upload name="attachments" label="Attach files…" multiple&gt;&lt;/file-upload&gt;
+&lt;/form&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

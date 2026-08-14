@@ -165,6 +165,11 @@ class SearchDropdown extends HTMLElement {
       this.value = raw;
       this.input.value = li.innerText.trim();
       this.removeAttribute("open");
+      // Form-associated custom elements don't fire a native "change" on their
+      // own — internals.setFormValue() is silent. Dispatch one explicitly
+      // (composed so it crosses the shadow boundary) so ancestor forms using
+      // hx-trigger="change" or a plain change listener see the pick.
+      this.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
     });
 
     this.input.addEventListener("focus", () => this.setAttribute("open", ""));

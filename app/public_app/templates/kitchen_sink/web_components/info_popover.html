@@ -1,0 +1,137 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}info-popover{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/info_popover.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">help_outline</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;info-popover&gt;</h1>
+        <p class="page-subtitle">Hover/click info bubble positioned relative to its trigger, detached to &lt;body&gt; so it is never clipped by an ancestor's overflow.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+
+    {# Live Demo #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Live Demo</div>
+      </div>
+      <div class="card-content" style="overflow: hidden;">
+        <p class="is-size-7 mb-4">
+          Icon trigger, hover mode
+          <info-popover direction="top" hover="true">
+            <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">help_outline</span></span></detail>
+            <summary><p>Explanatory text shown on hover or keyboard focus.</p></summary>
+          </info-popover>
+        </p>
+        <p class="is-size-7 mb-4">
+          Text trigger, click mode
+          <info-popover direction="bottom" hover="false">
+            <detail>what does this mean?</detail>
+            <summary><p>Click mode stays open until you click outside the popover or press <strong>Escape</strong>.</p></summary>
+          </info-popover>
+        </p>
+        <div style="overflow: hidden; border: 1px dashed var(--bulma-border); padding: 1.5rem; height: 4rem; display: flex; align-items: center;">
+          <p class="is-size-7">
+            Inside an overflow:hidden box
+            <info-popover direction="right">
+              <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">help_outline</span></span></detail>
+              <summary><p>The content box is appended to <code>document.body</code> and positioned with <code>getBoundingClientRect()</code>, so it escapes this box's clipping.</p></summary>
+            </info-popover>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {# API & Documentation #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">API & Properties</div>
+      </div>
+      <div class="card-content content is-size-7">
+        <h4 class="title is-6">Markup</h4>
+        <p>
+          Uses <code>&lt;detail&gt;</code>/<code>&lt;summary&gt;</code> child tags — deliberately not the native
+          <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code> elements, chosen only for the semantic naming, not
+          for accordion behavior.
+        </p>
+        <ul>
+          <li><code>&lt;detail&gt;</code> — the trigger (icon or short text).</li>
+          <li><code>&lt;summary&gt;</code> — the popover body content.</li>
+        </ul>
+        <h4 class="title is-6">Attributes</h4>
+        <ul>
+          <li><code>direction</code> — <code>top</code> (default) | <code>bottom</code> | <code>left</code> | <code>right</code>. Flips automatically if it would overflow the viewport.</li>
+          <li><code>hover</code> — <code>"true"</code> (default) shows on hover/focus; <code>"false"</code> shows on click and closes on outside click / Escape.</li>
+        </ul>
+        <h4 class="title is-6">Accessibility</h4>
+        <p>Trigger is a real <code>&lt;button&gt;</code> (focusable, keyboard-activatable). Content has <code>role="tooltip"</code>/<code>"dialog"</code> as appropriate, linked via <code>aria-describedby</code>. Focus shows the popover in hover mode too.</p>
+      </div>
+    </div>
+
+    {# Code Snippet #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Template Code</div>
+      </div>
+      <div class="card-content">
+        <pre class="ks-code" style="display:block; overflow-x:auto;"><code>&lt;info-popover direction="top" hover="true"&gt;
+  &lt;detail&gt;&lt;span class="icon has-text-info"&gt;&lt;span class="material-icons"&gt;help_outline&lt;/span&gt;&lt;/span&gt;&lt;/detail&gt;
+  &lt;summary&gt;
+    &lt;p&gt;Explanatory text…&lt;/p&gt;
+  &lt;/summary&gt;
+&lt;/info-popover&gt;</code></pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

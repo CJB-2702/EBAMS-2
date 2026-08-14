@@ -1,14 +1,27 @@
 ---
-type: "UX Example"
-title: "`<search-dropdown>` — markup and component source"
-description: "Reference markup and the full web component source for the picker described in [../components/searchbars.md](../components/searchbars.md)."
-tags: [ux-ui, ux-example, examples]
-context_tier: 3
+type: "UX Guide"
+title: "Search dropdown component guide"
+description: "The <search-dropdown> web component — a form-associated custom element that pairs an input with an HTMX-loaded dropdown of picked results. Source: app/static/web_components/search_dropdown.js."
+tags: [ux-ui, ux-guide]
+context_tier: 2
 ---
 
-# `<search-dropdown>` — markup and component source
+# Search dropdown component guide
 
-Reference markup and the full web component source for the picker described in [../components/searchbars.md](../components/searchbars.md).
+`<search-dropdown>` is a reusable, **form-associated** custom element that pairs an input with a dropdown of `<li>` results. Backed by an open shadow root; results are projected into a default `<slot>`. Source: `app/static/web_components/search_dropdown.js`.
+
+**Use this when the search produces a single picked value** that becomes a form field (e.g. picking a permission, a user, an asset). For the decision between this component and a plain HTMX list filter, see [../search/searchbars.md](../search/searchbars.md).
+
+---
+
+## Why a custom element
+
+- **Form participation** via `ElementInternals.setFormValue()` — the picked value submits with the surrounding `<form>` exactly like a native input.
+- **HTMX attribute pass-through** — `hx-get`, `hx-target`, `hx-trigger`, etc. on the host element are forwarded to the internal `<input>`.
+- **Shadow-DOM-correct `hx-target`** — defaults to `global #<host-id>` so swaps hit the host element in the document, not a stale node inside the shadow tree.
+- **No JS bindings on consumer pages** — register the script once, drop the tag, done.
+
+---
 
 ## Page-level script registration
 
@@ -59,30 +72,28 @@ The corresponding view returns **only `<li>` elements** (no `<ul>` wrapper), eac
 </form>
 ```
 
-## Plain HTMX list filter
+---
 
-```html
-<div class="field">
-  <p class="control has-icons-left">
-    <input class="input is-family-monospace"
-           type="search" name="q"
-           hx-get="{% url 'asset_list' %}?format=htmx-search-results"
-           hx-trigger="keyup changed delay:350ms, search"
-           hx-target="#asset-list-container"
-           hx-swap="innerHTML"
-           hx-push-url="true"
-           hx-indicator=".asset-list-skeleton"
-           placeholder="search assets...">
-    <span class="icon is-small is-left">
-      <i class="fa-solid fa-magnifying-glass"></i>
-    </span>
-  </p>
-</div>
+## Server contract — what the endpoint must return
 
-<div id="asset-list-container">
-  {% include "assets/_asset_list_rows.html" %}
-</div>
-```
+- **URL:** the canonical collection URL for the resource (e.g. `…/permissions`, `…/users`).
+- **Query:** `format=htmx-search-results`, `q=<typed text>`, plus any scope params (`group_id=…`, `org_id=…`).
+- **Response body:** **only `<li>` elements** — no surrounding `<ul>`, `<div>`, or template wrapper. The component swaps `innerHTML` into its slot.
+- **Each `<li>`** that should be selectable has a `data-value="<id>"`. Disabled / informational rows omit `data-value` (or set `aria-disabled="true"` / class `is-disabled`).
+- **Pagination:** include a sentinel `<li>` (e.g. *"Showing 25 of 412 — refine your search…"*) when the result is truncated.
+
+---
+
+## Rules
+
+- **Do not nest** a `<search-dropdown>` inside another `<search-dropdown>`.
+- **One per form field.** Two related records → two separate elements with distinct `name=` attributes.
+- **Do not** reach into the shadow DOM from page CSS. Style hooks: `::slotted(li)`, `::slotted(li.is-disabled)`, `::slotted(li.is-family-monospace)`. New variants are added to the component, not to a stylesheet.
+- **Always set `name=`** on the host element if the picked value should submit with the form.
+- **The `q` parameter is fixed.** Internal input is `name="q"` — endpoint must read `q`, not `query` or `term`.
+- **Keep the `<li>` markup flat.** Nested interactive children steal click events from the component's selection handler.
+
+---
 
 ## Component source (excerpt)
 
@@ -96,3 +107,12 @@ The full component lives at `app/static/web_components/search_dropdown.js`. Key 
 - Click handler reads `data-value` from the clicked `<li>` and stores it via `setFormValue`.
 
 Treat the file as the authoritative source; this excerpt is a behaviour summary, not a re-implementation.
+
+---
+
+## Common pitfalls
+
+- **Empty results show no feedback.** Always render a "No matches" `<li class="is-disabled">`.
+- **`hx-target` set to a stale element.** Don't override unless you know the shadow-DOM caveat above.
+- **Picking does not update the form.** Forgot `data-value` on the `<li>`, or forgot `name=` on the host.
+- **Results wrapped in a `<ul>` or `<div>`.** The component provides the `<ul>`; wrapping breaks slot projection.

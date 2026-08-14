@@ -1,0 +1,8 @@
+{% for p in parts %}
+<li data-value="{{ p.id }}" class="is-family-monospace">
+  {{ p.part_number }}
+  <span class="has-text-grey is-size-7"> — {{ p.name }}</span>
+</li>
+{% empty %}
+<li class="is-disabled">No matching parts.</li>
+{% endfor %}

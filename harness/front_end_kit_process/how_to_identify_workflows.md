@@ -58,12 +58,12 @@ Apply the same rule. If creating an entity is a wizard, editing it is usually th
 
 ## What a wizard looks like here
 
-The form is already settled by [../UX_UI/components/multi_step_flows.md](../UX_UI/components/multi_step_flows.md) — **apply it, do not redesign it**:
+The form is already settled by [../UX_UI/design_patterns/multi_step_flows.md](../UX_UI/design_patterns/multi_step_flows.md) — **apply it, do not redesign it**:
 
 - **One route.** `…/create`, vertical scroll, every card on the same document. Not `/create/step-1`.
 - **Progressive enablement.** Later cards visible but disabled until earlier ones validate — server-side, not JavaScript-only.
 - **Session-backed draft** under a namespaced `request.session` key. Nothing commits until final submit.
-- **Assignment relations get in-page cards** — left-heavy assignment card pair or dual listbox. **Never a modal.** See [../UX_UI/components/modals.md](../UX_UI/components/modals.md).
+- **Assignment relations get in-page cards** — left-heavy assignment card pair or dual listbox. **Never a modal.** See [../UX_UI/design_patterns/modals.md](../UX_UI/design_patterns/modals.md).
 - **Card order follows dependency:** identity fields → relations that depend on them → attachments and notes.
 
 Only two exceptions justify splitting across URLs: the user is expected to bookmark a deep step, or per-step server work is genuinely heavy. Document the exception if you claim one.

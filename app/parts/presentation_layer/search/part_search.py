@@ -1,27 +1,43 @@
-"""PartSearch — the seam Phase 4's lookup page calls. Wraps AliasResolver plus
-direct part_number/name matching. Provisional minimal ranking (OQ7): exact
-alias > prefix alias > name contains."""
+"""search_parts — the parts hub's filter bar. Five independent, narrowing
+criteria: part_number (silently also matches aliases — internal/legacy/NSN/
+vendor MPN — so a technician typing a vendor part number still lands on the
+right Part), name, description, manufacturer, and revision_name."""
 
 from __future__ import annotations
 
-from app.parts.control_layer.domain_structs.part_structs.part_struct import PartStruct
-from app.parts.models import Part
-from app.parts.presentation_layer.search.alias_resolver import AliasResolver
+from django.db.models import Q, QuerySet
+
+from app.parts.models import Alias, Part
 
 
-class PartSearch:
-    @staticmethod
-    def query(term: str) -> list[PartStruct]:
-        term = (term or "").strip()
-        if not term:
-            return []
+def search_parts(
+    *,
+    part_number: str = "",
+    name: str = "",
+    description: str = "",
+    manufacturer: str = "",
+    revision_name: str = "",
+) -> QuerySet[Part]:
+    qs = Part.objects.prefetch_related("revisions").order_by("part_number")
 
-        alias_hits = AliasResolver.resolve(term)
-        seen_part_ids = {s.part_id for s in alias_hits}
+    part_number = (part_number or "").strip()
+    if part_number:
+        alias_part_ids = Alias.objects.filter(
+            normalized_value__icontains=part_number.casefold()
+        ).values_list("part_id", flat=True)
+        qs = qs.filter(Q(part_number__icontains=part_number) | Q(id__in=alias_part_ids))
+    if name:
+        qs = qs.filter(name__icontains=name)
+    if description:
+        qs = qs.filter(description__icontains=description)
+    if manufacturer:
+        qs = qs.filter(supplier_items__part_manufacturer__name__icontains=manufacturer)
+    if revision_name:
+        qs = qs.filter(
+            Q(revisions__major_revision_name__icontains=revision_name)
+            | Q(revisions__minor_revision_name__icontains=revision_name)
+        )
+    if manufacturer or revision_name:
+        qs = qs.distinct()
 
-        direct = Part.objects.filter(name__icontains=term).exclude(
-            id__in=seen_part_ids
-        )[:25]
-        direct_structs = [PartStruct.from_instance(p) for p in direct]
-
-        return alias_hits + direct_structs
+    return qs

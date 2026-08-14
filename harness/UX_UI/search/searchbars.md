@@ -1,7 +1,7 @@
 ---
 type: "UX Guide"
 title: "Search bars"
-description: "For verbatim markup and the full <search-dropdown> web component source see [../Examples/search_dropdown_component.md](../Examples/search_dropdown_component.md)."
+description: "Two distinct search patterns — the <search-dropdown> picker and a plain HTMX list filter — and which to use when."
 tags: [ux-ui, ux-guide]
 context_tier: 2
 ---
@@ -10,10 +10,10 @@ context_tier: 2
 
 Two distinct search patterns live in this app, and they are **not interchangeable**:
 
-1. **`<search-dropdown>`** — a form-associated custom element that pairs an input with an HTMX-loaded dropdown of `<li>` results. **Use this when the search produces a single picked value** that becomes a form field (e.g. picking a permission, a user, an asset).
-2. **Plain HTMX search input** — a vanilla `<input>` with `hx-get` that swaps a results region. **Use this when the search drives a list view** (e.g. filtering a table of assets, the *Available* column of a [dual listbox](dual_listbox.md)).
+1. **`<search-dropdown>`** — a form-associated custom element that pairs an input with an HTMX-loaded dropdown of `<li>` results. **Use this when the search produces a single picked value** that becomes a form field (e.g. picking a permission, a user, an asset). Full component guide: [../components/search_dropdown.md](../components/search_dropdown.md).
+2. **Plain HTMX search input** — a vanilla `<input>` with `hx-get` that swaps a results region. **Use this when the search drives a list view** (e.g. filtering a table of assets, the *Available* column of a [dual listbox](../components/dual_listbox.md)).
 
-For verbatim markup and the full `<search-dropdown>` web component source see [../Examples/search_dropdown_component.md](../Examples/search_dropdown_component.md).
+For the full range of search-and-select/assignment patterns built on top of these two primitives (dual listbox, left-heavy assignment card pair, mini-card and wide-card combos, etc.), see [list_management_patterns.md](list_management_patterns.md).
 
 ---
 
@@ -24,52 +24,38 @@ For verbatim markup and the full `<search-dropdown>` web component source see [.
 | Pick **one** related record to attach to a form field (FK, single tag, owner) | `<search-dropdown>` |
 | Pick **one of many** for an inline edit (replace a row's owner without leaving the row) | `<search-dropdown>` |
 | Filter a **list view** (assets table, events feed) | Plain HTMX input → `?format=htmx-search-results` |
-| Filter the *Available* column of a **dual listbox** | Plain HTMX input scoped to that column ([dual_listbox.md](dual_listbox.md)) |
+| Filter the *Available* column of a **dual listbox** | Plain HTMX input scoped to that column ([dual_listbox.md](../components/dual_listbox.md)) |
 | Type-ahead with **>8 options** for a `<select>` field | `<search-dropdown>` |
 | Global "search the whole app" bar in the header | Plain HTMX input, results target a portal-level container |
 
 ---
 
-## 1. `<search-dropdown>` — picking a single value
-
-A reusable, **form-associated** custom element that pairs an input with a dropdown of `<li>` results. Backed by an open shadow root; results are projected into a default `<slot>`. Source: `app/static/web_components/search_dropdown.js`.
-
-### Why a custom element
-
-- **Form participation** via `ElementInternals.setFormValue()` — the picked value submits with the surrounding `<form>` exactly like a native input.
-- **HTMX attribute pass-through** — `hx-get`, `hx-target`, `hx-trigger`, etc. on the host element are forwarded to the internal `<input>`.
-- **Shadow-DOM-correct `hx-target`** — defaults to `global #<host-id>` so swaps hit the host element in the document, not a stale node inside the shadow tree.
-- **No JS bindings on consumer pages** — register the script once, drop the tag, done.
-
-### Server contract — what the endpoint must return
-
-- **URL:** the canonical collection URL for the resource (e.g. `…/permissions`, `…/users`).
-- **Query:** `format=htmx-search-results`, `q=<typed text>`, plus any scope params (`group_id=…`, `org_id=…`).
-- **Response body:** **only `<li>` elements** — no surrounding `<ul>`, `<div>`, or template wrapper. The component swaps `innerHTML` into its slot.
-- **Each `<li>`** that should be selectable has a `data-value="<id>"`. Disabled / informational rows omit `data-value` (or set `aria-disabled="true"` / class `is-disabled`).
-- **Pagination:** include a sentinel `<li>` (e.g. *"Showing 25 of 412 — refine your search…"*) when the result is truncated.
-
-### Rules
-
-- **Do not nest** a `<search-dropdown>` inside another `<search-dropdown>`.
-- **One per form field.** Two related records → two separate elements with distinct `name=` attributes.
-- **Do not** reach into the shadow DOM from page CSS. Style hooks: `::slotted(li)`, `::slotted(li.is-disabled)`, `::slotted(li.is-family-monospace)`. New variants are added to the component, not to a stylesheet.
-- **Always set `name=`** on the host element if the picked value should submit with the form.
-- **The `q` parameter is fixed.** Internal input is `name="q"` — endpoint must read `q`, not `query` or `term`.
-- **Keep the `<li>` markup flat.** Nested interactive children steal click events from the component's selection handler.
-
-### Common pitfalls
-
-- **Empty results show no feedback.** Always render a "No matches" `<li class="is-disabled">`.
-- **`hx-target` set to a stale element.** Don't override unless you know the shadow-DOM caveat above.
-- **Picking does not update the form.** Forgot `data-value` on the `<li>`, or forgot `name=` on the host.
-- **Results wrapped in a `<ul>` or `<div>`.** The component provides the `<ul>`; wrapping breaks slot projection.
-
----
-
-## 2. Plain HTMX search input — filtering a list
+## Plain HTMX search input — filtering a list
 
 For list-filtering use cases, use a plain Bulma input plus `hx-get` to the canonical list URL with `format=htmx-search-results`.
+
+```html
+<div class="field">
+  <p class="control has-icons-left">
+    <input class="input is-family-monospace"
+           type="search" name="q"
+           hx-get="{% url 'asset_list' %}?format=htmx-search-results"
+           hx-trigger="keyup changed delay:350ms, search"
+           hx-target="#asset-list-container"
+           hx-swap="innerHTML"
+           hx-push-url="true"
+           hx-indicator=".asset-list-skeleton"
+           placeholder="search assets...">
+    <span class="icon is-small is-left">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </span>
+  </p>
+</div>
+
+<div id="asset-list-container">
+  {% include "assets/_asset_list_rows.html" %}
+</div>
+```
 
 ### Rules
 
@@ -88,3 +74,23 @@ For list-filtering use cases, use a plain Bulma input plus `hx-get` to the canon
 - **Two `format=` values in one URL.** The server should reject this (see [../format_contract.md](../format_contract.md)).
 - **Server returns a fully-rendered page** to a search request. Search responses are fragments.
 - **No `hx-push-url`** on a list filter — back button is broken, bookmarks don't work.
+
+---
+
+## Query-parameter contract (Tier 1 rule — see [../../UX_UI.md](../../UX_UI.md))
+
+`hx-push-url` covers *writing* state to the URL as the user interacts. The other half — **reading**
+that same state back out on a plain GET** — is just as required and easier to skip:
+
+- Every filter field's current value comes from `request.GET`, not only from client-side state.
+- Every "select an item to drive a detail panel" interaction (a master-detail pane, a clickable
+  row/card that populates a side panel) accepts the selected id as a query parameter (e.g.
+  `?line_id=<id>`) and renders already-selected on load — not only after a click.
+- A link from another page that "deep-links" into a specific selection (e.g. a demand's edit page
+  linking out to a PO's linkage tool with that demand's PO line pre-chosen) passes that selection as
+  a query parameter the target page reads on load, rather than relying on the user to re-find and
+  re-click it.
+
+This is what makes such a page bookmarkable and reload-safe, and it is the direct fix for the
+common legacy-app gap of a client-only JS selection with no URL sync — reloading such a page loses
+the selection entirely.

@@ -116,19 +116,19 @@
 {% endblock %}
 
 {% block content %}
-  <!-- Small breadcrumb / back link row -->
+  {# Small breadcrumb / back link row #}
   <div style="display:flex; justify-content:flex-end; margin-bottom:0.5rem;">
     <a href="{% url 'kitchen_sink' %}" class="button is-small is-light">← Kitchen Sink</a>
   </div>
 
-  <!-- Hero -->
+  {# Hero #}
   <div class="portal-hub-hero">
     <div class="hero-icon">⚒</div>
     <h1>Maintenance Portal</h1>
     <p>Choose your portal based on your role</p>
   </div>
 
-  <!-- Primary action card (full width inside container) -->
+  {# Primary action card (full width inside container) #}
   <div class="body-grid full-width" style="margin-bottom: 1.25rem;">
     <div class="portal-primary-card">
       <div class="icon-big">📅</div>
@@ -138,7 +138,7 @@
     </div>
   </div>
 
-  <!-- Role cards (3 across) -->
+  {# Role cards (3 across) #}
   <div class="portal-role-grid" style="margin-bottom: 1.25rem;">
     <div class="portal-role-card">
       <div class="role-icon">👷</div>
@@ -160,7 +160,7 @@
     </div>
   </div>
 
-  <!-- Overview stats (full width) -->
+  {# Overview stats (full width) #}
   <div class="card">
     <div class="card-header"><div class="card-header-title"><span class="icon">📈</span>Maintenance Overview</div></div>
     <div class="card-content is-flush">

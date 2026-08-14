@@ -56,7 +56,7 @@
 <div class="body-grid full-width">
   <form method="post" id="config-form">{% csrf_token %}
 
-    <!-- Base Template -->
+    {# Base Template #}
     <div class="card">
       <div class="card-header"><div class="card-header-title">Base Template</div></div>
       <div class="card-content">
@@ -103,10 +103,10 @@
       </footer>
     </div>
 
-    <!-- Actual Modifications — two cards in a row -->
+    {# Actual Modifications — two cards in a row #}
     <div class="columns is-variable is-4" id="mod-assignment-row">
 
-      <!-- LEFT card 2/3 — available modifications -->
+      {# LEFT card 2/3 — available modifications #}
       <div class="column is-8">
         <div class="card" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
           <div class="card-header">
@@ -117,15 +117,15 @@
             <span class="is-size-7 has-text-grey"><span id="avail-count"></span> shown</span>
           </div>
 
-          <!-- Filter + search bar -->
+          {# Filter + search bar #}
           <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
             <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
-              <!-- Text search -->
+              {# Text search #}
               <div class="control has-icons-left" style="flex:1;min-width:140px">
                 <input type="search" id="search-mods" class="input is-small" placeholder="Search name or model…" autocomplete="off">
                 <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
               </div>
-              <!-- Class dropdown -->
+              {# Class dropdown #}
               <div class="select is-small">
                 <select id="filter-class" aria-label="Filter by asset class">
                   <option value="">All Classes</option>
@@ -134,7 +134,7 @@
                   {% endfor %}
                 </select>
               </div>
-              <!-- Model dropdown -->
+              {# Model dropdown #}
               <div class="select is-small">
                 <select id="filter-model" aria-label="Filter by model">
                   <option value="">All Models</option>
@@ -143,7 +143,7 @@
                   {% endfor %}
                 </select>
               </div>
-              <!-- Incompatible toggle -->
+              {# Incompatible toggle #}
               <button type="button" id="btn-show-incompat" class="button is-small is-light" title="Show modifications that cannot be applied to this asset">
                 <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">visibility_off</span></span>
                 <span class="btn-incompat-label">Incompatible</span>
@@ -151,7 +151,7 @@
             </div>
           </div>
 
-          <!-- Scrollable table container -->
+          {# Scrollable table container #}
           <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
             <table id="avail-table" class="table is-fullwidth is-hoverable" style="margin:0">
               <thead>
@@ -216,13 +216,13 @@
             {% if not modifications_available %}
             <p class="is-size-7 has-text-grey p-3">No modifications available for this asset.</p>
             {% endif %}
-            <!-- Infinite scroll sentinel -->
+            {# Infinite scroll sentinel #}
             <div id="scroll-sentinel" class="has-text-centered py-3" hidden>
               <span class="is-size-7 has-text-grey">Loading more…</span>
             </div>
           </div>
 
-          <!-- Left card footer -->
+          {# Left card footer #}
           <footer class="card-footer custom-card-footer">
             <div class="card-footer-secondaries pl-0 pr-3">
               <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
@@ -235,7 +235,7 @@
         </div>
       </div>
 
-      <!-- RIGHT card 1/3 — assigned modifications -->
+      {# RIGHT card 1/3 — assigned modifications #}
       <div class="column">
         <div class="card" style="display:flex;flex-direction:column;height:580px;overflow:hidden">
           <div class="card-header">
@@ -246,7 +246,7 @@
             <span class="is-size-7 has-text-grey"><span id="assigned-count">{{ modifications_assigned|length }}</span> applied</span>
           </div>
 
-          <!-- Assigned list -->
+          {# Assigned list #}
           <div style="flex:1;overflow-y:auto;min-height:0">
             <table class="table is-fullwidth is-hoverable" style="margin:0">
               <tbody id="assigned-body">
@@ -282,7 +282,7 @@
             </table>
           </div>
 
-          <!-- Right card footer -->
+          {# Right card footer #}
           <footer class="card-footer" style="padding:0">
             <button type="button" id="btn-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
               <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>

@@ -1,0 +1,52 @@
+{% comment %}
+Shared behavior for the left-heavy assignment component pair. Include ONCE
+per page (not once per line) — scoped generically with
+document.querySelectorAll, so one script block drives every line's pair.
+
+The client<->server swap and the warning dialog are both declarative (htmx +
+native <dialog> command/commandfor) and need no JS at all. This only drives
+the client-side component's own local filtering, since with JS off every row
+is simply visible, which is still a working page.
+{% endcomment %}
+<script>
+(function () {
+  'use strict';
+
+  function applyClientFilters(card) {
+    var text = (card.querySelector('.lh-filter-text').value || '').trim().toLowerCase();
+    var id = (card.querySelector('.lh-filter-id').value || '').trim();
+    var status = card.querySelector('.lh-filter-status').value;
+    var from = card.querySelector('.lh-filter-created-from').value;
+    var to = card.querySelector('.lh-filter-created-to').value;
+    var shown = 0;
+    card.querySelectorAll('.lh-pool-body .pool-row').forEach(function (row) {
+      var visible = true;
+      if (text && row.dataset.search.indexOf(text) === -1) visible = false;
+      if (id && row.dataset.demandId !== id) visible = false;
+      if (status && row.dataset.demandState !== status) visible = false;
+      if (from && row.dataset.created < from) visible = false;
+      if (to && row.dataset.created > to) visible = false;
+      row.hidden = !visible;
+      if (visible) shown += 1;
+    });
+    var count = card.querySelector('.lh-client-count');
+    if (count) count.textContent = shown + ' available';
+  }
+
+  function wireClientFilters(card) {
+    ['lh-filter-text', 'lh-filter-id', 'lh-filter-status', 'lh-filter-created-from', 'lh-filter-created-to']
+      .forEach(function (cls) {
+        var el = card.querySelector('.' + cls);
+        if (el) el.addEventListener('input', function () { applyClientFilters(card); });
+      });
+  }
+
+  document.querySelectorAll('.lh-client').forEach(wireClientFilters);
+
+  // The client-side component is swapped back in by the server card's "Back"
+  // button, so newly-arrived copies need their filter listeners wired too.
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    evt.detail.target.querySelectorAll('.lh-client').forEach(wireClientFilters);
+  });
+})();
+</script>

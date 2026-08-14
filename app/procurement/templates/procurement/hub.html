@@ -1,0 +1,98 @@
+{% extends "procurement/base.html" %}
+{% block title %}Procurement{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Hub</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
+  <div class="page-header-icon" style="margin: 0 auto 0.5rem;"><span class="material-icons" aria-hidden="true" style="font-size: 2.5rem;">shopping_cart</span></div>
+  <h1 class="page-title">Procurement</h1>
+  <p class="page-subtitle">Raise demands, buy against them, and track what the vendor sent back.</p>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Create a demand</p>
+      <p class="has-text-grey is-size-7">Raise a need for a part.</p>
+      <a href="{% url 'demand_create' %}" class="button is-small is-link mt-2">Create a demand</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Review demands</p>
+      <p class="has-text-grey is-size-7">Open demands awaiting a decision.</p>
+      <a href="{% url 'demand_index' %}?demand_state=required" class="button is-small is-link mt-2">Review demands</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> Build a purchase order</p>
+      <p class="has-text-grey is-size-7">Buy against open demands, or stock proactively.</p>
+      <a href="{% url 'purchase_order_create' %}" class="button is-small is-link mt-2">Build a purchase order</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span> Purchase orders</p>
+      <p class="has-text-grey is-size-7">Every order, drafted or placed.</p>
+      <a href="{% url 'purchase_order_index' %}" class="button is-small is-link mt-2">Purchase orders</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Track packages</p>
+      <p class="has-text-grey is-size-7">Everything in transit or delivered.</p>
+      <a href="{% url 'package_index' %}" class="button is-small is-link mt-2">Track packages</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a shipment</p>
+      <p class="has-text-grey is-size-7">Log what arrived, even with no purchase order on file yet.</p>
+      <a href="{% url 'package_receive' %}" class="button is-small is-link mt-2">Receive a shipment</a>
+    </div>
+  </div>
+  {% if can_buy_prices %}
+  <div class="card">
+    <div class="card-content">
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span> Prices</p>
+      <p class="has-text-grey is-size-7">Record what parts actually cost, and see what has no price on record.</p>
+      <a href="{% url 'price_hub' %}" class="button is-small is-link mt-2">Prices</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="stat-grid mt-5">
+  <div class="stat-tile">
+    <p class="stat-value">{{ open_demands }}</p>
+    <p class="stat-label">Open demands</p>
+  </div>
+  <div class="stat-tile">
+    <p class="stat-value">{{ demands_pending_approval }}</p>
+    <p class="stat-label">Demands pending approval</p>
+  </div>
+  <div class="stat-tile">
+    <p class="stat-value">{{ pos_pending_approval }}</p>
+    <p class="stat-label">POs pending approval</p>
+  </div>
+  <div class="stat-tile">
+    <p class="stat-value">{{ draft_pos }}</p>
+    <p class="stat-label">Draft POs</p>
+  </div>
+  <div class="stat-tile">
+    <p class="stat-value">{{ packages_in_transit }}</p>
+    <p class="stat-label">Packages in transit</p>
+  </div>
+  <div class="stat-tile">
+    <p class="stat-value">{{ drift_flagged_packages }}</p>
+    <p class="stat-label">Drift-flagged packages</p>
+  </div>
+  {% if can_buy_prices %}
+  <div class="stat-tile">
+    <p class="stat-value">{{ unpriced_parts_count }}</p>
+    <p class="stat-label">Unpriced parts</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

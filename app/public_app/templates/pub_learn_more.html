@@ -1,0 +1,212 @@
+{% extends "pub_base.html" %}
+{% block title %}Learn More - EBAMS{% endblock %}
+{% block container_max_width %}100%{% endblock %}
+
+{% block content %}
+<section class="pub-page-hero">
+  <h1>Learn More About EBAMS</h1>
+  <p>Event-Based Asset Management System — Complete system overview</p>
+</section>
+
+<section class="pub-section">
+  <div class="pub-section-wrap">
+
+    <h2 class="pub-section-headline" style="text-align:left;">System Overview</h2>
+    <div class="pub-info-card mb-6">
+      <p style="font-size: 1rem; margin-bottom: 0.75rem;">
+        EBAMS is a comprehensive fleet and asset management system designed to streamline operations
+        and simplify tasks. Built on an event-driven architecture, EBAMS tracks all changes and
+        activities across your asset fleet, providing complete visibility and control.
+      </p>
+      <p>
+        The system is organized into integrated modules that work together to provide a complete
+        solution for managing assets, maintenance workflows, inventory, dispatching, and operational planning.
+      </p>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Source &amp; tutorials</h2>
+    <div class="pub-info-grid-2 mb-6">
+      <div class="pub-info-card">
+        <span class="material-icons" aria-hidden="true">code</span>
+        <h4>View the code</h4>
+        <p style="margin-bottom: 0.75rem;">Browse the application source, README, and project structure on GitHub.</p>
+        <a href="https://github.com/CJB-2702/Minimalist-Post-Based-Asset-Management" class="button is-small is-info is-light" target="_blank" rel="noopener noreferrer">
+          <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+          <span>GitHub repository</span>
+        </a>
+      </div>
+      <div class="pub-info-card">
+        <span class="material-icons" aria-hidden="true">smart_display</span>
+        <h4>Watch tutorials</h4>
+        <p style="margin-bottom: 0.75rem;">Step-by-step videos and walkthroughs on the project YouTube channel.</p>
+        <a href="https://www.youtube.com/@CB-td4ck/videos" class="button is-small is-danger is-light" target="_blank" rel="noopener noreferrer">
+          <span class="icon"><span class="material-icons" aria-hidden="true">play_circle</span></span>
+          <span>YouTube channel</span>
+        </a>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Why Choose EBAMS?</h2>
+    <div class="pub-info-grid-3 mb-6">
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">history</span>
+        <h4>Reduce Downtime</h4>
+        <p>Proactive maintenance scheduling and tracking helps minimize asset downtime and maximize availability.</p>
+      </div>
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">speed</span>
+        <h4>Increase Efficiency</h4>
+        <p>Streamlined workflows and automated processes reduce manual work and improve operational efficiency.</p>
+      </div>
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">assessment</span>
+        <h4>Data-Driven Decisions</h4>
+        <p>Comprehensive reporting and analytics provide insights for informed decision-making.</p>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">System Architecture</h2>
+    <div class="pub-info-card mb-6">
+      <p class="mb-4">EBAMS follows a layered architecture pattern for maintainability and scalability:</p>
+      <div class="pub-info-grid-2">
+        <div>
+          <h5><span class="icon"><span class="material-icons" aria-hidden="true">table_chart</span></span> Models</h5>
+          <p>Django models defining database schema, organized by application domain (assets, events, parts, administration). Schema and constraints only — no business logic.</p>
+        </div>
+        <div>
+          <h5><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Control Layer</h5>
+          <p>Adapters, domain structs, factories, handlers, and validators. Implements business rules, writes, and orchestration between models.</p>
+        </div>
+        <div>
+          <h5><span class="icon"><span class="material-icons" aria-hidden="true">travel_explore</span></span> Presentation Layer</h5>
+          <p>Django views (entrypoints), search, and server-rendered templates. Handles all reads and user interaction.</p>
+        </div>
+        <div>
+          <h5><span class="icon"><span class="material-icons" aria-hidden="true">security</span></span> Authorization</h5>
+          <p>Django's permission system combined with row-level ownership-group scoping, applied consistently across every sub-application.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Technology Stack</h2>
+    <div class="pub-info-card mb-6">
+      <div class="pub-info-grid-2">
+        <div>
+          <h5 class="mb-3">Backend</h5>
+          <ul style="list-style:none; margin:0; padding:0;">
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>Django 6.x</strong> — Web framework</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>Django ORM</strong> — Database management</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>SQLite / PostgreSQL</strong> — Database options</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>mozilla-django-oidc</strong> — Single sign-on authentication</li>
+          </ul>
+        </div>
+        <div>
+          <h5 class="mb-3">Frontend</h5>
+          <ul style="list-style:none; margin:0; padding:0;">
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>HTMX</strong> — Dynamic interactions</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>Bulma</strong> — Responsive UI</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>Web Components</strong> — Reusable interactive elements</li>
+            <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true" style="color: var(--bulma-success);">check_circle</span></span> <strong>Minimal JavaScript</strong> — Performance focused</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Key Features</h2>
+    <div class="pub-info-grid-2 mb-6">
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span> Asset Management</h5>
+        <ul>
+          <li>Create and track assets with customizable types</li>
+          <li>Link assets to makes/models with automatic detail population</li>
+          <li>Track asset parent-child relationships</li>
+          <li>Complete audit trail of all changes</li>
+        </ul>
+      </div>
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Maintenance System</h5>
+        <ul>
+          <li>Event-based maintenance tracking</li>
+          <li>Template-based maintenance workflows</li>
+          <li>Action items with checklist functionality</li>
+          <li>Technician, manager, and fleet portals</li>
+        </ul>
+      </div>
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Inventory Management</h5>
+        <ul>
+          <li>Multi-location inventory tracking</li>
+          <li>Purchase order management</li>
+          <li>Arrival processing and receiving</li>
+          <li>Part linking to maintenance events</li>
+        </ul>
+      </div>
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Dispatching</h5>
+        <ul>
+          <li>Work order creation and assignment</li>
+          <li>Status tracking with history</li>
+          <li>Asset-dispatch relationships</li>
+          <li>Outcome recording and documentation</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">User Roles</h2>
+    <div class="pub-info-grid-4 mb-6">
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">verified_user</span>
+        <h5>Admin</h5>
+        <p style="font-size:0.78rem;">Full system access, user management, configuration</p>
+      </div>
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">badge</span>
+        <h5>Manager</h5>
+        <p style="font-size:0.78rem;">Asset management, maintenance planning, reporting</p>
+      </div>
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">build</span>
+        <h5>Technician</h5>
+        <p style="font-size:0.78rem;">Maintenance execution, inventory access</p>
+      </div>
+      <div class="pub-info-card has-text-centered">
+        <span class="material-icons" aria-hidden="true">visibility</span>
+        <h5>Viewer</h5>
+        <p style="font-size:0.78rem;">Read-only access to assigned areas</p>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Development Principles</h2>
+    <div class="pub-info-card mb-6">
+      <div class="pub-info-grid-2">
+        <ul style="list-style:none; margin:0; padding:0;">
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>Atomic Models</strong> — Each table has its own model file</li>
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>Domain-Driven Design</strong> — Code organized by business domain</li>
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>Separation of Concerns</strong> — Clear boundaries between layers</li>
+        </ul>
+        <ul style="list-style:none; margin:0; padding:0;">
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>Audit Trail</strong> — All user actions tracked</li>
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>HTMX-First</strong> — Minimize JavaScript usage</li>
+          <li class="mb-2"><span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span> <strong>Event-Driven</strong> — Complete activity logging</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pub-cta-banner pub-cta-banner--light" style="text-align:center;">
+      <h2>Ready to Get Started?</h2>
+      <p style="margin: 0 auto 1.25rem;">Follow our quick start guide to begin using EBAMS</p>
+      <div class="pub-cta-actions" style="justify-content:center;">
+        <a href="{% url 'public_get_started' %}" class="button is-primary is-medium">
+          <span class="icon"><span class="material-icons" aria-hidden="true">rocket_launch</span></span>
+          <span>Get Started</span>
+        </a>
+        <button type="button" class="button is-light is-medium" commandfor="public-login-modal" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+          <span>Login</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

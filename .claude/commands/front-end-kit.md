@@ -37,7 +37,7 @@ Both are committed to git. Deleting the front-end kit when it is spent loses not
 
 > A create or edit page is a **multi-card wizard** when the entity has **more than one reverse foreign key** that a user would plausibly populate in the same sitting.
 
-Wizards are one long scrolling page with progressive enablement — not a chain of URLs. Assignment relations become in-page left-heavy assignment cards, never modals. See [harness/UX_UI/components/multi_step_flows.md](harness/UX_UI/components/multi_step_flows.md) and [harness/UX_UI/components/modals.md](harness/UX_UI/components/modals.md).
+Wizards are one long scrolling page with progressive enablement — not a chain of URLs. Assignment relations become in-page left-heavy assignment cards, never modals. See [harness/UX_UI/design_patterns/multi_step_flows.md](harness/UX_UI/design_patterns/multi_step_flows.md) and [harness/UX_UI/design_patterns/modals.md](harness/UX_UI/design_patterns/modals.md).
 
 ## Output
 

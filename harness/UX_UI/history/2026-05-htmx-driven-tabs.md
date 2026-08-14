@@ -15,7 +15,7 @@ context_tier: 2
 
 Tabs default to **HTMX-driven**: one canonical URL with a `?view=<tab-name>` query parameter, server-side branching on the `HX-Request` header, and `hx-push-url="true"` so back/forward and F5 work.
 
-Web-component tab switchers remain allowed for small, self-contained widgets (Approach 2 in [../../UX_UI/components/tabs.md](../../UX_UI/components/tabs.md)) but **only** when the canonical implementation in the component library defers initialization past parse and uses real `<ul>` / `<ol>` containers for slotted list data. Web components are not the default any more.
+Web-component tab switchers remain allowed for small, self-contained widgets (Approach 2 in [../../UX_UI/navigation/tabs.md](../../UX_UI/navigation/tabs.md)) but **only** when the canonical implementation in the component library defers initialization past parse and uses real `<ul>` / `<ol>` containers for slotted list data. Web components are not the default any more.
 
 ## Rationale
 
@@ -38,5 +38,5 @@ HTMX-driven tabs sidestep all of these: there is no `connectedCallback` race, no
 
 ## Related
 
-- [../../UX_UI/components/tabs.md](../../UX_UI/components/tabs.md) — the four allowable tab strategies and when to use each.
+- [../../UX_UI/navigation/tabs.md](../../UX_UI/navigation/tabs.md) — the four allowable tab strategies and when to use each.
 - [../../../docs/administration/incidents/2026-05-web_component_tab_incident.md](../../../docs/administration/incidents/2026-05-web_component_tab_incident.md) — the underlying incident.

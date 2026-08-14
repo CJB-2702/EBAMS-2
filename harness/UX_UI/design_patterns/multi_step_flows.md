@@ -29,7 +29,7 @@ One reverse FK is a form with a section. Two or more — manufacturers *and* rev
 
 Secondary signals that push a borderline page toward wizard: a file upload, a status that must be set at creation, or a related record the user may need to create inline.
 
-**Each assignment relation gets its own card, in the page.** Use the left-heavy assignment card pair ([../Examples/left_heavy_assignment_card_pair.md](../Examples/left_heavy_assignment_card_pair.md)) or a dual listbox ([dual_listbox.md](dual_listbox.md)) — never a modal. See [modals.md](modals.md) for why.
+**Each assignment relation gets its own card, in the page.** Use the left-heavy assignment card pair ([left_heavy_assignment_card_pair.md](left_heavy_assignment_card_pair.md)) or a dual listbox ([../components/dual_listbox.md](../components/dual_listbox.md)) — never a modal. See [modals.md](modals.md) for why.
 
 Card order follows dependency: identity fields first, then relations that depend on them, then free-form attachments and notes.
 

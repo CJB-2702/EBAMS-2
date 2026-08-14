@@ -10,7 +10,7 @@ context_tier: 2
 
 A **dual listbox** presents two side-by-side lists — *Available* and *Selected* — with controls to move items between them. It is a deliberate, high-friction control: every move is explicit and visible. Use it when a multi-select must be **auditable**, **bulk-editable**, and **comprehensible at a glance**.
 
-For verbatim markup and component fragments see [../Examples/dual_listbox_markup.md](../Examples/dual_listbox_markup.md).
+For verbatim markup and component fragments see [dual_listbox_markup.md](dual_listbox_markup.md).
 
 ---
 
@@ -28,14 +28,14 @@ Pick **dual listbox** over a standard `<select multiple>` or tag-style multi-sel
 
 Pick a **standard multi-select** (or a single search dropdown) when:
 
-- The expected selection is **0–3 items** (use a single `<search-dropdown>`; see [searchbars.md](searchbars.md)).
+- The expected selection is **0–3 items** (use a single `<search-dropdown>`; see [../search/searchbars.md](../search/searchbars.md)).
 - The relation is **conceptually one-to-many on the form**.
 - Selection is **immediate / autosaved** (use a chip add-remove pattern instead).
 - The available pool is **fixed and small** (under ~8 options) — use checkboxes.
 
 If two dual listboxes are needed on the same page, step back: that is usually a sign the page should be split into two edit screens, or the relation should be inverted.
 
-**Never put an assignment control in a modal.** Whichever control you pick — dual listbox, left-heavy assignment card pair, or search dropdown — it lives in the page. See [modals.md](modals.md#when-to-use-a-modal--and-when-not-to) for the rule and its rationale, and [multi_step_flows.md](multi_step_flows.md) for how assignment cards stack inside a creation wizard.
+**Never put an assignment control in a modal.** Whichever control you pick — dual listbox, left-heavy assignment card pair, or search dropdown — it lives in the page. See [../design_patterns/modals.md](../design_patterns/modals.md#when-to-use-a-modal--and-when-not-to) for the rule and its rationale, and [../design_patterns/multi_step_flows.md](../design_patterns/multi_step_flows.md) for how assignment cards stack inside a creation wizard.
 
 ---
 
@@ -65,7 +65,7 @@ For the previous form-submission + page-reload model and the rationale for migra
 
 ## REST-shaped API on the same URL
 
-The same resource also exposes a JSON contract on the same URL for non-HTMX consumers (GET/PUT/PATCH on the collection endpoint). The HTMX endpoints are **not** a parallel API; they share the same view and dispatch on `format=`. Literal request/response shapes: [../Examples/dual_listbox_markup.md](../Examples/dual_listbox_markup.md).
+The same resource also exposes a JSON contract on the same URL for non-HTMX consumers (GET/PUT/PATCH on the collection endpoint). The HTMX endpoints are **not** a parallel API; they share the same view and dispatch on `format=`. Literal request/response shapes: [dual_listbox_markup.md](dual_listbox_markup.md).
 
 ---
 

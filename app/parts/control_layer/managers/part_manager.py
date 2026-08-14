@@ -27,7 +27,6 @@ _FIELDS = (
     "part_type",
     "category",
     "is_active",
-    "is_domain_limited",
 )
 
 
@@ -50,7 +49,8 @@ class PartManager:
             p.part_type = data.get("part_type") or ""
             p.category = data.get("category") or ""
             p.is_active = data.get("is_active", True)
-            p.is_domain_limited = data.get("is_domain_limited", False)
+            # is_domain_limited is not settable here — it's derived from whether any
+            # active PartDomainAccessMapping rows exist (see PartDomainManager).
             p.updated_by = self.actor
             p.save(update_fields=[*_FIELDS, "updated_at", "updated_by"])
         return p

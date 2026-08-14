@@ -29,11 +29,11 @@ python dev_tools/get_models_and_control.py --application <target_app>
 - `harness/UX_UI/visual_language.md` — tokens, sharp corners, dark-mode strategy.
 - `harness/UX_UI/page_structure.md` — shell, hero, sidebars, page patterns.
 - `harness/UX_UI/form_style_guide.md` — card-footer geometry.
-- `harness/UX_UI/components/common_buttons.md` — master button table and icon-only rules.
+- `harness/UX_UI/design_patterns/common_buttons.md` — master button table and icon-only rules.
 - `harness/UX_UI/format_contract.md` — `format=` density / HTMX fragment contract.
-- For dual-listbox work: `harness/UX_UI/components/dual_listbox.md` and `harness/UX_UI/Examples/dual_listbox_markup.md`.
-- For searchbars: `harness/UX_UI/components/searchbars.md` and `harness/UX_UI/Examples/search_dropdown_component.md`.
-- For tabs: `harness/UX_UI/components/tabs.md`.
+- For dual-listbox work: `harness/UX_UI/components/dual_listbox.md` and `harness/UX_UI/components/dual_listbox_markup.md`.
+- For searchbars: `harness/UX_UI/search/searchbars.md` and `harness/UX_UI/components/search_dropdown.md`.
+- For tabs: `harness/UX_UI/navigation/tabs.md`.
 
 ## Skip
 

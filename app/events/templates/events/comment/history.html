@@ -29,8 +29,10 @@
 
 <div style="max-width: 760px;">
   {% for row in rows %}
-  {# Revision entries are individual comment bodies — square, matching the rows
-     in events/fragments/comment_row.html. See docs/UX_UI/components/chamfers.md. #}
+  {% comment %}
+  Revision entries are individual comment bodies — square, matching the rows
+  in events/fragments/comment_row.html. See docs/UX_UI/components/chamfers.md.
+  {% endcomment %}
   <div class="card sharp-corners mb-3 depth-1">
     <div class="card-header">
       <div class="card-header-title">

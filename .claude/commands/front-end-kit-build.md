@@ -22,7 +22,7 @@ Report the failure and stop rather than building against a failed gate.
 
 - **One route per route-skeleton entry**, at the same paths, so URL structure is validated too.
 - **Every navigation edge clickable.** A stager with dead links validates nothing — this is the primary thing you built it to check.
-- **The project's real styling** — Bulma theme layer, sharp corners, actual markup copied from [harness/UX_UI/Examples/](harness/UX_UI/Examples/index.md). Not an approximation.
+- **The project's real styling** — Bulma theme layer, sharp corners, actual markup copied from [harness/UX_UI/index.md](harness/UX_UI/index.md) (components, navigation, search, file_management, and design_patterns guides). Not an approximation.
 - **Wizards at full scroll length**, every card in order, later cards visibly disabled.
 - **Empty states rendered** for at least one instance of each card — cards always render in this project.
 - **Dummy data only** — hardcoded dicts in `dummy_data.py`. No DB, no ORM, no real validation.

@@ -1,0 +1,156 @@
+{% extends "parts/base.html" %}
+{% block title %}Edit {{ item.mpn }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">{{ item.internal_part.part_number }}</a></li>
+  <li><a href="{% url 'part_supplier_items' part_id=part_id %}">Supplier Items</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Edit {{ item.mpn }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+      <div><h1 class="page-title">Edit {{ item.mpn }}</h1>
+        <p class="page-subtitle">Mapped to {{ item.internal_part.part_number }} · {{ item.manufacturer.name }}</p>
+      </div></div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card mb-5">
+    <div class="card-content">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="card depth-2 mb-4">
+          <div class="card-header"><div class="card-header-title">Item</div></div>
+          <div class="card-content">
+            <p class="help mb-3">Manufacturer: <strong>{{ item.manufacturer.name }}</strong> (fixed — remap by creating a new supplier item).</p>
+            <label class="label is-small">Manufacturer Part Number</label>
+            <input class="input is-small" type="text" name="manufacturer_part_number" value="{{ item.mpn }}" required>
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="text" name="name" value="{{ item.name|default:'' }}">
+            <label class="label is-small">Description</label>
+            <textarea class="textarea is-small" name="description">{{ item.description|default:'' }}</textarea>
+            <label class="checkbox is-size-7 mt-2"><input type="checkbox" name="is_active" {% if item.is_active %}checked{% endif %}> Active</label>
+          </div>
+        </div>
+
+        <div class="card depth-2 mb-4">
+          <div class="card-header"><div class="card-header-title">Compatibility (optional)</div></div>
+          <div class="card-content">
+            {{ revision_map|json_script:"part-revision-map" }}
+            <p class="help mb-3">Leave any bound blank for "no constraint" on that side.</p>
+
+            <div class="columns is-mobile">
+              <div class="column">
+                <label class="label is-small">Min Major</label>
+                <div class="select is-small is-fullwidth">
+                  <select id="min-major-select" name="min_major_revision_number">
+                    <option value="">— none —</option>
+                    {% for major in revision_majors %}
+                    <option value="{{ major }}" {% if item.compatibility_range.min_major|stringformat:"s" == major %}selected{% endif %}>{{ major }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="column">
+                <label class="label is-small" id="min-minor-label" {% if not item.compatibility_range.min_major %}hidden{% endif %}>Min Minor</label>
+                <p class="help is-size-7" id="min-minor-range-info" hidden></p>
+                <div class="select is-small is-fullwidth">
+                  <select id="min-minor-select" name="min_minor_revision_number" {% if not item.compatibility_range.min_major %}hidden{% endif %}>
+                    <option value="">— none —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="columns is-mobile">
+              <div class="column">
+                <label class="label is-small">Max Major</label>
+                <div class="select is-small is-fullwidth">
+                  <select id="max-major-select" name="max_major_revision_number">
+                    <option value="">— none —</option>
+                    {% for major in revision_majors %}
+                    <option value="{{ major }}" {% if item.compatibility_range.max_major|stringformat:"s" == major %}selected{% endif %}>{{ major }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="column">
+                <label class="label is-small" id="max-minor-label" {% if not item.compatibility_range.max_major %}hidden{% endif %}>Max Minor</label>
+                <p class="help is-size-7" id="max-minor-range-info" hidden></p>
+                <div class="select is-small is-fullwidth">
+                  <select id="max-minor-select" name="max_minor_revision_number" {% if not item.compatibility_range.max_major %}hidden{% endif %}>
+                    <option value="">— none —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button type="submit" class="button is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save Changes</span>
+          </button>
+          <a href="{% url 'part_supplier_items' part_id=part_id %}" class="button is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Cancel</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  const revisionMap = JSON.parse(document.getElementById("part-revision-map").textContent);
+
+  function wireCascade(majorId, minorId, labelId, infoId, selectedMinor) {
+    const majorSelect = document.getElementById(majorId);
+    const minorSelect = document.getElementById(minorId);
+    const label = document.getElementById(labelId);
+    const info = document.getElementById(infoId);
+
+    function populate(preserveSelection) {
+      const keep = preserveSelection ? String(selectedMinor ?? "") : "";
+      minorSelect.innerHTML = '<option value="">— none —</option>';
+      if (!majorSelect.value) {
+        minorSelect.hidden = true; label.hidden = true; info.hidden = true;
+        return;
+      }
+      const minors = (revisionMap[majorSelect.value] || []).slice().sort((a, b) => a - b);
+      minors.forEach((m) => {
+        const opt = document.createElement("option");
+        opt.value = String(m); opt.textContent = String(m);
+        if (preserveSelection && String(m) === keep) opt.selected = true;
+        minorSelect.appendChild(opt);
+      });
+      minorSelect.hidden = false; label.hidden = false;
+      if (minors.length) {
+        info.textContent = `minors ${minors[0]}–${minors[minors.length - 1]} exist under major ${majorSelect.value}`;
+        info.hidden = false;
+      } else {
+        info.hidden = true;
+      }
+    }
+
+    majorSelect.addEventListener("change", () => populate(false));
+    if (majorSelect.value) populate(true);
+  }
+  wireCascade(
+    "min-major-select", "min-minor-select", "min-minor-label", "min-minor-range-info",
+    {{ item.compatibility_range.min_minor|default_if_none:"null" }}
+  );
+  wireCascade(
+    "max-major-select", "max-minor-select", "max-minor-label", "max-minor-range-info",
+    {{ item.compatibility_range.max_minor|default_if_none:"null" }}
+  );
+})();
+</script>
+{% endblock %}

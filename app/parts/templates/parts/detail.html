@@ -122,7 +122,7 @@
   </div>
 </div>
 
-<dialog id="modal-add-gallery-image" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
+<dialog id="modal-add-gallery-image" class="card modal-styled" style="padding:0; max-width: 580px;">
   <form method="post" action="{% url 'part_add_gallery_image' part_id=part_id %}" enctype="multipart/form-data">
     {% csrf_token %}
     <header class="card-header">

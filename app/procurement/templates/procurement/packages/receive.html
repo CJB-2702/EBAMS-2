@@ -1,0 +1,130 @@
+{% extends "procurement/base.html" %}
+{% load static %}
+{% block title %}Receive a Shipment{% endblock %}
+{% block nav_package_receive %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'package_index' %}">Packages</a></li>
+<li class="is-active"><a href="#" aria-current="page">Receive a Shipment</a></li>
+{% endblock %}
+
+{% comment %}
+THE REACTIVE PATH: a box arrived and there is no purchase order.
+
+D71/D73's nullable `purchase_order` is what makes this route possible, and
+D74's required `domain` is what stops it producing an ownerless record.
+
+THERE IS NO PO FIELD ON THIS FORM, on purpose. Offering one would just recreate
+package_create and lose the single thing this page exists to say: you do not
+need the paperwork to record the box. Attachment happens later on the edit page,
+where auto-linking can run against real order lines.
+
+Lines land unassigned. That is correct, not an error state.
+{% endcomment %}
+
+{% block extra_head %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></div>
+      <div>
+        <h1 class="page-title">Receive a Shipment</h1>
+        <p class="page-subtitle">Something turned up and there is no purchase order for it yet. Record it now, sort the paperwork after.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'package_index' %}" class="button is-small is-light">← Back</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <article class="message is-info">
+    <div class="message-body is-size-7">
+      <strong>Know which order this is for?</strong>
+      <a href="{% url 'package_create' %}">Record it against the purchase order</a> instead — the
+      lines will link themselves to matching order lines automatically.
+    </div>
+  </article>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+      What arrived
+    </div></div>
+    <div class="card-content">
+      <form method="post" action="{% url 'package_receive' %}">
+        {% csrf_token %}
+
+        <div class="columns is-multiline is-variable is-3">
+          {% if show_domain_picker %}
+          <div class="column is-4">
+            <label class="label is-small" for="rcv-domain">Domain <span class="has-text-danger">*</span></label>
+            <div class="select is-small is-fullwidth">
+              <select id="rcv-domain" name="domain_id" required>
+                {% for d in domains %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <p class="help is-size-7">Whoever accepts a shipment has a domain to assign it to. This is the one field that cannot be deferred.</p>
+          </div>
+          {% else %}
+          <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
+          <div class="column is-4">
+            <label class="label is-small">Domain</label>
+            <p class="is-size-7">
+              <strong>{{ single_domain.name|default:"—" }}</strong>
+              <span class="has-text-grey">(resolved from your assignment)</span>
+            </p>
+          </div>
+          {% endif %}
+
+          <div class="column is-4">
+            <label class="label is-small" for="rcv-shipment-id">Shipment / tracking ID</label>
+            <input id="rcv-shipment-id" class="input is-small is-family-monospace" type="text" name="shipment_id"
+                   placeholder="as printed on the label" autocomplete="off" autofocus>
+            <p class="help is-size-7">Text, not a number — leading zeros matter, and vendors reuse these.</p>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small" for="rcv-carrier">Carrier</label>
+            <input id="rcv-carrier" class="input is-small" type="text" name="carrier" autocomplete="off">
+          </div>
+
+          <div class="column is-3">
+            <label class="label is-small" for="rcv-shipped">Shipped date</label>
+            <input id="rcv-shipped" class="input is-small" type="date" name="shipped_date">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small" for="rcv-expected">Expected arrival</label>
+            <input id="rcv-expected" class="input is-small" type="date" name="expected_arrival_date">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small" for="rcv-notes">Notes</label>
+            <textarea id="rcv-notes" class="textarea is-small" name="notes" rows="1"
+                      placeholder="condition on arrival, who signed for it, anything odd…"></textarea>
+          </div>
+        </div>
+
+        {% include "procurement/packages/_line_rows.html" with search_url_name="package_receive" %}
+
+        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
+          <div class="card-footer-secondaries">
+            <a href="{% url 'package_index' %}" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+            </a>
+          </div>
+          <button type="submit" class="button is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Record Shipment</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% include "procurement/packages/_line_rows_script.html" %}
+{% endblock %}

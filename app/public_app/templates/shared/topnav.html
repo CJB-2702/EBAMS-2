@@ -75,6 +75,37 @@
         </div>
       </li>
 
+      <li role="tab" data-group="Procurement">
+        <button class="portal-tab-btn" commandfor="portal-procurement" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span> Procurement <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-procurement" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Demands</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'demand_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
+                <a href="{% url 'demand_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Purchasing</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'purchase_order_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span> Purchase Orders</a>
+                <a href="{% url 'purchase_order_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> New Purchase Order</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Receiving</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'package_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Packages</a>
+                <a href="{% url 'package_receive' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a Shipment</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
       <li role="tab" data-group="Administration">
         <button class="portal-tab-btn" commandfor="portal-administration" command="toggle-popover">
           <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration <span class="portal-tab-chevron">▾</span>

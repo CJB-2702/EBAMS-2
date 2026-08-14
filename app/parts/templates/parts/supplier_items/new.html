@@ -19,15 +19,17 @@
   </div>
 </div>
 
-{# All 3 steps render at once; step 2/3 inputs start disabled and are progressively enabled —
-   see docs/UX_UI/components/multi_step_flows.md ("later steps shown but disabled"). #}
+{% comment %}
+All 3 steps render at once; step 2/3 inputs start disabled and are progressively enabled —
+see docs/UX_UI/components/multi_step_flows.md ("later steps shown but disabled").
+{% endcomment %}
 <div class="body-grid full-width">
   <div class="card mb-5" id="supplier-item-wizard">
     <div class="card-content">
       <form method="post">
         {% csrf_token %}
 
-        {# ── Step 1: Manufacturer ── #}
+        {# Step 1: Manufacturer #}
         <div class="card depth-2 mb-4" data-step="1">
           <div class="card-header"><div class="card-header-title">1. Manufacturer</div></div>
           <div class="card-content" id="supplier-item-manufacturer-slot">
@@ -58,9 +60,11 @@
             <div class="columns is-mobile">
               <div class="column">
                 <label class="label is-small">Min Major</label>
-                <!-- DEV NOTE (v1 limitation): only majors that already exist as PartRevision rows
-                     on this Part are offered here. A future major not yet created can't be
-                     selected, and there's no typed/custom numeric entry path yet. -->
+                {% comment %}
+                DEV NOTE (v1 limitation): only majors that already exist as PartRevision rows
+                on this Part are offered here. A future major not yet created can't be
+                selected, and there's no typed/custom numeric entry path yet.
+                {% endcomment %}
                 <div class="select is-small is-fullwidth">
                   <select id="min-major-select" name="min_major_revision_number" data-gated disabled>
                     <option value="">— none —</option>
@@ -71,9 +75,11 @@
               <div class="column">
                 <label class="label is-small" id="min-minor-label" hidden>Min Minor</label>
                 <p class="help is-size-7" id="min-minor-range-info" hidden></p>
-                <!-- DEV NOTE: leaving this blank after picking a major is valid and intentional —
-                     null minor means "whole major band" (D13). The overall default when nothing
-                     is touched at all is "valid for all revisions" — never force a pick here. -->
+                {% comment %}
+                DEV NOTE: leaving this blank after picking a major is valid and intentional —
+                null minor means "whole major band" (D13). The overall default when nothing
+                is touched at all is "valid for all revisions" — never force a pick here.
+                {% endcomment %}
                 <div class="select is-small is-fullwidth">
                   <select id="min-minor-select" name="min_minor_revision_number" hidden>
                     <option value="">— none —</option>
@@ -140,12 +146,14 @@
   }
 
   wizard.addEventListener("click", (e) => {
-    if (e.target.closest('[data-action="show-quick-create"]')) {
+    const showBtn = e.target.closest('[data-action="show-quick-create"]');
+    if (showBtn) {
       e.preventDefault();
-      document.getElementById("mfr-quick-create-fields").hidden = false;
+      showBtn.closest(".mfr-picker").querySelector(".mfr-quick-create-fields").hidden = false;
     }
-    if (e.target.closest('[data-action="hide-quick-create"]')) {
-      document.getElementById("mfr-quick-create-fields").hidden = true;
+    const hideBtn = e.target.closest('[data-action="hide-quick-create"]');
+    if (hideBtn) {
+      hideBtn.closest(".mfr-picker").querySelector(".mfr-quick-create-fields").hidden = true;
     }
     recomputeGating(); // covers search-dropdown <li> picks via delegation
   });

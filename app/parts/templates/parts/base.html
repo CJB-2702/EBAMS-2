@@ -28,10 +28,12 @@
       <p class="sidebar-section-label">Parts</p>
       <a href="{% url 'parts_hub' %}" class="sidebar-link {% block nav_hub %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
       <a href="{% url 'part_create' %}" class="sidebar-link {% block nav_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Part</a>
+      <a href="{% url 'part_bulk_upload' %}" class="sidebar-link {% block nav_bulk_upload %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span> Bulk Upload</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Supply</p>
       <a href="{% url 'part_manufacturer_index' %}" class="sidebar-link {% block nav_manufacturers %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
+      <a href="{% url 'supplier_items_hub' %}" class="sidebar-link {% block nav_supplier_items %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Supplier Items</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Other Portals</p>

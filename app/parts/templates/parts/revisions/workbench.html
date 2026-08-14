@@ -34,48 +34,93 @@
         <a href="{% url 'revision_detail_by_id' revision_id=rev.id %}">{{ rev.major_revision_number }}.{{ rev.minor_revision_number }}</a>
       </div>
       {% include "assets/_status_tag.html" with value=rev.status %}
+      {% if can_manage %}
+      <a href="{% url 'revision_edit' revision_id=rev.id %}" class="button is-info is-light is-small ml-2">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      {% endif %}
     </div>
     <div class="card-content">
-      <div class="body-grid has-rail">
-        <div>
-          <dl class="kv">
-            <dt>Released</dt><dd>{{ rev.date_of_release|default:"—" }}</dd>
-            <dt>Summary</dt><dd>{{ rev.summary|default:"—" }}</dd>
-          </dl>
-          <form method="post" action="{% url 'revision_set_status' part_id=part_id revision_id=rev.id %}" class="mt-3">
-            {% csrf_token %}
-            <div class="select is-small"><select name="status" onchange="this.form.submit()">
-              <option value="draft" {% if rev.status == "draft" %}selected{% endif %}>Draft</option>
-              <option value="released" {% if rev.status == "released" %}selected{% endif %}>Released</option>
-              <option value="redline" {% if rev.status == "redline" %}selected{% endif %}>Redline</option>
-              <option value="obsolete" {% if rev.status == "obsolete" %}selected{% endif %}>Obsolete</option>
-            </select></div>
-          </form>
+      <dl class="kv">
+        <dt>Released</dt><dd>{{ rev.date_of_release|default:"—" }}</dd>
+        <dt>Summary</dt><dd>{{ rev.summary|default:"—" }}</dd>
+      </dl>
+      <form method="post" action="{% url 'revision_set_status' part_id=part_id revision_id=rev.id %}" class="mt-3">
+        {% csrf_token %}
+        <div class="select is-small"><select name="status" onchange="this.form.submit()">
+          <option value="draft" {% if rev.status == "draft" %}selected{% endif %}>Draft</option>
+          <option value="released" {% if rev.status == "released" %}selected{% endif %}>Released</option>
+          <option value="redline" {% if rev.status == "redline" %}selected{% endif %}>Redline</option>
+          <option value="obsolete" {% if rev.status == "obsolete" %}selected{% endif %}>Obsolete</option>
+        </select></div>
+      </form>
 
-          {# ── Gallery ── #}
-          <div class="card depth-2 mt-4">
-            <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
-            <div class="card-content">
-              {% if rev.image_documents %}
-              <image-carousel id="carousel-rev-{{ rev.id }}" preview-height="240" loop>
-                {% for d in rev.image_documents %}
-                <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
-                {% endfor %}
-              </image-carousel>
-              <div class="mt-3"><carousel-preview-items for="carousel-rev-{{ rev.id }}" size="50"></carousel-preview-items></div>
-              {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
-            </div>
+      <div class="body-grid even mt-4">
+        {# Gallery #}
+        <div class="card depth-2" style="position:relative;">
+          <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+          <div class="card-content">
+            <button type="button" class="button is-small is-light" style="position:absolute; top:0.75rem; right:0.75rem;"
+                    commandfor="rev-files-modal-{{ rev.id }}" command="show-modal" title="Add photos or documents">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add</span></span>
+              <span>Add Files</span>
+            </button>
+            {% if rev.image_documents %}
+            <image-carousel id="carousel-rev-{{ rev.id }}" preview-height="240" loop>
+              {% for d in rev.image_documents %}
+              <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+              {% endfor %}
+            </image-carousel>
+            <div class="mt-3"><carousel-preview-items for="carousel-rev-{{ rev.id }}" size="50"></carousel-preview-items></div>
+            {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
           </div>
-
-          {# ── Comments ── #}
-          {% url 'revision_add_comment' part_id=part_id revision_id=rev.id as comment_add_url %}
-          {% include "events/fragments/comments_card.html" with card=rev.comments_card add_url=comment_add_url next=request.get_full_path depth="depth-2 mt-4" row_depth="depth-3" action_depth="depth-4" %}
         </div>
 
-        <div class="body-rail">
-          {% include "events/fragments/files_card.html" with documents=rev.other_documents %}
-        </div>
+        {# Library #}
+        {% with rid=rev.id|stringformat:"s" %}
+        {% with modal_id="rev-files-modal-"|add:rid %}
+        {% include "events/fragments/files_card.html" with documents=rev.other_documents title="Library" upload_modal_id=modal_id %}
+        {% endwith %}
+        {% endwith %}
       </div>
+
+      <dialog id="rev-files-modal-{{ rev.id }}" class="card modal-styled" style="padding:0; max-width:480px;">
+        <form method="post" action="{% url 'revision_attach_document' part_id=part_id revision_id=rev.id %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <header class="card-header">
+            <p class="card-header-title">Add Photos / Documents</p>
+            <button type="button" class="delete is-large" aria-label="close"
+                    commandfor="rev-files-modal-{{ rev.id }}" command="close"></button>
+          </header>
+          <div class="card-content">
+            <p class="help mb-3">Images are added to the Gallery; other file types are added to Library.</p>
+            <file-upload name="file" fullwidth label="Choose file…"></file-upload>
+            <label class="label is-small mt-2">Domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain">
+              {% for d in domains %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}
+            </select></div>
+            <label class="label is-small mt-2">Caption (optional)</label>
+            <input class="input is-small" type="text" name="caption">
+          </div>
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries">
+              <button type="button" class="button is-light" commandfor="rev-files-modal-{{ rev.id }}" command="close">
+                <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+                <span>Cancel</span>
+              </button>
+            </div>
+            <button type="submit" class="button is-link card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>
+              <span>Upload</span>
+            </button>
+          </footer>
+        </form>
+      </dialog>
+
+      {# Comments #}
+      {% url 'revision_add_comment' part_id=part_id revision_id=rev.id as comment_add_url %}
+      {% include "events/fragments/comments_card.html" with card=rev.comments_card add_url=comment_add_url next=request.get_full_path depth="depth-2 mt-4" row_depth="depth-3" action_depth="depth-4" %}
     </div>
   </div>
   {% empty %}
@@ -83,7 +128,7 @@
   {% endfor %}
 </div>
 
-<dialog id="modal-add-revision" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
+<dialog id="modal-add-revision" class="card modal-styled" style="padding:0; max-width: 580px;">
   <form method="post">
     {% csrf_token %}
     <header class="card-header">

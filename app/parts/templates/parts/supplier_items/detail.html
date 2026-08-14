@@ -7,15 +7,27 @@
 {% endblock %}
 
 {% block content %}
+<script src="{% static 'web_components/image_carousel.js' %}" defer></script>
+<script src="{% static 'web_components/file_browser.js' %}" defer></script>
+<script src="{% static 'web_components/file_upload.js' %}" defer></script>
 <script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
 <script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
 <div class="page-hero"><div class="page-header">
   <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
     <div><h1 class="page-title">{{ item.mpn }} ({{ item.manufacturer.name }})</h1>
       <p class="page-subtitle">Maps to <a href="{% url 'part_detail' part_id=item.internal_part.id %}">{{ item.internal_part.part_number }}</a></p></div></div>
-</div></div>
+</div>
+{% if can_manage %}
+<div class="page-hero-actions">
+  <button type="button" class="button is-link" commandfor="si-files-modal" command="show-modal">
+    <span class="icon"><span class="material-icons" aria-hidden="true">add_photo_alternate</span></span>
+    <span>Add Files</span>
+  </button>
+</div>
+{% endif %}
+</div>
 
-<div class="body-grid has-rail">
+<div class="body-grid full-width">
   <div>
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
       <div class="card-content"><dl class="kv">
@@ -27,6 +39,19 @@
           — max {{ compatibility_range.max_major|default:"—" }}.{{ compatibility_range.max_minor|default:"—" }}
         </dd>
       </dl></div>
+    </div>
+
+    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery</div></div>
+      <div class="card-content">
+        {% if image_documents %}
+        <image-carousel id="carousel-item-{{ item_id }}" preview-height="280" loop>
+          {% for d in image_documents %}
+          <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+          {% endfor %}
+        </image-carousel>
+        <div class="mt-3"><carousel-preview-items for="carousel-item-{{ item_id }}" size="50"></carousel-preview-items></div>
+        {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+      </div>
     </div>
 
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">update</span></span>Vendor Revision History</div></div>
@@ -46,13 +71,41 @@
   </div>
 
   <div class="body-rail">
-    <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Documents</div></div>
-      <div class="card-content">
-        {% for d in documents %}<p class="is-size-7">{{ d.filename }}</p>{% empty %}<p class="has-text-grey is-size-7">None.</p>{% endfor %}
-      </div>
-    </div>
+    {% include "events/fragments/files_card.html" with documents=other_documents upload_modal_id=can_manage|yesno:"si-files-modal," %}
     {% url 'supplier_item_add_comment' item_id=item_id as comment_add_url %}
     {% include "events/fragments/comments_card.html" with card=comments_card add_url=comment_add_url next=request.get_full_path row_depth="depth-3" action_depth="depth-4" %}
   </div>
 </div>
+
+{% if can_manage %}
+<dialog id="si-files-modal" class="card modal-styled" style="padding:0; max-width:480px;">
+  <form method="post" action="{% url 'supplier_item_add_document' item_id=item_id %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <header class="card-header">
+      <p class="card-header-title">Add Photos / Documents</p>
+      <button type="button" class="delete is-large" aria-label="close"
+              commandfor="si-files-modal" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="help mb-3">Images are added to the Gallery; other file types are added to Files.</p>
+      <file-upload name="files" multiple fullwidth label="Choose file(s)…"></file-upload>
+      <label class="label is-small mt-2">Caption (optional)</label>
+      <input class="input is-small" type="text" name="caption">
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-light" commandfor="si-files-modal" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-link card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>
+        <span>Upload</span>
+      </button>
+    </footer>
+  </form>
+</dialog>
+{% endif %}
 {% endblock %}

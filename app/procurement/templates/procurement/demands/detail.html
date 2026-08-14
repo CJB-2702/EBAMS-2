@@ -1,0 +1,207 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}Demand #{{ demand.pk }}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'demand_index' %}">Demands</a></li>
+<li class="is-active"><a href="#" aria-current="page">#{{ demand.pk }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">assignment</span></div>
+      <div>
+        <h1 class="page-title">Demand #{{ demand.pk }}</h1>
+        <p class="page-subtitle is-family-monospace">{{ demand.part.part_number }} — {{ demand.part.name }} · qty {{ demand.quantity_requested }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'demand_edit' pk=demand.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span>
+      </a>
+      {% if can_cancel %}
+      <form method="post" action="{% url 'demand_detail' pk=demand.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel">
+        <button type="submit" class="button is-small is-warning is-light" onclick="return confirm('Cancel this demand? A linked, still-active purchase order will refuse this.');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Cancel</span>
+        </button>
+      </form>
+      {% endif %}
+      {% if can_delete %}
+      <form method="post" action="{% url 'demand_detail' pk=demand.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button is-small is-danger is-light" style="max-width:8rem;"
+                onclick="return confirm('{{ delete_confirm_copy|escapejs }}');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="body-grid has-rail">
+  <div>
+    {# Header #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Details</div></div>
+      <div class="card-content">
+        <dl class="kv">
+          <dt>Part</dt><dd><a href="{% url 'part_detail' part_id=demand.part_id %}">{{ demand.part.part_number }}</a> — {{ demand.part.name }}</dd>
+          <dt>Quantity Requested</dt><dd class="is-family-monospace">{{ demand.quantity_requested }}</dd>
+          <dt>Priority</dt><dd>{% demand_priority_tag demand.priority %}</dd>
+          <dt>Needed By</dt><dd>{{ demand.needed_by|date:"Y-m-d H:i"|default:"—" }}</dd>
+          <dt>Requested By</dt><dd>{{ demand.requested_by|default:"—" }}</dd>
+          <dt>Domain</dt><dd>{{ demand.domain.name }}</dd>
+          <dt>Source Module</dt><dd>{{ demand.get_source_module_display }}</dd>
+          <dt>Serial Tracking</dt><dd>{{ demand.serial_number_tracking_required|yesno:"Required,Not required" }}</dd>
+          <dt>Created</dt><dd>{{ demand.created_at|date:"Y-m-d H:i" }} by {{ demand.created_by|default:"—" }}</dd>
+          <dt>Updated</dt><dd>{{ demand.updated_at|date:"Y-m-d H:i" }} by {{ demand.updated_by|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    {# Linked PO information #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>Linked PO Information</div></div>
+      <div class="card-content">
+        {% if detail.purchasing_coverage %}
+        {% for cov in detail.purchasing_coverage %}
+        {% demand_in_domain cov.purchase_order_domain_id as po_linkable %}
+        <div class="mb-3 pb-2" style="border-bottom:1px solid var(--bulma-border-weak);">
+          {% if po_linkable %}
+          <p class="is-size-7"><a href="{% url 'purchase_order_detail' pk=cov.purchase_order_id %}">PO {{ cov.po_number }}</a></p>
+          {% else %}
+          <p class="is-size-7 is-family-monospace">PO {{ cov.po_number }} <span class="has-text-grey">(outside your domain access)</span></p>
+          {% endif %}
+          <p class="is-size-7 has-text-grey">Line #{{ cov.line_number }} · allocated {{ cov.quantity_allocated_to_this_demand }}</p>
+          <p class="is-size-7">
+            {% if cov.is_partial %}<span class="tag is-small is-light">Partial</span>{% else %}<span class="tag is-small is-success is-light">{{ cov.po_status }}</span>{% endif %}
+          </p>
+          {% if po_linkable %}
+          <a class="button is-small is-light mt-1" href="{% url 'purchase_order_edit' pk=cov.purchase_order_id %}?line_id={{ cov.purchase_order_line_id }}">Edit linkage</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="has-text-grey is-size-7">Not linked to a purchase order line yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Four-axis glance — full width #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>Status at a Glance</div></div>
+  <div class="card-content">
+    <div class="columns is-multiline is-mobile">
+      {% for snap in detail.axis_snapshots %}
+      <div class="column is-3-desktop is-6-mobile">
+        <div class="stat-tile">
+          <div class="stat-label">{{ snap.dimension_label }}</div>
+          <div style="margin:0.35rem 0;">{% demand_axis_tag snap.dimension snap.stage %}</div>
+          <div class="has-text-grey is-size-7">{% if snap.last_transition_at %}since {{ snap.last_transition_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{# Four axis cards, 1/4 each, collapsing to 2x2 #}
+<div class="columns is-multiline mt-4">
+  <div class="column is-3-desktop is-6-tablet">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title is-size-7">Demand</div></div>
+      <div class="card-content is-flush pb-3">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <tbody>
+            {% for row in detail.journal %}{% if row.dimension == "demand" %}
+            <tr><td>{{ row.to_stage_label }}</td><td class="has-text-grey">{{ row.created_at|date:"Y-m-d" }}</td></tr>
+            {% endif %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-3-desktop is-6-tablet">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title is-size-7">Purchasing</div></div>
+      <div class="card-content pb-3">
+        <p class="is-size-7">Purchased {{ demand.purchased_qty }} of {{ demand.quantity_requested }} requested.</p>
+        {% if detail.purchasing_coverage %}
+        {% for cov in detail.purchasing_coverage %}
+        <p class="is-size-7 has-text-grey">
+          PO {{ cov.po_number }} (line #{{ cov.line_number }}): {% if cov.is_partial %}Partial{% else %}{{ cov.po_status }}{% endif %}
+          {% if cov.is_shared %} — shared: {{ cov.other_members|length }} other demand(s), line total requested {{ cov.line_total_requested }}, ordered {{ cov.line_total_ordered }}{% endif %}
+        </p>
+        {% endfor %}
+        {% else %}
+        <p class="has-text-grey is-size-7">No purchasing decision yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-3-desktop is-6-tablet">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title is-size-7">Shipment</div></div>
+      <div class="card-content is-flush pb-3">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <tbody>
+            {% for row in detail.journal %}{% if row.dimension == "shipment" %}
+            <tr><td>{{ row.to_stage_label }}</td><td class="has-text-grey">{{ row.created_at|date:"Y-m-d" }}</td></tr>
+            {% endif %}{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-3-desktop is-6-tablet">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title is-size-7">Issuance</div></div>
+      <div class="card-content pb-3">
+        <p class="is-size-7">Net issued: {{ demand.issued_qty }}</p>
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <tbody>
+            {% for row in detail.journal %}{% if row.dimension == "issuance" %}
+            <tr><td>{{ row.to_stage_label }}</td><td class="has-text-grey">{{ row.created_at|date:"Y-m-d" }}</td></tr>
+            {% endif %}{% endfor %}
+          </tbody>
+        </table>
+        {% if demand.issuance_state == "not_issued" %}<p class="has-text-grey is-size-7">Nothing issued yet.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Misc status updates #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>All Status Updates</div></div>
+  <div class="card-content is-flush pb-3">
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead><tr><th>Dimension</th><th>From</th><th>To</th><th>Actor</th><th>Notes</th><th>When</th></tr></thead>
+      <tbody>
+        {% for row in detail.journal %}
+        <tr {% if row.flagged_for_review %}class="has-background-warning-light"{% endif %}>
+          <td>{{ row.dimension_label }}</td>
+          <td>{{ row.from_stage_label }}</td>
+          <td>{{ row.to_stage_label }}</td>
+          <td>{{ row.actor_display }}</td>
+          <td>{{ row.notes|default:"—" }}</td>
+          <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

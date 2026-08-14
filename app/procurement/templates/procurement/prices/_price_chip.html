@@ -1,0 +1,52 @@
+{% load procurement_tags %}
+<div class="price-chip">
+{% if not facts or not facts.has_any %}
+  {% if facts and facts.other_vendor_count %}
+  <a href="{% url 'part_price_history' part_id %}" class="is-size-7"
+      hx-get="{% url 'part_price_history' part_id %}?format=htmx-picker&target_input_id={{ handle }}"
+      hx-target="#price-picker-modal-body" hx-swap="innerHTML"
+      onclick="document.getElementById('price-picker-modal').classList.add('is-active')">
+    No price from {{ vendor.name }} — {{ facts.other_vendor_count }} price{{ facts.other_vendor_count|pluralize }} from other vendors →
+  </a>
+  {% else %}
+  <span class="is-size-7 has-text-grey">No price on record for {{ vendor.name|default:"this vendor" }}.</span>
+  {% endif %}
+{% elif facts.collapses %}
+  <p class="is-size-7 mb-0">
+    ${{ facts.most_recent.unit_cost }} — verified, {{ facts.most_recent.domain_name }}, {% price_staleness facts.most_recent.observed_at %}
+    <button type="button" class="button is-white is-small py-0"
+        data-price-use="{{ facts.most_recent.unit_cost }}"
+        data-price-source="{% if facts.most_recent.source_type == 'invoiced' %}last_paid{% elif facts.most_recent.source_type == 'ordered' %}last_ordered{% else %}quoted{% endif %}"
+        data-price-date="{{ facts.most_recent.observed_at|date:'Y-m-d' }}"
+        data-target-input="{{ handle }}">Use this</button>
+  </p>
+{% else %}
+  {% if facts.most_recent %}
+  <p class="is-size-7 mb-0">
+    ${{ facts.most_recent.unit_cost }} — recorded by {{ facts.most_recent.recorded_by_name|default:"someone" }}, {% price_staleness facts.most_recent.observed_at %}
+    {% if not facts.most_recent_verified %}
+    <button type="button" class="button is-white is-small py-0"
+        data-price-use="{{ facts.most_recent.unit_cost }}" data-price-source="quoted"
+        data-price-date="{{ facts.most_recent.observed_at|date:'Y-m-d' }}"
+        data-target-input="{{ handle }}">Use this</button>
+    {% endif %}
+  </p>
+  {% endif %}
+  {% if facts.most_recent_verified %}
+  <p class="is-size-7 mb-0">
+    ${{ facts.most_recent_verified.unit_cost }} — verified, {{ facts.most_recent_verified.domain_name }}, {% price_staleness facts.most_recent_verified.observed_at %}
+    <button type="button" class="button is-white is-small py-0"
+        data-price-use="{{ facts.most_recent_verified.unit_cost }}"
+        data-price-source="{% if facts.most_recent_verified.source_type == 'invoiced' %}last_paid{% elif facts.most_recent_verified.source_type == 'ordered' %}last_ordered{% else %}quoted{% endif %}"
+        data-price-date="{{ facts.most_recent_verified.observed_at|date:'Y-m-d' }}"
+        data-target-input="{{ handle }}">Use this</button>
+  </p>
+  {% endif %}
+{% endif %}
+{% if facts and facts.has_any %}
+<p class="is-size-7 mb-0"><a href="{% url 'part_price_history' part_id %}"
+    hx-get="{% url 'part_price_history' part_id %}?format=htmx-picker&target_input_id={{ handle }}"
+    hx-target="#price-picker-modal-body" hx-swap="innerHTML"
+    onclick="document.getElementById('price-picker-modal').classList.add('is-active')">{{ facts.total_count }} price{{ facts.total_count|pluralize }} on record for this part →</a></p>
+{% endif %}
+</div>

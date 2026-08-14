@@ -1,0 +1,674 @@
+{
+  "generated_at": "2026-08-09",
+  "issue": "Multi-line {# ... #} Django comments. Django's {# #} comment tag cannot span multiple lines - it only comments to the end of the line. Every occurrence below therefore renders its comment body into the page as literal visible text.",
+  "fix": "Replace the whole {# ... #} block with {% comment %} ... {% endcomment %}. Keep the wording; drop the leading '{#' and trailing '#}'. Do not merge the comment onto one line - the {% comment %} tag is the correct construct here.",
+  "verification": "After editing, render the affected route and confirm no '{#' or '#}' appears in the response body.",
+  "review_manually": [
+    "app/public_app/templates/kitchen_sink/index.html",
+    "app/public_app/templates/kitchen_sink/design_patterns/list_management.html"
+  ],
+  "review_manually_reason": "These are style-guide/demo pages. Some occurrences may be deliberate displayed code samples showing template syntax to the reader rather than real comments. Check intent before converting each one.",
+  "already_fixed_do_not_reopen": [
+    "app/procurement/templates/procurement/demands/_index_results.html",
+    "app/procurement/templates/procurement/demands/_results_card.html",
+    "app/procurement/templates/procurement/packages/_index_results.html",
+    "app/procurement/templates/procurement/packages/_results_card.html",
+    "app/procurement/templates/procurement/packages/_hero_metrics.html"
+  ],
+  "total_occurrences": 57,
+  "total_files": 15,
+  "files": {
+    "app/detail_extensions/templates/detail_extensions/panel/panel_fragment.html": [
+      {
+        "line": 2,
+        "end_line": 3,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "{# HTMX fragment — included into a parent page via hx-target + format=htmx-panel.",
+          "   F5-safe full-page wrapper is panel.html. #}"
+        ]
+      }
+    ],
+    "app/events/templates/events/comment/history.html": [
+      {
+        "line": 32,
+        "end_line": 33,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "  {# Revision entries are individual comment bodies — square, matching the rows",
+          "     in events/fragments/comment_row.html. See docs/UX_UI/components/chamfers.md. #}"
+        ]
+      }
+    ],
+    "app/parts/templates/parts/_domains_dlb_only.html": [
+      {
+        "line": 1,
+        "end_line": 2,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "{# Direct analogue of app/administration/templates/users/_domains_dlb_only.html —",
+          "   same dual-list-box component, same move-endpoint contract, applied to Part. #}"
+        ]
+      }
+    ],
+    "app/parts/templates/parts/bulk_upload.html": [
+      {
+        "line": 71,
+        "end_line": 74,
+        "unterminated": false,
+        "line_count": 4,
+        "snippet": [
+          "        {# ── Domains — hidden until the button above is clicked. Left-heavy assignment card",
+          "             pair per harness/UX_UI/search/left_heavy_assignment_card_pair.md, staged client-side",
+          "             (no Part ids exist yet) into hidden domain_ids inputs at submit time. Every part",
+          "             created by this upload is assigned the same domain set. #}"
+        ]
+      }
+    ],
+    "app/parts/templates/parts/create_wizard.html": [
+      {
+        "line": 61,
+        "end_line": 63,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "        {# ── 2. Domains — hidden until \"Restrict to specific domains\" is checked above.",
+          "             Left-heavy assignment card pair per harness/UX_UI/search/left_heavy_assignment_card_pair.md,",
+          "             staged client-side (no Part id exists yet) into hidden domain_ids inputs at submit time. #}"
+        ]
+      },
+      {
+        "line": 197,
+        "end_line": 199,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# Cloneable row template for \"Add another supplier item\" — __ROW__ is a literal token, not",
+          "   a real index; JS replaces it with the next row number on clone. Reuses the same",
+          "   _manufacturer_picker.html include as row 0 so both stay in sync automatically. #}"
+        ]
+      }
+    ],
+    "app/parts/templates/parts/supplier_items/new.html": [
+      {
+        "line": 22,
+        "end_line": 23,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "{# All 3 steps render at once; step 2/3 inputs start disabled and are progressively enabled —",
+          "   see docs/UX_UI/components/multi_step_flows.md (\"later steps shown but disabled\"). #}"
+        ]
+      },
+      {
+        "line": 61,
+        "end_line": 63,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "                {# DEV NOTE (v1 limitation): only majors that already exist as PartRevision rows",
+          "                     on this Part are offered here. A future major not yet created can't be",
+          "                     selected, and there's no typed/custom numeric entry path yet. #}"
+        ]
+      },
+      {
+        "line": 74,
+        "end_line": 76,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "                {# DEV NOTE: leaving this blank after picking a major is valid and intentional —",
+          "                     null minor means \"whole major band\" (D13). The overall default when nothing",
+          "                     is touched at all is \"valid for all revisions\" — never force a pick here. #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/packages/basic_manager.html": [
+      {
+        "line": 107,
+        "end_line": 109,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "                {# THE EXPLICIT EQUIVALENT OF THE DRAG GESTURE. Always present,",
+          "                   never hidden behind a \"no JS\" branch — one path, tested by",
+          "                   everyone who uses it. #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/packages/detail.html": [
+      {
+        "line": 94,
+        "end_line": 96,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "            {# Constrained to the CURRENTLY LEGAL next stage(s). Not a stepper,",
+          "               not jump-to-any-stage: a list offering illegal moves teaches",
+          "               people to expect a refusal. #}"
+        ]
+      },
+      {
+        "line": 226,
+        "end_line": 229,
+        "unterminated": false,
+        "line_count": 4,
+        "snippet": [
+          "                      {# DELIBERATELY NOT DEFAULTED TO 0 or to the shipped",
+          "                         quantity. A blank box means \"not inspected\", and the",
+          "                         handler refuses a blank rather than reading it as a",
+          "                         write-off. #}"
+        ]
+      },
+      {
+        "line": 322,
+        "end_line": 324,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ---- Status history stepper. Kept ALONGSIDE the comments card, never",
+          "           merged into it: one answers \"where is it\" at a glance, the other",
+          "           answers \"why\" in prose. ---- #}"
+        ]
+      },
+      {
+        "line": 346,
+        "end_line": 347,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "    {# ---- The package's OWN Event stream (D68). Package-lifecycle machine",
+          "           comments live here now, not on the PO's thread. ---- #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/packages/edit.html": [
+      {
+        "line": 90,
+        "end_line": 92,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "          {# Read-only here on purpose. Advancing status is its own action on",
+          "             the view page — the same edit-vs-status-action split the PO sector",
+          "             draws. #}"
+        ]
+      },
+      {
+        "line": 216,
+        "end_line": 217,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "                {# hx-push-url keeps the selection in the URL, so a reload or a",
+          "                   bookmark reproduces it exactly. #}"
+        ]
+      },
+      {
+        "line": 331,
+        "end_line": 334,
+        "unterminated": false,
+        "line_count": 4,
+        "snippet": [
+          "    {# ---- Candidate PO lines as WIDE SEARCH-SELECT CARDS. Each candidate",
+          "           needs three quantities to judge against — ordered, already accepted,",
+          "           outstanding — which a compact row cannot carry, and the pool is too",
+          "           large and too filter-dependent for a typeahead. ---- #}"
+        ]
+      },
+      {
+        "line": 408,
+        "end_line": 410,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "                  {# Defaulted to the WHOLE line, which is the common case and",
+          "                     produces a plain reassignment. Type less and it becomes a",
+          "                     split — same control, one decision. #}"
+        ]
+      },
+      {
+        "line": 528,
+        "end_line": 530,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "          {# MANDATORY ALWAYS, not only on a delivered package: a shipment",
+          "             record vanishing with no stated reason is the case where the",
+          "             history is most needed and least recoverable. #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/purchase_orders/detail.html": [
+      {
+        "line": 54,
+        "end_line": 55,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "{# ---- The approval axis and the status axis, as separate action groups. They",
+          "       answer different questions and are never one control. ---- #}"
+        ]
+      },
+      {
+        "line": 203,
+        "end_line": 206,
+        "unterminated": false,
+        "line_count": 4,
+        "snippet": [
+          "                {# The attribution rule (D55/D60). A shared session yields a",
+          "                   SENTENCE, never a per-demand number — the system must never",
+          "                   divide session_arrived among its members, not even as an",
+          "                   estimate. #}"
+        ]
+      },
+      {
+        "line": 325,
+        "end_line": 326,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "    {# ---- Per-line allocation editor. Expands for the line named in ?line_id=,",
+          "           so the state is a URL and survives a reload. ---- #}"
+        ]
+      },
+      {
+        "line": 489,
+        "end_line": 491,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# Always renders, even with zero comments — this is the order's whole",
+          "       history: status changes, D57 audit snapshots, human comments, and the",
+          "       document library (quotes, invoices, packing slips). #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/purchase_orders/edit.html": [
+      {
+        "line": 70,
+        "end_line": 72,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "          {# Read-only on purpose. Status changes happen through their own",
+          "             actions on the detail page, never through an edit form — the same",
+          "             edit-vs-status-action split D57 draws for lines. #}"
+        ]
+      },
+      {
+        "line": 133,
+        "end_line": 135,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "            {# NO LINE IS EVER UNSELECTABLE, including a fully-linked one — the",
+          "               Buyer must be able to review or de-link a complete line without",
+          "               leaving the portal. #}"
+        ]
+      },
+      {
+        "line": 139,
+        "end_line": 140,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "                {# hx-push-url keeps selection in the URL, so a reload or a",
+          "                   bookmark reproduces it exactly. #}"
+        ]
+      },
+      {
+        "line": 211,
+        "end_line": 212,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "                  {# Cross-domain demand: identifying data in plain text, no link",
+          "                     through to a page this user cannot open. #}"
+        ]
+      },
+      {
+        "line": 244,
+        "end_line": 245,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "    {# ---- Top-bottom demand search tool: filter bar over a results list, each",
+          "           row carrying its own Link action. ---- #}"
+        ]
+      },
+      {
+        "line": 255,
+        "end_line": 256,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "        {# The selected line rides along in every filter submission, so filtering",
+          "           never silently deselects the line being worked on. #}"
+        ]
+      }
+    ],
+    "app/procurement/templates/procurement/purchase_orders/index.html": [
+      {
+        "line": 26,
+        "end_line": 27,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "    {# Counts reflect the filters currently applied below — this card is inside",
+          "       the hx-select target, so submitting the filter form refreshes it too. #}"
+        ]
+      },
+      {
+        "line": 48,
+        "end_line": 49,
+        "unterminated": false,
+        "line_count": 2,
+        "snippet": [
+          "  {# Plain GET form: every filter state is a bookmarkable URL, so F5 reproduces",
+          "     the list exactly. HTMX only smooths the swap on top of that. #}"
+        ]
+      }
+    ],
+    "app/public_app/templates/kitchen_sink/design_patterns/list_management.html": [
+      {
+        "line": 77,
+        "end_line": 79,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     1. LIST BOX (SINGLE PANEL)",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 125,
+        "end_line": 127,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     2. DUAL LISTBOX",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 188,
+        "end_line": 190,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     3. LEFT-HEAVY ASSIGNMENT CARD PAIR",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 543,
+        "end_line": 545,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     4. SELECT + MINI CARDS COMBO",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 632,
+        "end_line": 634,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     5. SELECT + WIDE CARDS COMBO",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 753,
+        "end_line": 755,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     6. TOP AND BOTTOM FILTERABLE LIST TABLE PAIR",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1024,
+        "end_line": 1026,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "{# ═══════════════════════════════════════════════════════════",
+          "     7. TOP AND BOTTOM SEARCH SELECT WIDE CARDS PAIR",
+          "════════════════════════════════════════════════════════════ #}"
+        ]
+      }
+    ],
+    "app/public_app/templates/kitchen_sink/index.html": [
+      {
+        "line": 341,
+        "end_line": 343,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         PAGE HERO PATTERN (Documentation)",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 372,
+        "end_line": 374,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         TYPOGRAPHY",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 400,
+        "end_line": 402,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         COLORS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 480,
+        "end_line": 482,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         BUTTONS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 610,
+        "end_line": 612,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         ICON-ONLY BUTTONS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 653,
+        "end_line": 655,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         FORMS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 800,
+        "end_line": 802,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         INLINE SINGLE-FIELD FORM",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 824,
+        "end_line": 826,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         GROUPED ADDONS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 930,
+        "end_line": 932,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         CARD LAYOUTS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 961,
+        "end_line": 963,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         SEARCH BARS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1033,
+        "end_line": 1035,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         TABLES",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1117,
+        "end_line": 1119,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         NOTIFICATIONS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1151,
+        "end_line": 1153,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         TAGS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1196,
+        "end_line": 1198,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         LOADING STATES",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1232,
+        "end_line": 1234,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         EMPTY STATES",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1271,
+        "end_line": 1273,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         BREADCRUMBS",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1288,
+        "end_line": 1290,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         PAGINATION",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      },
+      {
+        "line": 1309,
+        "end_line": 1311,
+        "unterminated": false,
+        "line_count": 3,
+        "snippet": [
+          "    {# ═══════════════════════════════════════════════════════════",
+          "         HTMX DEMO",
+          "    ════════════════════════════════════════════════════════════ #}"
+        ]
+      }
+    ],
+    "app/public_app/templates/shared/dual_listbox.html": [
+      {
+        "line": 1,
+        "end_line": 20,
+        "unterminated": false,
+        "line_count": 20,
+        "snippet": [
+          "{# DO NOT {% include %} THIS FRAGMENT.",
+          "   This file is a STRUCTURAL REFERENCE ONLY. It exists so engineers can copy",
+          "   the markup shape (dual-list-box, slotted list-box children, the hx-post",
+          "   control buttons) directly into their own _*_dlb_only.html partials with the",
+          "   real model fields and URL inline.",
+          "",
+          "   Why it is not includable:",
+          "   - Trying to drive every callsite through one generic {% include %} forced"
+        ]
+      }
+    ]
+  }
+}

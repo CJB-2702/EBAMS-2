@@ -1,0 +1,78 @@
+{% comment %}
+Left-heavy assignment: client-side default path (list_management_patterns.md
+§3). Ships only demands whose purchasing_state is unset — OpenDemandSearch
+.for_part's default — and filters them entirely in the browser: this pool is
+one part's demands (tens of rows, already on the page), so filtering it
+server-side would be a round trip for nothing.
+
+The header button opens a warning dialog (a sibling include, see
+_left_heavy_linked_warning_dialog.html) whose confirm action htmx-swaps this
+whole component's parent wrapper for the server_side_search sibling — linked
+demands are never shipped to this component at all, so "including" them means
+switching to a real search, not revealing hidden rows.
+
+Required context: unique_id, part, pool, consumer, line_ref, line_field_name,
+allocate_url, demand_status_choices. exclude_purchase_order/exclude_ids are
+optional (blank for the create wizard's fresh lines).
+{% endcomment %}
+<div class="card lh-client" style="display:flex;flex-direction:column;height:360px;overflow:hidden;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+      Open demands for this part
+    </div>
+    <div class="is-flex is-align-items-center" style="gap:0.75rem;">
+      <span class="is-size-7 has-text-grey lh-client-count">{{ pool|length }} available</span>
+      <button type="button" class="button is-small is-light" title="Search demands with existing purchase order linkages"
+              command="show-modal" commandfor="lh-warn-{{ unique_id }}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">travel_explore</span></span>
+        <span>Search demands with existing purchase order linkages</span>
+      </button>
+    </div>
+  </div>
+  <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis);">
+    <div class="columns is-variable is-2 is-multiline mb-0">
+      <div class="column is-3">
+        <input class="input is-small is-family-monospace" type="text" value="{{ part.part_number }}" disabled
+               aria-label="Part — fixed to this line">
+      </div>
+      <div class="column is-2">
+        <input class="input is-small is-family-monospace lh-filter-id" type="number" placeholder="Demand ID"
+               aria-label="Filter by demand id">
+      </div>
+      <div class="column is-3">
+        <div class="select is-small is-fullwidth">
+          <select class="lh-filter-status" aria-label="Filter by demand status">
+            <option value="">Any status</option>
+            {% for value, label in demand_status_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-2">
+        <input class="input is-small lh-filter-created-from" type="date" aria-label="Created on or after">
+      </div>
+      <div class="column is-2">
+        <input class="input is-small lh-filter-created-to" type="date" aria-label="Created on or before">
+      </div>
+    </div>
+    <div class="control has-icons-left mt-2">
+      <input type="search" class="input is-small lh-filter-text" placeholder="Filter these demands…" autocomplete="off"
+             aria-label="Filter open demands for this part">
+      <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">search</span></span>
+    </div>
+  </div>
+  <div class="alloc-scroll" style="flex:1;overflow-y:auto;min-height:0;">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr>
+        <th>Demand</th><th>Priority</th><th>Needed by</th>
+        <th class="has-text-right">Outstanding</th>
+        <th style="width:11rem;">Allocate</th>
+      </tr></thead>
+      <tbody class="lh-pool-body">
+        {% include "procurement/demands/components/_left_heavy_pool_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>

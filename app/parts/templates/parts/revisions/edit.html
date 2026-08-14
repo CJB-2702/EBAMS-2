@@ -1,0 +1,56 @@
+{% extends "parts/base.html" %}
+{% block title %}Edit Revision {{ revision.major }}.{{ revision.minor }}{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'part_detail' part_id=part_id %}">Part</a></li>
+  <li><a href="{% url 'part_revisions' part_id=part_id %}">Revisions</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Edit {{ revision.major }}.{{ revision.minor }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+      <div><h1 class="page-title">Edit Revision {{ revision.major }}.{{ revision.minor }}</h1>
+        <p class="page-subtitle">Status: {{ revision.status }}</p>
+      </div></div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card mb-5">
+    <div class="card-content">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="card depth-2 mb-4">
+          <div class="card-header"><div class="card-header-title">Detail</div></div>
+          <div class="card-content">
+            <p class="help mb-3">Major/minor numbers are fixed (D4) — append a new revision instead of renumbering.</p>
+            <label class="label is-small">Major Name (optional)</label>
+            <input class="input is-small" type="text" name="major_name" value="{{ revision.major_name|default:'' }}">
+            <label class="label is-small">Minor Name (optional)</label>
+            <input class="input is-small" type="text" name="minor_name" value="{{ revision.minor_name|default:'' }}">
+            <label class="label is-small">Summary</label>
+            <input class="input is-small" type="text" name="summary" value="{{ revision.summary|default:'' }}">
+            <label class="label is-small">Notes</label>
+            <textarea class="textarea is-small" name="notes">{{ revision.notes|default:'' }}</textarea>
+            <label class="label is-small">Date of Release</label>
+            <input class="input is-small" type="date" name="date_of_release" value="{{ revision.date_of_release|date:'Y-m-d' }}">
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button type="submit" class="button is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save Changes</span>
+          </button>
+          <a href="{% url 'part_revisions' part_id=part_id %}" class="button is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Cancel</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

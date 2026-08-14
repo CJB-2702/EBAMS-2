@@ -1,0 +1,51 @@
+{% load procurement_tags %}
+<div id="price-hub-results">
+<div class="card">
+  <div class="card-header"><p class="card-header-title">{{ total }} observation{{ total|pluralize }}</p></div>
+  <div class="card-content">
+    {% if page.object_list %}
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow">
+        <thead>
+          <tr>
+            <th>Part</th><th>Vendor</th><th>Domain</th>
+            <th class="has-text-right">Price</th><th>Source</th><th>Confidence</th>
+            <th>Recorded</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for obs in page.object_list %}
+          <tr>
+            <td><a href="{% url 'part_price_history' obs.part_id %}" class="is-family-monospace">{{ obs.part.part_number }}</a></td>
+            <td>{{ obs.vendor.name }}</td>
+            <td class="is-size-7">{{ obs.domain.name }}</td>
+            <td class="has-text-right is-family-monospace">{{ obs.unit_cost }}</td>
+            <td class="is-size-7">{{ obs.get_source_type_display }}</td>
+            <td class="is-size-7">{{ obs.get_confidence_display }}</td>
+            <td class="is-size-7 has-text-grey">{% price_staleness obs.observed_at %}</td>
+            <td>{% if obs.is_verified %}<span class="tag is-small is-success is-light">Verified</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination is-centered is-small mt-4" role="navigation" aria-label="pagination">
+      {% if page.has_previous %}
+      <a class="pagination-previous" href="?{{ carry_qs }}&page={{ page.previous_page_number }}">Previous</a>
+      {% endif %}
+      {% if page.has_next %}
+      <a class="pagination-next" href="?{{ carry_qs }}&page={{ page.next_page_number }}">Next</a>
+      {% endif %}
+      <ul class="pagination-list">
+        <li><span class="pagination-link is-current">{{ page.number }} of {{ page.paginator.num_pages }}</span></li>
+      </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <p class="has-text-grey is-size-7">No observations match these filters.</p>
+    {% endif %}
+  </div>
+</div>
+</div>

@@ -1,0 +1,54 @@
+{% load procurement_tags %}
+{% comment %}
+The results card alone. Included directly by index.html on a full page load,
+and by _index_results.html (which adds the OOB metrics swap) on the htmx
+path. Keep the OOB block out of here — including it on a full page load
+duplicates the `demand-hero-metrics` id and renders the metrics table twice.
+{% endcomment %}
+<div class="card" id="demand-results-container">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Demands ({{ page.paginator.count }})</div></div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>#</th><th>Part</th><th>Qty Req.</th><th>Priority</th><th>Needed By</th>
+          <th>Demand</th><th>Purchasing</th><th>Shipment</th><th>Issuance</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in demands %}
+        <tr>
+          <td><a href="{% url 'demand_detail' pk=d.pk %}">#{{ d.pk }}</a></td>
+          <td>{{ d.part.part_number }} <span class="has-text-grey is-size-7">{{ d.part.name }}</span></td>
+          <td class="is-family-monospace">{{ d.quantity_requested }}</td>
+          <td>{% demand_priority_tag d.priority %}</td>
+          <td>{{ d.needed_by|date:"Y-m-d"|default:"—" }}</td>
+          <td>{% demand_axis_tag "demand" d.demand_state %}</td>
+          <td>{% demand_axis_tag "purchasing" d.purchasing_state %}</td>
+          <td>{% demand_axis_tag "shipment" d.shipment_state %}</td>
+          <td>{% demand_axis_tag "issuance" d.issuance_state %}</td>
+          <td class="has-text-right">
+            <a class="button is-small is-light" href="{% url 'demand_detail' pk=d.pk %}">
+              <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="has-text-grey has-text-centered py-5">No demands match your filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+    <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+        <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>

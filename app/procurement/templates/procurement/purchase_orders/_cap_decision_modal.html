@@ -1,0 +1,153 @@
+{% comment %}
+D28's allocation-cap decision — ONE component, three call sites (the wizard's
+per-line allocation card, PO detail's inline allocation editor, and Edit &
+Linkage's right column). Do not fork it per page.
+
+THE CAP IS PER DEMAND, NEVER PER LINE. A PO line is always free to carry more
+ordered quantity than the sum of its allocations — that is proactive restocking,
+a vendor minimum order quantity, and reserve for a demand that does not exist
+yet, all at once (D14/D28). What is capped is how much of a *demand* can be
+claimed as on order.
+
+Exceeding it is neither a silent success nor a flat refusal. It is a choice, and
+this dialog is where the Buyer makes it:
+
+  raise the request      the demand's quantity_requested moves up to cover the
+                         allocation. This edits somebody else's record, so it
+                         carries a strong warning.
+  leave excess unallocated  allocate only the outstanding amount; the rest of
+                         the line stays unclaimed, which is a legitimate line.
+
+A modal is correct here despite the "assignment never lives in a modal" rule:
+this is a one-shot confirmation on a single pending allocation, not the
+assignment interaction itself — modals.md's single-field-capture / confirmation
+carve-out, not its excluded case.
+
+Context: `cap_decision` = {form_action, demand_id, part_label, quantity_requested,
+purchased_qty, outstanding, attempted, fields} where `fields` is a list of
+{name, value} replaying the original submission.
+{% endcomment %}
+{% if cap_decision %}
+<dialog id="cap-decision-dialog" class="card modal-styled" style="padding:0; max-width:640px;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon has-text-warning"><span class="material-icons" aria-hidden="true">report_problem</span></span>
+      Allocation exceeds demand #{{ cap_decision.demand_id }}
+    </p>
+    <button type="button" class="delete is-large" aria-label="close" commandfor="cap-decision-dialog" command="close"></button>
+  </header>
+
+  <div class="card-content">
+    <div class="content">
+      {% if cap_decision.binary_allocation %}
+      <p class="mb-3">
+        Allocations for demand #{{ cap_decision.demand_id }} must be all-or-nothing:
+        you must allocate the entire outstanding amount of
+        <strong class="is-family-monospace">{{ cap_decision.outstanding }}</strong>
+        or nothing at all.
+      </p>
+      <dl class="kv is-size-7">
+        <dt>Requested</dt><dd class="is-family-monospace">{{ cap_decision.quantity_requested }}</dd>
+        <dt>Already on order</dt><dd class="is-family-monospace">{{ cap_decision.purchased_qty }}</dd>
+        <dt>Outstanding</dt><dd class="is-family-monospace">{{ cap_decision.outstanding }}</dd>
+      </dl>
+      <p class="has-text-grey is-size-7 mt-3">
+        If you cannot purchase the full amount right now, allocate it to a future
+        purchase order instead when you have enough inventory budget.
+      </p>
+      {% else %}
+      <p class="mb-3">
+        You allocated <strong class="is-family-monospace">{{ cap_decision.attempted }}</strong>
+        {% if cap_decision.part_label %}of {{ cap_decision.part_label }} {% endif %}to
+        demand&nbsp;#{{ cap_decision.demand_id }}, which has only
+        <strong class="is-family-monospace">{{ cap_decision.outstanding }}</strong> outstanding.
+      </p>
+      <dl class="kv is-size-7">
+        <dt>Requested</dt><dd class="is-family-monospace">{{ cap_decision.quantity_requested }}</dd>
+        <dt>Already on order</dt><dd class="is-family-monospace">{{ cap_decision.purchased_qty }}</dd>
+        <dt>Outstanding</dt><dd class="is-family-monospace">{{ cap_decision.outstanding }}</dd>
+        <dt>You allocated</dt><dd class="is-family-monospace has-text-weight-bold">{{ cap_decision.attempted }}</dd>
+      </dl>
+      <p class="has-text-grey is-size-7 mt-3">
+        A purchase-order line may legitimately carry more than its demands claim — buying
+        extra is not an error. Choose whether the extra should be charged to this demand
+        or simply left unclaimed on the line.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="post" action="{{ cap_decision.form_action }}">
+    {% csrf_token %}
+    {% for field in cap_decision.fields %}
+      <input type="hidden" name="{{ field.name }}" value="{{ field.value }}">
+    {% endfor %}
+
+    {% if cap_decision.binary_allocation %}
+    <div class="card-content pt-0">
+      <article class="message is-info is-small mb-0">
+        <div class="message-body is-size-7">
+          <strong>All-or-nothing allocation:</strong> You can either raise the demand's requested
+          quantity to cover a larger purchase, or cancel and add it to a future order.
+        </div>
+      </article>
+    </div>
+
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="cap-decision-dialog" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </div>
+      <button type="submit" name="cap_resolution" value="raise_request"
+              class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">trending_up</span></span>
+        <span>Raise request to {{ cap_decision.outstanding }}</span>
+      </button>
+    </footer>
+    {% else %}
+    <div class="card-content pt-0">
+      <article class="message is-warning is-small mb-0">
+        <div class="message-body is-size-7">
+          <strong>Raising the request edits the requester's demand.</strong>
+          Demand&nbsp;#{{ cap_decision.demand_id }}'s requested quantity becomes
+          <span class="is-family-monospace">{{ cap_decision.purchased_qty|add:cap_decision.attempted }}</span>.
+          Do this only when you know the requester genuinely needs the larger amount —
+          it is not a way to silence this dialog.
+        </div>
+      </article>
+    </div>
+
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="cap-decision-dialog" command="close">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+        <button type="submit" name="cap_resolution" value="raise_request"
+                class="button is-small is-warning is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">trending_up</span></span>
+          <span>Raise the request</span>
+        </button>
+      </div>
+      <button type="submit" name="cap_resolution" value="leave_unallocated"
+              class="button is-primary card-footer-primary"
+              {% if not cap_decision.outstanding %}disabled title="This demand has nothing outstanding — there is no amount left to allocate."{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">content_cut</span></span>
+        <span>Allocate {{ cap_decision.outstanding }}, leave the rest unallocated</span>
+      </button>
+    </footer>
+    {% endif %}
+  </form>
+</dialog>
+<script>
+  // Server-decided dialogs open on render. `commandfor` handles user-triggered
+  // dialogs natively and needs no script; this one has no trigger to click —
+  // the server decided it must be answered, so it is opened here.
+  (function () {
+    var dialog = document.getElementById('cap-decision-dialog');
+    if (dialog && !dialog.open) { dialog.showModal(); }
+  })();
+</script>
+{% endif %}

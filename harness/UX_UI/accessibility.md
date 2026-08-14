@@ -25,10 +25,10 @@ The accessibility floor every page must meet, plus per-component additions refer
 
 ## Component-specific accessibility (referenced from peer files)
 
-- **Buttons:** every action has a text label except in the [icon-only exceptions](components/common_buttons.md#icon-only-buttons) list. Table-row buttons carry both `title` and `aria-label` with the row identifier.
+- **Buttons:** every action has a text label except in the [icon-only exceptions](design_patterns/common_buttons.md#icon-only-buttons) list. Table-row buttons carry both `title` and `aria-label` with the row identifier.
 - **Modals:** the native `<dialog>` element provides focus trap, backdrop, and Escape-to-close. Close buttons use `aria-label="close"`.
 - **Dual listbox:** each column is a `<ul role="listbox" aria-multiselectable="true">` with a real heading element above it ([components/dual_listbox.md](components/dual_listbox.md)).
-- **`<search-dropdown>`:** the host is form-associated and propagates the picked value to the surrounding form ([components/searchbars.md](components/searchbars.md)).
+- **`<search-dropdown>`:** the host is form-associated and propagates the picked value to the surrounding form ([search/searchbars.md](search/searchbars.md)).
 
 ---
 

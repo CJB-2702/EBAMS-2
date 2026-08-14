@@ -30,7 +30,7 @@
 <form method="post" action="{% url 'extension_assign_editor' ctx.descriptor.key %}">
   {% csrf_token %}
 
-  {# ── Asset Class assignments ─────────────────────────────────────────── #}
+  {# Asset Class assignments #}
   <div class="card mb-4">
     <div class="card-header">
       <span class="card-header-title">
@@ -72,7 +72,7 @@
     </div>
   </div>
 
-  {# ── Per-model override (ASSET-target only) ──────────────────────────── #}
+  {# Per-model override (ASSET-target only) #}
   {% if ctx.descriptor.target.value == "asset" and ctx.asset_models %}
   <div class="card mb-4">
     <div class="card-header">

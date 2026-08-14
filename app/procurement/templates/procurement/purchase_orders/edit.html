@@ -1,0 +1,400 @@
+{% extends "procurement/base.html" %}
+{% load static %}
+{% block title %}Edit &amp; Linkage — {{ po.po_number }}{% endblock %}
+{% block nav_po_index %}is-active{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'purchase_order_index' %}">Purchase Orders</a></li>
+  <li><a href="{% url 'purchase_order_detail' po.pk %}">{{ po.po_number }}</a></li>
+  <li class="is-active"><a href="#" aria-current="page">Edit &amp; Linkage</a></li>
+{% endblock %}
+
+{% comment %}
+PO EDIT & LINKAGE — the renamed Linkage Portal (/link -> /edit), now with a real
+header edit form on top.
+
+The master-detail selection MUST round-trip through the URL. `?line_id=` is not a
+convenience: it is how Phase 1's demand pages deep-link straight to the relevant
+line, and it is what makes a reload or a bookmark reproduce the selection. The
+legacy portal selected client-side with no URL sync; that gap is not repeated.
+
+The right column is a TOP-BOTTOM search tool, deliberately not the wizard's
+left-heavy pair. The target here is a current-links list, not a running multi-pick
+build-up, so there is nothing to hold side by side.
+{% endcomment %}
+
+{% block content %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+
+<div class="page-hero">
+  <div class="page-hero-content">
+    <h1 class="page-title">Edit &amp; Linkage</h1>
+    <p class="page-subtitle">{{ po.po_number }} · {{ po.vendor.name }}</p>
+    <div class="mt-2">{% include "procurement/purchase_orders/_status_tags.html" %}</div>
+  </div>
+  <div class="page-hero-actions">
+    <a href="{% url 'purchase_order_detail' po.pk %}" class="button is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+      <span>Back to order</span>
+    </a>
+  </div>
+</div>
+
+{% if show_placed_warning %}
+<article class="message is-warning">
+  <div class="message-body is-size-7">
+    <strong>This order is {{ po.get_status_display }}.</strong>
+    Header edits are still allowed — but saving posts a snapshot of the previous values to the
+    order's activity thread, the same shape as a line edit. Permissive, paid for in audit.
+  </div>
+</article>
+{% endif %}
+
+{# ================= Top row, full width — the header edit form ================= #}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>
+    Order header
+  </div></div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_header">
+    <input type="hidden" name="selected_line_id" value="{{ selected_line_id|default:'' }}">
+    <div class="card-content">
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-3">
+          <label class="label is-small">PO number</label>
+          <p class="is-family-monospace">{{ po.po_number }}</p>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Status</label>
+          {% comment %}
+          Read-only on purpose. Status changes happen through their own
+          actions on the detail page, never through an edit form — the same
+          edit-vs-status-action split D57 draws for lines.
+          {% endcomment %}
+          <p>{{ po.get_status_display }} · {{ approval_label }}</p>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="edit-vendor">Vendor <span class="has-text-danger">*</span></label>
+          <div class="select is-small is-fullwidth"><select id="edit-vendor" name="vendor_id" required>
+            {% for vendor in vendors %}
+              <option value="{{ vendor.pk }}" {% if po.vendor_id == vendor.pk %}selected{% endif %}>{{ vendor.name }}</option>
+            {% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="edit-contact">Vendor contact</label>
+          <input id="edit-contact" class="input is-small is-family-monospace" type="text" name="vendor_contact" value="{{ po.vendor_contact }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="edit-vendor-po">Vendor's own PO number</label>
+          <input id="edit-vendor-po" class="input is-small is-family-monospace" type="text" name="vendor_po_id" value="{{ po.vendor_po_id|default:'' }}">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="edit-order-date">Order date <span class="has-text-danger">*</span></label>
+          <input id="edit-order-date" class="input is-small" type="date" name="order_date" value="{{ po.order_date|date:'Y-m-d' }}" required>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="edit-expected">Expected delivery</label>
+          <input id="edit-expected" class="input is-small" type="date" name="expected_delivery_date" value="{{ po.expected_delivery_date|date:'Y-m-d' }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small" for="edit-notes">Notes</label>
+          <textarea id="edit-notes" class="textarea is-small" rows="2" name="notes">{{ po.notes }}</textarea>
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'purchase_order_detail' po.pk %}" class="button is-small is-light">Cancel</a>
+        <button type="reset" class="button is-small is-light">Reset</button>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_buy %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Save header</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+{% if can_buy %}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+    Add a line
+  </div></div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_line">
+    <input type="hidden" name="selected_line_id" value="{{ selected_line_id|default:'' }}">
+    <div class="card-content">
+      <div class="columns is-variable is-3">
+        <div class="column is-3">
+          <label class="label is-small" for="add-line-part">Part</label>
+          <input id="add-line-part" class="input is-small is-family-monospace" type="number" name="part_id" placeholder="part id" required>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="add-line-qty">Quantity</label>
+          <input id="add-line-qty" class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity_ordered" required>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="add-line-cost">Unit cost</label>
+          <input id="add-line-cost" class="input is-small is-family-monospace" type="number" step="0.01" min="0" name="unit_cost" required>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="add-line-date">Delivery</label>
+          <input id="add-line-date" class="input is-small" type="date" name="expected_delivery_date">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="add-line-notes">Notes</label>
+          <input id="add-line-notes" class="input is-small" type="text" name="line_notes">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries"></div>
+      <button type="submit" class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>Add line</span>
+      </button>
+    </footer>
+  </form>
+</div>
+{% endif %}
+
+<div class="columns is-variable is-4">
+
+  {# Left column (1/3): every line, selectable #}
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+          Lines
+        </div>
+        <span class="is-size-7 has-text-grey pr-3">{{ lines|length }}</span>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <tbody>
+            {% comment %}
+            NO LINE IS EVER UNSELECTABLE, including a fully-linked one — the
+            Buyer must be able to review or de-link a complete line without
+            leaving the portal.
+            {% endcomment %}
+            {% for line in lines %}
+            <tr class="{% if line.struct.line_id == selected_line_id %}is-selected{% endif %}">
+              <td>
+                {% comment %}
+                hx-push-url keeps selection in the URL, so a reload or a
+                bookmark reproduces it exactly.
+                {% endcomment %}
+                <a href="?line_id={{ line.struct.line_id }}"
+                   hx-get="?line_id={{ line.struct.line_id }}"
+                   hx-target="#procurement-main-content"
+                   hx-select="#procurement-main-content"
+                   hx-push-url="true"
+                   class="is-block">
+                  <span class="is-family-monospace">{{ line.struct.line_number }}. {{ line.struct.part_number }}</span>
+                  <span class="is-block has-text-grey">
+                    ordered {{ line.struct.qty_ordered }} ·
+                    allocated {{ line.struct.qty_allocated }}{% if line.unallocated > 0 %} · {{ line.unallocated }} pending{% endif %}
+                  </span>
+                  <span class="tag is-small mt-1 {% if line.struct.qty_allocated <= 0 %}is-light{% elif line.unallocated > 0 %}is-warning{% else %}is-success{% endif %}">
+                    {% if line.struct.qty_allocated <= 0 %}Unlinked{% elif line.unallocated > 0 %}Partially linked{% else %}Fully linked{% endif %}
+                  </span>
+                </a>
+              </td>
+              {% if can_buy %}
+              <td style="width:2.5rem; vertical-align:middle;">
+                <form method="post" style="margin:0;"
+                      onsubmit="return confirm('Cancel line {{ line.struct.line_number }}? Its demand links are removed and those demands\' purchasing state resets.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="cancel_line">
+                  <input type="hidden" name="line_id" value="{{ line.struct.line_id }}">
+                  <button type="submit" class="button is-small is-light" title="Cancel line">
+                    <span class="icon has-text-danger"><span class="material-icons is-size-7" aria-hidden="true">delete</span></span>
+                  </button>
+                </form>
+              </td>
+              {% endif %}
+            </tr>
+            {% empty %}
+            <tr><td class="has-text-grey has-text-centered py-5">
+              No lines on this order yet. Add one below.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Right column (2/3): current links, then a top-bottom search #}
+  <div class="column">
+    {% if not selected %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+        Linkage
+      </div></div>
+      <div class="card-content">
+        <p class="has-text-grey is-size-7">
+          Choose a line on the left. Nothing here is interactive until one is selected —
+          links belong to a line, not to the order.
+        </p>
+      </div>
+    </div>
+    {% else %}
+
+    {# Current links for the selected line #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+          Line {{ selected.struct.line_number }} · {{ selected.struct.part_number }} — current links
+        </div>
+        <span class="is-size-7 has-text-grey pr-3">
+          {{ selected.struct.qty_allocated }} / {{ selected.struct.qty_ordered }} allocated
+        </span>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>Demand</th><th>State</th>
+            <th class="has-text-right">Allocated</th><th class="has-text-right">Requested</th>
+            <th style="width:6rem;"></th>
+          </tr></thead>
+          <tbody>
+            {% for entry in selected.links %}
+            <tr>
+              <td>
+                {% if entry.linkable %}
+                  <a class="is-family-monospace" href="{% url 'demand_detail' entry.demand.pk %}">#{{ entry.demand.pk }}</a>
+                {% else %}
+                  {% comment %}
+                  Cross-domain demand: identifying data in plain text, no link
+                  through to a page this user cannot open.
+                  {% endcomment %}
+                  <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">#{{ entry.demand.pk }}</span>
+                {% endif %}
+              </td>
+              <td>{{ entry.demand.get_demand_state_display }}</td>
+              <td class="has-text-right is-family-monospace">{{ entry.link.quantity_allocated }}</td>
+              <td class="has-text-right is-family-monospace">{{ entry.demand.quantity_requested }}</td>
+              <td>
+                {% if can_buy %}
+                <form method="post" style="margin:0;"
+                      onsubmit="return confirm('De-link demand #{{ entry.demand.pk }}? This is the Buyer\'s alternative to cancelling a demand — the demand itself is untouched.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delink">
+                  <input type="hidden" name="link_id" value="{{ entry.link.pk }}">
+                  <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
+                  <button type="submit" class="button is-small is-light" title="De-link">
+                    <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">link_off</span></span>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="has-text-grey has-text-centered py-5">
+              No demands linked to this line. That is a valid line — it buys stock nobody has claimed.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% comment %}
+    ---- Top-bottom demand search tool: filter bar over a results list, each
+    row carrying its own Link action. ----
+    {% endcomment %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        Link another demand to this line
+      </div></div>
+
+      <form method="get" class="card-content pb-2"
+            hx-get="{% url 'purchase_order_edit' po.pk %}"
+            hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        {% comment %}
+        The selected line rides along in every filter submission, so filtering
+        never silently deselects the line being worked on.
+        {% endcomment %}
+        <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
+        <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
+          <div style="flex:2;min-width:200px;">
+            <label class="label is-small" for="link-q">Search</label>
+            <input id="link-q" class="input is-small is-family-monospace" type="search" name="q" value="{{ search_filters.q }}" placeholder="part number, name, notes…">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="label is-small" for="link-priority">Priority</label>
+            <div class="select is-small is-fullwidth"><select id="link-priority" name="priority">
+              <option value="">Any</option>
+              {% for value, label in priority_choices %}
+                <option value="{{ value }}" {% if search_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select></div>
+          </div>
+          <div style="flex:1;min-width:120px;">
+            <label class="label is-small" for="link-part">Part id</label>
+            <input id="link-part" class="input is-small is-family-monospace" type="number" name="part_id" value="{{ search_filters.part_id|default:'' }}">
+          </div>
+          <button type="submit" class="button is-small is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Filter</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="card-content is-flush" style="max-height:420px;overflow-y:auto;">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>Demand</th><th>Part</th><th>Priority</th><th>Needed by</th>
+            <th class="has-text-right">Outstanding</th><th style="width:12rem;">Link</th>
+          </tr></thead>
+          <tbody>
+            {% for demand in candidates %}
+            <tr>
+              <td class="is-family-monospace">#{{ demand.pk }}</td>
+              <td>{{ demand.part.part_number }} <span class="has-text-grey">{{ demand.part.name }}</span></td>
+              <td>{{ demand.get_priority_display }}</td>
+              <td>{{ demand.needed_by|date:"Y-m-d"|default:"—" }}</td>
+              <td class="has-text-right is-family-monospace">{{ demand.outstanding_qty }}</td>
+              <td>
+                {% if can_buy %}
+                <form method="post" class="mb-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="allocate">
+                  <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
+                  <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+                  <input type="hidden" name="quantity_allocated" value="{{ demand.outstanding_qty }}">
+                  <button type="submit" class="button is-small is-link" title="Allocate all {{ demand.outstanding_qty }} to this line">
+                    <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+                    <span>Allocate all</span>
+                  </button>
+                </form>
+                {% else %}
+                <span class="has-text-grey">Buyer only</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="has-text-grey has-text-centered py-5">
+              No open demands match. Demands already on this order are not offered again —
+              allocating more means editing the existing link above.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% include "procurement/purchase_orders/_cap_decision_modal.html" %}
+{% endblock %}

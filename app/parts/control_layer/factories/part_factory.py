@@ -8,9 +8,12 @@ from typing import TYPE_CHECKING
 from django.db import transaction
 
 from app.parts.control_layer.errors import PartValidationError
+from app.parts.control_layer.factories.alias_factory import AliasFactory
 from app.parts.control_layer.guards.part_validator_guard import PartValidator
 from app.parts.control_layer.managers.part_revision_manager import PartRevisionManager
-from app.parts.models import Part, PartRevisionStatus
+from app.parts.control_layer.narrators.alias_narrator import AliasNarrator
+from app.parts.control_layer.narrators.part_activity_narrator import PartActivityNarrator
+from app.parts.models import AliasSource, Part, PartRevisionStatus
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -35,7 +38,8 @@ class PartFactory:
                 part_type=data.get("part_type") or "",
                 category=data.get("category") or "",
                 is_active=data.get("is_active", True),
-                is_domain_limited=data.get("is_domain_limited", False),
+                # is_domain_limited starts False (model default) — it becomes True only
+                # as a side effect of PartDomainManager.add_domain being called later.
                 created_by=actor,
                 updated_by=actor,
             )
@@ -46,10 +50,15 @@ class PartFactory:
             )
 
             # Alias hook (D8/D9): mirrors part_number into an INTERNAL alias.
-            from app.parts.control_layer.orchestrators.part_alias_orchestrator import (
-                PartAliasOrchestrator,
+            alias = AliasFactory.for_string(
+                part,
+                part.part_number,
+                "INTERNAL",
+                source=AliasSource.AUTO,
+                actor=actor,
             )
-
-            PartAliasOrchestrator.on_part_created(part, actor)
+            PartActivityNarrator.for_part(part, actor).record(
+                AliasNarrator.alias_added(part, alias)
+            )
 
         return part

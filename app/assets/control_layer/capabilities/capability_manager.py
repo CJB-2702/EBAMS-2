@@ -1,7 +1,7 @@
 """CapabilityManager — asset-layer capability set-reconcile, event-tracked.
 
-Catalog CRUD lives on ``CapabilityDefinitionFactory`` (create) and
-``CapabilityDefinitionContext`` (edit metadata + class/model assignment sets).
+Catalog CRUD lives on ``CapabilityDefinitionContext`` (create, edit metadata,
+and class/model assignment sets).
 This manager owns only the asset layer: reconciling an asset's manual
 (non-inherited) ``AssetCapability`` rows, and the inverse bulk editor that
 reconciles which assets carry one definition. Adds and removes emit

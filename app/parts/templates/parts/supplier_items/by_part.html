@@ -22,6 +22,7 @@
 
 <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
 <script src="{% static 'web_components/file_browser.js' %}" defer></script>
+<script src="{% static 'web_components/file_upload.js' %}" defer></script>
 <script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
 <script src="{% static 'web_components/app_specific/comment_filter.js' %}" defer></script>
 
@@ -34,49 +35,99 @@
         <a href="{% url 'supplier_item_detail' item_id=item.id %}">{{ item.mpn }}</a>
       </div>
       {% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}
+      {% if can_manage %}
+      <a href="{% url 'supplier_item_edit' item_id=item.id %}" class="button is-info is-light is-small ml-2">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+        <span>Edit</span>
+      </a>
+      {% endif %}
     </div>
     <div class="card-content">
-      <div class="body-grid has-rail">
-        <div>
-          <dl class="kv">
-            <dt>Manufacturer</dt><dd>{{ item.manufacturer.name }}</dd>
-            <dt>Name</dt><dd>{{ item.name|default:"—" }}</dd>
-            <dt>Compatibility</dt><dd>
-              min {{ item.compatibility_range.min_major|default:"—" }}.{{ item.compatibility_range.min_minor|default:"—" }}
-              — max {{ item.compatibility_range.max_major|default:"—" }}.{{ item.compatibility_range.max_minor|default:"—" }}
-            </dd>
-          </dl>
+      <dl class="kv">
+        <dt>Manufacturer</dt><dd>{{ item.manufacturer.name }}</dd>
+        <dt>Name</dt><dd>{{ item.name|default:"—" }}</dd>
+        <dt>Compatibility</dt><dd>
+          min {{ item.compatibility_range.min_major|default:"—" }}.{{ item.compatibility_range.min_minor|default:"—" }}
+          — max {{ item.compatibility_range.max_major|default:"—" }}.{{ item.compatibility_range.max_minor|default:"—" }}
+        </dd>
+      </dl>
 
-          {# ── Gallery ── #}
-          <div class="card depth-2 mt-4">
-            <div class="card-content">
-              <details {% if item.image_documents %}open{% endif %}>
-                <summary class="has-text-weight-semibold" style="cursor:pointer;">
-                  <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery
-                </summary>
-                <div class="mt-3">
-                  {% if item.image_documents %}
-                  <image-carousel id="carousel-item-{{ item.id }}" preview-height="240" loop>
-                    {% for d in item.image_documents %}
-                    <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
-                    {% endfor %}
-                  </image-carousel>
-                  <div class="mt-3"><carousel-preview-items for="carousel-item-{{ item.id }}" size="50"></carousel-preview-items></div>
-                  {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
-                </div>
-              </details>
-            </div>
+      <div class="body-grid even mt-4">
+        {# Gallery #}
+        <div class="card depth-2" style="position:relative;">
+          <div class="card-content">
+            {% if can_manage %}
+            <button type="button" class="button is-small is-light" style="position:absolute; top:0.75rem; right:0.75rem;"
+                    commandfor="si-files-modal-{{ item.id }}" command="show-modal" title="Add photos or documents">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add</span></span>
+              <span>Add Files</span>
+            </button>
+            {% endif %}
+            <details {% if item.image_documents %}open{% endif %}>
+              <summary class="has-text-weight-semibold" style="cursor:pointer;">
+                <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>Gallery
+              </summary>
+              <div class="mt-3">
+                {% if item.image_documents %}
+                <image-carousel id="carousel-item-{{ item.id }}" preview-height="240" loop>
+                  {% for d in item.image_documents %}
+                  <img src="{% url 'file_inline' file_id=d.file_id %}" alt="{{ d.filename }}" loading="lazy" title="{{ d.filename }}">
+                  {% endfor %}
+                </image-carousel>
+                <div class="mt-3"><carousel-preview-items for="carousel-item-{{ item.id }}" size="50"></carousel-preview-items></div>
+                {% else %}<p class="has-text-grey is-size-7">No images.</p>{% endif %}
+              </div>
+            </details>
           </div>
-
-          {# ── Comments ── #}
-          {% url 'supplier_item_add_comment' item_id=item.id as comment_add_url %}
-          {% include "events/fragments/comments_card.html" with card=item.comments_card add_url=comment_add_url next=request.get_full_path depth="depth-2 mt-4" row_depth="depth-3" action_depth="depth-4" %}
         </div>
 
-        <div class="body-rail">
-          {% include "events/fragments/files_card.html" with documents=item.other_documents %}
-        </div>
+        {# Library #}
+        {% with iid=item.id|stringformat:"s" %}
+        {% if can_manage %}
+          {% with modal_id="si-files-modal-"|add:iid %}
+          {% include "events/fragments/files_card.html" with documents=item.other_documents title="Library" upload_modal_id=modal_id %}
+          {% endwith %}
+        {% else %}
+          {% include "events/fragments/files_card.html" with documents=item.other_documents title="Library" %}
+        {% endif %}
+        {% endwith %}
       </div>
+
+      {% if can_manage %}
+      <dialog id="si-files-modal-{{ item.id }}" class="card modal-styled" style="padding:0; max-width:480px;">
+        <form method="post" action="{% url 'supplier_item_add_document' item_id=item.id %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <header class="card-header">
+            <p class="card-header-title">Add Photos / Documents</p>
+            <button type="button" class="delete is-large" aria-label="close"
+                    commandfor="si-files-modal-{{ item.id }}" command="close"></button>
+          </header>
+          <div class="card-content">
+            <p class="help mb-3">Images are added to the Gallery; other file types are added to Library.</p>
+            <file-upload name="files" multiple fullwidth label="Choose file(s)…"></file-upload>
+            <label class="label is-small mt-2">Caption (optional)</label>
+            <input class="input is-small" type="text" name="caption">
+          </div>
+          <footer class="card-footer custom-card-footer">
+            <div class="card-footer-secondaries">
+              <button type="button" class="button is-light" commandfor="si-files-modal-{{ item.id }}" command="close">
+                <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+                <span>Cancel</span>
+              </button>
+            </div>
+            <button type="submit" class="button is-link card-footer-primary">
+              <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>
+              <span>Upload</span>
+            </button>
+          </footer>
+        </form>
+      </dialog>
+      {% endif %}
+
+      {# Comments #}
+      {% url 'supplier_item_add_comment' item_id=item.id as comment_add_url %}
+      {% include "events/fragments/comments_card.html" with card=item.comments_card add_url=comment_add_url next=request.get_full_path depth="depth-2 mt-4" row_depth="depth-3" action_depth="depth-4" %}
     </div>
   </div>
   {% empty %}

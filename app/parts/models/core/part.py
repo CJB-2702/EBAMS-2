@@ -50,6 +50,26 @@ class Part(AuditFieldsMixin):
         blank=True,
     )
 
+    # Denormalized pointers for the common case: a part with exactly one active
+    # supplier item. Avoids a join for the majority-case manufacturer/supplier
+    # lookup. SupplierItem remains the source of truth; SupplierItemManager keeps
+    # these in sync. SET_NULL because these are denormalization, not ownership.
+    primary_manufacturer = models.ForeignKey(
+        "parts.PartManufacturer",
+        on_delete=models.SET_NULL,
+        related_name="simple_parts",
+        null=True,
+        blank=True,
+    )
+    primary_supplier_item = models.ForeignKey(
+        "parts.SupplierItem",
+        on_delete=models.SET_NULL,
+        related_name="simple_part_of",
+        null=True,
+        blank=True,
+    )
+    is_simple_part = models.BooleanField(default=False)
+
     class Meta:
         db_table = "part"
         ordering = ["part_number"]

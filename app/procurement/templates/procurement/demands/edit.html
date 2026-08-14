@@ -1,0 +1,252 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}Edit Demand #{{ demand.pk }}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'demand_index' %}">Demands</a></li>
+<li><a href="{% url 'demand_detail' pk=demand.pk %}">#{{ demand.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+      <div>
+        <h1 class="page-title">Edit Demand #{{ demand.pk }}</h1>
+        <p class="page-subtitle">{{ demand.part.part_number }} — {{ demand.part.name }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'demand_detail' pk=demand.pk %}" class="button is-small is-light">← Back to demand</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# 1. Demand fields #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>Demand Fields</div></div>
+    <div class="card-content">
+      <form method="post" action="{% url 'demand_edit' pk=demand.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_fields">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Quantity Requested</label>
+            <input class="input is-small is-family-monospace" type="number" step="0.001" min="{{ struct.quantity_requested }}"
+                   name="quantity_requested" value="{{ struct.quantity_requested }}">
+            <p class="has-text-grey is-size-7">Can only be raised — {{ struct.purchased_qty }} already on order.</p>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Priority</label>
+            <div class="select is-small is-fullwidth">
+              <select name="priority">
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if value == struct.priority %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Needed By</label>
+            <input class="input is-small" type="datetime-local" name="needed_by" value="{{ struct.needed_by|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Serial Tracking Required</label>
+            <label class="checkbox is-size-7" style="margin-top:0.6rem; display:block;">
+              <input type="checkbox" name="serial_number_tracking_required" {% if struct.serial_number_tracking_required %}checked{% endif %}> Track by serial number
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Notes</label>
+          <textarea class="textarea is-small" name="notes" rows="3">{{ struct.notes }}</textarea>
+        </div>
+        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
+          <div class="card-footer-secondaries">
+            <a href="{% url 'demand_detail' pk=demand.pk %}" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+            </a>
+          </div>
+          <button type="submit" class="button is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  {# 2. Linkage — read only #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>Linkage (read only)</div></div>
+    <div class="card-content is-flush">
+      {% if struct.allocations %}
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>PO Number</th><th>Line</th><th>Qty Allocated</th><th>PO Status</th><th></th></tr></thead>
+        <tbody>
+          {% for a in struct.allocations %}
+          {% if a.is_active %}
+          <tr>
+            <td class="is-family-monospace">{{ a.po_number }}</td>
+            <td>#{{ a.purchase_order_line_id }}</td>
+            <td class="is-family-monospace">{{ a.quantity_allocated }}</td>
+            <td>{{ a.purchase_order_status }}</td>
+            <td class="has-text-right">
+              <a class="button is-small is-light" href="{% url 'purchase_order_edit' pk=a.purchase_order_id %}?line_id={{ a.purchase_order_line_id }}">Edit linkage</a>
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7 p-4">Not linked to a purchase order line yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# 3. Status update actions #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span>Status Update Actions</div></div>
+    <div class="card-content">
+      <div class="buttons">
+        {% if can_manage_demand %}
+        <button class="button is-small is-success" commandfor="decision-dialog" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Approve / Reject</span>
+        </button>
+        {% endif %}
+        {% if can_buy %}
+        <button class="button is-small is-link is-light" commandfor="shipment-dialog" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span><span>Advance Shipment</span>
+        </button>
+        {% endif %}
+        {% if can_manage_demand or is_owner %}
+        <button class="button is-small is-light" commandfor="issuance-dialog" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span><span>Issuance</span>
+        </button>
+        {% endif %}
+        {% if not can_manage_demand and not can_buy and not is_owner %}
+        <p class="has-text-grey is-size-7">You do not hold a permission that can move this demand's status.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# 4. Status history #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Status History</div></div>
+    <div class="card-content is-flush">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Dimension</th><th>From</th><th>To</th><th>Actor</th><th>Notes</th><th>When</th></tr></thead>
+        <tbody>
+          {% for row in history %}
+          <tr {% if row.flagged_for_review %}class="has-background-warning-light"{% endif %}>
+            <td>{{ row.dimension_label }}</td>
+            <td>{{ row.from_stage_label }}</td>
+            <td>{{ row.to_stage_label }}</td>
+            <td>{{ row.actor_display }}</td>
+            <td>{{ row.notes|default:"—" }}</td>
+            <td>{{ row.created_at|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="has-text-grey has-text-centered py-4">No history yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# Modals #}
+<dialog id="decision-dialog" class="card modal-styled" style="padding:0;">
+  <header class="card-header">
+    <p class="card-header-title">Approve / Reject Demand</p>
+    <button class="delete is-large" aria-label="close" commandfor="decision-dialog" command="close"></button>
+  </header>
+  <form method="post" action="{% url 'demand_edit' pk=demand.pk %}">
+    {% csrf_token %}
+    <div class="card-content content">
+      <div class="field">
+        <label class="label is-small">Notes (optional)</label>
+        <textarea class="textarea is-small" name="notes" rows="3" placeholder="No reason is required."></textarea>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="decision-dialog" command="close">Cancel</button>
+        <button type="submit" name="action" value="reject" class="button is-small is-warning is-light">Reject</button>
+      </div>
+      <button type="submit" name="action" value="approve" class="button is-success card-footer-primary">Approve</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="shipment-dialog" class="card modal-styled" style="padding:0;">
+  <header class="card-header">
+    <p class="card-header-title">Advance Shipment</p>
+    <button class="delete is-large" aria-label="close" commandfor="shipment-dialog" command="close"></button>
+  </header>
+  <form method="post" action="{% url 'demand_edit' pk=demand.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="advance_shipment">
+    <div class="card-content content">
+      <div class="field">
+        <label class="label is-small">New Shipment Stage</label>
+        <div class="select is-small is-fullwidth">
+          <select name="to_stage" required>
+            {% for value, label in shipment_states %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small">Notes (optional)</label>
+        <textarea class="textarea is-small" name="notes" rows="2"></textarea>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="shipment-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary">Update</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="issuance-dialog" class="card modal-styled" style="padding:0;">
+  <header class="card-header">
+    <p class="card-header-title">Issuance Status</p>
+    <button class="delete is-large" aria-label="close" commandfor="issuance-dialog" command="close"></button>
+  </header>
+  <form method="post" action="{% url 'demand_edit' pk=demand.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="issuance">
+    <div class="card-content content">
+      <p class="has-text-grey is-size-7">Records only that a physical movement happened or reversed — no quantity is captured here.</p>
+      <div class="field">
+        <label class="label is-small">New Issuance Stage</label>
+        <div class="select is-small is-fullwidth">
+          <select name="to_stage" required>
+            {% for value, label in issuance_states %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small">Notes (optional)</label>
+        <textarea class="textarea is-small" name="notes" rows="2"></textarea>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="issuance-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary">Update</button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}

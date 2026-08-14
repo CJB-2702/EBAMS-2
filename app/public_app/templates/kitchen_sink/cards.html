@@ -1,0 +1,606 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cards & Modals — Kitchen Sink</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/kitchen_sink_chamfer.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <style>
+    /* ── Top nav (from portal base) ── */
+    .app-topnav {
+      display: flex;
+      align-items: center;
+      height: 3rem;
+      background: var(--bulma-scheme-invert);
+      color: var(--bulma-scheme-main);
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--bulma-border);
+      position: relative;
+      z-index: 40;
+    }
+    .app-topnav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      height: 100%;
+      white-space: nowrap;
+      border-right: 1px solid rgba(255,255,255,0.12);
+    }
+
+    /* ── Page hero ── */
+    .page-hero {
+      background: var(--bulma-scheme-main);
+      border: 1px solid var(--bulma-border-weak);
+      border-left: 4px solid var(--bulma-primary);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .page-hero-content { flex: 1; }
+    .page-hero-actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start; }
+    .page-title    { font-size: 1.85rem; font-weight: 700; margin: 0; }
+    .page-subtitle { font-size: 0.9rem; color: var(--bulma-text-weak); margin-top: 0.3rem; }
+
+    body {
+      background-color: var(--bulma-scheme-main-bis);
+      color: var(--bulma-text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .ks-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background-color: var(--bulma-scheme-main-bis);
+      border-right: 1px solid var(--bulma-border);
+    }
+    .ks-section {
+      scroll-margin-top: 1.5rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--bulma-border-weak);
+      margin-bottom: 3rem;
+    }
+    .ks-section:last-child {
+      border-bottom: none;
+    }
+    .ks-label {
+      font-family: var(--app-font-mono-input, monospace);
+      font-size: 0.7rem;
+      color: var(--bulma-text-weak);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .ks-sidebar .menu-label {
+      font-size: 0.65rem;
+      color: var(--bulma-text-weak);
+    }
+    .ks-sidebar .menu-list a {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.82rem;
+      padding: 0.2em 0.5em;
+      color: var(--bulma-text);
+    }
+    .ks-sidebar .menu-list a:hover {
+      background-color: var(--bulma-background);
+      color: var(--bulma-text-strong);
+    }
+    /* Tabs that live inside a card-content sit flush under the header. */
+    .card-content .tabs.is-boxed {
+      margin-bottom: 0;
+    }
+    .card-content .tabs.is-boxed ul {
+      border-bottom-color: var(--bulma-border);
+    }
+    /* Extra width for rightmost button in header */
+    .card-header > div:last-child .button:last-child {
+      min-width: 3rem;
+    }
+  </style>
+</head>
+<body>
+<script>
+  document.body.addEventListener('htmx:configRequest', (e) => {
+    e.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+  });
+</script>
+
+{% include "shared/public_topnav.html" %}
+{% include "shared/_login_modal.html" %}
+
+<div style="display: grid; grid-template-columns: 200px 1fr; flex: 1; overflow: hidden;">
+
+  <aside class="ks-sidebar p-4">
+    <p class="menu-label mt-2">Kitchen Sink</p>
+    <ul class="menu-list">
+      <li><a href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">design_services</span></span> Design System</a></li>
+    </ul>
+
+    <p class="menu-label mt-4">On This Page</p>
+    <ul class="menu-list">
+      <li><a href="#card-layouts">Card Layouts</a></li>
+      <li><a href="#tabs">Tabs</a></li>
+      <li><a href="#header-multi-select-card">header_multi_select_card</a></li>
+      <li><a href="#modals">Modals</a></li>
+    </ul>
+  </aside>
+
+  <main style="overflow-y: auto;">
+    <div class="p-6" style="max-width: 960px;">
+
+    <div class="page-hero">
+      <div class="page-hero-content">
+        <h1 class="page-title">Cards & Modals</h1>
+        <p class="page-subtitle">Every card layout, footer variant, and modal pattern in the design system.</p>
+      </div>
+    </div>
+
+    <div class="ks-demo-box mb-6" style="max-width: 400px;">
+      <p class="ks-label mb-3">Button Textures</p>
+      <div class="field mb-3">
+        <label class="checkbox">
+          <input type="checkbox" id="card-texture-toggle" data-texture-section="cards">
+          Enable texture overlay on buttons
+        </label>
+      </div>
+      <div class="field mb-3">
+        <label class="label is-size-7">Texture Type</label>
+        <div class="control">
+          <label class="radio">
+            <input type="radio" name="texture-type" id="texture-sandstone" value="sandstone" checked>
+            Sandstone
+          </label>
+          <label class="radio">
+            <input type="radio" name="texture-type" id="texture-cement" value="cement">
+            Cement
+          </label>
+        </div>
+      </div>
+      <div class="field mb-3">
+        <label class="label is-size-7" for="card-texture-depth">
+          Depth: <span id="card-depth-value" style="font-family: monospace;">0.0</span>
+        </label>
+        <div class="control">
+          <input type="range" id="card-texture-depth" min="0" max="5" step="0.1" value="0" style="width: 100%; cursor: pointer;">
+        </div>
+      </div>
+      <div class="field mb-3">
+        <label class="checkbox">
+          <input type="checkbox" id="card-roughness-toggle" checked> Enable edge roughness
+        </label>
+      </div>
+      <div class="field">
+        <label class="label is-size-7" for="card-roughness-amount">
+          Roughness: <span id="card-roughness-value" style="font-family: monospace;">1.5</span>
+        </label>
+        <div class="control">
+          <input type="range" id="card-roughness-amount" min="0" max="3" step="0.1" value="1.5" style="width: 100%; cursor: pointer;">
+        </div>
+      </div>
+    </div>
+
+    <section id="card-layouts" class="ks-section">
+      <h2 class="title is-5 mb-4">Card Layouts</h2>
+
+      <p class="ks-label">Basic editable content with action buttons</p>
+      <div class="card mb-5" style="max-width: 780px;">
+        <div class="card-header" style="justify-content: space-between; padding: 0; min-height: 2.65rem;">
+          <div class="card-header-title">Basic editable content</div>
+          <div style="display: flex; gap: 0; align-items: stretch;">
+            <a class="button is-light" title="View" aria-label="View" style="height: auto;">
+              <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+            </a>
+            <button type="button" class="button is-info is-light" title="Edit" aria-label="Edit" style="height: auto;">
+              <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+            </button>
+            <button type="button" class="button is-danger is-light" title="Delete" aria-label="Delete" style="height: auto;">
+              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">Action buttons sit on the top right using a simple flex container with default Bulma button styling. Grey (View), blue (Edit), and red (Delete) buttons are grouped together without spacing between them.</p>
+        </div>
+      </div>
+
+      <p class="ks-label">Single primary action card — Create</p>
+      <div class="card mb-5" style="max-width: 780px;">
+        <div class="card-header">
+          <div class="card-header-title">Single primary action card</div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">… form fields …</p>
+          <p class="has-text-grey is-size-7">Use for a form with exactly one outcome — typically a create flow. The footer carries only the primary button; the secondaries column stays empty (but present) so the footer grid stays balanced with the other card layouts.</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries"></div>
+          <button type="submit" class="button is-medium is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            <span>Create</span>
+          </button>
+        </footer>
+      </div>
+
+      <p class="ks-label">Dual action card — Delete (secondary) / Edit (primary)</p>
+      <div class="card mb-5" style="max-width: 780px;">
+        <div class="card-header">
+          <div class="card-header-title">Dual action card</div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">… read-only content …</p>
+          <p class="has-text-grey is-size-7">Use to present a read-only sub item with exactly two outcomes: Delete it or Edit it. Common on hub/detail pages that list a parent record's owned sub-records one card at a time.</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <button class="button is-danger is-light" type="button"
+                    onclick="return confirm('Delete this item?');" style="max-width: 6rem;">
+              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+              <span>Delete</span>
+            </button>
+          </div>
+          <a class="button is-medium is-info is-light card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+            <span>Edit</span>
+          </a>
+        </footer>
+      </div>
+
+      <p class="ks-label">Multi action card — Cancel + Reset + Delete / Save</p>
+      <div class="card mb-5" style="max-width: 780px;">
+        <div class="card-header">
+          <div class="card-header-title">Multi action card</div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">… form fields …</p>
+          <p class="has-text-grey is-size-7">Use for an edit form or a workflow with more than one possible outcome — Cancel (leave without saving), Reset (discard pending edits), and Delete (destructive escape hatch) cluster on the left as secondaries, Save stays alone as the one primary action on the right.</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <a class="button is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              <span>Cancel</span>
+            </a>
+            <button type="reset" class="button is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">file_copy</span></span>
+              <span>Reset</span>
+            </button>
+            <button type="submit" class="button is-danger is-light" style="max-width: 6rem;"
+                    onclick="return confirm('Delete this item?');">
+              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+              <span>Delete</span>
+            </button>
+          </div>
+          <button type="submit" class="button is-medium is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save</span>
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <section id="tabs" class="ks-section">
+      <h2 class="title is-5 mb-4">Tabs — inside a card</h2>
+      <p class="is-size-7 has-text-grey mb-3">Tabs live <strong>inside</strong> the card, directly below the header. Always <code>is-boxed</code>, always left-justified. Skip when there is only one section.</p>
+
+      <div class="card">
+        <header class="card-header">
+          <p class="card-header-title">Editor Role</p>
+        </header>
+        <div class="card-content" style="padding-top: 0.75rem; padding-bottom: 0;">
+          <div class="tabs is-boxed">
+            <ul>
+              <li class="is-active"><a>Details</a></li>
+              <li><a>Permissions</a></li>
+              <li><a>History</a></li>
+              <li><a>Attachments</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">… active-tab panel content …</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <a class="button is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              <span>Cancel</span>
+            </a>
+          </div>
+          <button class="button is-medium is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save</span>
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <section id="header-multi-select-card" class="ks-section">
+      <h2 class="title is-5 mb-4">header_multi_select_card</h2>
+      <p class="is-size-7 has-text-grey mb-3">
+        Instead of a fixed title, the header <strong>is</strong> a selection menu — full-width, equal-width buttons spanning the top of the card. The button for the currently selected view gets <code>is-primary</code>; every other button sits dampened (<code>is-light</code>), the same visual weighting the footer uses for primary vs. secondary actions, just mirrored onto the top of the card. There is no secondaries column in the footer either — each action gets an equal share of the card's width via <code>card-footer-uniform</code>.
+      </p>
+
+      <div class="card mb-5" style="max-width: 780px;">
+        <div class="card-header is-multiselect">
+          <div class="card-header-multiselect">
+            <button type="button" class="button is-primary" aria-pressed="true" data-multiselect-btn>
+              <span>Details</span>
+            </button>
+            <button type="button" class="button is-light" aria-pressed="false" data-multiselect-btn>
+              <span>Permissions</span>
+            </button>
+            <button type="button" class="button is-light" aria-pressed="false" data-multiselect-btn>
+              <span>History</span>
+            </button>
+            <button type="button" class="button is-light" aria-pressed="false" data-multiselect-btn>
+              <span>Attachments</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <p class="has-text-grey is-size-7">… panel content for the selected segment …</p>
+          <p class="has-text-grey is-size-7">Use when a card's "sections" are mutually exclusive views of the same record rather than independent content beside a title — e.g. switching between Details / Permissions / History on the same role without leaving the card.</p>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          document.querySelectorAll('[data-multiselect-btn]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var group = btn.closest('.card-header-multiselect').querySelectorAll('[data-multiselect-btn]');
+              group.forEach(function (b) {
+                b.classList.remove('is-primary');
+                b.classList.add('is-light');
+                b.setAttribute('aria-pressed', 'false');
+              });
+              btn.classList.remove('is-light');
+              btn.classList.add('is-primary');
+              btn.setAttribute('aria-pressed', 'true');
+            });
+          });
+        })();
+      </script>
+    </section>
+
+    <section id="modals" class="ks-section">
+      <h2 class="title is-5 mb-4">Modals — Native &lt;dialog&gt;</h2>
+      <p class="is-size-7 has-text-grey mb-4">Native <code>&lt;dialog&gt;</code> with Bulma <code>.card</code> inside. Uses <code>commandfor</code> / <code>command</code> declarative attributes. Escape closes automatically.</p>
+
+      <div class="ks-row mb-4" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        <button class="button is-primary" commandfor="ks-modal-info" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+          <span>Open Info Modal</span>
+        </button>
+        <button class="button is-danger is-light" commandfor="ks-modal-confirm" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Open Confirm Delete</span>
+        </button>
+        <button class="button is-primary" commandfor="ks-modal-form" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+          <span>Open Form Modal</span>
+        </button>
+      </div>
+
+      <dialog id="ks-modal-info" class="card modal-styled" style="padding:0; max-width: 520px;">
+        <header class="card-header">
+          <p class="card-header-title">Information</p>
+          <button class="delete is-large" aria-label="close" commandfor="ks-modal-info" command="close"></button>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <p>This is a read-only info modal. No form inside — just content and a close action.</p>
+            <p class="is-size-7 has-text-grey">Native <code>&lt;dialog&gt;</code> provides focus trapping, Escape key, and backdrop automatically.</p>
+          </div>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries"></div>
+          <button class="button is-medium is-primary card-footer-primary" commandfor="ks-modal-info" command="close">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+            <span>OK</span>
+          </button>
+        </footer>
+      </dialog>
+
+      <dialog id="ks-modal-confirm" class="card modal-styled" style="padding:0; max-width: 520px;">
+        <header class="card-header">
+          <p class="card-header-title">Confirm Delete</p>
+          <button class="delete is-large" aria-label="close" commandfor="ks-modal-confirm" command="close"></button>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <p>Are you sure you want to delete <strong>Asset Alpha</strong>? This cannot be undone.</p>
+          </div>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <button class="button is-light" commandfor="ks-modal-confirm" command="close">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              <span>Cancel</span>
+            </button>
+          </div>
+          <button class="button is-medium is-danger card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+            <span>Delete</span>
+          </button>
+        </footer>
+      </dialog>
+
+      <dialog id="ks-modal-form" class="card modal-styled" style="padding:0; max-width: 580px;">
+        <header class="card-header">
+          <p class="card-header-title">Edit Asset Name</p>
+          <button class="delete is-large" aria-label="close" commandfor="ks-modal-form" command="close"></button>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <div class="field">
+              <label class="label" for="ks-modal-name">Name</label>
+              <div class="control">
+                <input id="ks-modal-name" class="input is-family-monospace" type="text" value="asset-alpha">
+              </div>
+            </div>
+            <div class="field">
+              <label class="label" for="ks-modal-domain">Domain</label>
+              <div class="control">
+                <div class="select is-fullwidth">
+                  <select id="ks-modal-domain">
+                    <option>Operations</option>
+                    <option>Finance</option>
+                    <option>HR</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <button class="button is-light" commandfor="ks-modal-form" command="close">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              <span>Cancel</span>
+            </button>
+            <button type="reset" class="button is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">file_copy</span></span>
+              <span>Reset</span>
+            </button>
+          </div>
+          <button class="button is-medium is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save</span>
+          </button>
+        </footer>
+      </dialog>
+    </section>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Texture controls for buttons on the cards page
+  (function () {
+    const textureToggle = document.getElementById('card-texture-toggle');
+    const textureDepth = document.getElementById('card-texture-depth');
+    const depthValue = document.getElementById('card-depth-value');
+    const roughnessToggle = document.getElementById('card-roughness-toggle');
+    const roughnessAmount = document.getElementById('card-roughness-amount');
+    const roughnessValue = document.getElementById('card-roughness-value');
+    const textureTypeRadios = document.querySelectorAll('input[name="texture-type"]');
+    let textureEnabled = false;
+    let currentTextureType = 'sandstone';
+
+    function generateSandstoneFilter(depth, roughness, roughnessEnabled) {
+      const surfaceScale = 0.5 + (depth * 1.5);
+      const displacementScale = roughnessEnabled ? roughness : 0;
+      return `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='texture' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='3' result='edgeNoise' seed='1'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='edgeNoise' scale='${displacementScale}' xChannelSelector='R' yChannelSelector='G' result='displacedGraphic'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.6' numOctaves='4' result='surfaceNoise'/%3E%3CfeDiffuseLighting in='surfaceNoise' lighting-color='%23ffffff' surfaceScale='${surfaceScale}' result='bumpLight'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3CfeBlend mode='multiply' in='displacedGraphic' in2='bumpLight' result='texturedSolid'/%3E%3CfeComposite in='texturedSolid' in2='displacedGraphic' operator='in'/%3E%3C/filter%3E%3Crect width='256' height='256' fill='rgba(0,0,0,0.3)' filter='url(%23texture)'/%3E%3C/svg%3E`;
+    }
+
+    function generateCementFilter(depth, roughness, roughnessEnabled) {
+      const surfaceScale = 0.3 + (depth * 1.2);
+      const displacementScale = roughnessEnabled ? roughness * 0.8 : 0;
+      return `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='texture' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.08' numOctaves='5' result='noise1' seed='2'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise1' scale='${displacementScale}' xChannelSelector='R' yChannelSelector='G' result='displaced'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.03' numOctaves='3' result='noise2' seed='3'/%3E%3CfeDiffuseLighting in='noise2' lighting-color='%23ffffff' surfaceScale='${surfaceScale}' result='lighting'%3E%3CfeDistantLight azimuth='135' elevation='45'/%3E%3C/feDiffuseLighting%3E%3CfeBlend mode='multiply' in='displaced' in2='lighting' result='textured'/%3E%3CfeComposite in='textured' in2='displaced' operator='in'/%3E%3C/filter%3E%3Crect width='256' height='256' fill='rgba(0,0,0,0.25)' filter='url(%23texture)'/%3E%3C/svg%3E`;
+    }
+
+    function updateTexture() {
+      const depth = parseFloat(textureDepth.value);
+      const roughness = parseFloat(roughnessAmount.value);
+      const roughnessEnabled = roughnessToggle.checked;
+
+      depthValue.textContent = depth.toFixed(1);
+      roughnessValue.textContent = roughness.toFixed(1);
+
+      if (textureEnabled) {
+        let filterUrl;
+        if (currentTextureType === 'cement') {
+          filterUrl = generateCementFilter(depth, roughness, roughnessEnabled);
+        } else {
+          filterUrl = generateSandstoneFilter(depth, roughness, roughnessEnabled);
+        }
+
+        // Remove old style if exists
+        const oldStyle = document.getElementById('card-texture-style');
+        if (oldStyle) oldStyle.remove();
+
+        // Create new style for all buttons on this page
+        const style = document.createElement('style');
+        style.id = 'card-texture-style';
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const opacity = isDark ? '0.4' : '0.8';
+        style.textContent = `
+          main button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            z-index: 1;
+            pointer-events: none;
+            opacity: ${opacity};
+            mix-blend-mode: overlay;
+            background-image: url("${filterUrl}");
+            background-size: 256px 256px;
+            background-attachment: scroll;
+          }
+          main button {
+            position: relative;
+          }
+          main button .icon,
+          main button span {
+            position: relative;
+            z-index: 2;
+          }
+        `;
+        document.head.appendChild(style);
+      } else {
+        // Remove style when disabled
+        const oldStyle = document.getElementById('card-texture-style');
+        if (oldStyle) oldStyle.remove();
+      }
+    }
+
+    textureToggle.addEventListener('change', function () {
+      textureEnabled = this.checked;
+      updateTexture();
+    });
+
+    textureDepth.addEventListener('input', function () {
+      updateTexture();
+    });
+
+    roughnessToggle.addEventListener('change', function () {
+      updateTexture();
+    });
+
+    roughnessAmount.addEventListener('input', function () {
+      updateTexture();
+    });
+
+    textureTypeRadios.forEach(function (radio) {
+      radio.addEventListener('change', function () {
+        currentTextureType = this.value;
+        updateTexture();
+      });
+    });
+  })();
+</script>
+</body>
+</html>

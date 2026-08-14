@@ -18,13 +18,13 @@ Markup pattern for every icon:
 <span class="icon"><span class="material-icons" aria-hidden="true">icon_name</span></span>
 ```
 
-For canonical markup snippets see [../Examples/button_markup.md](../Examples/button_markup.md). For the full action → icon → color → Bulma-class table see [../Examples/button_markup.md#master-button-table](../Examples/button_markup.md#master-button-table).
+For canonical markup snippets see [button_markup.md](button_markup.md). For the full action → icon → color → Bulma-class table see [button_markup.md#master-button-table](button_markup.md#master-button-table).
 
 ---
 
 ## Master button table
 
-Every standard action (Save, Create, Edit, Cancel, Delete, Refresh, Search, Filter, Export, Approve, Reject, etc.) has one fixed icon, semantic color, and Bulma class combination — never improvise a new pairing for an existing action. Full table: [../Examples/button_markup.md#master-button-table](../Examples/button_markup.md#master-button-table).
+Every standard action (Save, Create, Edit, Cancel, Delete, Refresh, Search, Filter, Export, Approve, Reject, etc.) has one fixed icon, semantic color, and Bulma class combination — never improvise a new pairing for an existing action. Full table: [button_markup.md#master-button-table](button_markup.md#master-button-table).
 
 ---
 

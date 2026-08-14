@@ -72,9 +72,9 @@ Read these when in doubt — they are authoritative:
 ### UX / UI
 - [docs/UX_UI.md](docs/UX_UI.md) — visual language, density (`format=`)
 - [docs/UX_UI/form_style_guide.md](docs/UX_UI/form_style_guide.md) — action layout rules for forms and cards
-- [docs/UX_UI/components/common_buttons.md](docs/UX_UI/components/common_buttons.md) — button library and semantic colors
+- [docs/UX_UI/design_patterns/common_buttons.md](docs/UX_UI/design_patterns/common_buttons.md) — button library and semantic colors
 - [docs/UX_UI/components/dual_listbox.md](docs/UX_UI/components/dual_listbox.md) — dual listbox many-to-many selection
-- [docs/UX_UI/components/searchbars.md](docs/UX_UI/components/searchbars.md) — searchbars and autocomplete guides
+- [docs/UX_UI/search/searchbars.md](docs/UX_UI/search/searchbars.md) — searchbars and autocomplete guides
 
 ### Domain
 - [docs/Authorization/rbac.md](docs/Authorization/rbac.md) — Django permissions, groups, and templates

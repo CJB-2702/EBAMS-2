@@ -16,12 +16,14 @@ Most technical-decision content now lives **per application** — see `docs/<app
 technical_decisions/
 ├── index.md              ← this file
 ├── project_history.md    ← master chronological index of every archived kit, across all apps
-└── tech_debt/             ← cross-cutting deferred work items (not tied to one app)
+├── tech_debt/             ← cross-cutting deferred work items (not tied to one app)
+└── decisions_pending/     ← cross-cutting open design questions (not tied to one app)
 ```
 
 ## Contents
 
 - `tech_debt/` — cross-cutting tech debt notes, dated by discovery. App-specific tech debt lives under that app's own `tech_debt/` instead.
+- `decisions_pending/` — cross-cutting open design questions that span multiple applications (including apps not yet built). App-specific open questions live under that app's own `decisions_pending/` instead.
 - `project_history.md` — the chronological log of every kit archived via `/kit-complete`, regardless of which app it belongs to. The archived kit folders themselves live under `docs/<app-name>/project_history/<kit-name>/`, not here.
 
 App-specific incidents, decisions pending, and project history live under each application's own folder, not in this one.

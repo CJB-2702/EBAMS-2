@@ -31,5 +31,75 @@
         ["view_user", "administration", "user"]
       ]
     }
+  },
+  {
+    "model": "auth.group",
+    "pk": 4,
+    "fields": {
+      "name": "Parts Administration",
+      "permissions": [
+        ["add_part", "parts", "part"],
+        ["change_part", "parts", "part"],
+        ["delete_part", "parts", "part"],
+        ["add_supplieritem", "parts", "supplieritem"],
+        ["change_supplieritem", "parts", "supplieritem"],
+        ["delete_supplieritem", "parts", "supplieritem"],
+        ["change_partrevision", "parts", "partrevision"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "pk": 5,
+    "fields": {
+      "name": "procurement_super_user",
+      "permissions": [
+        ["add_partdemand", "procurement", "partdemand"],
+        ["change_partdemand", "procurement", "partdemand"],
+        ["delete_partdemand", "procurement", "partdemand"],
+        ["view_partdemand", "procurement", "partdemand"],
+        ["add_partdemandupdate", "procurement", "partdemandupdate"],
+        ["change_partdemandupdate", "procurement", "partdemandupdate"],
+        ["delete_partdemandupdate", "procurement", "partdemandupdate"],
+        ["view_partdemandupdate", "procurement", "partdemandupdate"],
+        ["add_package", "procurement", "package"],
+        ["change_package", "procurement", "package"],
+        ["delete_package", "procurement", "package"],
+        ["view_package", "procurement", "package"],
+        ["add_packageline", "procurement", "packageline"],
+        ["change_packageline", "procurement", "packageline"],
+        ["delete_packageline", "procurement", "packageline"],
+        ["view_packageline", "procurement", "packageline"],
+        ["add_purchaseorder", "procurement", "purchaseorder"],
+        ["change_purchaseorder", "procurement", "purchaseorder"],
+        ["delete_purchaseorder", "procurement", "purchaseorder"],
+        ["view_purchaseorder", "procurement", "purchaseorder"],
+        ["add_purchaseorderdemandlink", "procurement", "purchaseorderdemandlink"],
+        ["change_purchaseorderdemandlink", "procurement", "purchaseorderdemandlink"],
+        ["delete_purchaseorderdemandlink", "procurement", "purchaseorderdemandlink"],
+        ["view_purchaseorderdemandlink", "procurement", "purchaseorderdemandlink"],
+        ["add_purchaseorderline", "procurement", "purchaseorderline"],
+        ["change_purchaseorderline", "procurement", "purchaseorderline"],
+        ["delete_purchaseorderline", "procurement", "purchaseorderline"],
+        ["view_purchaseorderline", "procurement", "purchaseorderline"],
+        ["add_partpriceobservation", "procurement", "partpriceobservation"],
+        ["view_partpriceobservation", "procurement", "partpriceobservation"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "pk": 6,
+    "fields": {
+      "name": "Procurement Administration",
+      "permissions": [
+        ["buy", "procurement", "purchaseorder"],
+        ["purchase_approve", "procurement", "purchaseorder"],
+        ["request", "procurement", "partdemand"],
+        ["demand_manage", "procurement", "partdemand"],
+        ["receive", "procurement", "package"],
+        ["price_establish", "procurement", "partpriceobservation"]
+      ]
+    }
   }
 ]

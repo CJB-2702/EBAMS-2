@@ -1,0 +1,114 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}{{ part.part_number }} — price history{% endblock %}
+{% block nav_price_hub %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'price_hub' %}">Prices</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ part.part_number }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
+  <h1 class="page-title">{{ part.part_number }}</h1>
+  <p class="page-subtitle">{{ part.name }} — full price history across every vendor and domain you can see.</p>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><p class="card-header-title">Per-vendor snapshot</p></div>
+  <div class="card-content">
+    {% if facts_by_vendor %}
+    <div class="columns is-multiline">
+      {% for vendor_id, facts in facts_by_vendor.items %}
+      <div class="column is-4">
+        <div class="notification is-light py-2 px-3">
+          <p class="is-size-7 has-text-weight-semibold">{{ facts.most_recent.vendor_name|default:facts.most_recent_verified.vendor_name }}</p>
+          {% if facts.collapses %}
+            <p class="is-size-7">${{ facts.most_recent.unit_cost }} — verified, {{ facts.most_recent.domain_name }}, {% price_staleness facts.most_recent.observed_at %}</p>
+          {% else %}
+            {% if facts.most_recent %}<p class="is-size-7">${{ facts.most_recent.unit_cost }} — recorded by {{ facts.most_recent.recorded_by_name|default:"someone" }}, {% price_staleness facts.most_recent.observed_at %}</p>{% endif %}
+            {% if facts.most_recent_verified %}<p class="is-size-7">${{ facts.most_recent_verified.unit_cost }} — verified, {{ facts.most_recent_verified.domain_name }}, {% price_staleness facts.most_recent_verified.observed_at %}</p>{% endif %}
+            {% if not facts.most_recent and not facts.most_recent_verified %}<p class="is-size-7 has-text-grey">No price on record.</p>{% endif %}
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="has-text-grey is-size-7">No prices on record for this part yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<form method="get" action="{% url 'part_price_history' part.pk %}"
+      hx-get="{% url 'part_price_history' part.pk %}" hx-trigger="change"
+      hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true" class="mb-4">
+  <div class="columns is-variable is-2">
+    <div class="column is-3">
+      <div class="select is-small is-fullwidth"><select name="vendor_id">
+        <option value="">All vendors</option>
+        {% for v in vendors %}<option value="{{ v.pk }}" {% if filters.vendor_id == v.pk %}selected{% endif %}>{{ v.name }}</option>{% endfor %}
+      </select></div>
+    </div>
+    <div class="column is-3">
+      <div class="select is-small is-fullwidth"><select name="domain_id">
+        <option value="">All your domains</option>
+        {% for d in domains %}<option value="{{ d.pk }}" {% if filters.domain_id == d.pk %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+      </select></div>
+    </div>
+    <div class="column is-2">
+      <button type="submit" class="button is-small is-link">Filter</button>
+    </div>
+  </div>
+</form>
+
+<div class="card">
+  <div class="card-header"><p class="card-header-title">Observation history</p></div>
+  <div class="card-content">
+    {% if observations %}
+    <div class="table-container">
+      <table class="table is-fullwidth is-narrow">
+        <thead>
+          <tr>
+            <th>Date</th><th>Vendor</th><th>Domain</th><th class="has-text-right">Qty</th>
+            <th class="has-text-right">Unit cost</th><th>Confidence</th><th>Verified</th>
+            <th>Source</th><th>Recorded by</th><th>Notes</th><th>PO line</th>{% if can_establish %}<th></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for obs in observations %}
+          <tr>
+            <td class="is-size-7">{{ obs.observed_at }}</td>
+            <td>{{ obs.vendor.name }}</td>
+            <td>{{ obs.domain.name }}</td>
+            <td class="has-text-right is-family-monospace">{{ obs.quantity|default_if_none:"—" }}</td>
+            <td class="has-text-right is-family-monospace">{{ obs.unit_cost }}</td>
+            <td>{% price_confidence_tag obs.confidence %}</td>
+            <td>{% if obs.is_verified %}<span class="tag is-small is-success is-light">Verified</span>{% else %}<span class="tag is-small is-light">Unverified</span>{% endif %}</td>
+            <td class="is-size-7">{{ obs.get_source_type_display }}</td>
+            <td class="is-size-7">{{ obs.created_by|default:"—" }}</td>
+            <td class="is-size-7 has-text-grey">{{ obs.notes|truncatechars:40 }}</td>
+            <td class="is-size-7">
+              {% if obs.source_po_line_id %}<a href="{% url 'purchase_order_detail' obs.source_po_line.purchase_order_id %}">PO #{{ obs.source_po_line.purchase_order_id }}</a>{% else %}—{% endif %}
+            </td>
+            {% if can_establish %}
+            <td>
+              {% if not obs.is_verified %}
+              <form method="post" action="{% url 'part_price_history' part.pk %}" onsubmit="return confirm('Record ${{ obs.unit_cost }} as the established price for {{ obs.domain.name }}?');">
+                {% csrf_token %}
+                <input type="hidden" name="observation_id" value="{{ obs.pk }}">
+                <button type="submit" class="button is-small is-light">Verify</button>
+              </form>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="has-text-grey is-size-7">No observations match these filters.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

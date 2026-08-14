@@ -1,0 +1,65 @@
+{% comment %}
+The shared line table for both creation routes (create.html and receive.html).
+
+Rows are plain repeated inputs named `line_part_id` / `line_quantity`, parsed
+server-side by `_line_rows_from_post`. Blank rows are skipped rather than
+refused, so the five spare rows below cost the receiver nothing.
+
+NO PO-LINE COLUMN HERE, on either route. On the create path, copy-on-create
+resolves the assignment from the part; on the receive path there is no order to
+resolve against and a null assignment is the correct answer. Asking a receiver
+to pick an order line while holding a box is asking them to guess.
+
+Usage: {% include "procurement/packages/_line_rows.html" with search_url_name="package_create" %}
+{% endcomment %}
+<div class="card depth-2 mt-4">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+      What is in the box
+    </div>
+    <button type="button" class="button is-small is-light mr-3" data-add-line-row>
+      <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+      <span>Add row</span>
+    </button>
+  </div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead><tr>
+        <th style="width:60%;">Part</th>
+        <th style="width:30%;">Quantity shipped</th>
+        <th style="width:10%;"></th>
+      </tr></thead>
+      <tbody id="package-line-rows">
+        {% for i in "12345"|make_list %}
+        <tr class="package-line-row">
+          <td>
+            <search-dropdown
+                name="line_part_id"
+                placeholder="search parts by number or name…"
+                hx-get="{% url search_url_name %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search">
+            </search-dropdown>
+          </td>
+          <td>
+            <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                   name="line_quantity" aria-label="Quantity shipped">
+          </td>
+          <td class="has-text-right">
+            <button type="button" class="button is-small is-light" data-remove-line-row title="Clear this row">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-content pt-0">
+    <p class="has-text-grey is-size-7">
+      Leave spare rows blank — they are ignored. A line whose part matches nothing on the order is
+      recorded anyway, marked unassigned: a vendor substitution or a bonus item is a real thing that
+      arrived, and dropping it would be the only genuinely wrong answer.
+    </p>
+  </div>
+</div>

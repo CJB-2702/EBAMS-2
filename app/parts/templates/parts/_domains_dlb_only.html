@@ -1,0 +1,38 @@
+{% comment %}
+Direct analogue of app/administration/templates/users/_domains_dlb_only.html —
+same dual-list-box component, same move-endpoint contract, applied to Part.
+{% endcomment %}
+<dual-list-box id="part-domains-dlb">
+  <list-box slot="left" id="part-domains-avail" label="Available domains">
+    <select slot="options" multiple>
+      {% for item in domains_available %}
+      <option value="{{ item.pk }}">{{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+  <div slot="controls">
+    <button type="button" class="button is-small"
+            hx-post="{% url 'part_move_domains' part_id %}"
+            hx-vals="js:{domain_ids: listBox('part-domains-avail').selected(), direction: 'add'}"
+            hx-target="#part-domains-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Assign selected domains">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+    </button>
+    <button type="button" class="button is-small"
+            hx-post="{% url 'part_move_domains' part_id %}"
+            hx-vals="js:{domain_ids: listBox('part-domains-held').selected(), direction: 'remove'}"
+            hx-target="#part-domains-dlb"
+            hx-swap="outerHTML swap:1s"
+            title="Remove selected domains">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+    </button>
+  </div>
+  <list-box slot="right" id="part-domains-held" label="Assigned to this part">
+    <select slot="options" multiple>
+      {% for item in domains_assigned %}
+      <option value="{{ item.pk }}">{{ item.name }}</option>
+      {% endfor %}
+    </select>
+  </list-box>
+</dual-list-box>

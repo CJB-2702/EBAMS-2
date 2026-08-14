@@ -1,0 +1,1329 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}List Management{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/list_box.js' %}"></script>
+<script src="{% static 'web_components/dual_listbox.js' %}"></script>
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+<style>
+  .lm-avail-scroll { position: relative; }
+  .lm-avail-scroll table thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bulma-scheme-main);
+    z-index: 10;
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+  .lm-section { padding-bottom: 2.5rem; border-bottom: 1px solid var(--bulma-border-weak); margin-bottom: 2.5rem; }
+  .lm-section:last-child { border-bottom: none; margin-bottom: 0; }
+  .lm-group-heading { margin-top: 1rem; }
+</style>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">On This Page</p>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Left/Right Search &amp; Select Tools</summary>
+    <a class="sidebar-link" href="#lm-list-box"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> List Box</a>
+    <a class="sidebar-link" href="#lm-dual-listbox"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> Dual Listbox</a>
+    <a class="sidebar-link" href="#lm-left-heavy"><span class="icon"><span class="material-icons" aria-hidden="true">view_column</span></span> Left-Heavy Assignment Card Pair</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Top and Bottom Selection Tools</summary>
+    <a class="sidebar-link" href="#lm-mini-card"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> Select + Mini Cards Combo</a>
+    <a class="sidebar-link" href="#lm-wide-card"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Select + Wide Cards Combo</a>
+    <a class="sidebar-link" href="#lm-top-bottom-pair"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> Top and Bottom Filterable List Table Pair</a>
+    <a class="sidebar-link" href="#lm-search-wide-card"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Top and Bottom Search Select Wide Cards Pair</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">playlist_add_check</span>
+      </div>
+      <div>
+        <h1 class="page-title">List Management</h1>
+        <p class="page-subtitle">Seven ways to select, assign, and build lists of items — modeled around adding supplier items and aliases to a new Part record.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="is-size-7 has-text-grey mb-6">
+  Every list on this page — parts, supplier items, aliases — is hardcoded demo JSON rendered directly into the
+  page. Nothing here reads from or writes to the database; compare against the real creation form at
+  <code>/parts/new/</code>.
+</p>
+
+<div class="notification is-info is-light is-size-7 mb-6">
+  <strong>Note:</strong> any card built around a large search area can double as a create/add form as needed,
+  via a search/create toggle in the card header — not just a pure picker. The
+  <strong>Left-Heavy Assignment Card Pair</strong>, <strong>Top and Bottom Filterable List Table Pair</strong>, and
+  <strong>Top and Bottom Search Select Wide Cards Pair</strong> all demonstrate this toggle live.
+</div>
+
+<h2 class="title is-4 lm-group-heading" id="lm-group-leftright">Left/Right Search &amp; Select Tools</h2>
+<p class="is-size-7 has-text-grey mb-5">
+  Two-pane (or single-pane) pickers where the source pool and the result sit side by side rather than stacked.
+</p>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+1. LIST BOX (SINGLE PANEL)
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-list-box">
+  <h2 class="title is-5 mb-2">1. List Box (Single Panel)</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    A single searchable multi-select panel with no "available vs. assigned" split — best when the choice is
+    flat (pick several from one list) rather than a two-sided assignment. Full component API:
+    <a href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}">&lt;list-box&gt;</a>.
+  </p>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">Live Demo — Supplier Items on Part PN-10234</div>
+    </div>
+    <div class="card-content">
+      <div class="columns">
+        <div class="column is-7">
+          <list-box id="lm-lb" label="Supplier Items" description="Select all items that apply to this part.">
+            <input slot="search" type="search" class="input is-small" placeholder="Filter…">
+            <select slot="options" multiple>
+              <option value="ACME-4471" selected>ACME-4471 — Acme Fasteners, M6 Hex Bolt, Zinc</option>
+              <option value="ACME-4472">ACME-4472 — Acme Fasteners, M6 Hex Nut, Zinc</option>
+              <option value="BOLT-9001">BOLT-9001 — Boltco M6 Washer, Stainless</option>
+              <option value="HYD-2201" selected>HYD-2201 — HydroWorks Manifold Block</option>
+              <option value="HYD-2202">HYD-2202 — HydroWorks Manifold Seal Kit</option>
+              <option value="SEAL-115">SEAL-115 — SealTech O-Ring, Viton</option>
+            </select>
+          </list-box>
+        </div>
+        <div class="column is-5">
+          <p class="is-size-7 mb-2"><strong>Selected Values:</strong></p>
+          <div id="lm-lb-selection" class="ks-note" style="display:block; min-height: 2.2rem; width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const lb = document.getElementById('lm-lb');
+      const display = document.getElementById('lm-lb-selection');
+      display.textContent = JSON.stringify(lb.selected());
+      lb.addEventListener('list-box-change', (e) => {
+        display.textContent = JSON.stringify(e.detail.values);
+      });
+    });
+  </script>
+</section>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+2. DUAL LISTBOX
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-dual-listbox">
+  <h2 class="title is-5 mb-2">2. Dual Listbox</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    Bidirectional assignment between two equally-weighted panels — best when both the "available" and "chosen"
+    sets are small enough to browse side by side at a glance. Full component API:
+    <a href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}">&lt;dual-listbox&gt;</a>.
+  </p>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">Live Demo — Supplier Items on Part PN-10234</div>
+    </div>
+    <div class="card-content">
+      <dual-list-box id="lm-dlb">
+        <list-box slot="left" id="lm-dlb-avail" label="Available Supplier Items" description="Select items to add to this part.">
+          <select slot="options" multiple>
+            <option value="BOLT-9001">BOLT-9001 — Boltco M6 Washer, Stainless</option>
+            <option value="HYD-2202">HYD-2202 — HydroWorks Manifold Seal Kit</option>
+            <option value="SEAL-115">SEAL-115 — SealTech O-Ring, Viton</option>
+          </select>
+        </list-box>
+
+        <div slot="controls">
+          <button type="button" class="button is-small" id="lm-dlb-add" title="Add selected to this part" aria-label="Add selected">
+            <span class="icon"><span class="material-icons">arrow_forward</span></span>
+          </button>
+          <button type="button" class="button is-small" id="lm-dlb-remove" title="Remove selected from this part" aria-label="Remove selected">
+            <span class="icon"><span class="material-icons">arrow_back</span></span>
+          </button>
+        </div>
+
+        <list-box slot="right" id="lm-dlb-held" label="On This Part" description="Supplier items already added.">
+          <select slot="options" multiple>
+            <option value="ACME-4471">ACME-4471 — Acme M6 Hex Bolt, Zinc</option>
+            <option value="HYD-2201">HYD-2201 — HydroWorks Manifold Block</option>
+          </select>
+        </list-box>
+      </dual-list-box>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const moveOptions = (fromSel, toSel) => {
+        Array.from(fromSel.selectedOptions).forEach(opt => {
+          fromSel.removeChild(opt);
+          opt.selected = false;
+          const options = Array.from(toSel.options);
+          const after = options.find(o => o.value > opt.value);
+          after ? toSel.insertBefore(opt, after) : toSel.appendChild(opt);
+        });
+      };
+      document.getElementById('lm-dlb-add').addEventListener('click', () => {
+        moveOptions(document.querySelector('#lm-dlb-avail select'), document.querySelector('#lm-dlb-held select'));
+      });
+      document.getElementById('lm-dlb-remove').addEventListener('click', () => {
+        moveOptions(document.querySelector('#lm-dlb-held select'), document.querySelector('#lm-dlb-avail select'));
+      });
+    });
+  </script>
+</section>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+3. LEFT-HEAVY ASSIGNMENT CARD PAIR
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-left-heavy">
+  <h2 class="title is-5 mb-2">3. Left-Heavy Assignment Card Pair</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    A large, searchable pool on the left (2/3 width) assigns into a lighter target list on the right (1/3
+    width) — used when the available pool is too large to browse as a plain multi-select, so it needs its own
+    search box, sortable table, and select-all header checkbox. The left card's header carries the same
+    search/create toggle as §6 and §7 — switching to create mode swaps the search bar and table for a create
+    form, and the footer's primary button adds the new item straight to "On This Part". See
+    <code>harness/UX_UI/design_patterns/left_heavy_assignment_card_pair.md</code>.
+  </p>
+  <div class="columns is-variable is-4" id="lm-assign-row">
+
+    {# LEFT: heavy, searchable pool #}
+    <div class="column is-8">
+      <div class="card" style="display:flex; flex-direction:column; height:420px; overflow:hidden;">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true" id="lm-avail-mode-icon">inventory_2</span></span>
+            <span id="lm-avail-mode-title">Available Supplier Items</span>
+          </div>
+          <span class="is-size-7 has-text-grey mr-3" id="lm-avail-count-wrap"><span id="lm-avail-count">0</span> shown</span>
+          <div class="buttons has-addons mb-0" role="group" aria-label="Search or create">
+            <button type="button" class="button is-small is-link is-selected" id="lm-avail-btn-search" title="Search existing supplier items" aria-pressed="true">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            </button>
+            <button type="button" class="button is-small is-light" id="lm-avail-btn-create" title="Create a new supplier item" aria-pressed="false">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            </button>
+          </div>
+        </div>
+
+        {# Search panel: search bar + scrollable table #}
+        <div id="lm-avail-panel-search" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+          <div class="px-3 py-2" style="border-bottom: 1px solid var(--bulma-border-weak); background: var(--bulma-scheme-main-bis);">
+            <div class="control has-icons-left">
+              <input type="search" id="lm-avail-search" class="input is-small" placeholder="Search by part number or description…" autocomplete="off">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size: 0.9rem;">search</span></span>
+            </div>
+          </div>
+          <div class="lm-avail-scroll" style="flex: 1; overflow-y: auto; min-height: 0;">
+            <table class="table is-fullwidth is-hoverable" style="margin: 0;">
+              <thead>
+                <tr>
+                  <th style="width: 2.5rem;"><input type="checkbox" id="lm-avail-header-check" aria-label="Select all visible"></th>
+                  <th>Manufacturer P/N</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="lm-avail-body">
+                <tr class="lm-avail-row" data-id="2" data-label="ACME-4472" data-desc="Acme Fasteners — M6 Hex Nut, Zinc">
+                  <td><input type="checkbox" class="lm-avail-check" aria-label="Select ACME-4472"></td>
+                  <td class="is-family-monospace">ACME-4472</td>
+                  <td>Acme Fasteners — M6 Hex Nut, Zinc</td>
+                </tr>
+                <tr class="lm-avail-row" data-id="3" data-label="BOLT-9001" data-desc="Boltco — M6 Washer, Stainless">
+                  <td><input type="checkbox" class="lm-avail-check" aria-label="Select BOLT-9001"></td>
+                  <td class="is-family-monospace">BOLT-9001</td>
+                  <td>Boltco — M6 Washer, Stainless</td>
+                </tr>
+                <tr class="lm-avail-row" data-id="5" data-label="HYD-2202" data-desc="HydroWorks — Manifold Seal Kit">
+                  <td><input type="checkbox" class="lm-avail-check" aria-label="Select HYD-2202"></td>
+                  <td class="is-family-monospace">HYD-2202</td>
+                  <td>HydroWorks — Manifold Seal Kit</td>
+                </tr>
+                <tr class="lm-avail-row" data-id="6" data-label="SEAL-115" data-desc="SealTech — O-Ring, Viton, 12mm">
+                  <td><input type="checkbox" class="lm-avail-check" aria-label="Select SEAL-115"></td>
+                  <td class="is-family-monospace">SEAL-115</td>
+                  <td>SealTech — O-Ring, Viton, 12mm</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {# Create panel #}
+        <form onsubmit="return false;" id="lm-avail-create-form" style="display:none; flex:1; overflow-y:auto; padding: 1rem;">
+          <div class="field">
+            <label class="label is-small">Manufacturer P/N</label>
+            <div class="control">
+              <input type="text" class="input is-small" id="lm-avail-create-pn" placeholder="e.g. WHS-4471-B" autocomplete="off" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label is-small">Manufacturer</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="lm-avail-create-manufacturer">
+                  <option>Acme Fasteners</option>
+                  <option>Boltco</option>
+                  <option>HydroWorks</option>
+                  <option>SealTech</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label is-small">Description</label>
+            <div class="control">
+              <input type="text" class="input is-small" id="lm-avail-create-desc" placeholder="e.g. M8 Washer, Stainless" autocomplete="off">
+            </div>
+          </div>
+          <p class="help">No matching supplier item found? Create it here — use "Add Supplier Item" below to add it straight to "On This Part".</p>
+        </form>
+
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries pl-0 pr-3" id="lm-avail-footer-secondaries">
+            <button type="button" id="lm-avail-select-all" class="button is-small is-light">Select All</button>
+          </div>
+          <button type="button" id="lm-avail-assign" class="button is-link card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true" id="lm-avail-footer-icon">arrow_forward</span></span>
+            <span id="lm-avail-footer-label">Assign Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    {# RIGHT: light, assigned list #}
+    <div class="column">
+      <div class="card" style="display:flex; flex-direction:column; height:420px; overflow:hidden;">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+            On This Part
+          </div>
+          <span class="is-size-7 has-text-grey"><span id="lm-assigned-count">0</span> applied</span>
+        </div>
+        <div style="flex: 1; overflow-y: auto; min-height: 0;">
+          <table class="table is-fullwidth is-hoverable" style="margin: 0;">
+            <tbody id="lm-assigned-body">
+              <tr class="lm-assigned-row" data-id="1" data-label="ACME-4471" data-desc="Acme Fasteners — M6 Hex Bolt, Zinc">
+                <td style="padding: 0.65rem 0.75rem; vertical-align: middle;">
+                  <span class="is-family-monospace has-text-weight-semibold">ACME-4471</span>
+                  <br><span class="is-size-7 has-text-grey">Acme Fasteners — M6 Hex Bolt, Zinc</span>
+                </td>
+                <td style="width: 2.5rem; padding: 0.65rem 0.75rem; vertical-align: middle;">
+                  <input type="checkbox" class="lm-assigned-check" aria-label="Remove ACME-4471">
+                </td>
+              </tr>
+              <tr class="lm-assigned-row" data-id="4" data-label="HYD-2201" data-desc="HydroWorks — Manifold Block, Cast Aluminum">
+                <td style="padding: 0.65rem 0.75rem; vertical-align: middle;">
+                  <span class="is-family-monospace has-text-weight-semibold">HYD-2201</span>
+                  <br><span class="is-size-7 has-text-grey">HydroWorks — Manifold Block, Cast Aluminum</span>
+                </td>
+                <td style="width: 2.5rem; padding: 0.65rem 0.75rem; vertical-align: middle;">
+                  <input type="checkbox" class="lm-assigned-check" aria-label="Remove HYD-2201">
+                </td>
+              </tr>
+              <tr id="lm-assigned-empty" style="display: none;"><td class="has-text-grey p-4 is-size-7">No supplier items assigned.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <footer class="card-footer" style="padding: 0;">
+          <button type="button" id="lm-assigned-remove" class="button is-danger is-light card-footer-primary" style="flex: 1; border-radius: 0;">
+            <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+            <span>Remove Selected</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  (function () {
+    const availBody = document.getElementById('lm-avail-body');
+    const assignedBody = document.getElementById('lm-assigned-body');
+    const availCount = document.getElementById('lm-avail-count');
+    const assignedCount = document.getElementById('lm-assigned-count');
+    const headerCheck = document.getElementById('lm-avail-header-check');
+    const selectAllBtn = document.getElementById('lm-avail-select-all');
+
+    function visibleAvailRows() {
+      return Array.from(availBody.querySelectorAll('.lm-avail-row')).filter(r => r.style.display !== 'none');
+    }
+
+    function syncAvailCount() {
+      availCount.textContent = visibleAvailRows().length;
+      const checks = visibleAvailRows().map(r => r.querySelector('.lm-avail-check'));
+      const checkedCount = checks.filter(c => c.checked).length;
+      headerCheck.checked = checks.length > 0 && checkedCount === checks.length;
+      headerCheck.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+      selectAllBtn.textContent = checks.length > 0 && checkedCount === checks.length ? 'Deselect All' : 'Select All';
+    }
+
+    function syncAssignedCount() {
+      const hasRows = assignedBody.querySelectorAll('.lm-assigned-row').length > 0;
+      document.getElementById('lm-assigned-empty').style.display = hasRows ? 'none' : '';
+      assignedCount.textContent = assignedBody.querySelectorAll('.lm-assigned-row').length;
+    }
+
+    document.getElementById('lm-avail-search').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      availBody.querySelectorAll('.lm-avail-row').forEach(row => {
+        const hay = (row.dataset.label + ' ' + row.dataset.desc).toLowerCase();
+        row.style.display = q && !hay.includes(q) ? 'none' : '';
+      });
+      syncAvailCount();
+    });
+
+    availBody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('lm-avail-check')) syncAvailCount();
+    });
+
+    headerCheck.addEventListener('change', () => {
+      visibleAvailRows().forEach(r => { r.querySelector('.lm-avail-check').checked = headerCheck.checked; });
+      syncAvailCount();
+    });
+
+    selectAllBtn.addEventListener('click', () => {
+      const shouldSelect = selectAllBtn.textContent === 'Select All';
+      visibleAvailRows().forEach(r => { r.querySelector('.lm-avail-check').checked = shouldSelect; });
+      syncAvailCount();
+    });
+
+    function addAssignedRow(label, desc, id) {
+      const tr = document.createElement('tr');
+      tr.className = 'lm-assigned-row';
+      tr.dataset.id = id;
+      tr.dataset.label = label;
+      tr.dataset.desc = desc;
+      tr.innerHTML = `
+        <td style="padding: 0.65rem 0.75rem; vertical-align: middle;">
+          <span class="is-family-monospace has-text-weight-semibold">${label}</span>
+          <br><span class="is-size-7 has-text-grey">${desc}</span>
+        </td>
+        <td style="width: 2.5rem; padding: 0.65rem 0.75rem; vertical-align: middle;">
+          <input type="checkbox" class="lm-assigned-check" aria-label="Remove ${label}">
+        </td>`;
+      assignedBody.appendChild(tr);
+    }
+
+    document.getElementById('lm-avail-assign').addEventListener('click', () => {
+      if (availMode === 'create') {
+        const pnInput = document.getElementById('lm-avail-create-pn');
+        const manufacturer = document.getElementById('lm-avail-create-manufacturer');
+        const descInput = document.getElementById('lm-avail-create-desc');
+        const pn = pnInput.value.trim();
+        if (!pn) return;
+        addAssignedRow(pn, `${manufacturer.value} — ${descInput.value.trim() || 'New supplier item'}`, 'new-' + Date.now());
+        pnInput.value = '';
+        descInput.value = '';
+        pnInput.focus();
+        syncAssignedCount();
+        return;
+      }
+      availBody.querySelectorAll('.lm-avail-check:checked').forEach(check => {
+        const row = check.closest('.lm-avail-row');
+        addAssignedRow(row.dataset.label, row.dataset.desc, row.dataset.id);
+        row.remove();
+      });
+      syncAvailCount();
+      syncAssignedCount();
+    });
+
+    // ── Mode toggle: search vs create ──
+    let availMode = 'search';
+    const availModeIcon = document.getElementById('lm-avail-mode-icon');
+    const availModeTitle = document.getElementById('lm-avail-mode-title');
+    const availCountWrap = document.getElementById('lm-avail-count-wrap');
+    const availBtnSearch = document.getElementById('lm-avail-btn-search');
+    const availBtnCreate = document.getElementById('lm-avail-btn-create');
+    const availPanelSearch = document.getElementById('lm-avail-panel-search');
+    const availPanelCreate = document.getElementById('lm-avail-create-form');
+    const availFooterSecondaries = document.getElementById('lm-avail-footer-secondaries');
+    const availFooterIcon = document.getElementById('lm-avail-footer-icon');
+    const availFooterLabel = document.getElementById('lm-avail-footer-label');
+
+    function setAvailMode(mode) {
+      availMode = mode;
+      const isSearch = mode === 'search';
+      availPanelSearch.style.display = isSearch ? 'flex' : 'none';
+      availPanelCreate.style.display = isSearch ? 'none' : 'block';
+      availCountWrap.style.display = isSearch ? '' : 'none';
+      availFooterSecondaries.style.display = isSearch ? '' : 'none';
+      availModeIcon.textContent = isSearch ? 'inventory_2' : 'add';
+      availModeTitle.textContent = isSearch ? 'Available Supplier Items' : 'Create Supplier Item';
+      availFooterIcon.textContent = isSearch ? 'arrow_forward' : 'add';
+      availFooterLabel.textContent = isSearch ? 'Assign Selected' : 'Add Supplier Item';
+      availBtnSearch.classList.toggle('is-link', isSearch);
+      availBtnSearch.classList.toggle('is-selected', isSearch);
+      availBtnSearch.classList.toggle('is-light', !isSearch);
+      availBtnSearch.setAttribute('aria-pressed', String(isSearch));
+      availBtnCreate.classList.toggle('is-link', !isSearch);
+      availBtnCreate.classList.toggle('is-selected', !isSearch);
+      availBtnCreate.classList.toggle('is-light', isSearch);
+      availBtnCreate.setAttribute('aria-pressed', String(!isSearch));
+    }
+    availBtnSearch.addEventListener('click', () => setAvailMode('search'));
+    availBtnCreate.addEventListener('click', () => setAvailMode('create'));
+
+    document.getElementById('lm-assigned-remove').addEventListener('click', () => {
+      assignedBody.querySelectorAll('.lm-assigned-check:checked').forEach(check => {
+        const row = check.closest('.lm-assigned-row');
+        const tr = document.createElement('tr');
+        tr.className = 'lm-avail-row';
+        tr.dataset.id = row.dataset.id;
+        tr.dataset.label = row.dataset.label;
+        tr.dataset.desc = row.dataset.desc;
+        tr.innerHTML = `
+          <td><input type="checkbox" class="lm-avail-check" aria-label="Select ${row.dataset.label}"></td>
+          <td class="is-family-monospace">${row.dataset.label}</td>
+          <td>${row.dataset.desc}</td>`;
+        availBody.appendChild(tr);
+        row.remove();
+      });
+      syncAvailCount();
+      syncAssignedCount();
+    });
+
+    syncAvailCount();
+    syncAssignedCount();
+  })();
+  </script>
+</section>
+
+<h2 class="title is-4 lm-group-heading" id="lm-group-topbottom">Top and Bottom Selection Tools</h2>
+<p class="is-size-7 has-text-grey mb-5">
+  Pickers where the search/create step stacks above (or below) the resulting list or detail card, rather than
+  sitting beside it.
+</p>
+
+<div class="notification is-info is-light is-size-7 mb-6">
+  <strong>Naming system.</strong> Every pattern below is named
+  <code>&lt;Selection Type&gt; + &lt;Display Type&gt; Combo</code> (the picker and its results share one card) or
+  <code>Top and Bottom &lt;Selection Type&gt; &lt;Display Type&gt; Pair</code> (the picker and its results are two
+  separate stacked cards).
+  <div class="columns is-variable is-4 mt-2">
+    <div class="column">
+      <p class="mb-1"><strong>Selection types</strong></p>
+      <ul class="mb-0">
+        <li><strong>Select</strong> — implies the <code>&lt;search-dropdown&gt;</code> web component.</li>
+        <li><strong>Dropdown</strong> — a standard <code>&lt;select&gt;</code> dropdown.</li>
+        <li><strong>Filterable list</strong> — a single input filtering a selectable table.</li>
+        <li><strong>Search select</strong> — a search/filters form paired with a selectable items table.</li>
+      </ul>
+    </div>
+    <div class="column">
+      <p class="mb-1"><strong>Display types</strong></p>
+      <ul class="mb-0">
+        <li>Mini cards</li>
+        <li>Wide cards</li>
+        <li>Table</li>
+      </ul>
+    </div>
+  </div>
+  <p class="mt-2 mb-0">
+    Not every combination is built here — e.g. a <strong>Dropdown + Table Combo</strong> (a dropdown with table
+    rows showing your selection, in one card) would follow the same system without appearing on this page.
+  </p>
+</div>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+4. SELECT + MINI CARDS COMBO
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-mini-card">
+  <h2 class="title is-5 mb-2">4. Select + Mini Cards Combo</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    Search an existing pool via typeahead; each pick renders as a small removable tile rather than a table row
+    or listbox option. This is the same <code>.fb-grid</code>/<code>.fb-tile</code> markup
+    <a href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}">&lt;add-comment&gt;</a> uses for its
+    staged-file previews, generalized here to any searched-and-picked item instead of just uploaded files.
+  </p>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
+        Add Supplier Items to Part PN-10234
+      </div>
+    </div>
+    <div class="card-content">
+      <search-dropdown
+        id="lm-mc-search"
+        placeholder="Search supplier items by part number or description…"
+        hx-get="{% url 'kitchen_sink_dummy_supplier_item_search' %}"
+        hx-trigger="keyup changed delay:300ms, search">
+      </search-dropdown>
+      <div id="lm-mc-grid" class="fb-grid mt-3"></div>
+      <p id="lm-mc-empty" class="has-text-grey is-size-7 mt-3">No supplier items picked yet.</p>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const search = document.getElementById('lm-mc-search');
+    const grid = document.getElementById('lm-mc-grid');
+    const emptyMsg = document.getElementById('lm-mc-empty');
+    const picked = [
+      { id: "1", label: "ACME-4471", description: "Acme Fasteners — M6 Hex Bolt, Zinc" },
+      { id: "4", label: "HYD-2201", description: "HydroWorks — Manifold Block, Cast Aluminum" },
+    ];
+
+    function render() {
+      grid.innerHTML = '';
+      picked.forEach((item, idx) => {
+        const tile = document.createElement('div');
+        tile.className = 'fb-tile';
+        tile.innerHTML = `
+          <span class="fb-tile-link">
+            <span class="fb-thumb"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+            <span class="fb-meta">
+              <span class="fb-name"></span>
+              <span class="fb-sub"></span>
+            </span>
+          </span>
+          <span class="fb-tile-actions">
+            <button type="button" class="button is-small lm-mc-remove" title="Remove">
+              <span class="material-icons" aria-hidden="true">close</span>
+            </button>
+          </span>`;
+        tile.querySelector('.fb-name').textContent = item.label;
+        tile.querySelector('.fb-sub').textContent = item.description;
+        tile.querySelector('.lm-mc-remove').addEventListener('click', () => {
+          picked.splice(idx, 1);
+          render();
+        });
+        grid.appendChild(tile);
+      });
+      emptyMsg.style.display = picked.length ? 'none' : '';
+    }
+
+    search.addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (!li || !li.hasAttribute('data-value')) return;
+      const id = li.getAttribute('data-value');
+      if (picked.some((p) => p.id === id)) return;
+      picked.push({
+        id,
+        label: li.getAttribute('data-label') || li.innerText.trim(),
+        description: li.getAttribute('data-description') || '',
+      });
+      render();
+      search.value = '';
+      if (search.input) search.input.value = '';
+    });
+
+    render();
+  })();
+  </script>
+</section>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+5. SELECT + WIDE CARDS COMBO
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-wide-card">
+  <h2 class="title is-5 mb-2">5. Select + Wide Cards Combo</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    Search or pick an item and it's appended as a full-width, comfortably-spaced detail block underneath, inside
+    the same card — same append-on-pick behavior as the mini-card combo (§4), just with a wide detail block
+    instead of a small tile. Each block is square-cornered content nested inside the chamfered parent card, the
+    same "chamfer marks a container, its contents stay square" rule as everywhere else in the app — which is
+    also what keeps this visually distinct from the two stacked cards of §6.
+  </p>
+  <div class="card mb-3">
+    <div class="card-content">
+      <search-dropdown
+        id="lm-wc-search"
+        placeholder="Search supplier items by part number or description…"
+        hx-get="{% url 'kitchen_sink_dummy_supplier_item_search' %}"
+        hx-trigger="keyup changed delay:300ms, search">
+      </search-dropdown>
+
+      <div id="lm-wc-detail-list" class="mt-3"></div>
+
+      <div class="card sharp-corners mt-3" id="lm-wc-empty-card">
+        <div class="card-content has-text-grey is-size-7 has-text-centered p-5">
+          Search above to preview a supplier item's full details.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    // Dummy per-item detail record, keyed by the same ids the search endpoint returns.
+    // Real fields modeled on the SupplierItem model (manufacturer_part_number, name,
+    // description, part_manufacturer, is_active, min/max revision numbers).
+    const DETAILS = {
+      "1": { part: "PN-10234", manufacturer: "Acme Fasteners", description: "M6 Hex Bolt, Zinc plated, DIN 933", revisions: "Rev A – current", active: true },
+      "2": { part: "PN-10234", manufacturer: "Acme Fasteners", description: "M6 Hex Nut, Zinc plated, DIN 934", revisions: "Rev A – current", active: true },
+      "3": { part: "PN-10234", manufacturer: "Boltco", description: "M6 Flat Washer, Stainless Steel", revisions: "Rev B – current", active: true },
+      "4": { part: "PN-10234", manufacturer: "HydroWorks", description: "Manifold Block, Cast Aluminum, 6-port", revisions: "Rev A – Rev C", active: true },
+      "5": { part: "PN-10234", manufacturer: "HydroWorks", description: "Manifold Seal Kit, Viton", revisions: "Rev A – current", active: false },
+      "6": { part: "PN-10234", manufacturer: "SealTech", description: "O-Ring, Viton, 12mm ID", revisions: "Rev A – current", active: true },
+    };
+
+    const search = document.getElementById('lm-wc-search');
+    const list = document.getElementById('lm-wc-detail-list');
+    const emptyCard = document.getElementById('lm-wc-empty-card');
+    const picked = [];
+
+    function render() {
+      list.innerHTML = '';
+      picked.forEach((item) => {
+        const d = DETAILS[item.id];
+        if (!d) return;
+
+        const card = document.createElement('div');
+        card.className = 'card sharp-corners mb-3';
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+              <span class="lm-wc-detail-title"></span>
+            </div>
+            <span class="tag is-small lm-wc-detail-status"></span>
+            <button type="button" class="button is-small is-white" title="View detail page" aria-label="View detail page"
+              commandfor="lm-view-detail-modal" command="show-modal">
+              <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+            </button>
+          </div>
+          <div style="display: flex; align-items: stretch;">
+            <div class="card-content" style="flex: 1;">
+              <div class="detail-grid">
+                <div><div class="detail-label">MANUFACTURER</div><div class="detail-value lm-wc-detail-manufacturer"></div></div>
+                <div><div class="detail-label">INTERNAL PART</div><div class="detail-value lm-wc-detail-part"></div></div>
+                <div><div class="detail-label">DESCRIPTION</div><div class="detail-value lm-wc-detail-description"></div></div>
+                <div><div class="detail-label">REVISION RANGE</div><div class="detail-value lm-wc-detail-revisions"></div></div>
+              </div>
+            </div>
+            <button type="button" title="Remove" class="button is-danger is-light lm-wc-detail-remove"
+              style="flex-shrink: 0; width: 2.75rem; height: auto; border-radius: 0;">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            </button>
+          </div>`;
+
+        card.querySelector('.lm-wc-detail-title').textContent = item.label;
+        card.querySelector('.lm-wc-detail-manufacturer').textContent = d.manufacturer;
+        card.querySelector('.lm-wc-detail-part').textContent = d.part;
+        card.querySelector('.lm-wc-detail-description').textContent = d.description;
+        card.querySelector('.lm-wc-detail-revisions').textContent = d.revisions;
+        const status = card.querySelector('.lm-wc-detail-status');
+        status.textContent = d.active ? 'Active' : 'Inactive';
+        status.className = 'tag is-small lm-wc-detail-status ' + (d.active ? 'is-success is-light' : 'is-light');
+        card.querySelector('.lm-wc-detail-remove').addEventListener('click', () => {
+          const idx = picked.findIndex((p) => p.id === item.id);
+          if (idx !== -1) picked.splice(idx, 1);
+          render();
+        });
+
+        list.appendChild(card);
+      });
+      emptyCard.style.display = picked.length ? 'none' : '';
+    }
+
+    search.addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (!li || !li.hasAttribute('data-value')) return;
+      const id = li.getAttribute('data-value');
+      if (picked.some((p) => p.id === id)) return;
+      picked.push({ id, label: li.getAttribute('data-label') || li.innerText.trim() });
+      render();
+      search.value = '';
+      if (search.input) search.input.value = '';
+    });
+
+    picked.push({ id: "1", label: "ACME-4471" });
+    render();
+  })();
+  </script>
+</section>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+6. TOP AND BOTTOM FILTERABLE LIST TABLE PAIR
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-top-bottom-pair">
+  <h2 class="title is-5 mb-2">6. Top and Bottom Filterable List Table Pair</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    A newer concept, still being validated: the top card handles adding the next item, and toggles between two
+    modes via the icon pair in its top-right corner — <strong>search</strong> (the same searchable-table content
+    as the left side of the left-heavy assignment card pair, §3) for assigning an existing supplier item, or
+    <strong>create</strong> for one that doesn't exist in the pool yet. The bottom card holds a table of items
+    already on the record, in line with the search-on-top/results-below shape of the other patterns on this page.
+  </p>
+
+  {# Top: search / create toggle #}
+  <div class="card mb-3">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true" id="lm-tb-mode-icon">search</span></span>
+        <span id="lm-tb-mode-title">Search Supplier Items</span>
+      </div>
+      <div class="buttons has-addons mb-0" role="group" aria-label="Search or create">
+        <button type="button" class="button is-small is-link is-selected" id="lm-tb-btn-search" title="Search existing supplier items" aria-pressed="true">
+          <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        </button>
+        <button type="button" class="button is-small is-light" id="lm-tb-btn-create" title="Create a new supplier item" aria-pressed="false">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        </button>
+      </div>
+    </div>
+    <div class="card-content">
+
+      {# Search panel #}
+      <div id="lm-tb-panel-search">
+        <div class="control has-icons-left mb-3">
+          <input type="search" id="lm-tb-search-input" class="input is-small" placeholder="Search by part number or description…" autocomplete="off">
+          <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size: 0.9rem;">search</span></span>
+        </div>
+        <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--bulma-border-weak);">
+          <table class="table is-fullwidth is-hoverable" style="margin: 0;">
+            <thead>
+              <tr>
+                <th style="width: 2.5rem;"><input type="checkbox" id="lm-tb-search-header-check" aria-label="Select all visible"></th>
+                <th>Manufacturer P/N</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody id="lm-tb-search-body">
+              <tr class="lm-tb-search-row" data-label="ACME-4472" data-desc="Acme Fasteners — M6 Hex Nut, Zinc">
+                <td><input type="checkbox" class="lm-tb-search-check"></td>
+                <td class="is-family-monospace">ACME-4472</td>
+                <td>Acme Fasteners — M6 Hex Nut, Zinc</td>
+              </tr>
+              <tr class="lm-tb-search-row" data-label="BOLT-9001" data-desc="Boltco — M6 Washer, Stainless">
+                <td><input type="checkbox" class="lm-tb-search-check"></td>
+                <td class="is-family-monospace">BOLT-9001</td>
+                <td>Boltco — M6 Washer, Stainless</td>
+              </tr>
+              <tr class="lm-tb-search-row" data-label="HYD-2202" data-desc="HydroWorks — Manifold Seal Kit">
+                <td><input type="checkbox" class="lm-tb-search-check"></td>
+                <td class="is-family-monospace">HYD-2202</td>
+                <td>HydroWorks — Manifold Seal Kit</td>
+              </tr>
+              <tr class="lm-tb-search-row" data-label="SEAL-115" data-desc="SealTech — O-Ring, Viton, 12mm">
+                <td><input type="checkbox" class="lm-tb-search-check"></td>
+                <td class="is-family-monospace">SEAL-115</td>
+                <td>SealTech — O-Ring, Viton, 12mm</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="is-flex is-justify-content-space-between mt-3">
+          <button type="button" class="button is-small is-light" id="lm-tb-search-select-all">Select All</button>
+          <button type="button" class="button is-small is-link" id="lm-tb-search-add">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_downward</span></span>
+            <span>Add Selected</span>
+          </button>
+        </div>
+      </div>
+
+      {# Create panel #}
+      <form onsubmit="return false;" id="lm-tb-create-form" style="display: none;">
+        <div class="field">
+          <label class="label is-small">Manufacturer P/N</label>
+          <div class="control">
+            <input type="text" class="input is-small" id="lm-tb-create-label" placeholder="e.g. WHS-4471-B" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Manufacturer</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select id="lm-tb-create-manufacturer">
+                <option>Acme Fasteners</option>
+                <option>Boltco</option>
+                <option>HydroWorks</option>
+                <option>SealTech</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Description</label>
+          <div class="control">
+            <input type="text" class="input is-small" id="lm-tb-create-desc" placeholder="e.g. M8 Washer, Stainless" autocomplete="off">
+          </div>
+        </div>
+        <button type="submit" class="button is-small is-primary">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+          <span>Add Supplier Item</span>
+        </button>
+        <p class="help">No matching supplier item found? Create it here — this form adds a brand-new item rather than assigning from the existing pool.</p>
+      </form>
+
+    </div>
+  </div>
+
+  {# Bottom: table of items already added #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+        Supplier Items on Part PN-10234
+      </div>
+      <span class="is-size-7 has-text-grey"><span id="lm-tb-count">2</span> total</span>
+    </div>
+    <div class="card-content" style="padding: 0;">
+      <table class="table is-fullwidth is-hoverable" style="margin: 0;">
+        <thead>
+          <tr><th>Manufacturer P/N</th><th>Description</th><th style="width: 2.5rem;"></th></tr>
+        </thead>
+        <tbody id="lm-tb-body">
+          <tr class="lm-tb-row">
+            <td class="is-family-monospace">ACME-4471</td>
+            <td>Acme Fasteners — M6 Hex Bolt, Zinc</td>
+            <td><button type="button" class="button is-small is-danger is-light lm-tb-remove" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">close</span></span></button></td>
+          </tr>
+          <tr class="lm-tb-row">
+            <td class="is-family-monospace">HYD-2201</td>
+            <td>HydroWorks — Manifold Block, Cast Aluminum</td>
+            <td><button type="button" class="button is-small is-danger is-light lm-tb-remove" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">close</span></span></button></td>
+          </tr>
+        </tbody>
+      </table>
+      <p id="lm-tb-empty" class="has-text-grey is-size-7 p-4" style="display: none;">No supplier items yet.</p>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const body = document.getElementById('lm-tb-body');
+    const empty = document.getElementById('lm-tb-empty');
+    const count = document.getElementById('lm-tb-count');
+
+    function syncTopEmpty() {
+      const rows = body.querySelectorAll('.lm-tb-row').length;
+      empty.style.display = rows === 0 ? '' : 'none';
+      count.textContent = rows;
+    }
+
+    function addToTop(label, desc) {
+      const tr = document.createElement('tr');
+      tr.className = 'lm-tb-row';
+      tr.innerHTML = `
+        <td class="is-family-monospace"></td>
+        <td></td>
+        <td><button type="button" class="button is-small is-danger is-light lm-tb-remove" title="Remove"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">close</span></span></button></td>`;
+      tr.children[0].textContent = label;
+      tr.children[1].textContent = desc;
+      body.appendChild(tr);
+      syncTopEmpty();
+    }
+
+    body.addEventListener('click', (e) => {
+      const btn = e.target.closest('.lm-tb-remove');
+      if (!btn) return;
+      btn.closest('.lm-tb-row').remove();
+      syncTopEmpty();
+    });
+
+    // ── Mode toggle: search vs create ──
+    const modeIcon = document.getElementById('lm-tb-mode-icon');
+    const modeTitle = document.getElementById('lm-tb-mode-title');
+    const btnSearch = document.getElementById('lm-tb-btn-search');
+    const btnCreate = document.getElementById('lm-tb-btn-create');
+    const panelSearch = document.getElementById('lm-tb-panel-search');
+    const panelCreate = document.getElementById('lm-tb-create-form');
+
+    function setMode(mode) {
+      const isSearch = mode === 'search';
+      panelSearch.style.display = isSearch ? '' : 'none';
+      panelCreate.style.display = isSearch ? 'none' : '';
+      modeIcon.textContent = isSearch ? 'search' : 'add';
+      modeTitle.textContent = isSearch ? 'Search Supplier Items' : 'Create Supplier Item';
+      btnSearch.classList.toggle('is-link', isSearch);
+      btnSearch.classList.toggle('is-selected', isSearch);
+      btnSearch.classList.toggle('is-light', !isSearch);
+      btnSearch.setAttribute('aria-pressed', String(isSearch));
+      btnCreate.classList.toggle('is-link', !isSearch);
+      btnCreate.classList.toggle('is-selected', !isSearch);
+      btnCreate.classList.toggle('is-light', isSearch);
+      btnCreate.setAttribute('aria-pressed', String(!isSearch));
+    }
+    btnSearch.addEventListener('click', () => setMode('search'));
+    btnCreate.addEventListener('click', () => setMode('create'));
+
+    // ── Search panel behavior ──
+    const searchBody = document.getElementById('lm-tb-search-body');
+    const searchHeaderCheck = document.getElementById('lm-tb-search-header-check');
+    const searchSelectAllBtn = document.getElementById('lm-tb-search-select-all');
+
+    function visibleSearchRows() {
+      return Array.from(searchBody.querySelectorAll('.lm-tb-search-row')).filter(r => r.style.display !== 'none');
+    }
+    function syncSearchHeader() {
+      const checks = visibleSearchRows().map(r => r.querySelector('.lm-tb-search-check'));
+      const checkedCount = checks.filter(c => c.checked).length;
+      searchHeaderCheck.checked = checks.length > 0 && checkedCount === checks.length;
+      searchHeaderCheck.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+      searchSelectAllBtn.textContent = checks.length > 0 && checkedCount === checks.length ? 'Deselect All' : 'Select All';
+    }
+
+    document.getElementById('lm-tb-search-input').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      searchBody.querySelectorAll('.lm-tb-search-row').forEach(row => {
+        const hay = (row.dataset.label + ' ' + row.dataset.desc).toLowerCase();
+        row.style.display = q && !hay.includes(q) ? 'none' : '';
+      });
+      syncSearchHeader();
+    });
+    searchBody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('lm-tb-search-check')) syncSearchHeader();
+    });
+    searchHeaderCheck.addEventListener('change', () => {
+      visibleSearchRows().forEach(r => { r.querySelector('.lm-tb-search-check').checked = searchHeaderCheck.checked; });
+      syncSearchHeader();
+    });
+    searchSelectAllBtn.addEventListener('click', () => {
+      const shouldSelect = searchSelectAllBtn.textContent === 'Select All';
+      visibleSearchRows().forEach(r => { r.querySelector('.lm-tb-search-check').checked = shouldSelect; });
+      syncSearchHeader();
+    });
+    document.getElementById('lm-tb-search-add').addEventListener('click', () => {
+      searchBody.querySelectorAll('.lm-tb-search-check:checked').forEach(check => {
+        const row = check.closest('.lm-tb-search-row');
+        addToTop(row.dataset.label, row.dataset.desc);
+        row.remove();
+      });
+      syncSearchHeader();
+    });
+
+    // ── Create panel behavior ──
+    panelCreate.addEventListener('submit', () => {
+      const labelInput = document.getElementById('lm-tb-create-label');
+      const manufacturer = document.getElementById('lm-tb-create-manufacturer');
+      const descInput = document.getElementById('lm-tb-create-desc');
+      const label = labelInput.value.trim();
+      if (!label) return;
+      const desc = descInput.value.trim() || 'New supplier item';
+      addToTop(label, `${manufacturer.value} — ${desc}`);
+      labelInput.value = '';
+      descInput.value = '';
+      labelInput.focus();
+    });
+
+    syncTopEmpty();
+    syncSearchHeader();
+  })();
+  </script>
+</section>
+
+{% comment %}
+═══════════════════════════════════════════════════════════
+7. TOP AND BOTTOM SEARCH SELECT WIDE CARDS PAIR
+════════════════════════════════════════════════════════════
+{% endcomment %}
+<section class="lm-section anchor-target" id="lm-search-wide-card">
+  <h2 class="title is-5 mb-2">7. Top and Bottom Search Select Wide Cards Pair</h2>
+  <p class="is-size-7 has-text-grey mb-4">
+    A filters-and-results layout like
+    <a href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}">Search Page Example</a>,
+    scoped down to the same three fields as the §6 create form (Manufacturer P/N, Manufacturer, Description) —
+    but picking a result doesn't navigate anywhere; each row's arrow button appends a full-width detail card to
+    the stack below, same as §5's wide card. The header's search/create toggle switches to the same create form
+    as §6 for items that don't exist in the pool yet.
+  </p>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true" id="lm-sw-mode-icon">search</span></span>
+        <span id="lm-sw-mode-title">Search Supplier Items</span>
+      </div>
+      <div class="buttons has-addons mb-0" role="group" aria-label="Search or create">
+        <button type="button" class="button is-small is-link is-selected" id="lm-sw-btn-search" title="Search existing supplier items" aria-pressed="true">
+          <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        </button>
+        <button type="button" class="button is-small is-light" id="lm-sw-btn-create" title="Create a new supplier item" aria-pressed="false">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        </button>
+      </div>
+    </div>
+    <div class="card-content">
+
+      {# Search panel #}
+      <div id="lm-sw-panel-search">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small">Manufacturer P/N</label>
+            <input type="text" class="input is-small" id="lm-sw-filter-pn" placeholder="e.g. ACME-4471" autocomplete="off">
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Description</label>
+            <input type="text" class="input is-small" id="lm-sw-filter-desc" placeholder="e.g. hex bolt" autocomplete="off">
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Manufacturer</label>
+            <div class="select is-small is-fullwidth">
+              <select id="lm-sw-filter-manufacturer">
+                <option>All Manufacturers</option>
+                <option>Acme Fasteners</option>
+                <option>Boltco</option>
+                <option>HydroWorks</option>
+                <option>SealTech</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="buttons mt-2 mb-4">
+          <button type="button" class="button is-small is-info" id="lm-sw-apply">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            <span>Apply Filters</span>
+          </button>
+          <button type="button" class="button is-small is-light" id="lm-sw-clear">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Clear Filters</span>
+          </button>
+        </div>
+
+        <table class="table is-fullwidth is-hoverable" style="margin: 0;">
+          <thead>
+            <tr><th>Manufacturer P/N</th><th>Manufacturer</th><th>Description</th><th style="width: 3rem;"></th></tr>
+          </thead>
+          <tbody id="lm-sw-results-body">
+            <tr class="lm-sw-row" data-id="1" data-pn="ACME-4471" data-manufacturer="Acme Fasteners" data-desc="M6 Hex Bolt, Zinc plated, DIN 933">
+              <td class="is-family-monospace">ACME-4471</td><td>Acme Fasteners</td><td>M6 Hex Bolt, Zinc plated, DIN 933</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+            <tr class="lm-sw-row" data-id="2" data-pn="ACME-4472" data-manufacturer="Acme Fasteners" data-desc="M6 Hex Nut, Zinc plated, DIN 934">
+              <td class="is-family-monospace">ACME-4472</td><td>Acme Fasteners</td><td>M6 Hex Nut, Zinc plated, DIN 934</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+            <tr class="lm-sw-row" data-id="3" data-pn="BOLT-9001" data-manufacturer="Boltco" data-desc="M6 Flat Washer, Stainless Steel">
+              <td class="is-family-monospace">BOLT-9001</td><td>Boltco</td><td>M6 Flat Washer, Stainless Steel</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+            <tr class="lm-sw-row" data-id="4" data-pn="HYD-2201" data-manufacturer="HydroWorks" data-desc="Manifold Block, Cast Aluminum, 6-port">
+              <td class="is-family-monospace">HYD-2201</td><td>HydroWorks</td><td>Manifold Block, Cast Aluminum, 6-port</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+            <tr class="lm-sw-row" data-id="5" data-pn="HYD-2202" data-manufacturer="HydroWorks" data-desc="Manifold Seal Kit, Viton">
+              <td class="is-family-monospace">HYD-2202</td><td>HydroWorks</td><td>Manifold Seal Kit, Viton</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+            <tr class="lm-sw-row" data-id="6" data-pn="SEAL-115" data-manufacturer="SealTech" data-desc="O-Ring, Viton, 12mm ID">
+              <td class="is-family-monospace">SEAL-115</td><td>SealTech</td><td>O-Ring, Viton, 12mm ID</td>
+              <td><button type="button" class="button is-small is-primary lm-sw-add" title="Add"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span></button></td>
+            </tr>
+          </tbody>
+        </table>
+        <p id="lm-sw-no-results" class="has-text-grey is-size-7 p-4" style="display: none;">No supplier items match these filters.</p>
+      </div>
+
+      {# Create panel #}
+      <form onsubmit="return false;" id="lm-sw-create-form" style="display: none;">
+        <div class="field">
+          <label class="label is-small">Manufacturer P/N</label>
+          <div class="control">
+            <input type="text" class="input is-small" id="lm-sw-create-pn" placeholder="e.g. WHS-4471-B" autocomplete="off" required>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Manufacturer</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select id="lm-sw-create-manufacturer">
+                <option>Acme Fasteners</option>
+                <option>Boltco</option>
+                <option>HydroWorks</option>
+                <option>SealTech</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Description</label>
+          <div class="control">
+            <input type="text" class="input is-small" id="lm-sw-create-desc" placeholder="e.g. M8 Washer, Stainless" autocomplete="off">
+          </div>
+        </div>
+        <button type="submit" class="button is-small is-primary">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+          <span>Add Supplier Item</span>
+        </button>
+        <p class="help">No matching supplier item found? Create it here — it renders as a new wide card below, same as picking an existing result.</p>
+      </form>
+
+    </div>
+  </div>
+
+  <div id="lm-sw-cards"></div>
+
+  <script>
+  (function () {
+    const resultsBody = document.getElementById('lm-sw-results-body');
+    const noResults = document.getElementById('lm-sw-no-results');
+    const cardsContainer = document.getElementById('lm-sw-cards');
+    const added = new Set();
+
+    function applyFilters() {
+      const pn = document.getElementById('lm-sw-filter-pn').value.trim().toLowerCase();
+      const desc = document.getElementById('lm-sw-filter-desc').value.trim().toLowerCase();
+      const manufacturer = document.getElementById('lm-sw-filter-manufacturer').value;
+      let visibleCount = 0;
+      resultsBody.querySelectorAll('.lm-sw-row').forEach(row => {
+        const matchesPn = !pn || row.dataset.pn.toLowerCase().includes(pn);
+        const matchesDesc = !desc || row.dataset.desc.toLowerCase().includes(desc);
+        const matchesManufacturer = manufacturer === 'All Manufacturers' || row.dataset.manufacturer === manufacturer;
+        const visible = matchesPn && matchesDesc && matchesManufacturer;
+        row.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+      });
+      noResults.style.display = visibleCount === 0 ? '' : 'none';
+    }
+
+    document.getElementById('lm-sw-apply').addEventListener('click', applyFilters);
+    document.getElementById('lm-sw-clear').addEventListener('click', () => {
+      document.getElementById('lm-sw-filter-pn').value = '';
+      document.getElementById('lm-sw-filter-desc').value = '';
+      document.getElementById('lm-sw-filter-manufacturer').value = 'All Manufacturers';
+      applyFilters();
+    });
+
+    function addWideCard(data) {
+      const id = data.id;
+      if (added.has(id)) return;
+      added.add(id);
+
+      const card = document.createElement('div');
+      card.className = 'card mb-3';
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+            <span class="lm-sw-card-title"></span>
+          </div>
+          <button type="button" title="View detail page" aria-label="View detail page" class="button is-small is-white"
+            commandfor="lm-view-detail-modal" command="show-modal">
+            <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+          </button>
+        </div>
+        <div style="display: flex; align-items: stretch;">
+          <div class="card-content" style="flex: 1;">
+            <div class="detail-grid">
+              <div><div class="detail-label">MANUFACTURER</div><div class="detail-value"></div></div>
+              <div><div class="detail-label">INTERNAL PART</div><div class="detail-value">PN-10234</div></div>
+              <div><div class="detail-label">DESCRIPTION</div><div class="detail-value"></div></div>
+              <div><div class="detail-label">MANUFACTURER P/N</div><div class="detail-value"></div></div>
+            </div>
+          </div>
+          <button type="button" title="Remove" class="button is-danger is-light lm-sw-card-remove" style="flex-shrink: 0; width: 2.75rem; height: auto; border-radius: 0;">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          </button>
+        </div>`;
+
+      card.querySelector('.lm-sw-card-title').textContent = data.pn;
+      card.querySelectorAll('.detail-value')[0].textContent = data.manufacturer;
+      card.querySelectorAll('.detail-value')[2].textContent = data.desc;
+      card.querySelectorAll('.detail-value')[3].textContent = data.pn;
+      card.querySelector('.lm-sw-card-remove').addEventListener('click', () => {
+        card.remove();
+        added.delete(id);
+      });
+
+      cardsContainer.appendChild(card);
+    }
+
+    resultsBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.lm-sw-add');
+      if (!btn) return;
+      const row = btn.closest('.lm-sw-row');
+      addWideCard({ id: row.dataset.id, pn: row.dataset.pn, manufacturer: row.dataset.manufacturer, desc: row.dataset.desc });
+    });
+
+    const initialRow = resultsBody.querySelector('.lm-sw-row[data-id="1"]');
+    addWideCard({ id: initialRow.dataset.id, pn: initialRow.dataset.pn, manufacturer: initialRow.dataset.manufacturer, desc: initialRow.dataset.desc });
+
+    // ── Mode toggle: search vs create ──
+    const modeIcon = document.getElementById('lm-sw-mode-icon');
+    const modeTitle = document.getElementById('lm-sw-mode-title');
+    const btnSearch = document.getElementById('lm-sw-btn-search');
+    const btnCreate = document.getElementById('lm-sw-btn-create');
+    const panelSearch = document.getElementById('lm-sw-panel-search');
+    const panelCreate = document.getElementById('lm-sw-create-form');
+
+    function setMode(mode) {
+      const isSearch = mode === 'search';
+      panelSearch.style.display = isSearch ? '' : 'none';
+      panelCreate.style.display = isSearch ? 'none' : '';
+      modeIcon.textContent = isSearch ? 'search' : 'add';
+      modeTitle.textContent = isSearch ? 'Search Supplier Items' : 'Create Supplier Item';
+      btnSearch.classList.toggle('is-link', isSearch);
+      btnSearch.classList.toggle('is-selected', isSearch);
+      btnSearch.classList.toggle('is-light', !isSearch);
+      btnSearch.setAttribute('aria-pressed', String(isSearch));
+      btnCreate.classList.toggle('is-link', !isSearch);
+      btnCreate.classList.toggle('is-selected', !isSearch);
+      btnCreate.classList.toggle('is-light', isSearch);
+      btnCreate.setAttribute('aria-pressed', String(!isSearch));
+    }
+    btnSearch.addEventListener('click', () => setMode('search'));
+    btnCreate.addEventListener('click', () => setMode('create'));
+
+    // ── Create panel behavior ──
+    panelCreate.addEventListener('submit', () => {
+      const pnInput = document.getElementById('lm-sw-create-pn');
+      const manufacturer = document.getElementById('lm-sw-create-manufacturer');
+      const descInput = document.getElementById('lm-sw-create-desc');
+      const pn = pnInput.value.trim();
+      if (!pn) return;
+      addWideCard({
+        id: 'new-' + Date.now(),
+        pn,
+        manufacturer: manufacturer.value,
+        desc: descInput.value.trim() || 'New supplier item',
+      });
+      pnInput.value = '';
+      descInput.value = '';
+      pnInput.focus();
+    });
+  })();
+  </script>
+</section>
+
+<dialog id="lm-view-detail-modal" class="card modal-styled" style="padding:0; max-width: 520px;">
+  <header class="card-header">
+    <p class="card-header-title">View Detail Page</p>
+    <button class="delete is-large" aria-label="close" commandfor="lm-view-detail-modal" command="close"></button>
+  </header>
+  <div class="card-content">
+    <div class="content">
+      <p>In the real application, this button would open a new tab showing the full detail page for this item.</p>
+    </div>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries"></div>
+    <button class="button is-medium is-primary card-footer-primary" commandfor="lm-view-detail-modal" command="close">
+      <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+      <span>Close</span>
+    </button>
+  </footer>
+</dialog>
+
+{% endblock %}

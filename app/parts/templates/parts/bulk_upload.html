@@ -1,0 +1,429 @@
+{% extends "parts/base.html" %}
+{% load static %}
+{% block title %}Bulk Upload Parts{% endblock %}
+{% block nav_bulk_upload %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'part_create' %}">New Part</a></li>
+<li class="is-active"><a href="#" aria-current="page">Bulk Upload</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">table_rows</span></div>
+    <div><h1 class="page-title">Bulk Upload Parts</h1>
+      <p class="page-subtitle">Paste rows straight from Excel. Each row creates a simple part with its base revision, one manufacturer, and one supplier item — name and description are reused on the supplier item automatically.</p>
+    </div></div>
+</div></div>
+
+{% if submitted %}
+<div class="body-grid full-width">
+  <div class="card mb-5">
+    <div class="card-header"><div class="card-header-title">Results</div></div>
+    <div class="card-content">
+      {% if succeeded %}
+      <div class="notification is-success is-light py-2 px-3 is-size-7">{{ succeeded|length }} part{{ succeeded|length|pluralize }} created.</div>
+      <ul class="mb-4">
+        {% for r in succeeded %}
+        <li><a href="{% url 'part_detail' part_id=r.part_id %}">{{ r.part_number }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if failed %}
+      <div class="notification is-danger is-light py-2 px-3 is-size-7">{{ failed|length }} row{{ failed|length|pluralize }} failed — fix and re-paste just those rows.</div>
+      <table class="table is-fullwidth is-hoverable">
+        <thead><tr><th>Row</th><th>Part Number</th><th>Errors</th></tr></thead>
+        <tbody>
+          {% for r in failed %}
+          <tr><td>{{ r.row_index|add:1 }}</td><td>{{ r.part_number|default:"—" }}</td>
+            <td>{% for e in r.errors %}<div>{{ e }}</div>{% endfor %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      <div class="buttons mt-4">
+        <a href="{% url 'part_bulk_upload' %}" class="button is-link is-small">Upload more</a>
+        <a href="{% url 'parts_hub' %}" class="button is-light is-small">Back to hub</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+
+<div class="body-grid full-width">
+  <div class="card mb-5" id="bulk-upload-card">
+    <div class="card-content">
+      <p class="help mb-3">Click a cell and paste a block copied from Excel — it will fill across and down from that cell, adding rows as needed. Every row needs at least Part Number, Name, Manufacturer, and Manufacturer Part Number.</p>
+
+      <form method="post" id="bulk-upload-form">
+        {% csrf_token %}
+        <input type="hidden" name="rows_json" id="rows-json-input">
+        <div id="bulk-domain-ids-hidden-inputs"></div>
+
+        <div class="mb-4">
+          <button type="button" class="button is-small is-light" id="toggle-bulk-domains">
+            <span class="icon"><span class="material-icons" aria-hidden="true">shield</span></span>
+            <span>Assign domains to all parts</span>
+          </button>
+        </div>
+
+        {% comment %}
+        ── Domains — hidden until the button above is clicked. Left-heavy assignment card
+        pair per harness/UX_UI/search/left_heavy_assignment_card_pair.md, staged client-side
+        (no Part ids exist yet) into hidden domain_ids inputs at submit time. Every part
+        created by this upload is assigned the same domain set.
+        {% endcomment %}
+        <div class="card depth-2 mb-4" id="bulk-domains-card" hidden>
+          <div class="card-header"><div class="card-header-title">Assign Domains</div></div>
+          <div class="card-content">
+            <p class="help mb-3">Every part created by this upload will be scoped to the domains assigned here. Leave empty to keep parts global.</p>
+
+            <div class="columns is-variable is-4" id="bulk-domain-assignment-row">
+              <div class="column is-8">
+                <div class="card" style="display:flex;flex-direction:column;height:320px;overflow:hidden">
+                  <div class="card-header">
+                    <div class="card-header-title">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+                      Available Domains
+                    </div>
+                    <span class="is-size-7 has-text-grey"><span id="bulk-domain-avail-count">0</span> shown</span>
+                  </div>
+                  <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+                    <div class="control has-icons-left">
+                      <input type="search" id="bulk-domain-search" class="input is-small" placeholder="Search domains…" autocomplete="off">
+                      <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+                    </div>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;min-height:0;position:relative">
+                    <table class="table is-fullwidth is-hoverable" style="margin:0">
+                      <thead>
+                        <tr>
+                          <th style="width:2.5rem;position:sticky;top:0;background-color:var(--bulma-table-background-color, var(--bulma-scheme-main));z-index:10">
+                            <input type="checkbox" id="bulk-domain-avail-header-check" aria-label="Select all visible">
+                          </th>
+                          <th style="position:sticky;top:0;background-color:var(--bulma-table-background-color, var(--bulma-scheme-main));z-index:10">Name</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bulk-domain-avail-body">
+                        {% for d in domains %}
+                        <tr class="bulk-domain-avail-row" data-domain-id="{{ d.id }}" data-domain-name="{{ d.name|lower }}">
+                          <td><input type="checkbox" class="bulk-domain-avail-check"></td>
+                          <td>{{ d.name }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="is-size-7 has-text-grey">No domains defined.</td></tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  <footer class="card-footer custom-card-footer">
+                    <div class="card-footer-secondaries pl-0 pr-3">
+                      <button type="button" id="bulk-domain-btn-select-all" class="button is-small is-light">Select All</button>
+                    </div>
+                    <button type="button" id="bulk-domain-btn-assign" class="button is-link card-footer-primary">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+                      <span>Assign Selected</span>
+                    </button>
+                  </footer>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="card" style="display:flex;flex-direction:column;height:320px;overflow:hidden">
+                  <div class="card-header">
+                    <div class="card-header-title">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+                      Assigned
+                    </div>
+                    <span class="is-size-7 has-text-grey"><span id="bulk-domain-assigned-count">0</span> applied</span>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;min-height:0">
+                    <table class="table is-fullwidth is-hoverable" style="margin:0">
+                      <tbody id="bulk-domain-assigned-body"></tbody>
+                    </table>
+                  </div>
+                  <footer class="card-footer" style="padding:0">
+                    <button type="button" id="bulk-domain-btn-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+                      <span>Remove Selected</span>
+                    </button>
+                  </footer>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="table is-fullwidth is-hoverable" id="bulk-upload-table">
+            <thead>
+              <tr>
+                <th style="min-width:9rem">Part Number</th>
+                <th style="min-width:12rem">Name</th>
+                <th style="min-width:8rem">Part Type</th>
+                <th style="min-width:8rem">Category</th>
+                <th style="min-width:14rem">Description</th>
+                <th style="min-width:10rem">Manufacturer</th>
+                <th style="min-width:10rem">Manufacturer Part Number</th>
+                <th style="width:2.5rem"></th>
+              </tr>
+            </thead>
+            <tbody id="bulk-upload-body"></tbody>
+          </table>
+        </div>
+
+        <button type="button" class="button is-small is-light" id="add-row">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+          <span>Add row</span>
+        </button>
+
+        <div class="buttons mt-4">
+          <button type="submit" class="button is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Create Parts</span>
+          </button>
+          <a href="{% url 'parts_hub' %}" class="button is-light">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<template id="bulk-upload-row-template">
+  <tr>
+    <td><input class="input is-small" type="text" data-col="part_number"></td>
+    <td><input class="input is-small" type="text" data-col="name"></td>
+    <td><input class="input is-small" type="text" data-col="part_type"></td>
+    <td><input class="input is-small" type="text" data-col="category"></td>
+    <td><input class="input is-small" type="text" data-col="description"></td>
+    <td><input class="input is-small" type="text" data-col="manufacturer"></td>
+    <td><input class="input is-small" type="text" data-col="manufacturer_part_number"></td>
+    <td><button type="button" class="button is-small is-light" data-action="remove-row" aria-label="Remove row"><span class="icon"><span class="material-icons" aria-hidden="true">close</span></span></button></td>
+  </tr>
+</template>
+{% endif %}
+{% endblock %}
+
+{% block body_scripts %}
+{% if not submitted %}
+<script>
+(function () {
+  const COLUMNS = ["part_number", "name", "part_type", "category", "description", "manufacturer", "manufacturer_part_number"];
+  const body = document.getElementById("bulk-upload-body");
+  const rowTemplate = document.getElementById("bulk-upload-row-template");
+  const form = document.getElementById("bulk-upload-form");
+  const rowsJsonInput = document.getElementById("rows-json-input");
+
+  function addRow() {
+    body.appendChild(rowTemplate.content.firstElementChild.cloneNode(true));
+  }
+
+  // Start with a handful of blank rows — a full Excel paste grows the table anyway.
+  for (let i = 0; i < 5; i++) addRow();
+
+  document.getElementById("add-row").addEventListener("click", addRow);
+
+  // "Assign domains to all parts" button pops the Domains card in/out.
+  const bulkDomainsCard = document.getElementById("bulk-domains-card");
+  const toggleBulkDomains = document.getElementById("toggle-bulk-domains");
+  if (toggleBulkDomains && bulkDomainsCard) {
+    toggleBulkDomains.addEventListener("click", () => {
+      bulkDomainsCard.hidden = !bulkDomainsCard.hidden;
+    });
+  }
+
+  // Left-heavy assignment card pair (harness/UX_UI/search/left_heavy_assignment_card_pair.md),
+  // staged client-side — no Part ids exist yet, so nothing persists until final submit. The
+  // same domain_ids list is applied to every part created by this upload.
+  (function () {
+    const availBody = document.getElementById("bulk-domain-avail-body");
+    const assignedBody = document.getElementById("bulk-domain-assigned-body");
+    const hiddenInputs = document.getElementById("bulk-domain-ids-hidden-inputs");
+    const headerCheck = document.getElementById("bulk-domain-avail-header-check");
+    const btnSelectAll = document.getElementById("bulk-domain-btn-select-all");
+    const btnAssign = document.getElementById("bulk-domain-btn-assign");
+    const btnRemove = document.getElementById("bulk-domain-btn-remove");
+    const searchInput = document.getElementById("bulk-domain-search");
+    if (!availBody) return;
+
+    function updateCounts() {
+      document.getElementById("bulk-domain-avail-count").textContent =
+        availBody.querySelectorAll(".bulk-domain-avail-row:not([hidden])").length;
+      document.getElementById("bulk-domain-assigned-count").textContent =
+        assignedBody.querySelectorAll("tr").length;
+    }
+
+    function syncHiddenInputs() {
+      hiddenInputs.innerHTML = "";
+      assignedBody.querySelectorAll("tr").forEach((row) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "domain_ids";
+        input.value = row.dataset.domainId;
+        hiddenInputs.appendChild(input);
+      });
+    }
+
+    function updateHeaderCheckState() {
+      if (!headerCheck) return;
+      const visible = Array.from(availBody.querySelectorAll(".bulk-domain-avail-row:not([hidden]) .bulk-domain-avail-check"));
+      if (visible.length === 0) {
+        headerCheck.checked = false;
+        headerCheck.indeterminate = false;
+        if (btnSelectAll) btnSelectAll.textContent = "Select All";
+        return;
+      }
+      const checkedCount = visible.filter((cb) => cb.checked).length;
+      headerCheck.checked = checkedCount === visible.length;
+      headerCheck.indeterminate = checkedCount > 0 && checkedCount < visible.length;
+      if (btnSelectAll) btnSelectAll.textContent = checkedCount === visible.length ? "Deselect All" : "Select All";
+    }
+
+    if (headerCheck) {
+      headerCheck.addEventListener("change", () => {
+        availBody.querySelectorAll(".bulk-domain-avail-row:not([hidden]) .bulk-domain-avail-check").forEach((cb) => {
+          cb.checked = headerCheck.checked;
+        });
+        if (btnSelectAll) btnSelectAll.textContent = headerCheck.checked ? "Deselect All" : "Select All";
+      });
+    }
+    if (btnSelectAll) {
+      btnSelectAll.addEventListener("click", () => {
+        const visible = Array.from(availBody.querySelectorAll(".bulk-domain-avail-row:not([hidden]) .bulk-domain-avail-check"));
+        const allChecked = visible.length > 0 && visible.every((cb) => cb.checked);
+        visible.forEach((cb) => { cb.checked = !allChecked; });
+        updateHeaderCheckState();
+      });
+    }
+    availBody.addEventListener("change", (e) => {
+      if (e.target.classList.contains("bulk-domain-avail-check")) updateHeaderCheckState();
+    });
+
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        const term = searchInput.value.trim().toLowerCase();
+        availBody.querySelectorAll(".bulk-domain-avail-row").forEach((row) => {
+          row.hidden = term.length > 0 && !row.dataset.domainName.includes(term);
+        });
+        updateHeaderCheckState();
+        updateCounts();
+      });
+    }
+
+    function buildRow(name, checkboxClass) {
+      const tr = document.createElement("tr");
+      const tdCheck = document.createElement("td");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = checkboxClass;
+      tdCheck.appendChild(checkbox);
+      const tdName = document.createElement("td");
+      tdName.textContent = name;
+      tr.appendChild(tdCheck);
+      tr.appendChild(tdName);
+      return tr;
+    }
+
+    if (btnAssign) {
+      btnAssign.addEventListener("click", () => {
+        availBody.querySelectorAll(".bulk-domain-avail-check:checked").forEach((cb) => {
+          const row = cb.closest("tr");
+          const name = row.querySelector("td:nth-child(2)").textContent;
+          const newRow = buildRow(name, "bulk-domain-assigned-check");
+          newRow.dataset.domainId = row.dataset.domainId;
+          assignedBody.appendChild(newRow);
+          row.remove();
+        });
+        updateHeaderCheckState();
+        syncHiddenInputs();
+        updateCounts();
+      });
+    }
+    if (btnRemove) {
+      btnRemove.addEventListener("click", () => {
+        assignedBody.querySelectorAll(".bulk-domain-assigned-check:checked").forEach((cb) => {
+          const row = cb.closest("tr");
+          const name = row.querySelector("td:nth-child(2)").textContent;
+          const newRow = buildRow(name, "bulk-domain-avail-check");
+          newRow.classList.add("bulk-domain-avail-row");
+          newRow.dataset.domainId = row.dataset.domainId;
+          newRow.dataset.domainName = name.trim().toLowerCase();
+          availBody.appendChild(newRow);
+          row.remove();
+        });
+        updateHeaderCheckState();
+        syncHiddenInputs();
+        updateCounts();
+      });
+    }
+
+    updateCounts();
+  })();
+
+  body.addEventListener("click", (e) => {
+    const btn = e.target.closest('[data-action="remove-row"]');
+    if (!btn) return;
+    const rows = body.querySelectorAll("tr");
+    if (rows.length > 1) btn.closest("tr").remove();
+    else btn.closest("tr").querySelectorAll("input").forEach((i) => { i.value = ""; });
+  });
+
+  // Excel-style paste: fills across and down starting at the focused cell,
+  // appending rows to the grid as needed.
+  body.addEventListener("paste", (e) => {
+    const target = e.target;
+    if (!target.matches("input[data-col]")) return;
+    const text = (e.clipboardData || window.clipboardData).getData("text");
+    if (!text || !text.includes("\t") && !text.includes("\n")) return; // single-cell paste — let default behavior happen
+    e.preventDefault();
+
+    const startRow = target.closest("tr");
+    const startColIndex = COLUMNS.indexOf(target.dataset.col);
+    let rows = Array.from(body.querySelectorAll("tr"));
+    let startRowIndex = rows.indexOf(startRow);
+
+    const pasteRows = text.replace(/\r/g, "").split("\n").filter((line, idx, arr) => !(idx === arr.length - 1 && line === ""));
+
+    pasteRows.forEach((line, rOffset) => {
+      const cells = line.split("\t");
+      let rowIndex = startRowIndex + rOffset;
+      if (rowIndex >= rows.length) {
+        addRow();
+        rows = Array.from(body.querySelectorAll("tr"));
+      }
+      cells.forEach((value, cOffset) => {
+        const colIndex = startColIndex + cOffset;
+        if (colIndex >= COLUMNS.length) return;
+        const input = rows[rowIndex].querySelector(`input[data-col="${COLUMNS[colIndex]}"]`);
+        if (input) input.value = value.trim();
+      });
+    });
+  });
+
+  form.addEventListener("submit", (e) => {
+    const rows = Array.from(body.querySelectorAll("tr")).map((tr) => {
+      const row = {};
+      COLUMNS.forEach((col) => {
+        row[col] = tr.querySelector(`input[data-col="${col}"]`).value.trim();
+      });
+      return row;
+    }).filter((row) => Object.values(row).some((v) => v));
+
+    if (rows.length === 0) {
+      e.preventDefault();
+      alert("Add at least one row.");
+      return;
+    }
+    const incomplete = rows.filter((r) => !(r.part_number && r.name && r.manufacturer && r.manufacturer_part_number));
+    if (incomplete.length > 0) {
+      e.preventDefault();
+      alert("Every row needs at least Part Number, Name, Manufacturer, and Manufacturer Part Number.");
+      return;
+    }
+    rowsJsonInput.value = JSON.stringify(rows);
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -28,7 +28,7 @@ The chrome of the application is Bulma 1.0.x, with a thin project CSS layer that
 
 No pill buttons. No rounded cards. No "softened" inputs. The radius pinning is in `:root` so any new Bulma component picks up the rule automatically. If a third-party widget arrives with its own radius, set it to `0` in the project CSS — do not request an exception.
 
-Corners are either perfectly square, or cut at a 45° angle (a chamfer) on the project's main surface containers (`.card`, `.notification`, `.page-hero`, `.modal-styled`). See [components/chamfers.md](components/chamfers.md) for how the chamfer layer works and how to add or remove it from an element. A chamfer is not a rounded corner — do not substitute `border-radius` alone for it.
+Corners are either perfectly square, or cut at a 45° angle (a chamfer) on the project's main surface containers (`.card`, `.notification`, `.page-hero`, `.modal-styled`). See [design_patterns/chamfers.md](design_patterns/chamfers.md) for how the chamfer layer works and how to add or remove it from an element. A chamfer is not a rounded corner — do not substitute `border-radius` alone for it.
 
 The chamfer marks a **container**, not its contents: a card that composes a section keeps the cut, while small repeated items stacked inside it (comment rows, revision entries) opt out with `sharp-corners` so a 20px cut never nests inside another one.
 
@@ -43,7 +43,7 @@ There used to be a second, hand-rolled card component (`.pc`/`.pc-header`/`.pc-b
 
 ## Material Icons
 
-Icons come from vendored Material Icons (`static/fonts/material-icons/`). Use the `<span class="icon"><span class="material-icons" aria-hidden="true">icon_name</span></span>` shape. Icons paired with text labels follow the master button table in [components/common_buttons.md](components/common_buttons.md).
+Icons come from vendored Material Icons (`static/fonts/material-icons/`). Use the `<span class="icon"><span class="material-icons" aria-hidden="true">icon_name</span></span>` shape. Icons paired with text labels follow the master button table in [design_patterns/common_buttons.md](design_patterns/common_buttons.md).
 
 ## Dark mode
 
@@ -52,6 +52,6 @@ The OS preference is the source of truth. Tests should pass with `prefers-color-
 ## Common mistakes
 
 - **Hardcoded greys** that don't flip in dark mode.
-- **Reintroducing rounded corners** to "soften" a card or a button — use a chamfer (see [components/chamfers.md](components/chamfers.md)) if a cut corner is wanted, never `border-radius` alone.
+- **Reintroducing rounded corners** to "soften" a card or a button — use a chamfer (see [design_patterns/chamfers.md](design_patterns/chamfers.md)) if a cut corner is wanted, never `border-radius` alone.
 - **Mixing inline styles with the project CSS layer** — keep theme tokens in CSS, not in templates.
-- **Per-page custom colour scales** — extend the master button table in [components/common_buttons.md](components/common_buttons.md) before adding a one-off colour.
+- **Per-page custom colour scales** — extend the master button table in [design_patterns/common_buttons.md](design_patterns/common_buttons.md) before adding a one-off colour.

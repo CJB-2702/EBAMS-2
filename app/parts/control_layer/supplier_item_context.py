@@ -29,6 +29,11 @@ class SupplierItemContext:
     def struct(self) -> SupplierItemStruct:
         return self.item_struct
 
+    def update(self, *, data: dict) -> "SupplierItem":
+        from app.parts.control_layer.managers.supplier_item_manager import SupplierItemManager
+
+        return SupplierItemManager(self.item, self.actor).update(data=data)
+
     def compatibility_range(self) -> dict:
         i = self.item
         return {

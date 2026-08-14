@@ -1,9 +1,9 @@
 """Capabilities — definition catalog + class/model/asset assignment screens.
 
 Reads go through ``presentation_layer/search/capability_search``; writes go through
-``CapabilityDefinitionFactory`` (create), ``CapabilityDefinitionContext`` (edit
-metadata + class/model assignment sets), and ``CapabilityManager`` (asset-layer
-set-reconcile for the per-asset and bulk editors).
+``CapabilityDefinitionContext`` (create, edit metadata, and class/model assignment
+sets) and ``CapabilityManager`` (asset-layer set-reconcile for the per-asset and
+bulk editors).
 """
 
 from __future__ import annotations
@@ -23,10 +23,6 @@ from app.assets.control_layer.adapters.capability_adaptor import (
 from app.assets.control_layer.capabilities.capability_manager import CapabilityManager
 from app.assets.control_layer.capability_definition_context import (
     CapabilityDefinitionContext,
-    CapabilityDefinitionValidationError as DefinitionEditValidationError,
-)
-from app.assets.control_layer.factories.capability_definition_factory import (
-    CapabilityDefinitionFactory,
     CapabilityDefinitionValidationError,
 )
 from app.assets.models import Asset, CapabilityDefinition
@@ -71,7 +67,7 @@ def capability_definition_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         data = CapabilityDefinitionCreateAdaptor.from_post(request.POST)
         try:
-            definition = CapabilityDefinitionFactory.create(data=data, actor=request.user)
+            definition = CapabilityDefinitionContext.create(data=data, actor=request.user)
         except CapabilityDefinitionValidationError as exc:
             for error in exc.errors:
                 messages.error(request, error)
@@ -98,7 +94,7 @@ def capability_definition_edit(request: HttpRequest, definition_id: int) -> Http
             context.update(data=data)
             context.set_classes(class_ids=data["assigned_class_ids"])
             context.set_models(model_ids=data["assigned_model_ids"])
-        except DefinitionEditValidationError as exc:
+        except CapabilityDefinitionValidationError as exc:
             for error in exc.errors:
                 messages.error(request, error)
         else:

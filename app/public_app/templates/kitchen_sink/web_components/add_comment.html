@@ -1,0 +1,148 @@
+{% extends "kitchen_sink/structural_examples/_base.html" %}
+{% load static %}
+
+{% block title %}add-comment{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}"></script>
+{% endblock %}
+
+{% block sidebar %}
+  <p class="sidebar-section-label">Kitchen Sink</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink' %}"><span class="icon"><span class="material-icons" aria-hidden="true">design_services</span></span> Design System</a>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Web Components</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
+  <div class="sidebar-divider"></div>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">add_comment</span>
+      </div>
+      <div>
+        <h1 class="page-title">&lt;add-comment&gt;</h1>
+        <p class="page-subtitle">Add/edit comment card with an inline file-attach preview. Renders its real &lt;textarea&gt; and &lt;input type="file"&gt; into the light DOM so they submit natively.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-9">
+
+    {# Live Demo: add mode #}
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="card-header-title">Live Demo — add mode</div>
+      </div>
+      <div class="card-content">
+        <p class="is-size-7 has-text-grey mb-3">
+          This demo form does not submit anywhere — no comment or file leaves your browser.
+        </p>
+        <form onsubmit="return false;" enctype="multipart/form-data">
+          <add-comment placeholder="Write a comment…" depth="depth-2"></add-comment>
+        </form>
+      </div>
+    </div>
+
+    {# Live Demo: comment thread with filter + edit mode, all dummy data #}
+    <div class="card mb-4" id="comment-row-demo">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>
+          Comments (3)
+        </div>
+        <div class="buttons has-addons comment-filter-group mb-0">
+          <button type="button" class="button is-small is-light comment-filter-item" data-filter="human"
+                  onclick="return window.__filterComments(event, this, 'human')">Human</button>
+          <button type="button" class="button is-small is-link is-selected comment-filter-item" data-filter="all"
+                  onclick="return window.__filterComments(event, this, 'all')">All</button>
+          <button type="button" class="button is-small is-light comment-filter-item" data-filter="system"
+                  onclick="return window.__filterComments(event, this, 'system')">Machine</button>
+        </div>
+      </div>
+      <div class="card-content">
+        <div data-comment-kind="human" class="mb-3 pb-3" style="border-bottom: 1px solid var(--bulma-border-weak);">
+          <p class="is-size-7"><strong>Alice Chen</strong> <span class="has-text-grey">— Jul 20, 2026</span></p>
+          <p class="is-size-7">Looks good, ready for review.</p>
+        </div>
+        <div data-comment-kind="system" class="mb-3 pb-3" style="border-bottom: 1px solid var(--bulma-border-weak);">
+          <p class="is-size-7"><strong>System</strong> <span class="has-text-grey">— Jul 20, 2026</span></p>
+          <p class="is-size-7">Status changed to "In Review".</p>
+        </div>
+        <div data-comment-kind="human" class="mb-3 pb-3" style="border-bottom: 1px solid var(--bulma-border-weak);">
+          <p class="is-size-7"><strong>Bob Reyes</strong> <span class="has-text-grey">— Jul 19, 2026</span></p>
+          <p class="is-size-7">Attached the updated drawing, please confirm revision C.</p>
+        </div>
+
+        <p class="is-size-7 has-text-grey mb-2">Second card below reuses the <code>add-comment</code> edit mode, targeting this card's id via "closest [id^='comment-row-']":</p>
+        <form onsubmit="return false;" enctype="multipart/form-data">
+          <add-comment mode="edit" content="Attached the updated drawing, please confirm revision C."
+                       depth="depth-2"
+                       existing-attachments='[{"id": 101, "name": "drawing_rev_c.pdf", "size": 284119, "is_image": false}]'>
+          </add-comment>
+        </form>
+      </div>
+    </div>
+
+    {# API & Documentation #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">Design Intent & API</div>
+      </div>
+      <div class="card-content content is-size-7">
+        <p>
+          Same light-DOM-submission rationale as <code>&lt;file-upload&gt;</code>: this component only owns the chrome
+          and the pre-submit file preview grid (styled like <code>&lt;file-browser&gt;</code>'s tiles). The actual POST,
+          HTMX swap, and server-side validation are the caller's concern.
+        </p>
+        <h4 class="title is-6">Attributes</h4>
+        <ul>
+          <li><code>mode="edit"</code> — switches chrome to an editing card (Cancel button, "Save" submit label, existing attachments render alongside newly-staged ones).</li>
+          <li><code>placeholder</code>, <code>content</code>, <code>error</code>, <code>depth</code> — as in a normal comment card.</li>
+          <li><code>cancel-url</code>, <code>reload-url</code> — edit-mode-only HTMX endpoints for Cancel / Clear.</li>
+          <li><code>existing-attachments</code> — JSON array of <code>{id, name, size, is_image}</code>, rendered in the same tile grid as newly-picked files, each with a remove/restore toggle.</li>
+        </ul>
+        <h4 class="title is-6">Comment-filter behavior</h4>
+        <p>
+          The Human / All / Machine toggle above the demo thread is <code>window.__filterComments</code>
+          (<code>static/web_components/app_specific/comment_filter.js</code>) — a small shared function, not a custom
+          element, scoped to the nearest <code>.card</code> ancestor so multiple comment cards on one page stay
+          independent.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

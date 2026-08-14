@@ -21,6 +21,10 @@ This agent follows the tiered context model in `harness/Context_Scaling.md`. Alw
 - `harness/UX_UI/page_structure.md` — global chrome, breadcrumbs, hero
 - `harness/UX_UI/accessibility.md`
 
+**Card patterns (primary reference):**
+- **`http://localhost:8000/kitchen-sink/cards/`** — live kitchen sink reference for all card styles, variants, and implementations. **This is the canonical pattern reference for this card-heavy application.** Visit this before writing any card markup.
+- `harness/UX_UI/design_patterns/card_footer_markup.md` — footer geometry and button layout (sourced from patterns shown in kitchen sink)
+
 **URL contract and density (`format=` query):**
 - `harness/UX_UI/format_contract.md`
 - `harness/Architecture/patterns/endpoint_patterns.md`
@@ -30,17 +34,17 @@ This agent follows the tiered context model in `harness/Context_Scaling.md`. Alw
 
 **Forms and action buttons:**
 - `harness/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
-- `harness/UX_UI/components/common_buttons.md`
+- `harness/UX_UI/design_patterns/common_buttons.md`
 
 **Multi-step / wizard flows:**
-- `harness/UX_UI/components/multi_step_flows.md`
+- `harness/UX_UI/design_patterns/multi_step_flows.md`
 
 **Specific components:**
-- `harness/UX_UI/components/searchbars.md`
+- `harness/UX_UI/search/searchbars.md`
 - `harness/UX_UI/components/dual_listbox.md`
-- `harness/UX_UI/components/modals.md`
-- `harness/UX_UI/components/tabs.md`
-- `harness/UX_UI/components/pagination.md`
+- `harness/UX_UI/design_patterns/modals.md`
+- `harness/UX_UI/navigation/tabs.md`
+- `harness/UX_UI/navigation/pagination.md`
 - `harness/UX_UI/components/file_upload.md`
 - `harness/UX_UI/components/file_browser.md`
 
@@ -49,11 +53,11 @@ This agent follows the tiered context model in `harness/Context_Scaling.md`. Alw
 
 ### Tier 3 — only when actively writing markup
 
-- `harness/UX_UI/Examples/button_markup.md`
-- `harness/UX_UI/Examples/card_footer_markup.md`
-- `harness/UX_UI/Examples/dual_listbox_markup.md`
-- `harness/UX_UI/Examples/page_hero_markup.md`
-- `harness/UX_UI/Examples/search_dropdown_component.md`
+- `harness/UX_UI/design_patterns/button_markup.md`
+- `harness/UX_UI/design_patterns/card_footer_markup.md`
+- `harness/UX_UI/components/dual_listbox_markup.md`
+- `harness/UX_UI/design_patterns/page_hero_markup.md`
+- `harness/UX_UI/components/search_dropdown.md`
 - `harness/Architecture/Examples/htmx_csrf_and_search_snippets.md`
 
 ---
@@ -69,7 +73,7 @@ This agent follows the tiered context model in `harness/Context_Scaling.md`. Alw
 
 ### Canonical card footer layout
 
-Don't hand-roll this — see [harness/UX_UI/form_style_guide.md](../../harness/UX_UI/form_style_guide.md) and [harness/UX_UI/Examples/card_footer_markup.md](../../harness/UX_UI/Examples/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
+Don't hand-roll this — see [harness/UX_UI/form_style_guide.md](../../harness/UX_UI/form_style_guide.md) and [harness/UX_UI/design_patterns/card_footer_markup.md](../../harness/UX_UI/design_patterns/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
 
 ---
 

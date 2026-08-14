@@ -45,6 +45,30 @@ class ManufacturerContext:
         ctx.manufacturer = struct.manufacturer
         return ctx
 
+    # ── Creation ─────────────────────────────────────────────────────────────
+    @classmethod
+    def create(cls, *, data: dict, actor: "AbstractUser") -> "Manufacturer":
+        from app.assets.models import Manufacturer
+
+        errors = ManufacturerUniquenessValidator.validate(
+            name=data.get("name", ""),
+            code=data.get("code"),
+            website=data.get("website"),
+        )
+        if errors:
+            raise ManufacturerValidationError(errors)
+
+        with transaction.atomic():
+            manufacturer = Manufacturer.objects.create(
+                name=data["name"].strip(),
+                code=data.get("code") or None,
+                website=data.get("website") or None,
+                is_active=data.get("is_active", True),
+                created_by=actor,
+                updated_by=actor,
+            )
+        return manufacturer
+
     # ── Domain verbs ─────────────────────────────────────────────────────────
     def update(self, *, data: dict) -> "Manufacturer":
         """Apply submitted fields after re-checking uniqueness."""

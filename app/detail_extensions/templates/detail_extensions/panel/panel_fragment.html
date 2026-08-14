@@ -1,6 +1,8 @@
 {% load static %}
-{# HTMX fragment — included into a parent page via hx-target + format=htmx-panel.
-   F5-safe full-page wrapper is panel.html. #}
+{% comment %}
+HTMX fragment — included into a parent page via hx-target + format=htmx-panel.
+F5-safe full-page wrapper is panel.html.
+{% endcomment %}
 <div id="ext-panel-strip" style="display:flex; flex-wrap:wrap; gap:0.75rem;">
   {% for descriptor in descriptors %}
   <div class="card" style="min-width:180px; flex:1 1 180px; margin-bottom:0;">

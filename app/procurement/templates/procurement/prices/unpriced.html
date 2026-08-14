@@ -1,0 +1,46 @@
+{% extends "procurement/base.html" %}
+{% block title %}Unpriced parts{% endblock %}
+{% block nav_price_hub %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'price_hub' %}">Prices</a></li>
+<li class="is-active"><a href="#" aria-current="page">Unpriced parts</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
+  <h1 class="page-title">Unpriced parts</h1>
+  <p class="page-subtitle">Parts in your domains with no price on record — the D86 backstop, not a convenience.</p>
+</div>
+
+<form method="get" action="{% url 'unpriced_parts' %}"
+      hx-get="{% url 'unpriced_parts' %}?format=htmx-results" hx-trigger="change"
+      hx-target="#unpriced-results" hx-select="#unpriced-results" hx-push-url="true" class="mb-4">
+  <div class="columns is-variable is-2 is-multiline">
+    <div class="column is-3">
+      <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="search part number…">
+    </div>
+    <div class="column is-3">
+      <div class="select is-small is-fullwidth"><select name="domain_id">
+        <option value="">All your domains</option>
+        {% for domain in domains %}<option value="{{ domain.pk }}" {% if filters.domain_id == domain.pk %}selected{% endif %}>{{ domain.name }}</option>{% endfor %}
+      </select></div>
+    </div>
+    <div class="column is-3">
+      <div class="select is-small is-fullwidth"><select name="part_type">
+        <option value="">All types</option>
+        {% for pt in part_types %}<option value="{{ pt }}" {% if filters.part_type == pt %}selected{% endif %}>{{ pt }}</option>{% endfor %}
+      </select></div>
+    </div>
+    <div class="column is-2">
+      <input class="input is-small" type="date" name="created_from" value="{{ filters.created_from|default_if_none:'' }}" title="Created since">
+    </div>
+    <div class="column is-1">
+      <button type="submit" class="button is-small is-link is-fullwidth">Filter</button>
+    </div>
+  </div>
+</form>
+
+<div id="unpriced-results">
+  {% include "procurement/prices/_unpriced_results.html" %}
+</div>
+{% endblock %}

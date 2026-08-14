@@ -15,5 +15,4 @@ class PartCreateAdaptor:
             "part_type": (post.get("part_type") or "").strip(),
             "category": (post.get("category") or "").strip(),
             "is_active": parse_checkbox(post, "is_active"),
-            "is_domain_limited": parse_checkbox(post, "is_domain_limited"),
         }

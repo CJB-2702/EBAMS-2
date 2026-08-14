@@ -52,7 +52,7 @@
       "is_superuser": false,
       "date_joined": "2024-01-01T00:00:00Z",
       "last_login": null,
-      "groups": [3],
+      "groups": [3, 4, 5, 6],
       "user_permissions": []
     }
   }

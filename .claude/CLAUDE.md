@@ -11,9 +11,10 @@ python manage.py migrate
 python manage.py seed_dev         # dev users + sample org/division/ownership data
 ```
 
-Full DB reset (after schema changes — see "Migration strategy" below):
+Full project reset (after schema changes — see "Migration strategy" below):
 ```bash
-python dev_tools/delete_database_rebuild_models.py [--seed]
+python refresh_project.py        # Clean and rebuild with seeding
+python refresh_project.py --delete  # Clean only, no rebuild
 ```
 
 Generate `.env`:
@@ -95,9 +96,10 @@ Read these when in doubt — they are authoritative:
 
 - [harness/UX_UI.md](harness/UX_UI.md) — visual language, density (`format=`)
 - [harness/UX_UI/form_style_guide.md](harness/UX_UI/form_style_guide.md) — action layout rules for forms and cards
-- [harness/UX_UI/components/](harness/UX_UI/components/) — component guides: `common_buttons`, `dual_listbox`, `modals`, `searchbars`, `multi_step_flows`, `tabs`, `pagination`, `file_upload`, `file_browser`
-- [harness/UX_UI/components/multi_step_flows.md](harness/UX_UI/components/multi_step_flows.md) — the multi-card wizard trigger rule and session-draft pattern
-- [harness/UX_UI/components/modals.md](harness/UX_UI/components/modals.md) — when a modal is appropriate, and why assignment never goes in one
+- [harness/UX_UI/components/](harness/UX_UI/components/) — literal web-component guides: `dual_listbox`, `file_upload`, `file_browser`, `search_dropdown`
+- [harness/UX_UI/design_patterns/](harness/UX_UI/design_patterns/), [harness/UX_UI/navigation/](harness/UX_UI/navigation/), [harness/UX_UI/search/](harness/UX_UI/search/), [harness/UX_UI/file_management/](harness/UX_UI/file_management/) — non-component UX guides: `common_buttons`, `modals`, `chamfers`, `multi_step_flows`, `tabs`, `pagination`, `searchbars`, and related markup examples
+- [harness/UX_UI/design_patterns/multi_step_flows.md](harness/UX_UI/design_patterns/multi_step_flows.md) — the multi-card wizard trigger rule and session-draft pattern
+- [harness/UX_UI/design_patterns/modals.md](harness/UX_UI/design_patterns/modals.md) — when a modal is appropriate, and why assignment never goes in one
 
 ### Planning process (harness)
 
@@ -134,7 +136,8 @@ These same agents are also spawnable via the Task/Agent tool when you want to de
 
 ## Operational slash commands
 
-- `/db-rebuild` — clears project migrations + DB, regenerates and applies migrations, optionally seeds.
+- `/refresh-project` — **Preferred:** clears pycache, database, uploads, and migrations, then optionally rebuilds from scratch. Pass `--delete` to only clean without rebuilding.
+- `/db-rebuild` — alternative method: clears project migrations + DB, regenerates and applies migrations, optionally seeds (does not clear pycache or uploads).
 - `/kit-builder` — initiates the Kit Builder agent: seeds `<topic>_starter_kit/` with a pre-filled [20-question questionnaire](harness/starter_kit_process/kit_questionnaire_template.md) and **stops** until you answer it, then interrogates the answers, proposes a phase breakdown, and generates the kit following the `harness/starter_kit_process/` methodology.
 - `/front-end-kit <topic>` — initiates the Front-End Kit agent: turns a finished starter kit into a `front-end-kit/<topic>/` folder — route skeleton, navigation map, workflow verdicts, key workflows — following `harness/front_end_kit_process/`.
 - `/front-end-kit-build <topic>` — builds the optional throwaway Flask stager for an already-staged front-end kit.
@@ -181,8 +184,9 @@ Do **not** accumulate incremental migrations during active development.
 
 **Workflow** — from the project root, with the dev server stopped:
 
-- **Preferred:** `python dev_tools/delete_database_rebuild_models.py [--seed]` (or use the `/db-rebuild` slash command).
-- **Manual equivalent:** for each `app/<application>/migrations/`, delete every file except `__init__.py` and remove `__pycache__`. Clear the DB (delete `db.sqlite3`, or `DROP SCHEMA public CASCADE` on Postgres). Then `makemigrations`, `migrate`, optionally `seed_dev`.
+- **Preferred:** `python refresh_project.py` (or use the `/refresh-project` slash command). This clears migrations, database, cache, and uploaded files, then rebuilds from scratch with seeding.
+- **Alternative:** `python dev_tools/delete_database_rebuild_models.py [--seed]` (older method, does not clear cache or uploads).
+- **Manual equivalent:** for each `app/<application>/migrations/`, delete every file except `__init__.py`. Clear pycache directories. Clear `app/media/` uploads. Delete `db.sqlite3` (or `DROP SCHEMA public CASCADE` on Postgres). Then `makemigrations`, `migrate`, then run available seed commands.
 
 **Do not** add legacy-data cleanup helpers to seed commands (`_remove_legacy_*`, one-off slug renames, etc.). Schema/seed-shape changes are handled by wiping the DB. Idempotent `get_or_create` for the **current** seed is fine; tombstone cleanup is not.
 
@@ -255,8 +259,8 @@ This keeps page layout stable and signals to the user that the section was check
 - **No business logic on models** — schema and constraints only. Mark intentional exceptions with `# DELIBERATE ANTI-PATTERN`.
 - **Suffix vocabulary** (see OOP_CONTROL_PATTERNS): `Struct`, `Context`, `Factory`, `BulkFactory`, `Handler`, `Manager`, `Policy`, `Validator`, `StateMachine`, `Narrator`, `Adaptor`, `Orchestrator`. Guard files end in `_guard.py`.
 - **Sharp corners everywhere** — Bulma radius variables set to `0`. No pill buttons, no rounded cards.
-- **Assignment never lives in a modal** — attaching items from a pool to the record being edited uses an in-page left-heavy assignment card pair or a dual listbox. Modals are for destructive confirmations, read-only browsing, and single-field captures. See [harness/UX_UI/components/modals.md](harness/UX_UI/components/modals.md).
-- **Creation flows are one long scrolling page** — a multi-card wizard on a single route with progressive enablement and a session-backed draft, not a chain of `/step-1`, `/step-2` URLs. An entity with more than one reverse FK a user would populate in the same sitting is a wizard, not a form. See [harness/UX_UI/components/multi_step_flows.md](harness/UX_UI/components/multi_step_flows.md).
+- **Assignment never lives in a modal** — attaching items from a pool to the record being edited uses an in-page left-heavy assignment card pair or a dual listbox. Modals are for destructive confirmations, read-only browsing, and single-field captures. See [harness/UX_UI/design_patterns/modals.md](harness/UX_UI/design_patterns/modals.md).
+- **Creation flows are one long scrolling page** — a multi-card wizard on a single route with progressive enablement and a session-backed draft, not a chain of `/step-1`, `/step-2` URLs. An entity with more than one reverse FK a user would populate in the same sitting is a wizard, not a form. See [harness/UX_UI/design_patterns/multi_step_flows.md](harness/UX_UI/design_patterns/multi_step_flows.md).
 - **HTMX F5 rule** — every page/state must work via a plain full-page reload; HTMX layers interactivity on top.
 - **Single canonical URL per resource** with a `format=` query parameter for density (`condensed`/`medium`/`large`) and HTMX fragments (`htmx-*`). Never combine density and `htmx-*` in one request.
 

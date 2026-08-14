@@ -36,7 +36,7 @@ Every page has a **page hero** at the top containing the page title, subtitle, a
 3. **Quick details / stat bar** (optional) — Below the hero for key metrics (status, counts, health).
 4. **Main content area** — Cards, forms, and lists below the hero.
 
-**CSS classes:** `.page-hero`, `.page-hero-content`, `.page-hero-actions`, `.page-title`, `.page-subtitle`. See [Examples/page_hero_markup.md](Examples/page_hero_markup.md) for the canonical HTML.
+**CSS classes:** `.page-hero`, `.page-hero-content`, `.page-hero-actions`, `.page-title`, `.page-subtitle`. See [design_patterns/page_hero_markup.md](design_patterns/page_hero_markup.md) for the canonical HTML.
 
 **Do not:**
 
@@ -107,4 +107,4 @@ Every page has a **page hero** at the top containing the page title, subtitle, a
 
 ## Scrolling, fixed elements, and grid
 
-Top nav, portal dropdown, and sidebars each scroll/stack independently; the shell's grid columns resize when the main sidebar collapses. Exact z-index stacking order and pixel column widths: [Examples/page_grid_values.md](Examples/page_grid_values.md).
+Top nav, portal dropdown, and sidebars each scroll/stack independently; the shell's grid columns resize when the main sidebar collapses. Exact z-index stacking order and pixel column widths: [design_patterns/page_grid_values.md](design_patterns/page_grid_values.md).

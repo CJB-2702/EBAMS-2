@@ -136,6 +136,23 @@
       background-color: var(--bulma-background);
       color: var(--bulma-text-strong);
     }
+    .ks-sidebar details > summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.65rem;
+      color: var(--bulma-text-weak);
+    }
+    .ks-sidebar details > summary::-webkit-details-marker { display: none; }
+    .ks-sidebar details > summary::before {
+      content: '▸';
+      display: inline-block;
+      width: 0.7rem;
+      font-size: 0.6rem;
+      transition: transform 0.15s ease;
+    }
+    .ks-sidebar details[open] > summary::before {
+      transform: rotate(90deg);
+    }
     /* Tabs that live inside a card-content sit flush under the header. */
     .card-content .tabs.is-boxed {
       margin-bottom: 0;
@@ -152,41 +169,53 @@
   });
 </script>
 
-<!-- ─── TOP NAV ─── -->
-<nav class="app-topnav" role="navigation">
-  <div class="app-topnav-brand">EBAMS2</div>
-</nav>
+{# TOP NAV #}
+{% include "shared/public_topnav.html" %}
+{% include "shared/_login_modal.html" %}
 
 <div style="display: grid; grid-template-columns: 200px 1fr; flex: 1; overflow: hidden;">
 
-  <!-- ── Sidebar TOC ── -->
+  {# Sidebar TOC #}
   <aside class="ks-sidebar p-4">
     <p class="menu-label mt-2">Web Components</p>
     <ul class="menu-list">
       <li><a href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> Index</a></li>
       <li>
-        <ul>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">menu_open</span></span> collapsable-side-bar</a></li>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">swap_horiz</span></span> dual-listbox</a></li>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">view_carousel</span></span> image-carousel</a></li>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> list-box</a></li>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> search-dropdown</a></li>
-          <li><a href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">notification_important</span></span> toast-alert</a></li>
-        </ul>
+        <details open>
+          <summary>Components</summary>
+          <ul>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">menu_open</span></span> collapsable-side-bar</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">swap_horiz</span></span> dual-listbox</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">view_carousel</span></span> image-carousel</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> list-box</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> search-dropdown</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">notification_important</span></span> toast-alert</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">folder</span></span> file-browser</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">upload_file</span></span> file-upload</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">help_outline</span></span> info-popover</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">photo_library</span></span> mini-gallery</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">sell</span></span> tag-list-editor</a></li>
+            <li><a href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">add_comment</span></span> add-comment</a></li>
+          </ul>
+        </details>
       </li>
     </ul>
 
-    <p class="menu-label mt-4">Page Examples</p>
+    <p class="menu-label mt-4">Design Patterns</p>
     <ul class="menu-list">
-      <li><a href="{% url 'kitchen_sink_work_portal_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">business_center</span></span> Work Portal Example</a></li>
-      <li><a href="{% url 'kitchen_sink_search_page_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> Search Page Example</a></li>
-      <li><a href="{% url 'kitchen_sink_index_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">hub</span></span> Index / Portal Hub Example</a></li>
-      <li><a href="{% url 'kitchen_sink_sidebar_behavior_example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">menu</span></span> Sidebar Behavior</a></li>
-    </ul>
-
-    <p class="menu-label mt-4">Top Bar</p>
-    <ul class="menu-list">
-      <li><a href="{% url 'kitchen_sink_topbar_popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">web</span></span> Popovers API</a></li>
+      <li><a href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">list</span></span> Index</a></li>
+      <li>
+        <details open>
+          <summary>Patterns</summary>
+          <ul>
+            <li><a href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">business_center</span></span> Work Portal Example</a></li>
+            <li><a href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">search</span></span> Search Page Example</a></li>
+            <li><a href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">hub</span></span> Index / Portal Hub Example</a></li>
+            <li><a href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">web</span></span> Popovers API</a></li>
+            <li><a href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">playlist_add_check</span></span> List Management</a></li>
+          </ul>
+        </details>
+      </li>
     </ul>
 
     <p class="menu-label mt-4">Design System</p>
@@ -199,19 +228,21 @@
       <li><a href="#forms">Forms</a></li>
       <li><a href="#inline-form">Inline Form</a></li>
       <li><a href="#addons">Grouped Addons</a></li>
-      <li><a href="#card-footers">Card Footers</a></li>
+      <li><a href="#card-layouts">Card Layouts</a></li>
       <li><a href="#search">Search Bars</a></li>
       <li><a href="#tables">Tables</a></li>
       <li><a href="#notifications">Notifications</a></li>
       <li><a href="#tags">Tags</a></li>
-      <li><a href="#dual-listbox">Dual Listbox</a></li>
-      <li><a href="#modals">Modals</a></li>
       <li><a href="#loading">Loading States</a></li>
-      <li><a href="#tabs">Tabs</a></li>
       <li><a href="#empty-states">Empty States</a></li>
       <li><a href="#breadcrumbs">Breadcrumbs</a></li>
       <li><a href="#pagination">Pagination</a></li>
       <li><a href="#htmx-demo">HTMX Demo</a></li>
+    </ul>
+
+    <p class="menu-label mt-4">Cards & Modals</p>
+    <ul class="menu-list">
+      <li><a href="{% url 'kitchen_sink_cards' %}"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size: 1rem;">dashboard</span></span> Cards &amp; Modals →</a></li>
     </ul>
     <p class="menu-label mt-4">Endpoints</p>
     <ul class="menu-list">
@@ -221,10 +252,10 @@
     </ul>
   </aside>
 
-  <!-- ── Main Content ── -->
+  {# Main Content #}
   <main class="p-6" style="max-width: 960px; overflow-y: auto;">
 
-    <!-- ── Hero (page header with title + actions) ── -->
+    {# Hero (page header with title + actions) #}
     <div class="page-hero">
       <div class="page-hero-content">
         <h1 class="page-title">Design System — Kitchen Sink</h1>
@@ -307,9 +338,11 @@
       })();
     </script>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         PAGE HERO PATTERN (Documentation)
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    PAGE HERO PATTERN (Documentation)
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="page-hero-pattern" class="ks-section">
       <h2 class="title is-5 mb-4">Page Structure — Hero Container Pattern</h2>
       <p class="is-size-7 has-text-grey mb-3">
@@ -338,9 +371,11 @@
       </p>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TYPOGRAPHY
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    TYPOGRAPHY
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="typography" class="ks-section">
       <h2 class="title is-5 mb-4">Typography</h2>
 
@@ -366,9 +401,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         COLORS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    COLORS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="colors" class="ks-section">
       <h2 class="title is-5 mb-4">Colors — Carbon Design System</h2>
       <p class="is-size-7 has-text-grey mb-4">Semantic tokens map to Carbon's White theme (light) and Gray 100 theme (dark) via <code>prefers-color-scheme</code>. The palette primitives live in <code>--carbon-*</code> CSS variables on <code>:root</code>.</p>
@@ -446,11 +483,32 @@
       <p class="is-size-7 has-text-grey">Hover for color name. Red → Green → Yellow/Orange → Cyan → Teal → Purple.</p>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         BUTTONS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    BUTTONS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="buttons" class="ks-section">
       <h2 class="title is-5 mb-4">Buttons — Semantic Actions</h2>
+
+      {# Sandstone Texture Controls #}
+      <div class="ks-demo-box mb-4" style="max-width: 400px;">
+        <p class="ks-label mb-3">Sandstone Texture</p>
+        <div class="field mb-3">
+          <label class="checkbox">
+            <input type="checkbox" id="button-texture-toggle" data-texture-section="buttons">
+            Enable sandstone overlay
+          </label>
+        </div>
+        <div class="field">
+          <label class="label is-size-7" for="button-texture-depth">
+            Depth: <span id="button-depth-value" style="font-family: monospace;">0.0</span>
+          </label>
+          <div class="control">
+            <input type="range" id="button-texture-depth" min="0" max="2" step="0.1" value="0" style="width: 100%; cursor: pointer;">
+          </div>
+        </div>
+      </div>
 
       <p class="ks-label">Primary actions (one per card)</p>
       <div class="ks-row mb-4">
@@ -557,9 +615,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         ICON-ONLY BUTTONS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    ICON-ONLY BUTTONS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="icon-buttons" class="ks-section">
       <h2 class="title is-5 mb-4">Icon-Only Buttons</h2>
       <p class="is-size-7 has-text-grey mb-3">Acceptable only for: Close (modal dismiss), Copy (ID/slug), More/Menu, Search trigger, Sort direction.</p>
@@ -600,9 +660,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         FORMS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    FORMS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="forms" class="ks-section">
       <h2 class="title is-5 mb-4">Forms</h2>
 
@@ -747,9 +809,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         INLINE SINGLE-FIELD FORM
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    INLINE SINGLE-FIELD FORM
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="inline-form" class="ks-section">
       <h2 class="title is-5 mb-4">Inline Single-Field Form</h2>
       <p class="is-size-7 has-text-grey mb-3">For renaming, labelling, or editing a single value in place. No Cancel — navigate away to cancel. Graduates to a full card form the moment a second field is needed.</p>
@@ -771,14 +835,16 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         GROUPED ADDONS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    GROUPED ADDONS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="addons" class="ks-section">
       <h2 class="title is-5 mb-4">Grouped Controls — has-addons</h2>
       <p class="is-size-7 has-text-grey mb-4">Multiple controls flush against each other with shared borders. Works with inputs, selects, and buttons.</p>
 
-      <!-- Select + Button -->
+      {# Select + Button #}
       <p class="ks-label">Select with action button</p>
       <div class="ks-demo-box">
         <div class="field has-addons" style="max-width: 420px;">
@@ -810,7 +876,7 @@
         </div>
       </div>
 
-      <!-- Currency selector + input + button -->
+      {# Currency selector + input + button #}
       <p class="ks-label mt-4">Currency input with symbol selector</p>
       <div class="ks-demo-box">
         <div class="field has-addons">
@@ -836,7 +902,7 @@
         </div>
       </div>
 
-      <!-- Button group (text formatting) -->
+      {# Button group (text formatting) #}
       <p class="ks-label mt-4">Button groups — text formatting toolbar</p>
       <div class="ks-demo-box">
         <div class="field has-addons mb-3">
@@ -877,100 +943,48 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         CARD FOOTER LAYOUTS
-    ════════════════════════════════════════════════════════════ -->
-    <section id="card-footers" class="ks-section">
-      <h2 class="title is-5 mb-4">Card Footer Layouts</h2>
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    CARD LAYOUTS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
+    <section id="card-layouts" class="ks-section">
+      <h2 class="title is-5 mb-4">Card Layouts</h2>
+      <p class="is-size-7 has-text-grey mb-3">
+        Full catalogue of card layouts, footer variants, tabs-in-card, and modals moved to their own page:
+        <a href="{% url 'kitchen_sink_cards' %}">Cards &amp; Modals →</a>
+      </p>
 
-      <!-- Create form footer -->
-      <p class="ks-label">Create form — primary only</p>
+      {# Basic editable content #}
+      <p class="ks-label">Basic editable content</p>
       <div class="card mb-5" style="max-width: 780px;">
-        <div class="card-content">
-          <p class="has-text-grey is-size-7">… form fields …</p>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries"></div>
-          <button type="submit" class="button is-medium is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
-            <span>Create</span>
-          </button>
-        </footer>
-      </div>
-
-      <!-- Edit form footer -->
-      <p class="ks-label">Edit form — Cancel + Reset + Delete / Save</p>
-      <div class="card mb-5" style="max-width: 780px;">
-        <div class="card-content">
-          <p class="has-text-grey is-size-7">… form fields …</p>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries">
-            <a class="button is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
-              <span>Cancel</span>
+        <div class="card-header" style="gap: 0.5rem;">
+          <div class="card-header-title" style="flex: 1;">Basic editable content</div>
+          <span class="tag is-success is-light">Active</span>
+          <div class="card-header-actions">
+            <a class="button is-light" title="View" aria-label="View">
+              <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
             </a>
-            <button type="reset" class="button is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">file_copy</span></span>
-              <span>Reset</span>
-            </button>
-            <button type="submit" class="button is-danger is-light" style="max-width: 6rem;"
-                    onclick="return confirm('Delete this item?');">
-              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-              <span>Delete</span>
+            <button type="button" class="button is-info is-light" title="Edit" aria-label="Edit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
             </button>
           </div>
-          <button type="submit" class="button is-medium is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
-            <span>Save</span>
-          </button>
-        </footer>
-      </div>
-
-      <!-- Read-only card: Delete + Edit -->
-      <p class="ks-label">Read-only card — Delete (secondary) / Edit (primary)</p>
-      <div class="card mb-5" style="max-width: 780px;">
-        <div class="card-content">
-          <p class="has-text-grey is-size-7">… read-only content …</p>
         </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries">
-            <button class="button is-danger is-light" type="button"
-                    onclick="return confirm('Delete this item?');" style="max-width: 6rem;">
-              <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-              <span>Delete</span>
-            </button>
-          </div>
-          <a class="button is-medium is-info is-light card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-            <span>Edit</span>
-          </a>
-        </footer>
-      </div>
-
-      <!-- Read-only card: Edit only -->
-      <p class="ks-label">Read-only card — Edit only</p>
-      <div class="card mb-5" style="max-width: 780px;">
         <div class="card-content">
-          <p class="has-text-grey is-size-7">… read-only content …</p>
+          <p class="has-text-grey is-size-7">Use for a single record shown inline on a page — a summary panel, sidebar block, or "current state" card — where the body is read-only and the header's own Edit / View controls carry the record's actions instead of a footer. The active/inactive tag sits to the left of the header actions so the record's state reads before its controls.</p>
         </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries"></div>
-          <a class="button is-medium is-info is-light card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-            <span>Edit</span>
-          </a>
-        </footer>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         SEARCH BARS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    SEARCH BARS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="search" class="ks-section">
       <h2 class="title is-5 mb-4">Search Bars</h2>
 
-      <!-- Pattern 1: search-dropdown (picks one FK value) -->
+      {# Pattern 1: search-dropdown (picks one FK value) #}
       <p class="ks-label">Pattern 1 — &lt;search-dropdown&gt; (single value picker for form fields)</p>
       <p class="is-size-7 has-text-grey mb-3">Use when the search produces a single picked value that becomes a form field (FK, tag, owner). Results are <code>&lt;li data-value="id"&gt;</code> fragments from the server.</p>
       <div class="ks-demo-box" style="max-width: 780px;">
@@ -991,7 +1005,7 @@
         </form>
       </div>
 
-      <!-- Pattern 2: plain HTMX input (list filter) -->
+      {# Pattern 2: plain HTMX input (list filter) #}
       <p class="ks-label mt-5">Pattern 2 — plain HTMX input (list filter)</p>
       <p class="is-size-7 has-text-grey mb-3">Use when the search drives a list view. Targets a results region, pushes URL so back-button works (F5 rule).</p>
       <div class="ks-demo-box">
@@ -1036,9 +1050,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TABLES
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    TABLES
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="tables" class="ks-section">
       <h2 class="title is-5 mb-4">Tables — Condensed (default)</h2>
       <p class="is-size-7 has-text-grey mb-3">
@@ -1120,9 +1136,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         NOTIFICATIONS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    NOTIFICATIONS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="notifications" class="ks-section">
       <h2 class="title is-5 mb-4">Notifications / Messages</h2>
 
@@ -1154,9 +1172,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TAGS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    TAGS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="tags" class="ks-section">
       <h2 class="title is-5 mb-4">Tags</h2>
 
@@ -1199,272 +1219,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         DUAL LISTBOX
-    ════════════════════════════════════════════════════════════ -->
-    <section id="dual-listbox" class="ks-section">
-      <h2 class="title is-5 mb-4">Dual Listbox</h2>
-      <p class="is-size-7 has-text-grey mb-4">
-        Used for assign/remove workflows (groups, permissions, domains). Select items in the left panel and
-        use the arrow buttons to move them to the right, or select items in the right panel and move them back.
-      </p>
-
-      <p class="ks-label">Groups assignment</p>
-      <div class="box mb-0">
-        <div class="columns is-variable is-3 is-align-items-center">
-
-          <!-- ── Left: Available ── -->
-          <div class="column">
-            <h4 class="title is-6 mb-1">Available groups</h4>
-            <p class="is-size-7 has-text-grey mb-2">Choose groups by selecting them and then selecting the "Choose" arrow button.</p>
-            <div class="field mb-1">
-              <input type="search" class="input is-small ks-dlb-filter" id="ks-dlb-filter-left"
-                data-ks-dlb-target="ks-dlb-left" placeholder="Filter" autocomplete="off">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-              <select id="ks-dlb-left" multiple aria-label="Available groups"
-                style="width: 100%; height: 12rem; border: 1px solid var(--bulma-border); padding: 0.25rem; background: var(--bulma-scheme-main); color: var(--bulma-text); font-size: 0.875rem; outline: none;">
-                <option value="can_edit_others_comments">can_edit_others_comments</option>
-                <option value="can_view_deleted_comments_events_attachments">can_view_deleted_comments_events_attachments</option>
-                <option value="generic_manager">generic_manager</option>
-                <option value="generic_user">generic_user</option>
-              </select>
-              <button type="button" class="button is-small is-fullwidth" style="border-top: none;"
-                title="Select all available groups for addition"
-                onclick="ksDlbSelectAll('ks-dlb-left')">
-                Select all for addition
-              </button>
-            </div>
-          </div>
-
-          <!-- ── Centre: Arrow controls ── -->
-          <div class="column is-narrow" style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
-            <button type="button" class="button is-small"
-              title="Choose selected groups — move highlighted items from Available to Chosen"
-              aria-label="Choose selected groups"
-              onclick="ksDlbMoveRight()">
-              <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
-            </button>
-            <button type="button" class="button is-small"
-              title="Remove selected groups — move highlighted items from Chosen back to Available"
-              aria-label="Remove selected groups"
-              onclick="ksDlbMoveLeft()">
-              <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
-            </button>
-          </div>
-
-          <!-- ── Right: Chosen ── -->
-          <div class="column">
-            <h4 class="title is-6 mb-1">Chosen groups</h4>
-            <p class="is-size-7 has-text-grey mb-2">Remove groups by selecting them and then selecting the "Remove" arrow button.</p>
-            <div class="field mb-1">
-              <input type="search" class="input is-small ks-dlb-filter" id="ks-dlb-filter-right"
-                data-ks-dlb-target="ks-dlb-right" placeholder="Filter" autocomplete="off">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-              <select id="ks-dlb-right" multiple aria-label="Chosen groups"
-                style="width: 100%; height: 12rem; border: 1px solid var(--bulma-border); padding: 0.25rem; background: var(--bulma-scheme-main); color: var(--bulma-text); font-size: 0.875rem; outline: none;">
-                <option value="generic_admin">generic_admin</option>
-              </select>
-              <button type="button" class="button is-small is-fullwidth" style="border-top: none;"
-                title="Select all chosen groups for removal"
-                onclick="ksDlbSelectAll('ks-dlb-right')">
-                Select all for removal
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <script>
-      (function () {
-        /* Filter: hide <option> entries that don't match the query. */
-        document.querySelectorAll('.ks-dlb-filter').forEach(function (input) {
-          input.addEventListener('input', function () {
-            var q = input.value.trim().toLowerCase();
-            var sel = document.getElementById(input.getAttribute('data-ks-dlb-target'));
-            if (!sel) return;
-            sel.querySelectorAll('option').forEach(function (opt) {
-              opt.hidden = q ? !opt.value.toLowerCase().includes(q) : false;
-            });
-          });
-        });
-
-        /* Move selected options from left to right, sorted alphabetically. */
-        window.ksDlbMoveRight = function () {
-          var left  = document.getElementById('ks-dlb-left');
-          var right = document.getElementById('ks-dlb-right');
-          Array.from(left.selectedOptions).forEach(function (opt) {
-            left.removeChild(opt);
-            opt.selected = false;
-            opt.hidden   = false;
-            ksDlbInsertSorted(right, opt);
-          });
-        };
-
-        /* Move selected options from right back to left, sorted alphabetically. */
-        window.ksDlbMoveLeft = function () {
-          var left  = document.getElementById('ks-dlb-left');
-          var right = document.getElementById('ks-dlb-right');
-          Array.from(right.selectedOptions).forEach(function (opt) {
-            right.removeChild(opt);
-            opt.selected = false;
-            opt.hidden   = false;
-            ksDlbInsertSorted(left, opt);
-          });
-        };
-
-        /* Insert an <option> into a <select> in alphabetical order by value. */
-        function ksDlbInsertSorted(sel, opt) {
-          var after = Array.from(sel.options).find(function (o) { return o.value > opt.value; });
-          if (after) { sel.insertBefore(opt, after); }
-          else        { sel.appendChild(opt); }
-        }
-
-        /* Select all visible (non-hidden) options in the given select. */
-        window.ksDlbSelectAll = function (selId) {
-          var sel = document.getElementById(selId);
-          if (!sel) return;
-          sel.querySelectorAll('option:not([hidden])').forEach(function (opt) {
-            opt.selected = true;
-          });
-        };
-      })();
-      </script>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         MODALS / DIALOGS
-    ════════════════════════════════════════════════════════════ -->
-    <section id="modals" class="ks-section">
-      <h2 class="title is-5 mb-4">Modals — Native &lt;dialog&gt;</h2>
-      <p class="is-size-7 has-text-grey mb-4">Native <code>&lt;dialog&gt;</code> with Bulma <code>.card</code> inside. Uses <code>commandfor</code> / <code>command</code> declarative attributes. Escape closes automatically.</p>
-
-      <div class="ks-row mb-4">
-        <button class="button is-primary" commandfor="ks-modal-info" command="show-modal">
-          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
-          <span>Open Info Modal</span>
-        </button>
-        <button class="button is-danger is-light" commandfor="ks-modal-confirm" command="show-modal">
-          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-          <span>Open Confirm Delete</span>
-        </button>
-        <button class="button is-primary" commandfor="ks-modal-form" command="show-modal">
-          <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-          <span>Open Form Modal</span>
-        </button>
-      </div>
-
-      <!-- Info modal -->
-      <dialog id="ks-modal-info" class="card" style="padding:0; min-width: 380px; max-width: 520px;">
-        <header class="card-header">
-          <p class="card-header-title">Information</p>
-          <button class="delete is-large" aria-label="close" commandfor="ks-modal-info" command="close"></button>
-        </header>
-        <div class="card-content">
-          <div class="content">
-            <p>This is a read-only info modal. No form inside — just content and a close action.</p>
-            <p class="is-size-7 has-text-grey">Native <code>&lt;dialog&gt;</code> provides focus trapping, Escape key, and backdrop automatically.</p>
-          </div>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries"></div>
-          <button class="button is-medium is-primary card-footer-primary" commandfor="ks-modal-info" command="close">
-            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
-            <span>OK</span>
-          </button>
-        </footer>
-      </dialog>
-
-      <!-- Confirm delete modal -->
-      <dialog id="ks-modal-confirm" class="card" style="padding:0; min-width: 380px; max-width: 520px;">
-        <header class="card-header">
-          <p class="card-header-title">Confirm Delete</p>
-          <button class="delete is-large" aria-label="close" commandfor="ks-modal-confirm" command="close"></button>
-        </header>
-        <div class="card-content">
-          <div class="content">
-            <p>Are you sure you want to delete <strong>Asset Alpha</strong>? This cannot be undone.</p>
-          </div>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries">
-            <button class="button is-light" commandfor="ks-modal-confirm" command="close">
-              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
-              <span>Cancel</span>
-            </button>
-          </div>
-          <button class="button is-medium is-danger card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-            <span>Delete</span>
-          </button>
-        </footer>
-      </dialog>
-
-      <!-- Form modal -->
-      <dialog id="ks-modal-form" class="card" style="padding:0; min-width: 420px; max-width: 580px;">
-        <header class="card-header">
-          <p class="card-header-title">Edit Asset Name</p>
-          <button class="delete is-large" aria-label="close" commandfor="ks-modal-form" command="close"></button>
-        </header>
-        <div class="card-content">
-          <div class="content">
-            <div class="field">
-              <label class="label" for="ks-modal-name">Name</label>
-              <div class="control">
-                <input id="ks-modal-name" class="input is-family-monospace" type="text" value="asset-alpha">
-              </div>
-            </div>
-            <div class="field">
-              <label class="label" for="ks-modal-domain">Domain</label>
-              <div class="control">
-                <div class="select is-fullwidth">
-                  <select id="ks-modal-domain">
-                    <option>Operations</option>
-                    <option>Finance</option>
-                    <option>HR</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries">
-            <button class="button is-light" commandfor="ks-modal-form" command="close">
-              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
-              <span>Cancel</span>
-            </button>
-            <button type="reset" class="button is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">file_copy</span></span>
-              <span>Reset</span>
-            </button>
-          </div>
-          <button class="button is-medium is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
-            <span>Save</span>
-          </button>
-        </footer>
-      </dialog>
-
-      <script>
-        /* commandfor / command polyfill for browsers without native support */
-        document.addEventListener('click', (e) => {
-          const btn = e.target.closest('[commandfor]');
-          if (!btn) return;
-          const dialog = document.getElementById(btn.getAttribute('commandfor'));
-          if (!dialog) return;
-          const cmd = btn.getAttribute('command');
-          if (cmd === 'show-modal') dialog.showModal();
-          else if (cmd === 'close') dialog.close();
-        });
-      </script>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         LOADING STATES
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    LOADING STATES
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="loading" class="ks-section">
       <h2 class="title is-5 mb-4">Loading States — HTMX Indicators & Skeletons</h2>
       <p class="is-size-7 has-text-grey mb-4">The <code>.htmx-indicator</code> is hidden by default and shown while an HTMX request is in flight. Pair with Bulma <code>.skeleton-block</code> for layout-preserving loading states.</p>
@@ -1498,48 +1257,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         TABS
-    ════════════════════════════════════════════════════════════ -->
-    <section id="tabs" class="ks-section">
-      <h2 class="title is-5 mb-4">Tabs — inside a card</h2>
-      <p class="is-size-7 has-text-grey mb-3">Tabs live <strong>inside</strong> the card, directly below the header. Always <code>is-boxed</code>, always left-justified. Skip when there is only one section.</p>
-
-      <div class="card">
-        <header class="card-header">
-          <p class="card-header-title">Editor Role</p>
-        </header>
-        <div class="card-content" style="padding-top: 0.75rem; padding-bottom: 0;">
-          <div class="tabs is-boxed">
-            <ul>
-              <li class="is-active"><a>Details</a></li>
-              <li><a>Permissions</a></li>
-              <li><a>History</a></li>
-              <li><a>Attachments</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="card-content">
-          <p class="has-text-grey is-size-7">… active-tab panel content …</p>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries">
-            <a class="button is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
-              <span>Cancel</span>
-            </a>
-          </div>
-          <button class="button is-medium is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
-            <span>Save</span>
-          </button>
-        </footer>
-      </div>
-    </section>
-
-    <!-- ═══════════════════════════════════════════════════════════
-         EMPTY STATES
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    EMPTY STATES
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="empty-states" class="ks-section">
       <h2 class="title is-5 mb-4">Empty States</h2>
       <p class="is-size-7 has-text-grey mb-3">Explain why there is no data and the next step. The primary CTA lives in the card footer at <strong>full width</strong> (no secondaries column).</p>
@@ -1576,9 +1298,11 @@
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         BREADCRUMBS
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    BREADCRUMBS
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="breadcrumbs" class="ks-section">
       <h2 class="title is-5 mb-4">Breadcrumbs</h2>
       <p class="is-size-7 has-text-grey mb-3">Every page must have breadcrumbs back to the app root. Error pages (403/404/500) too.</p>
@@ -1593,9 +1317,11 @@
       </nav>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         PAGINATION
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    PAGINATION
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="pagination" class="ks-section">
       <h2 class="title is-5 mb-4">Pagination</h2>
 
@@ -1614,9 +1340,11 @@
       </nav>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════════════
-         HTMX DEMO
-    ════════════════════════════════════════════════════════════ -->
+    {% comment %}
+    ═══════════════════════════════════════════════════════════
+    HTMX DEMO
+    ════════════════════════════════════════════════════════════
+    {% endcomment %}
     <section id="htmx-demo" class="ks-section">
       <h2 class="title is-5 mb-4">HTMX Patterns Demo</h2>
 
@@ -1662,5 +1390,109 @@
 
   </main>
 </div>
+
+<script>
+  // Sandstone texture for buttons in the buttons section
+  (function () {
+    const textureToggle = document.getElementById('button-texture-toggle');
+    const textureDepth = document.getElementById('button-texture-depth');
+    const depthValue = document.getElementById('button-depth-value');
+    const buttonSection = document.getElementById('buttons');
+    let textureEnabled = false;
+
+    function generateSandstoneFilter(depth) {
+      const surfaceScale = 0.5 + (depth * 1.5); // 0.5 to 3.5 range
+      return `data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='sandstone' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='3' result='edgeNoise' seed='1'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='edgeNoise' scale='1.5' xChannelSelector='R' yChannelSelector='G' result='displacedGraphic'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.01 0.6' numOctaves='4' result='surfaceNoise'/%3E%3CfeDiffuseLighting in='surfaceNoise' lighting-color='%23ffffff' surfaceScale='${surfaceScale}' result='bumpLight'%3E%3CfeDistantLight azimuth='45' elevation='60'/%3E%3C/feDiffuseLighting%3E%3CfeBlend mode='multiply' in='displacedGraphic' in2='bumpLight' result='texturedSolid'/%3E%3CfeComposite in='texturedSolid' in2='displacedGraphic' operator='in'/%3E%3C/filter%3E%3Crect width='256' height='256' fill='rgba(0,0,0,0.3)' filter='url(%23sandstone)'/%3E%3C/svg%3E`;
+    }
+
+    function addTextureToButton(btn, filterUrl) {
+      if (!btn._sandstoneStyle) {
+        const style = document.createElement('style');
+        style.id = 'sandstone-' + Math.random().toString(36).substr(2, 9);
+        btn.appendChild(style);
+        btn._sandstoneStyle = style;
+      }
+
+      const selector = `.ks-section#buttons [data-texture-enabled] button:nth-of-type(${Array.from(btn.parentNode.querySelectorAll('button')).indexOf(btn) + 1})`;
+      btn._sandstoneStyle.textContent = `
+        ${selector}::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: inherit;
+          z-index: 1;
+          pointer-events: none;
+          opacity: 0.8;
+          mix-blend-mode: overlay;
+          background-image: url("${filterUrl}");
+          background-size: 256px 256px;
+          background-attachment: fixed;
+        }
+      `;
+    }
+
+    function updateTexture() {
+      const depth = parseFloat(textureDepth.value);
+      depthValue.textContent = depth.toFixed(1);
+
+      if (textureEnabled) {
+        const filterUrl = generateSandstoneFilter(depth);
+
+        // Remove old style if exists
+        const oldStyle = document.getElementById('button-texture-style');
+        if (oldStyle) oldStyle.remove();
+
+        // Create new style for all buttons in this section
+        const style = document.createElement('style');
+        style.id = 'button-texture-style';
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const opacity = isDark ? '0.4' : '0.8';
+        style.textContent = `
+          #buttons button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            z-index: 1;
+            pointer-events: none;
+            opacity: ${opacity};
+            mix-blend-mode: overlay;
+            background-image: url("${filterUrl}");
+            background-size: 256px 256px;
+            background-attachment: scroll;
+          }
+          #buttons button {
+            position: relative;
+          }
+          #buttons button .icon,
+          #buttons button span {
+            position: relative;
+            z-index: 2;
+          }
+        `;
+        document.head.appendChild(style);
+      } else {
+        // Remove style when disabled
+        const oldStyle = document.getElementById('button-texture-style');
+        if (oldStyle) oldStyle.remove();
+      }
+    }
+
+    textureToggle.addEventListener('change', function () {
+      textureEnabled = this.checked;
+      updateTexture();
+    });
+
+    textureDepth.addEventListener('input', function () {
+      updateTexture();
+    });
+  })();
+</script>
 </body>
 </html>

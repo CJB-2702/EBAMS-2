@@ -156,6 +156,27 @@
   padding: 0;
 }
 
+/* Header action buttons — bleed to the card-header's top/bottom/right edges
+   flush to the card edge. Top/bottom use negative margin to cancel padding;
+   right margin stays at 0 to prevent clipping. Each button stretches to full
+   header height with square aspect-ratio. */
+.card-header-actions {
+  display: flex;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: -0.7rem 0 -0.7rem 0;
+}
+
+.card-header-actions .button {
+  align-self: stretch;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--bulma-border-weak);
+  white-space: nowrap;
+}
+
 /* ── Shared app shell / page chrome ──
    Formerly copy-pasted independently into every app's own base template
    (asset_base.html, adm_base.html, ev_base.html, parts/base.html,
@@ -231,6 +252,7 @@ collapsable-side-bar { min-width: 0; }
 
 /* Page hero */
 .page-hero {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
   background: var(--bulma-scheme-main);
   border: 1px solid var(--bulma-border-weak);
   border-left: 4px solid var(--bulma-primary);
@@ -262,6 +284,58 @@ collapsable-side-bar { min-width: 0; }
   padding: 0.4em 0.75em;
   height: auto;
 }
+.page-hero-content {
+  flex: 1;
+}
+.page-hero-actions {
+  display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start; flex-wrap: wrap;
+}
+.page-hero-actions .button {
+  font-size: 0.85rem;
+  padding: 0.4em 0.75em;
+  height: auto;
+}
+
+/* Page hero body: header block on the left, a big metrics table taking up
+   roughly 2/3 of the hero on the right. */
+.page-hero-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+.page-hero-body .page-header {
+  flex: 1 1 34%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.page-hero-metrics { flex: 2 1 66%; }
+
+.hero-metrics-table { width: 100%; border-collapse: collapse; }
+.hero-metrics-table th {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--bulma-text-weak);
+  text-align: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--bulma-border-weak);
+}
+.hero-metrics-table td {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--bulma-family-monospace, monospace);
+  color: var(--bulma-text-strong);
+  text-align: center;
+  padding-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .page-hero-body { flex-direction: column; align-items: stretch; }
+  .hero-metrics-table td { font-size: 1.5rem; }
+}
 
 /* Body grid */
 .body-grid {
@@ -271,7 +345,24 @@ collapsable-side-bar { min-width: 0; }
 }
 .body-grid.has-rail { grid-template-columns: 3fr 1fr; }
 .body-grid.full-width { grid-template-columns: 1fr; }
+.body-grid.even { grid-template-columns: 1fr 1fr; }
 .body-rail { display: flex; flex-direction: column; gap: 1rem; }
+
+/* htmx loading overlay.
+   htmx's own injected rule is `.htmx-indicator{opacity:0;visibility:hidden}`,
+   which keeps the element in normal flow — an indicator left in flow reserves
+   its full height on every page load. Any skeleton placed inside a live-search
+   region must therefore be taken out of flow and floated over the content it
+   is standing in for. The region needs `position: relative` (`.is-relative`),
+   and the form's hx-indicator must point at the *region*, not the skeleton, so
+   htmx puts `.htmx-request` on the ancestor. */
+.htmx-indicator-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.htmx-indicator-overlay .skeleton-block { height: 100%; margin: 0; }
 
 /* Definition rows (key/value) */
 .kv { display: grid; grid-template-columns: 9rem 1fr; gap: 0.35rem 0.75rem; font-size: 0.82rem; }
@@ -338,6 +429,16 @@ collapsable-side-bar { min-width: 0; }
   .ks-demo-box {
     corner-shape: bevel;
     border-radius: var(--app-chamfer);
+  }
+
+  /* Header action buttons (.card-header-actions) bleed flush to the
+     card-header's own top/right edge, so the last button sits exactly in
+     the card's top-right corner. Left beveled, its square corner gets
+     clipped into a stray triangle by the .card overflow:hidden — square
+     just that corner off instead, same asymmetric-bevel trick as
+     .page-hero above. Order: TL TR BR BL. */
+  .card:has(.card-header-actions) {
+    border-radius: var(--app-chamfer) 0 var(--app-chamfer) var(--app-chamfer);
   }
 
   /* Modals (.modal-styled) are chamfered too, but that rule must live AFTER
@@ -465,6 +566,55 @@ collapsable-side-bar { min-width: 0; }
   gap: 0;
   padding: 0;
   align-items: stretch;
+}
+
+/* ── Card header — multi-select segmented control ──
+ * .card-header-multiselect replaces card-header-title with a full-width
+ * row of equal-width buttons, one per mutually-exclusive view of the card's
+ * content — the header itself is the switcher instead of carrying a fixed
+ * title. The selected segment is is-primary; the rest sit dampened
+ * (is-light), mirroring how a footer contrasts its primary action against
+ * its secondaries — but inverted, on top of the card.
+ * Apply to a <div> that is a direct child of .card-header for full override.
+ */
+.card-header.is-multiselect {
+  padding: 0;
+}
+.card-header-multiselect {
+  display: flex;
+  width: 100%;
+  margin: 0;
+}
+.card-header-multiselect .button {
+  flex: 1 1 0;
+  height: auto;
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid var(--bulma-border-weak);
+  border-bottom: 1px solid var(--bulma-border);
+  padding: 0.75rem 1rem;
+  justify-content: center;
+  align-items: center;
+}
+.card-header-multiselect .button:last-child {
+  border-right: none;
+}
+
+/* ── Card footer — uniform actions ──
+ * .card-footer-uniform replaces .custom-card-footer when no single action is
+ * "primary" — every action gets an equal share of the card's width instead
+ * of splitting into a secondaries cluster plus one emphasized action.
+ */
+.card-footer-uniform {
+  display: flex;
+  padding: 0;
+  gap: 0;
+  align-items: stretch;
+}
+.card-footer-uniform .button {
+  flex: 1 1 0;
+  height: auto;
+  border-radius: 0;
 }
 
 /* ── Attachment carousel (events) ── */
@@ -730,27 +880,46 @@ file-browser:not(.file-browser) .fb-item .fb-thumb img { width: 28px; height: 28
   flex-direction: column;
 }
 
-/* Close button: red square X flush with the modal's top-right corner. */
+/* Close button: a square flush with the modal's top-right corner, sized to
+   the full height of the header (width == height via aspect-ratio, since
+   top:0;bottom:0 gives it a definite stretched height to square against).
+   No background at rest — just a left border dividing it from the title —
+   and a highlight fill on hover/focus. */
+.modal-styled .card-header {
+  position: relative;
+}
 .modal-styled .delete {
+  --bulma-delete-color: currentColor;
+  --bulma-delete-dimensions: auto;
   position: absolute;
   top: 0;
+  bottom: 0;
   right: 0;
-  height: 2rem;
-  width: 2rem;
-  min-height: 2rem;
-  min-width: 2rem;
-  max-height: 2rem;
-  max-width: 2rem;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  min-width: 0;
+  max-height: none;
+  max-width: none;
   border-radius: 0;
-  background-color: var(--bulma-danger);
+  border-left: 1px solid var(--bulma-border-weak);
+  background-color: transparent;
+  color: var(--bulma-text-weak);
 }
-.modal-styled .delete:hover,
-.modal-styled .delete:focus {
+.modal-styled .delete:hover {
   background-color: var(--bulma-danger);
-  filter: brightness(1.1);
+  color: var(--bulma-white);
 }
 .modal-styled .delete:active {
   filter: brightness(0.9);
+}
+/* Native showModal() auto-focuses the first focusable descendant, which is
+   this button — without :focus excluded from the hover fill above, the
+   modal would open already showing the red "alert" state before the mouse
+   ever touches it. Keyboard users still get a visible ring via :focus-visible. */
+.modal-styled .delete:focus-visible {
+  outline: 2px solid var(--bulma-danger);
+  outline-offset: -2px;
 }
 .modal-styled .card-header-title {
   padding-right: 2.75rem;

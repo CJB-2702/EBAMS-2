@@ -1,0 +1,86 @@
+{% extends "procurement/base.html" %}
+{% block title %}Record prices{% endblock %}
+{% block nav_price_hub %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'price_hub' %}">Prices</a></li>
+<li class="is-active"><a href="#" aria-current="page">Record prices</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
+  <h1 class="page-title">Record prices</h1>
+  <p class="page-subtitle">Paste a column of costs. One vendor, one domain, one date per batch.</p>
+</div>
+
+{% include "procurement/prices/_grid.html" %}
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  // Paste handler: intercept a paste inside the grid, split rows on \n and
+  // columns on \t, and fill down/across from the focused cell. Never
+  // creates rows implicitly — a paste taller than the grid is truncated and
+  // the truncation is reported, per the D86-adjacent "never hide data loss"
+  // rule that governs the rest of this kit.
+  var rowsBody = document.getElementById("price-grid-rows");
+  if (!rowsBody) return;
+
+  function cellInputs() {
+    return Array.prototype.slice.call(rowsBody.querySelectorAll('input[type="number"]'));
+  }
+
+  rowsBody.addEventListener("paste", function (event) {
+    var target = event.target;
+    if (!target || target.tagName !== "INPUT") return;
+
+    var text = (event.clipboardData || window.clipboardData).getData("text");
+    if (!text || text.indexOf("\n") === -1 && text.indexOf("\t") === -1) return;
+
+    event.preventDefault();
+
+    var rows = text.replace(/\r/g, "").split("\n").filter(function (line, idx, arr) {
+      return line !== "" || idx !== arr.length - 1;
+    });
+
+    var allInputs = cellInputs();
+    var startIndex = allInputs.indexOf(target);
+    if (startIndex === -1) return;
+
+    var tr = target.closest("tr");
+    var td = target.closest("td");
+    var cellsInRow = Array.prototype.slice.call(tr.querySelectorAll('input[type="number"]'));
+    var startCol = cellsInRow.indexOf(target);
+    var allTrs = Array.prototype.slice.call(rowsBody.querySelectorAll("tr"));
+    var startRow = allTrs.indexOf(tr);
+
+    var pasted = 0, ignored = 0;
+    rows.forEach(function (line, rowOffset) {
+      var destRow = allTrs[startRow + rowOffset];
+      if (!destRow) { ignored += 1; return; }
+      var values = line.split("\t");
+      var destCells = Array.prototype.slice.call(destRow.querySelectorAll('input[type="number"]'));
+      values.forEach(function (value, colOffset) {
+        var destCell = destCells[startCol + colOffset];
+        if (!destCell) { ignored += 1; return; }
+        destCell.value = value.trim();
+        pasted += 1;
+      });
+    });
+
+    var notice = document.getElementById("paste-report");
+    if (notice) {
+      notice.textContent = pasted + " value" + (pasted === 1 ? "" : "s") + " pasted" +
+        (ignored ? ", " + ignored + " ignored — grid has " + allTrs.length + " row" + (allTrs.length === 1 ? "" : "s") + "." : ".");
+      notice.hidden = false;
+    }
+  });
+
+  var reportEl = document.createElement("p");
+  reportEl.id = "paste-report";
+  reportEl.className = "is-size-7 has-text-grey mt-2";
+  reportEl.hidden = true;
+  rowsBody.closest("table").insertAdjacentElement("afterend", reportEl);
+})();
+</script>
+{% endblock %}

@@ -1,22 +1,31 @@
 {% extends "parts/base.html" %}
-{% block title %}{% if mode == "edit" %}Edit {{ part.part_number }}{% else %}New Part{% endif %}{% endblock %}
-{% block nav_create %}{% if mode != "edit" %}is-active{% endif %}{% endblock %}
+{% load static %}
+{% block title %}Edit {{ part.part_number }}{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <style>
+    toast-alert {
+      --toast-max-width: 1216px;
+    }
+  </style>
+{% endblock %}
 {% block breadcrumb %}
-{% if mode == "edit" %}<li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
+<li><a href="{% url 'part_detail' part_id=part_id %}">{{ part.part_number }}</a></li>
 <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
-{% else %}<li class="is-active"><a href="#" aria-current="page">New Part</a></li>{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="page-hero"><div class="page-header">
-  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">{% if mode == "edit" %}edit{% else %}add_box{% endif %}</span></div>
-    <div><h1 class="page-title">{% if mode == "edit" %}Edit {{ part.part_number }}{% else %}New Part{% endif %}</h1>
-      <p class="page-subtitle">{% if mode == "edit" %}Update the part record's identity and metadata.{% else %}Establishes the internal engineering record and its base revision (1.0).{% endif %}</p>
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+    <div><h1 class="page-title">Edit {{ part.part_number }}</h1>
+      <p class="page-subtitle">Update the part record's identity and metadata.</p>
     </div></div>
 </div></div>
 
 <div class="body-grid full-width">
-  <div class="card"><div class="card-content">
+  <div class="card mb-5"><div class="card-content">
     <form method="post">
       {% csrf_token %}
       <div class="columns">
@@ -40,20 +49,66 @@
         </div>
         <div class="column is-4">
           <label class="label is-small">&nbsp;</label>
-          <label class="checkbox is-size-7"><input type="checkbox" name="is_active" {% if mode != "edit" or part.is_active %}checked{% endif %}> Active</label>
-          &nbsp;&nbsp;
-          <label class="checkbox is-size-7"><input type="checkbox" name="is_domain_limited" {% if part.is_domain_limited %}checked{% endif %}> Domain-limited</label>
+          <label class="checkbox is-size-7"><input type="checkbox" name="is_active" {% if part.is_active %}checked{% endif %}> Active</label>
         </div>
       </div>
       <label class="label is-small">Description</label>
       <textarea class="textarea is-small" name="description">{{ part.description|default:'' }}</textarea>
 
       <div class="mt-4">
-        <button class="button is-link is-small" type="submit">{% if mode == "edit" %}Save Changes{% else %}Create Part{% endif %}</button>
-        {% if mode == "edit" %}<a href="{% url 'part_detail' part_id=part_id %}" class="button is-light is-small">Cancel</a>
-        {% else %}<a href="{% url 'parts_hub' %}" class="button is-light is-small">Cancel</a>{% endif %}
+        <button class="button is-link is-small" type="submit">Save Changes</button>
+        <a href="{% url 'part_detail' part_id=part_id %}" class="button is-light is-small">Cancel</a>
       </div>
     </form>
   </div></div>
+
+  <div class="card mb-5">
+    <div class="card-header">
+      <div class="card-header-title">Domains</div>
+      <div class="card-header-icon">
+        <span class="tag {% if part.is_domain_limited %}is-warning{% else %}is-success is-light{% endif %} is-size-7">
+          {% if part.is_domain_limited %}Domain-limited{% else %}Global{% endif %}
+        </span>
+      </div>
+    </div>
+    <div class="card-content">
+      <p class="help mb-3">Assign domains to restrict which users may see this part. With no domains assigned, the part is global (visible to everyone).</p>
+
+      {% if domain_templates %}
+      <div class="field has-addons mb-4">
+        <div class="control is-expanded">
+          <div class="select is-small is-fullwidth">
+            <select id="part-domain-template-select">
+              <option value="">— apply a domain template —</option>
+              {% for t in domain_templates %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="control">
+          <button type="button" class="button is-small is-link"
+              hx-post="{% url 'part_apply_domain_template' part_id=part_id %}"
+              hx-vals="js:{template_id: document.getElementById('part-domain-template-select').value}"
+              hx-target="#part-domains-dlb" hx-swap="outerHTML swap:1s">
+            Apply
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+      <div id="part-domains-dlb-slot">
+        {% include "parts/_domains_dlb_only.html" %}
+      </div>
+
+      <div class="mt-4">
+        <button type="button" class="button is-small is-danger is-light"
+            hx-post="{% url 'part_domains_make_global' part_id=part_id %}"
+            hx-target="#part-domains-dlb" hx-swap="outerHTML swap:1s"
+            hx-confirm="Remove all domain assignments and make this part global?">
+          <span class="icon"><span class="material-icons" aria-hidden="true">public</span></span>
+          <span>Make Global</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

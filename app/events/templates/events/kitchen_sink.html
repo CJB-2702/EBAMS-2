@@ -79,7 +79,7 @@
 
 <div class="body-grid full-width">
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-feature-matrix" class="title is-5 mt-4">Feature matrix</h2>
   <p class="ks-section-intro">
     All three surface families share one underlying table (<code>event</code>, via
@@ -121,7 +121,7 @@
     </div>
   </div>
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-event-card" class="title is-5 mt-4">1. Event composite card</h2>
   <p class="ks-section-intro">
     <code>events/fragments/event_card.html</code> — the full self-contained thread card: event
@@ -139,7 +139,7 @@
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/event_card.html" with card=activity_card {% templatetag closeblock %}</div>
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-comments" class="title is-5 mt-4">2. Comments only</h2>
   <p class="ks-section-intro">
     <code>events/fragments/comments_card.html</code> — the exact same fragment and the exact same
@@ -155,7 +155,7 @@
   {% endif %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/comments_card.html" with card=activity_card row_depth="depth-3" action_depth="depth-4" {% templatetag closeblock %}</div>
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-gallery" class="title is-5 mt-4">3. Gallery only (image documents)</h2>
   <p class="ks-section-intro">
     <code>events/fragments/gallery_card.html</code> — same generic document-dict contract,
@@ -167,7 +167,7 @@
   {% include "events/fragments/gallery_card.html" with images=gallery_images %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/gallery_card.html" with images=gallery_images {% templatetag closeblock %}</div>
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-files" class="title is-5 mt-4">4. Files only (non-image documents)</h2>
   <p class="ks-section-intro">
     <code>events/fragments/files_card.html</code> — same contract, the non-image half, rendered via
@@ -177,7 +177,7 @@
   {% include "events/fragments/files_card.html" with documents=file_documents %}
   <div class="ks-usage">{% templatetag openblock %} include "events/fragments/files_card.html" with documents=file_documents {% templatetag closeblock %}</div>
 
-  {# ══════════════════════════════════════════════════════════════ #}
+  {#  #}
   <h2 id="sec-isolated" class="title is-4 mt-6">Isolated components</h2>
   <p class="ks-section-intro">
     The building blocks the composite cards above are assembled from, shown on their own —

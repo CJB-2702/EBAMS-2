@@ -1,0 +1,59 @@
+<div id="unpriced-results">
+<div class="card">
+  <div class="card-header"><p class="card-header-title">{{ total }} unpriced part{{ total|pluralize }}</p></div>
+  <div class="card-content">
+    {% if page.object_list %}
+    <form method="post" action="{% url 'price_bulk_grid' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_rows_bulk">
+      <div class="table-container">
+        <table class="table is-fullwidth is-narrow">
+          <thead>
+            <tr><th></th><th>Part number</th><th>Name</th><th>Domain(s)</th><th>Created</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for part in page.object_list %}
+            <tr>
+              <td><input type="checkbox" name="part_ids" value="{{ part.pk }}"></td>
+              <td class="is-family-monospace">{{ part.part_number }}</td>
+              <td>{{ part.name }}</td>
+              <td class="is-size-7">
+                {% if not part.is_domain_limited %}
+                  <span class="tag is-small is-light">All domains</span>
+                {% else %}
+                  {% for mapping in part.domain_access_mappings.all %}{% if mapping.is_active %}{{ mapping.domain.name }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}
+                {% endif %}
+              </td>
+              <td class="is-size-7 has-text-grey">{{ part.created_at|date:"Y-m-d" }}</td>
+              <td>
+                <button type="submit" class="button is-small is-link" name="part_ids" value="{{ part.pk }}">
+                  Price it
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="button is-small is-light mt-2">Add selected to grid</button>
+    </form>
+
+    {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination is-centered is-small mt-4" role="navigation" aria-label="pagination">
+      {% if page.has_previous %}
+      <a class="pagination-previous" href="?page={{ page.previous_page_number }}">Previous</a>
+      {% endif %}
+      {% if page.has_next %}
+      <a class="pagination-next" href="?page={{ page.next_page_number }}">Next</a>
+      {% endif %}
+      <ul class="pagination-list">
+        <li><span class="pagination-link is-current">{{ page.number }} of {{ page.paginator.num_pages }}</span></li>
+      </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <p class="has-text-grey is-size-7">Nothing unpriced in your domains.</p>
+    {% endif %}
+  </div>
+</div>
+</div>

@@ -1,0 +1,130 @@
+{% extends "pub_base.html" %}
+{% block title %}Get Started - EBAMS{% endblock %}
+{% block container_max_width %}100%{% endblock %}
+
+{% block content %}
+<section class="pub-page-hero">
+  <h1>Get Started with EBAMS</h1>
+  <p>Quick start guide to begin managing your assets</p>
+</section>
+
+<section class="pub-section">
+  <div class="pub-section-wrap">
+
+    <h2 class="pub-section-headline" style="text-align:left;">Prerequisites</h2>
+    <div class="pub-prereq-grid mb-6">
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">code</span></span> Python 3.11+</h5>
+        <p>Python 3.11 or higher required</p>
+      </div>
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> pip</h5>
+        <p>Python package installer</p>
+      </div>
+      <div class="pub-info-card">
+        <h5><span class="icon"><span class="material-icons" aria-hidden="true">merge</span></span> Git</h5>
+        <p>Version control system</p>
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Installation</h2>
+
+    <div class="pub-step-card">
+      <div class="pub-step-card-header">
+        <div class="pub-step-number">1</div>
+        <h3>Clone the repository</h3>
+      </div>
+      <div class="pub-code-block">git clone &lt;repository-url&gt;
+cd ebams2</div>
+    </div>
+
+    <div class="pub-step-card">
+      <div class="pub-step-card-header">
+        <div class="pub-step-number">2</div>
+        <h3>Create a virtual environment</h3>
+      </div>
+      <div class="pub-code-block"># Create virtual environment
+python -m venv venv
+
+# Activate (Linux/Mac)
+source venv/bin/activate
+
+# Activate (Windows)
+venv\Scripts\activate</div>
+    </div>
+
+    <div class="pub-step-card">
+      <div class="pub-step-card-header">
+        <div class="pub-step-number">3</div>
+        <h3>Install dependencies</h3>
+      </div>
+      <div class="pub-code-block">pip install -r requirements.txt</div>
+    </div>
+
+    <div class="pub-step-card">
+      <div class="pub-step-card-header">
+        <div class="pub-step-number">4</div>
+        <h3>Generate your environment file</h3>
+      </div>
+      <div class="pub-code-block">python dev_tools/generate_env.py</div>
+    </div>
+
+    <div class="pub-step-card">
+      <div class="pub-step-card-header">
+        <div class="pub-step-number">5</div>
+        <h3>Build the database and run the server</h3>
+      </div>
+      <div class="pub-code-block">python manage.py migrate
+python manage.py seed_dev
+python manage.py runserver</div>
+      <div class="notification is-info is-light mt-3" style="padding: 0.6rem 0.85rem;">
+        <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+        <code>seed_dev</code> creates development users and sample org/division/ownership data. The dev credentials it creates are written to a local, gitignored file rather than published here.
+      </div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">First login</h2>
+    <div class="pub-info-card mb-6">
+      <p>Navigate to <code>http://localhost:8000/</code> and sign in with a user created by <code>seed_dev</code>, or with your own Django superuser (<code>python manage.py createsuperuser</code>).</p>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Full database reset</h2>
+    <div class="pub-step-card">
+      <p style="margin-bottom: 0.75rem; color: var(--bulma-text-weak); font-size: 0.85rem;">After any schema change, EBAMS uses a full reset rather than incremental migrations:</p>
+      <div class="pub-code-block">python dev_tools/delete_database_rebuild_models.py --seed</div>
+    </div>
+
+    <h2 class="pub-section-headline" style="text-align:left;">Next steps</h2>
+    <div class="pub-next-steps-grid mb-6">
+      <div class="pub-next-step-card">
+        <span class="material-icons" aria-hidden="true">menu_book</span>
+        <h4>Explore Features</h4>
+        <p>Learn about all the capabilities EBAMS offers</p>
+        <a href="{% url 'public_features' %}" class="button is-small is-info is-light">View Features</a>
+      </div>
+      <div class="pub-next-step-card">
+        <span class="material-icons" aria-hidden="true">grid_view</span>
+        <h4>Understand Modules</h4>
+        <p>Deep dive into each integrated module</p>
+        <a href="{% url 'public_features' %}" class="button is-small is-info is-light">View features</a>
+      </div>
+      <div class="pub-next-step-card">
+        <span class="material-icons" aria-hidden="true">info</span>
+        <h4>Learn More</h4>
+        <p>Discover the system architecture and design</p>
+        <a href="{% url 'public_learn_more' %}" class="button is-small is-info is-light">Learn More</a>
+      </div>
+    </div>
+
+    <div class="pub-cta-banner pub-cta-banner--light" style="text-align:center;">
+      <h2>Ready to Login?</h2>
+      <p style="margin: 0 auto 1.25rem;">Start managing your assets with EBAMS</p>
+      <button type="button" class="button is-primary is-medium" commandfor="public-login-modal" command="show-modal">
+        <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+        <span>Go to Login</span>
+      </button>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

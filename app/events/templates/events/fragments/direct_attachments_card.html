@@ -70,7 +70,7 @@ optional attachment_error.
   </div>
 </dialog>
 
-<dialog id="files-upload-dialog-{{ card.hash }}" class="card" style="padding:0; min-width:360px; max-width:480px;">
+<dialog id="files-upload-dialog-{{ card.hash }}" class="card modal-styled" style="padding:0; max-width:480px;">
   <form method="post"
         action="{% url 'direct_attachment_add' event_hash=card.hash %}"
         enctype="multipart/form-data"

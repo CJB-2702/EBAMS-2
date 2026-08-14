@@ -1,0 +1,18 @@
+{% comment %}
+D92 — the price picker: read-only browsing plus a single-value capture, not
+assignment, so a modal is the right pattern here (unlike the project's usual
+"assignment never lives in a modal" rule). One shell per page, reused by
+every chip's doorway via hx-get into #price-picker-modal-body.
+{% endcomment %}
+<div class="modal" id="price-picker-modal">
+  <div class="modal-background" onclick="document.getElementById('price-picker-modal').classList.remove('is-active')"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Price history</p>
+      <button class="delete" aria-label="close" onclick="document.getElementById('price-picker-modal').classList.remove('is-active')"></button>
+    </header>
+    <section class="modal-card-body" id="price-picker-modal-body">
+      <p class="has-text-grey is-size-7">Loading…</p>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+{% comment %}
+Confirmation gate in front of the server-side "already linked" search.
+Destructive-confirmation-shaped per harness/UX_UI/design_patterns/modals.md —
+opened declaratively (command="show-modal") by the client-side component's
+header button, no JS required. Include this ONCE per line, as a sibling of
+the #lh-pair-{{ unique_id }} wrapper (not inside it, so it survives the swap).
+
+Required context: identical to the two assignment components (unique_id,
+part, consumer, line_ref, exclude_purchase_order, exclude_ids).
+{% endcomment %}
+<dialog id="lh-warn-{{ unique_id }}" class="card modal-styled" style="padding:0;">
+  <header class="card-header">
+    <p class="card-header-title">Search demands already linked to a purchase order?</p>
+    <button class="delete is-large" aria-label="close" command="close" commandfor="lh-warn-{{ unique_id }}"></button>
+  </header>
+  <div class="card-content">
+    <div class="content is-size-7">
+      <p>It is not recommended to attach one part demand to more than one purchase order. This switches to a full search that includes demands already carrying a purchasing decision on another order.</p>
+    </div>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <button type="button" class="button is-small is-light" command="close" commandfor="lh-warn-{{ unique_id }}">Cancel</button>
+    </div>
+    <button type="button" class="button is-warning card-footer-primary"
+            command="close" commandfor="lh-warn-{{ unique_id }}"
+            hx-get="{% url 'demand_index' %}?format=htmx-left-heavy&mode=server&unique_id={{ unique_id }}&consumer={{ consumer }}&part_id={{ part.pk }}&line_ref={{ line_ref }}&exclude_purchase_order={{ exclude_purchase_order|default:'' }}&exclude_ids={{ exclude_ids|default:'' }}"
+            hx-target="#lh-pair-{{ unique_id }}"
+            hx-swap="innerHTML">
+      Show them anyway
+    </button>
+  </footer>
+</dialog>

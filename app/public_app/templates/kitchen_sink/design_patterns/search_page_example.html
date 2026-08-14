@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% block content %}
-  <!-- ── Page hero (wraps title + actions + quick details) ── -->
+  {# Page hero (wraps title + actions + quick details) #}
   <div class="page-hero" style="flex-wrap: wrap;">
     <div style="flex: 1; min-width: 0;">
       <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -43,10 +43,10 @@
     </div>
   </div>
 
-  <!-- ── Body: full width (no quick actions rail on search pages) ── -->
+  {# Body: full width (no quick actions rail on search pages) #}
   <div class="body-grid full-width">
 
-    <!-- Filters card -->
+    {# Filters card #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon">⌕</span>Filters</div></div>
       <div class="card-content">
@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <!-- Results card (full width) -->
+    {# Results card (full width) #}
     <div class="card">
       <div class="card-header">
         <div class="card-header-title"><span class="icon">▤</span>Part Demands (4)</div>

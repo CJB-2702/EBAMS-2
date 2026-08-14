@@ -11,8 +11,8 @@ from django.views.decorators.http import require_http_methods
 from app.parts.control_layer.adapters.manufacturer_create_adaptor import (
     ManufacturerCreateAdaptor,
 )
-from app.parts.control_layer.factories.part_manufacturer_factory import (
-    PartManufacturerFactory,
+from app.parts.control_layer.managers.part_manufacturer_manager import (
+    PartManufacturerManager,
     PartManufacturerValidationError,
 )
 from app.parts.models import PartManufacturer
@@ -36,10 +36,14 @@ def manufacturer_index(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(["GET", "POST"])
 def manufacturer_create(request: HttpRequest) -> HttpResponse:
-    # format=htmx-fragment is the supplier-item wizard's inline "create manufacturer" sub-flow —
-    # the one legitimate server round trip inside that otherwise client-side wizard, because a
+    # format=htmx-fragment is a wizard's inline "create manufacturer" sub-flow — the one
+    # legitimate server round trip inside an otherwise client-side wizard, because a
     # PartManufacturer needs a real DB id before the rest of the wizard's form can reference it.
+    # field_name/target_id let repeatable-row wizards (the part-creation wizard) reuse this same
+    # fragment per row; single-row callers (the supplier-item wizard) rely on the defaults.
     fragment = request.GET.get("format") == "htmx-fragment"
+    field_name = request.POST.get("field_name") or request.GET.get("field_name") or "part_manufacturer_id"
+    target_id = request.POST.get("target_id") or request.GET.get("target_id") or "supplier-item-manufacturer-slot"
 
     if request.method == "POST":
         data = (
@@ -48,13 +52,19 @@ def manufacturer_create(request: HttpRequest) -> HttpResponse:
             else ManufacturerCreateAdaptor.from_post(request.POST)
         )
         try:
-            manufacturer = PartManufacturerFactory.create(data=data, actor=request.user)
+            manufacturer = PartManufacturerManager.create(data=data, actor=request.user)
         except PartManufacturerValidationError as exc:
             if fragment:
                 return render(
                     request,
                     "parts/manufacturers/_manufacturer_picker.html",
-                    {"create_errors": exc.errors, "create_data": data, "show_create_form": True},
+                    {
+                        "create_errors": exc.errors,
+                        "create_data": data,
+                        "show_create_form": True,
+                        "field_name": field_name,
+                        "target_id": target_id,
+                    },
                 )
             for error in exc.errors:
                 messages.error(request, error)
@@ -65,7 +75,11 @@ def manufacturer_create(request: HttpRequest) -> HttpResponse:
             return render(
                 request,
                 "parts/manufacturers/_manufacturer_picker.html",
-                {"selected_manufacturer": manufacturer},
+                {
+                    "selected_manufacturer": manufacturer,
+                    "field_name": field_name,
+                    "target_id": target_id,
+                },
             )
         messages.success(request, f"Manufacturer '{manufacturer.name}' created.")
         return redirect(reverse("part_manufacturer_index"))
@@ -73,6 +87,10 @@ def manufacturer_create(request: HttpRequest) -> HttpResponse:
     if fragment:
         # GET ...?format=htmx-fragment&reset=1 — the wizard's "Change" link swaps a selected
         # manufacturer back to the unselected search state.
-        return render(request, "parts/manufacturers/_manufacturer_picker.html", {})
+        return render(
+            request,
+            "parts/manufacturers/_manufacturer_picker.html",
+            {"field_name": field_name, "target_id": target_id},
+        )
 
     return render(request, "parts/manufacturers/form.html", {"manufacturer": None})

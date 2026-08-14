@@ -10,33 +10,15 @@
   <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
   <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/public_marketing.css' %}">
 </head>
 <body>
+
+{% include "shared/public_topnav.html" %}
+{% include "shared/_login_modal.html" %}
+
 <section class="section">
-  <div class="container" style="max-width: 720px;">
-    <nav class="level mb-5">
-      <div class="level-left">
-        <div class="level-item">
-          <a href="{% url 'public_home' %}" class="has-text-weight-semibold">Home</a>
-          <span class="mx-2">·</span>
-          <a href="{% url 'public_about' %}">About</a>
-          <span class="mx-2">·</span>
-          <a href="{% url 'docs_administration_overview' %}">Docs</a>
-        </div>
-      </div>
-      {% if user.is_authenticated %}
-      <div class="level-right">
-        <div class="level-item">
-          <form method="post" action="{% url 'public_logout' %}" class="is-inline">
-            {% csrf_token %}
-            <button type="submit" class="button is-medium is-light" aria-label="Sign out">
-              <span class="icon"><span class="material-icons" aria-hidden="true">logout</span></span>
-            </button>
-          </form>
-        </div>
-      </div>
-      {% endif %}
-    </nav>
+  <div class="container" style="max-width: {% block container_max_width %}720px{% endblock %};">
     {% if messages %}
       {% for message in messages %}
         <div class="notification is-info is-light">{{ message }}</div>

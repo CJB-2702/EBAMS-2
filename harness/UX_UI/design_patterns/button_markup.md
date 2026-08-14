@@ -1,14 +1,14 @@
 ---
 type: "UX Example"
 title: "Button markup snippets"
-description: "Canonical markup for the actions in [../common_buttons.md](../common_buttons.md)."
+description: "Canonical markup for the actions in common_buttons.md."
 tags: [ux-ui, ux-example, examples]
 context_tier: 3
 ---
 
 # Button markup snippets
 
-Canonical markup for the actions in [../components/common_buttons.md](../components/common_buttons.md). Material Icons (`<span class="icon"><span class="material-icons" aria-hidden="true">…</span></span>`) ship vendored.
+Canonical markup for the actions in [common_buttons.md](common_buttons.md). Material Icons (`<span class="icon"><span class="material-icons" aria-hidden="true">…</span></span>`) ship vendored.
 
 ## Master button table
 
@@ -24,7 +24,7 @@ Canonical markup for the actions in [../components/common_buttons.md](../compone
 | **Delete** | `delete` | Danger light (pink) | `button is-small is-danger is-light` | Remove a resource. Always small, always confirmed. |
 | **Remove** | `remove` | Danger light (pink) | `button is-small is-danger is-light` | Detach an item from a relation. |
 | **Refresh** | `refresh` | Link (blue) | `button is-link is-light` | Re-fetch the current view's data without a full page reload. |
-| **Search** | `search` | n/a (icon-only) | inside `<search-dropdown>` | See [../components/searchbars.md](../components/searchbars.md). |
+| **Search** | `search` | n/a (icon-only) | inside `<search-dropdown>` | See [../search/searchbars.md](../search/searchbars.md). |
 | **Filter** | `filter_list` | Light grey | `button is-light` | Open a filter panel or apply filter chips. |
 | **Sort** | `sort` | Light grey | `button is-light` | Open the sort selector. |
 | **Export** | `file_download` | Link (blue) | `button is-link is-light` | Download data (CSV, JSON). Always opens a download. |

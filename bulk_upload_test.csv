@@ -1,0 +1,13 @@
+part_number,name,part_type,category,description,manufacturer,manufacturer_part_number
+BULK-0001,10k Ohm Resistor 0603,Resistor,Passive,10k ohm 1% 0603 SMD resistor,Yageo,RC0603FR-0710KL
+BULK-0002,100nF Ceramic Capacitor,Capacitor,Passive,100nF X7R 0603 SMD capacitor,Murata,GRM188R71H104KA93D
+BULK-0003,1N4148 Signal Diode,Diode,Discrete,General purpose switching diode,onsemi,1N4148
+BULK-0004,2N3904 NPN Transistor,Transistor,Discrete,General purpose NPN BJT,onsemi,2N3904
+BULK-0005,LM358 Dual Op-Amp,IC,Analog,Dual operational amplifier 8-pin SOIC,Texas Instruments,LM358DR
+BULK-0006,ATmega328P Microcontroller,IC,Digital,8-bit AVR microcontroller 32KB flash,Microchip,ATMEGA328P-AU
+BULK-0007,Red LED 0805,LED,Optoelectronic,Red SMD LED 0805 package,Kingbright,KPT-2012SURCK
+BULK-0008,USB-C Receptacle Connector,Connector,Electromechanical,USB Type-C receptacle SMD,Amphenol,12401610E4-2A
+BULK-0009,Ferrite Bead 600R,Inductor,Passive,600 ohm at 100MHz ferrite bead 0603,Murata,BLM18PG601SN1D
+BULK-0010,Schottky Diode SS14,Diode,Discrete,1A 40V Schottky barrier rectifier,Diodes Inc,SS14
+BULK-0011,Voltage Regulator 3.3V,IC,Power,LDO linear regulator 3.3V 500mA,Texas Instruments,LM1117MP-3.3
+BULK-0012,Tactile Push Button,Switch,Electromechanical,6x6mm SMD tactile switch,C&K,KMR221GLFS

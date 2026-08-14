@@ -1,0 +1,139 @@
+{% extends "procurement/base.html" %}
+{% block title %}Demands{% endblock %}
+{% block nav_demand_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Demands</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">assignment</span></div>
+        <div>
+          <h1 class="page-title">Part Demands</h1>
+          <p class="page-subtitle">Requests moving through approval, purchasing, shipment, and issuance.</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        {% if can_request %}
+        <a href="{% url 'demand_create' %}" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Demand</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="page-hero-metrics" id="demand-hero-metrics">
+      {% include "procurement/demands/_hero_metrics.html" %}
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'demand_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#demand-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#demand-results-region">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-2">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="part number, name, notes…" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Demand State</label>
+            <div class="select is-small is-fullwidth">
+              <select name="demand_state">
+                <option value="">Any</option>
+                {% for value, label in demand_states %}
+                <option value="{{ value }}" {% if filters.demand_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Priority</label>
+            <div class="select is-small is-fullwidth">
+              <select name="priority">
+                <option value="">Any</option>
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Purchasing</label>
+            <div class="select is-small is-fullwidth">
+              <select name="purchasing_state">
+                <option value="">Any</option>
+                {% for value, label in purchasing_states %}
+                <option value="{{ value }}" {% if filters.purchasing_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Shipment</label>
+            <div class="select is-small is-fullwidth">
+              <select name="shipment_state">
+                <option value="">Any</option>
+                {% for value, label in shipment_states %}
+                <option value="{{ value }}" {% if filters.shipment_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Issuance</label>
+            <div class="select is-small is-fullwidth">
+              <select name="issuance_state">
+                <option value="">Any</option>
+                {% for value, label in issuance_states %}
+                <option value="{{ value }}" {% if filters.issuance_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Domain</label>
+            <div class="select is-small is-fullwidth">
+              <select name="domain_id">
+                <option value="">Any</option>
+                {% for d in domains %}
+                <option value="{{ d.id }}" {% if filters.domain_id == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Needed From</label>
+            <input class="input is-small" type="date" name="needed_by_from" value="{{ filters.needed_by_from }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Needed To</label>
+            <input class="input is-small" type="date" name="needed_by_to" value="{{ filters.needed_by_to }}">
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="demand-results-region" class="is-relative">
+    {# Overlay, not a flow sibling — see .htmx-indicator-overlay in custom_css.css. #}
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+      <div class="skeleton-block"></div>
+    </div>
+    {% include "procurement/demands/_results_card.html" %}
+  </div>
+</div>
+{% endblock %}

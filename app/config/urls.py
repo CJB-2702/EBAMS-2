@@ -34,6 +34,7 @@ urlpatterns = [
     path('assets/', include('app.assets.urls')),
     path('detail_extensions/', include('app.detail_extensions.urls')),
     path('parts/', include('app.parts.urls')),
+    path('procurement/', include('app.procurement.urls')),
 ]
 
 if settings.DEBUG:

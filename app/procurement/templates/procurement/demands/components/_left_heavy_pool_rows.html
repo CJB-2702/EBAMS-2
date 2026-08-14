@@ -1,0 +1,46 @@
+{% comment %}
+Shared row partial for both left-heavy demand-assignment components. Included
+directly (Python-fetched queryset) by the client-side component's initial
+render, and returned as-is by demand_index's `format=htmx-left-heavy` branch
+for the server-side component's searches. Rows only — no <table>/<thead>/
+<tbody> wrapper, so callers can swap this straight into an existing <tbody>.
+{% endcomment %}
+{% for demand in pool %}
+<tr class="pool-row"
+    data-search="#{{ demand.pk }} {{ demand.part.part_number|lower }} {{ demand.get_priority_display|lower }}"
+    data-demand-id="{{ demand.pk }}"
+    data-demand-state="{{ demand.demand_state }}"
+    data-created="{{ demand.created_at|date:'Y-m-d' }}"
+    data-linked="{% if demand.purchasing_state %}1{% else %}0{% endif %}">
+  <td class="is-family-monospace">
+    #{{ demand.pk }}
+    {% if demand.purchasing_state %}
+    <span class="tag is-small is-warning is-light" title="Already has a purchasing decision on another order.">Linked</span>
+    {% endif %}
+  </td>
+  <td>{{ demand.get_priority_display }}</td>
+  <td>{{ demand.needed_by|date:"Y-m-d"|default:"—" }}</td>
+  <td class="has-text-right is-family-monospace">{{ demand.outstanding_qty }}</td>
+  <td>
+    {% comment %}
+    Binary allocation: allocate the full outstanding amount or not at all.
+    Submit with hidden quantity field set to outstanding_qty.
+    {% endcomment %}
+    <form method="post" action="{{ allocate_url }}" class="mb-0">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="allocate">
+      <input type="hidden" name="{{ line_field_name }}" value="{{ line_ref }}">
+      <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+      <input type="hidden" name="quantity_allocated" value="{{ demand.outstanding_qty }}">
+      <button type="submit" class="button is-small is-link" title="Allocate all {{ demand.outstanding_qty }} to this line">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+        <span>Allocate all</span>
+      </button>
+    </form>
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="5" class="has-text-grey has-text-centered py-5">
+  No matching open demands for this part in your domains.
+</td></tr>
+{% endfor %}

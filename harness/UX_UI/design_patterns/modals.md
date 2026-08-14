@@ -35,9 +35,9 @@ A modal interrupts. That is its only real feature, and it is a cost. Reach for o
 
 | Instead of | Use | Guide |
 | :--- | :--- | :--- |
-| "Add manufacturers" modal | Left-heavy assignment card pair (2/3 pool + 1/3 assigned) | [../Examples/left_heavy_assignment_card_pair.md](../Examples/left_heavy_assignment_card_pair.md) |
-| "Manage members" modal | Dual listbox | [dual_listbox.md](dual_listbox.md) |
-| "Pick one related record" modal | Search dropdown, inline | [searchbars.md](searchbars.md) |
+| "Add manufacturers" modal | Left-heavy assignment card pair (2/3 pool + 1/3 assigned) | [left_heavy_assignment_card_pair.md](left_heavy_assignment_card_pair.md) |
+| "Manage members" modal | Dual listbox | [../components/dual_listbox.md](../components/dual_listbox.md) |
+| "Pick one related record" modal | Search dropdown, inline | [../search/searchbars.md](../search/searchbars.md) |
 
 Why this is a rule and not a preference:
 
@@ -117,7 +117,7 @@ Set `style="padding: 0;"` on the dialog element to remove default padding and le
 
 ## Browser support and accessibility
 
-- The native `<dialog>` element is supported in all modern browsers. The `commandfor` and `command` attributes require the browser's command API; a small polyfill or JS implementation may be needed for older targets.
+- The native `<dialog>` element is supported in all modern browsers. `commandfor`/`command` (the Invoker Commands API) are natively supported in current Chrome/Edge — no JS is used or needed to wire them up. Do not add a `document.addEventListener('click', ...)` polyfill for this; it double-handles clicks the browser already processes natively and causes hover/focus state glitches (e.g. a stuck `:focus` color on the close button).
 - Close button has `aria-label="close"` for screen readers.
 - `<dialog>` provides built-in focus management and backdrop.
 - Escape key closes the dialog automatically.

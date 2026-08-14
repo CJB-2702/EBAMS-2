@@ -1,0 +1,15 @@
+{% comment %}
+Attach-a-purchase-order picker, filtered to orders a vendor could still be
+shipping against. A cancelled or fully-received order is not what an
+unexpected box belongs to.
+{% endcomment %}
+{% for order in orders %}
+<li data-value="{{ order.id }}" class="is-family-monospace">
+  {{ order.po_number }}
+  <span class="has-text-grey is-size-7">
+    — {{ order.vendor.name }} · {{ order.get_status_display }} · {{ order.order_date|date:"Y-m-d" }}
+  </span>
+</li>
+{% empty %}
+<li class="is-disabled">No open purchase orders match.</li>
+{% endfor %}

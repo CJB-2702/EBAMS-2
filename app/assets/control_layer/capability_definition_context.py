@@ -41,6 +41,26 @@ class CapabilityDefinitionContext:
         self.actor = actor
         self.definition = CapabilityDefinition.objects.get(id=definition_id)
 
+    # ── Creation ─────────────────────────────────────────────────────────────
+    @classmethod
+    def create(cls, *, data: dict, actor: "AbstractUser") -> CapabilityDefinition:
+        errors = CapabilityDefinitionUniquenessValidator.validate(
+            name=data.get("name", ""),
+            code=data.get("code", ""),
+        )
+        if errors:
+            raise CapabilityDefinitionValidationError(errors)
+
+        with transaction.atomic():
+            return CapabilityDefinition.objects.create(
+                name=data["name"].strip(),
+                code=data["code"].strip().upper(),
+                description=data.get("description") or None,
+                is_active=data.get("is_active", True),
+                created_by=actor,
+                updated_by=actor,
+            )
+
     # ── Metadata ─────────────────────────────────────────────────────────────
     def update(self, *, data: dict) -> CapabilityDefinition:
         candidate_name = data.get("name", self.definition.name)

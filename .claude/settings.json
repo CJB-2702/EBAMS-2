@@ -3,7 +3,9 @@
     "allow": [
       "Bash(git mv *)",
       "Bash(python manage.py check)",
-      "Bash(python dev_tools/delete_database_rebuild_models.py --seed)"
+      "Bash(python dev_tools/delete_database_rebuild_models.py --seed)",
+      "Bash(python manage.py shell -c ' *)",
+      "Bash(python refresh_project.py)"
     ]
   }
 }

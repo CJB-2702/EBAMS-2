@@ -1,0 +1,25 @@
+{% extends "procurement/base.html" %}
+{% block title %}Not built yet{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Not built yet</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">construction</span></div>
+      <div>
+        <h1 class="page-title">{{ feature }} — not built yet</h1>
+        <p class="page-subtitle">This part of the procurement portal is a placeholder for a later wave.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-content">
+      <p>The Demand Loop (Phase 1) is live. {{ feature }} belongs to a different build wave and has not shipped yet.</p>
+      <a href="{% url 'demand_index' %}" class="button is-small is-link">Go to Demands</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

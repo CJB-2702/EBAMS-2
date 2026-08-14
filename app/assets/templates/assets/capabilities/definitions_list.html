@@ -13,16 +13,16 @@
 <div class="body-grid full-width">
   <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Definitions ({{ definitions|length }})</div></div>
     
-    <!-- Filter + Search Bar -->
+    {# Filter + Search Bar #}
     <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
       <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
-        <!-- Search input -->
+        {# Search input #}
         <div class="control has-icons-left" style="flex:1;min-width:140px">
           <input type="search" id="search-definitions" class="input is-small" placeholder="Search by name, code, or description…" autocomplete="off">
           <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
         </div>
         
-        <!-- Class Filter (Simple Select) -->
+        {# Class Filter (Simple Select) #}
         <div class="select is-small">
           <select id="filter-definition-class" aria-label="Filter by assigned class">
             <option value="">All Classes</option>
@@ -32,7 +32,7 @@
           </select>
         </div>
         
-        <!-- Model Filter (Searchable Dropdown Component) -->
+        {# Model Filter (Searchable Dropdown Component) #}
         <div class="dropdown is-active" id="model-search-dropdown-container" style="min-width:180px;position:relative;">
           <div class="dropdown-trigger" style="width:100%;">
             <div class="field" style="margin:0;">
@@ -54,7 +54,7 @@
           </div>
         </div>
 
-        <!-- Asset Filter (Searchable Dropdown Component) -->
+        {# Asset Filter (Searchable Dropdown Component) #}
         <div class="dropdown is-active" id="asset-search-dropdown-container" style="min-width:180px;position:relative;">
           <div class="dropdown-trigger" style="width:100%;">
             <div class="field" style="margin:0;">

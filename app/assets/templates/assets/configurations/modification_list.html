@@ -12,16 +12,16 @@
 
 <div class="body-grid full-width">
   <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Modifications ({{ modifications|length }})</div></div>
-    <!-- Filter + Search Bar -->
+    {# Filter + Search Bar #}
     <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
       <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
-        <!-- Search input -->
+        {# Search input #}
         <div class="control has-icons-left" style="flex:1;min-width:140px">
           <input type="search" id="search-modifications" class="input is-small" placeholder="Search by name or code…" value="{{ q }}" autocomplete="off">
           <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
         </div>
 
-        <!-- Category Filter -->
+        {# Category Filter #}
         <div class="select is-small">
           <select id="filter-category" aria-label="Filter by Category">
             <option value="">All Categories</option>
@@ -31,7 +31,7 @@
           </select>
         </div>
 
-        <!-- Allowable Class Filter -->
+        {# Allowable Class Filter #}
         <div class="select is-small">
           <select id="filter-class" aria-label="Filter by Allowable Class">
             <option value="">All Classes</option>
@@ -41,7 +41,7 @@
           </select>
         </div>
 
-        <!-- Allowable Model Filter -->
+        {# Allowable Model Filter #}
         <div class="dropdown is-active" id="model-search-dropdown-container" style="min-width:180px;position:relative;">
           <div class="dropdown-trigger" style="width:100%;">
             <div class="field" style="margin:0;">
@@ -63,7 +63,7 @@
           </div>
         </div>
 
-        <!-- Asset Compatibility Filter -->
+        {# Asset Compatibility Filter #}
         <div class="dropdown is-active" id="asset-search-dropdown-container" style="min-width:180px;position:relative;">
           <div class="dropdown-trigger" style="width:100%;">
             <div class="field" style="margin:0;">

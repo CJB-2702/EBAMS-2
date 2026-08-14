@@ -27,7 +27,7 @@
 </div>
 
 <div class="body-grid full-width">
-  <!-- Filters Card -->
+  {# Filters Card #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
@@ -38,14 +38,14 @@
     <div class="card-content">
       <form method="get" id="filter-form">
         <div class="columns is-multiline is-variable is-2 mb-4">
-          <!-- Text search -->
+          {# Text search #}
           <div class="column is-3">
             <label class="label is-small">Asset Search</label>
             <div class="control">
               <input class="input is-small is-family-monospace" type="search" name="q" value="{{ q }}" placeholder="Name or serial…" autocomplete="off">
             </div>
           </div>
-          <!-- Data Domain -->
+          {# Data Domain #}
           <div class="column is-2">
             <label class="label is-small">Data Domain</label>
             <div class="select is-small is-fullwidth">
@@ -57,7 +57,7 @@
               </select>
             </div>
           </div>
-          <!-- Asset Class -->
+          {# Asset Class #}
           <div class="column is-2">
             <label class="label is-small">Asset Class</label>
             <search-dropdown
@@ -70,7 +70,7 @@
                 hx-trigger="keyup changed delay:300ms, search">
             </search-dropdown>
           </div>
-          <!-- Asset Model -->
+          {# Asset Model #}
           <div class="column is-2">
             <label class="label is-small">Asset Model</label>
             <search-dropdown
@@ -83,7 +83,7 @@
                 hx-trigger="keyup changed delay:300ms, search">
             </search-dropdown>
           </div>
-          <!-- Manufacturer -->
+          {# Manufacturer #}
           <div class="column is-3">
             <label class="label is-small">Manufacturer</label>
             <div class="select is-small is-fullwidth">
@@ -95,7 +95,7 @@
               </select>
             </div>
           </div>
-          <!-- Asset Status -->
+          {# Asset Status #}
           <div class="column is-2">
             <label class="label is-small">Asset Status</label>
             <div class="select is-small is-fullwidth">
@@ -107,7 +107,7 @@
               </select>
             </div>
           </div>
-          <!-- Configuration Template -->
+          {# Configuration Template #}
           <div class="column is-4">
             <label class="label is-small">Baseline Template</label>
             <div class="select is-small is-fullwidth">
@@ -121,7 +121,7 @@
           </div>
         </div>
 
-        <!-- Action Submit -->
+        {# Action Submit #}
         <div class="field is-grouped is-grouped-right">
           <div class="control">
             <button class="button is-info" type="submit">
@@ -134,13 +134,13 @@
     </div>
   </div>
 
-  <!-- Results Cards -->
+  {# Results Cards #}
   <div style="display: flex; flex-direction: column; gap: 1rem;">
     {% for a in assets %}
     <div class="card" style="display: flex; flex-direction: row; align-items: stretch; overflow: hidden; box-shadow: var(--bulma-card-shadow); border-radius: 0; border: 1px solid var(--bulma-border-weak);">
-      <!-- Left Content Pane -->
+      {# Left Content Pane #}
       <div style="flex-grow: 1; padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
-        <!-- Header Area -->
+        {# Header Area #}
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
             <h2 class="title is-6 mb-0">
@@ -158,7 +158,7 @@
             {% endif %}
           </div>
         </div>
-        <!-- Body Area / Resolved Configurations Table -->
+        {# Body Area / Resolved Configurations Table #}
         <div>
           <p class="is-size-7 has-text-grey mb-1">
             <strong>Model:</strong> {{ a.model.display_name }} | <strong>Domain:</strong> {{ a.domain.name }} |
@@ -204,14 +204,14 @@
         </div>
       </div>
       
-      <!-- Right Action Pane (Side-by-side Flush Buttons) -->
+      {# Right Action Pane (Side-by-side Flush Buttons) #}
       <div style="display: flex; flex-direction: row; align-items: stretch; flex-shrink: 0; border-left: 1px solid var(--bulma-border-weak);">
-        <!-- View Button -->
+        {# View Button #}
         <a href="{% url 'asset_configuration_detail' asset_id=a.id %}" class="button is-info is-light" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 0; width: 70px; height: 100%; border: none; margin: 0; gap: 4px;">
           <span class="icon" style="margin: 0;"><span class="material-icons" style="font-size: 1.25rem;">visibility</span></span>
           <span class="is-size-7" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">View</span>
         </a>
-        <!-- Edit Button -->
+        {# Edit Button #}
         <a href="{% url 'asset_configuration_edit' asset_id=a.id %}" class="button is-link" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 0; width: 70px; height: 100%; border: none; margin: 0; gap: 4px; background-color: var(--bulma-link); color: var(--bulma-link-invert);">
           <span class="icon" style="margin: 0;"><span class="material-icons" style="font-size: 1.25rem;">edit</span></span>
           <span class="is-size-7" style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Edit</span>

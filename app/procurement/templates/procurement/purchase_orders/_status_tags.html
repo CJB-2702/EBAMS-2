@@ -1,0 +1,18 @@
+{% comment %}
+The two-axis badge pair. `status` answers "where is this order in the world";
+`approval_state` answers "has a purchasing manager blessed it". They are separate
+axes (Phase 0 §4) and must never be collapsed into one badge — an order can be
+Draft/Approved (ready to place) or Draft/Denied (dead), and one tag cannot say
+both.
+
+Context: `po_status`, `po_status_label`, `approval_state`, `approval_label`,
+`approval_tag_class`. Optional `size` (e.g. "is-small").
+{% endcomment %}
+<span class="tags has-addons mb-0" style="display:inline-flex;">
+  <span class="tag {{ size|default:'is-small' }} is-light">Status</span>
+  <span class="tag {{ size|default:'is-small' }} {% if po_status == 'draft' %}is-light{% elif po_status == 'placed' %}is-info{% elif po_status == 'partially_received' %}is-warning{% elif po_status == 'received' %}is-success{% elif po_status == 'cancelled' %}is-danger{% else %}is-light{% endif %}">{{ po_status_label }}</span>
+</span>
+<span class="tags has-addons mb-0 ml-2" style="display:inline-flex;">
+  <span class="tag {{ size|default:'is-small' }} is-light">Approval</span>
+  <span class="tag {{ size|default:'is-small' }} {{ approval_tag_class }}">{{ approval_label }}</span>
+</span>

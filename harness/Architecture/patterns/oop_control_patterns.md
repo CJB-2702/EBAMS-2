@@ -40,7 +40,7 @@ Class names follow a fixed suffix vocabulary. Reading a filename tells you the s
 | **StateMachine** | **Guard** subtype — explicit transitions for status-driven entities. |
 | **Service** | Cross-cutting or integration operations (use sparingly; prefer Context + Manager). |
 | **Adaptor** | Maps portal JSON, forms, or external payloads into **structured** types the control layer understands. |
-| **Orchestrator** | Coordinates multiple steps across boundaries when a Context would be the wrong scope (rare). |
+| **Orchestrator** | Coordinates two or more other **Factories** in one transaction to compose a creation flow, when a Context would be the wrong scope (rare). |
 
 ### Guard classes (Policy, Validator, StateMachine)
 
@@ -76,9 +76,14 @@ Class names follow a fixed suffix vocabulary. Reading a filename tells you the s
 **Context Managers** (sub-managers on Context): when a Context grows too large, group related operations and delegate to a sub-manager that receives the Context's Struct (or the Context itself). Prefer Managers as properties on the Context over `get_manager()`-style functions.
 
 ### Factory and BulkFactory
-**Factory:** stateless, class methods only, used for creating complex **root** items that have no parent. Often returns Structs, not loose dicts. Typical flow: entrypoint → Adaptor → Factory.
+**Factory:** stateless, class methods only, used for creating complex **root** items that have no parent. Often returns Structs, not loose dicts. Typical flow: entrypoint → Adaptor → Factory. A Factory may call **at most one** other Factory as a supporting dependency (e.g. `PartFactory` calling `AliasFactory` to mirror the part number into an alias) — that's a normal auxiliary step, not orchestration.
+
+**When a Factory is not warranted:** if creation is `validate → single .objects.create() → return` with no other class calling into it, it is not a Factory. It becomes a `@classmethod create()` on the resource's **Manager** (mirroring instance methods like `.update()` already on that Manager, e.g. `PartManager`) or on its **Context** if one already owns that resource's edit verbs (e.g. `CapabilityDefinitionContext.create()` alongside its existing `.update()`). Don't create a Manager or Context purely to hold `create()` if neither already exists and the resource has no other lifecycle — ask first.
 
 **BulkFactory:** batch creation; returns **only a list of the highest-level items** created (e.g. events), not nested Structs for every child.
+
+### Orchestrator litmus test
+**Orchestrator** exists only when a creation flow needs **two or more** other Factories sequenced in one transaction (e.g. `AssetCreationOrchestrator` → `AssetFactory` + `CapabilityFactory`). A class that calls exactly **one** Factory is a pass-through, not an orchestrator — inline that single call directly into the caller instead of naming a class for it. Orchestrators do not usually create their own primary row; supporting rows (an audit `Event`, a join record) are fine to create directly.
 
 ---
 

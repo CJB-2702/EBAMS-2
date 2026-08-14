@@ -35,9 +35,10 @@
               <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">help_outline</span></span></detail>
               <summary>
                 <p class="is-size-7">The specific make/model this asset is an instance of. Drives default meters and capabilities.</p>
-                <p class="is-size-7 mt-2">Model not found? <a href="{% url 'model_create' %}">Add new model</a></p>
+                <p class="is-size-7 mt-2">Model not found? <a href="{% url 'model_create' %}" target="_blank" rel="noopener">Add new model</a></p>
               </summary>
-            </info-popover></label><div class="select is-small is-fullwidth"><select name="model" id="asset-model-select">{% for m in models %}<option value="{{ m.id }}" data-baselines="{{ m.config_baselines|join:'|' }}" {% if asset.model.id == m.id %}selected{% endif %}>{{ m.model_name }}{% if m.version %} {{ m.version }}{% endif %}</option>{% endfor %}</select></div></div>
+            </info-popover></label><div class="select is-small is-fullwidth"><select name="model" id="asset-model-select">{% for m in models %}<option value="{{ m.id }}" data-baselines="{{ m.config_baselines|join:'|' }}" {% if asset.model.id == m.id %}selected{% endif %}>{{ m.model_name }}{% if m.version %} {{ m.version }}{% endif %}</option>{% endfor %}</select></div>
+          <p class="is-size-7 mt-1"><a href="{% url 'model_create' %}" target="_blank" rel="noopener">Model not found? Add new model</a></p></div>
         <div class="column is-4"><label class="label is-small">Config Baseline
             <info-popover direction="top" hover="true">
               <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">help_outline</span></span></detail>

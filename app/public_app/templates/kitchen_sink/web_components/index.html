@@ -9,14 +9,32 @@
   <div class="sidebar-divider"></div>
   <p class="sidebar-section-label">Web Components</p>
   <a class="sidebar-link is-active" href="{% url 'kitchen_sink_wc_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Components</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+  </details>
   <div class="sidebar-divider"></div>
-  <p class="sidebar-section-label">Components</p>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
-  <a class="sidebar-link" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+  <p class="sidebar-section-label">Design Patterns</p>
+  <a class="sidebar-link" href="{% url 'kitchen_sink_dp_index' %}"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Index</a>
+  <details class="sidebar-group" open>
+    <summary class="sidebar-section-label">Patterns</summary>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+    <a class="sidebar-link" href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+  </details>
 {% endblock %}
 
 {% block content %}
@@ -35,101 +53,84 @@
   </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+<h2 class="title is-5 mb-4">Basic Components</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;" class="mb-6">
 
-  <!-- collapsable-side-bar -->
+  {# toast-alert #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
-        <span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span>
-        collapsable-side-bar
+        <span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span>
+        toast-alert
       </div>
-      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}">view page</a>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}">view page</a>
     </div>
     <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
-        Collapsible application sidebar shell. Toggles a <code>[collapsed]</code> attribute
-        observed by the parent grid via CSS <code>:has()</code>.
+        Dismissible, overlay toast notification container. Supports slide-down and fade-out animations.
+        Can be triggered via backend response or client-side DOM insertions.
       </p>
       <div class="tags mb-3">
-        <span class="tag is-light is-small is-family-monospace">&lt;collapsable-side-bar&gt;</span>
+        <span class="tag is-light is-small is-family-monospace">&lt;toast-alert&gt;</span>
       </div>
       <p class="is-size-7 has-text-grey">
-        <strong>Source:</strong> <code>static/web_components/collapsable_side_bar.js</code>
+        <strong>Source:</strong> <code>static/web_components/toast_alert.js</code>
       </p>
     </div>
   </div>
 
-  <!-- dual-listbox -->
+  {# info-popover #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
-        <span class="icon"><span class="material-icons" aria-hidden="true">compare_arrows</span></span>
-        dual-listbox
+        <span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span>
+        info-popover
       </div>
-      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}">view page</a>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}">view page</a>
     </div>
     <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
-        Two-panel assign/remove widget for M2M fields. Left panel = available,
-        right panel = chosen. Arrow buttons move items between panels.
+        Hover/click info bubble positioned relative to its trigger, detached to <code>&lt;body&gt;</code>
+        so it is never clipped by an ancestor's overflow.
       </p>
       <div class="tags mb-3">
-        <span class="tag is-light is-small is-family-monospace">&lt;dual-list-box&gt;</span>
+        <span class="tag is-light is-small is-family-monospace">&lt;info-popover&gt;</span>
       </div>
       <p class="is-size-7 has-text-grey">
-        <strong>Source:</strong> <code>static/web_components/dual_listbox.js</code>
+        <strong>Source:</strong> <code>static/web_components/info_popover.js</code>
       </p>
     </div>
   </div>
 
-  <!-- image-carousel -->
+  {# tag-list-editor #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
-        <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>
-        image-carousel
+        <span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span>
+        tag-list-editor
       </div>
-      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}">view page</a>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}">view page</a>
     </div>
     <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
-        Horizontal scrollable image carousel with left/right navigation.
-        Images provided via default slot. Configurable preview dimensions via attributes.
+        Free-text tag/chip editor backed by hidden form inputs. F5-safe: a plain reload or
+        no-JS submit still round-trips the current list.
       </p>
       <div class="tags mb-3">
-        <span class="tag is-light is-small is-family-monospace">&lt;image-carousel&gt;</span>
+        <span class="tag is-light is-small is-family-monospace">&lt;tag-list-editor&gt;</span>
       </div>
       <p class="is-size-7 has-text-grey">
-        <strong>Source:</strong> <code>static/web_components/image_carousel.js</code>
+        <strong>Source:</strong> <code>static/web_components/tag_list_editor.js</code>
       </p>
     </div>
   </div>
 
-  <!-- list-box -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-title">
-        <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
-        list-box
-      </div>
-      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}">view page</a>
-    </div>
-    <div class="card-content">
-      <p class="is-size-7 has-text-grey mb-3">
-        Single-panel listbox used as one half of the dual-listbox. Also usable standalone
-        for single-select or multi-select filtered lists.
-      </p>
-      <div class="tags mb-3">
-        <span class="tag is-light is-small is-family-monospace">&lt;list-box&gt;</span>
-      </div>
-      <p class="is-size-7 has-text-grey">
-        <strong>Source:</strong> <code>static/web_components/list_box.js</code>
-      </p>
-    </div>
-  </div>
+</div>
 
-  <!-- search-dropdown -->
+<h2 class="title is-5 mb-4">Search & Selection</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;" class="mb-6">
+
+  {# search-dropdown #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
@@ -152,25 +153,196 @@
     </div>
   </div>
 
-  <!-- toast-alert -->
+  {# list-box #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title">
-        <span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span>
-        toast-alert
+        <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+        list-box
       </div>
-      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}">view page</a>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}">view page</a>
     </div>
     <div class="card-content">
       <p class="is-size-7 has-text-grey mb-3">
-        Dismissible, overlay toast notification container. Supports slide-down and fade-out animations.
-        Can be triggered via backend response or client-side DOM insertions.
+        Single-panel listbox used as one half of the dual-listbox. Also usable standalone
+        for single-select or multi-select filtered lists.
       </p>
       <div class="tags mb-3">
-        <span class="tag is-light is-small is-family-monospace">&lt;toast-alert&gt;</span>
+        <span class="tag is-light is-small is-family-monospace">&lt;list-box&gt;</span>
       </div>
       <p class="is-size-7 has-text-grey">
-        <strong>Source:</strong> <code>static/web_components/toast_alert.js</code>
+        <strong>Source:</strong> <code>static/web_components/list_box.js</code>
+      </p>
+    </div>
+  </div>
+
+  {# dual-listbox #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">compare_arrows</span></span>
+        dual-listbox
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Two-panel assign/remove widget for M2M fields. Left panel = available,
+        right panel = chosen. Arrow buttons move items between panels.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;dual-list-box&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/dual_listbox.js</code>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="title is-5 mb-4">Image & File Display</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;" class="mb-6">
+
+  {# image-carousel #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>
+        image-carousel
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Horizontal scrollable image carousel with left/right navigation.
+        Images provided via default slot. Configurable preview dimensions via attributes.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;image-carousel&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/image_carousel.js</code>
+      </p>
+    </div>
+  </div>
+
+  {# mini-gallery #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>
+        mini-gallery
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Split-pane layout: large image viewer on the left, clickable file list on the right.
+        Same slot format as image-carousel. Shadow-DOM encapsulated.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;mini-gallery&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/mini_gallery.js</code>
+      </p>
+    </div>
+  </div>
+
+  {# file-browser #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span>
+        file-browser
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Progressive-enhancement browser over a light-DOM set of file links — tiles/list view,
+        search, type/uploader filters, sort. Plain links are the F5-safe no-JS fallback.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;file-browser&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/file_browser.js</code>
+      </p>
+    </div>
+  </div>
+
+  {# file-upload #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span>
+        file-upload
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Bulma-styled file field. Renders a real <code>&lt;input type="file"&gt;</code> into the light DOM
+        so it submits natively with the enclosing form.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;file-upload&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/file_upload.js</code>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<h2 class="title is-5 mb-4">Layout & Activity</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+
+  {# collapsable-side-bar #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span>
+        collapsable-side-bar
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Collapsible application sidebar shell. Toggles a <code>[collapsed]</code> attribute
+        observed by the parent grid via CSS <code>:has()</code>.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;collapsable-side-bar&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/collapsable_side_bar.js</code>
+      </p>
+    </div>
+  </div>
+
+  {# add-comment #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>
+        add-comment
+      </div>
+      <a class="tag is-info is-light is-small" href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}">view page</a>
+    </div>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Add/edit comment card with an inline file-attach preview. Renders its real
+        <code>&lt;textarea&gt;</code>/<code>&lt;input type="file"&gt;</code> into the light DOM.
+      </p>
+      <div class="tags mb-3">
+        <span class="tag is-light is-small is-family-monospace">&lt;add-comment&gt;</span>
+      </div>
+      <p class="is-size-7 has-text-grey">
+        <strong>Source:</strong> <code>static/web_components/app_specific/add_comment.js</code>
       </p>
     </div>
   </div>

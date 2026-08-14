@@ -4,7 +4,7 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
   {{ model_class_map|json_script:"model-class-map" }}
   {{ preview_assets|json_script:"preview-assets" }}
 
-  {# ── Mode selector ── #}
+  {# Mode selector #}
   <div class="card">
     <div class="card-content">
       <label class="label is-small">Applicability mode</label>
@@ -21,7 +21,7 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
 
   <div class="body-grid has-rail">
     <div>
-      {# ── Asset Classes panel ── #}
+      {# Asset Classes panel #}
       <div class="card">
         <div class="card-header"><div class="card-header-title">Asset Classes
           {% if applicability.class_derived %}<span class="tag is-link is-light is-small ml-2">auto-derived from models</span>
@@ -57,7 +57,7 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
         </div>
       </div>
 
-      {# ── Asset Models panel ── #}
+      {# Asset Models panel #}
       <div class="card">
         <div class="card-header"><div class="card-header-title">Asset Models
           {% if applicability.model_binding %}<span class="tag is-warning is-light is-small ml-2">required gate</span>
@@ -87,7 +87,7 @@ selector changes; also rendered standalone inside editor.html for the F5 path.{%
       </div>
     </div>
 
-    {# ── Rail: preview + combine reminder ── #}
+    {# Rail: preview + combine reminder #}
     <div class="body-rail">
       {% include "assets/configurations/applicability/_preview.html" %}
       <div class="card"><div class="card-content">

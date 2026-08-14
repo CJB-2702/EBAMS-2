@@ -16,7 +16,7 @@ Four allowable tab strategies, ranked by preference. Pick the one that matches t
 
 **Rule.** Prefer this when the total content across all tabs exceeds **1,000 lines** of template code. Lazy-loading each tab over HTMX keeps the initial page load light.
 
-**Pattern.** One canonical URL, branch on the `HX-Request` header plus a `?view=` query parameter (per [../../Architecture.md](../../Architecture.md) HTMX rules). The view branches on the request: full page on a hard load, partial fragment on HTMX nav. Canonical markup: [../Examples/tabs_htmx_markup.md](../Examples/tabs_htmx_markup.md).
+**Pattern.** One canonical URL, branch on the `HX-Request` header plus a `?view=` query parameter (per [../../Architecture.md](../../Architecture.md) HTMX rules). The view branches on the request: full page on a hard load, partial fragment on HTMX nav. Canonical markup: [tabs_htmx_markup.md](tabs_htmx_markup.md).
 
 **Why this scales.** F5 still works (every `?view=` URL renders a full page). Browser back/forward works via `hx-push-url="true"`. No third-party tab library, no custom-element timing pitfalls.
 

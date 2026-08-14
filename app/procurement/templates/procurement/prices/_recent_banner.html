@@ -1,0 +1,24 @@
+{% if recent_banner.parts %}
+<div class="notification is-info is-light py-3 px-4 mb-4">
+  <p class="is-size-7">
+    <strong>{{ recent_banner.parts|length }} part{{ recent_banner.parts|length|pluralize }} you just created</strong>
+    {% if recent_banner.overflowed %}(and more — the recent-parts list is full at 100){% endif %}
+    still {% if recent_banner.parts|length == 1 %}has{% else %}have{% endif %} no price on record.
+  </p>
+  <div class="buttons mt-2">
+    <form method="post" action="{% url 'price_bulk_grid' %}" class="is-inline-block mr-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="load_banner">
+      <button type="submit" class="button is-small is-link">Load them into this grid</button>
+    </form>
+    <form method="post" action="{% url 'price_bulk_grid' %}" class="is-inline-block">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="dismiss_banner">
+      <button type="submit" class="button is-small is-light">Dismiss</button>
+    </form>
+    {% if recent_banner.overflowed %}
+    <a href="{% url 'unpriced_parts' %}" class="button is-small is-light">See all unpriced parts</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

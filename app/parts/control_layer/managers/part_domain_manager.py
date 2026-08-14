@@ -37,12 +37,30 @@ class PartDomainManager:
             mapping.is_active = True
             mapping.updated_by = self.actor
             mapping.save(update_fields=["is_active", "updated_at", "updated_by"])
+        if not self.part.is_domain_limited:
+            self.set_limited(True)
         return mapping
 
     def remove_domain(self, domain_id: int) -> None:
         PartDomainAccessMapping.objects.filter(
             part=self.part, domain_id=domain_id, is_active=True
         ).update(is_active=False, updated_by=self.actor)
+        if self.part.is_domain_limited and not self._has_active_mappings():
+            self.set_limited(False)
+
+    def make_global(self) -> None:
+        """Explicit 'remove all domain assignments' action — clears every active
+        mapping and flips is_domain_limited off in one pass (D14: default is
+        global when no assignments exist)."""
+        PartDomainAccessMapping.objects.filter(part=self.part, is_active=True).update(
+            is_active=False, updated_by=self.actor
+        )
+        self.set_limited(False)
+
+    def _has_active_mappings(self) -> bool:
+        return PartDomainAccessMapping.objects.filter(
+            part=self.part, is_active=True
+        ).exists()
 
     def domains(self) -> list[Domain]:
         return list(

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
   <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/public_marketing.css' %}">
   {% if user.is_authenticated %}
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
@@ -155,39 +156,19 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-thumb { background: var(--bulma-border); }
 
-    /* ── Login layout ── */
-    .login-wrap {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-    }
-    .login-card {
-      background: var(--bulma-scheme-main);
-      border: 1px solid var(--bulma-border-weak);
-      border-top: 4px solid var(--bulma-primary);
-      padding: 2rem 2.25rem;
-      width: 100%;
-      max-width: 420px;
-    }
-    .login-card h1 {
-      font-size: 1.3rem; font-weight: 700;
-      color: var(--bulma-text-strong);
-      margin-bottom: 0.25rem;
-    }
-    .login-card .login-sub {
-      font-size: 0.82rem; color: var(--bulma-text-weak);
-      margin-bottom: 1.5rem;
-    }
   </style>
 </head>
 <body>
 
-<!-- ─── TOP NAV ─── -->
+{# TOP NAV #}
+{% if user.is_authenticated %}
 {% include "shared/topnav.html" with current_app_group="" %}
+{% else %}
+{% include "shared/public_topnav.html" %}
+{% include "shared/_login_modal.html" %}
+{% endif %}
 
-<!-- ─── AUTHENTICATED SHELL ─── -->
+{# AUTHENTICATED SHELL #}
 {% if user.is_authenticated %}
 <div class="app-shell">
   <collapsable-side-bar aria-label="Section navigation">
@@ -201,6 +182,7 @@
       <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
       <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
       <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon">{% svg "part-icon" %}</span> Parts</a>
+      <a href="{% url 'procurement_hub' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span> Procurement</a>
       <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
 
       <div class="sidebar-divider"></div>
@@ -293,6 +275,26 @@
           </div>
 
           <div class="app-card">
+            <div class="app-card-icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></div>
+            <h3>Procurement</h3>
+            <p>Raise part demands, build purchase orders, and track packages from order to receiving — approval, purchasing, shipment, and issuance in one pipeline.</p>
+            <div class="app-card-links">
+              <a href="{% url 'procurement_hub' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>
+                <span>Hub</span>
+              </a>
+              <a href="{% url 'demand_create' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+                <span>New Demand</span>
+              </a>
+              <a href="{% url 'purchase_order_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+                <span>Purchase Orders</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="app-card">
             <div class="app-card-icon"><span class="material-icons" aria-hidden="true">settings</span></div>
             <h3>Administration</h3>
             <p>Manage users, organizations, roles, permissions, and data domain access. Control <em>who can act</em> and <em>which rows they can see</em> across the system.</p>
@@ -322,52 +324,302 @@
 {% include "csrf-htmx-required-snippet.html" %}
 
 {% else %}
-<!-- ─── UNAUTHENTICATED LOGIN ─── -->
-<div class="login-wrap">
-  <div class="login-card">
-    <h1>Sign in</h1>
-    <p class="login-sub">Enter your credentials to access EBAMS2.</p>
+{# PUBLIC LANDING PAGE #}
 
-    <div class="mb-4">
-      <a href="{% url 'oidc_authentication_init' %}" class="button is-link is-fullwidth">
-        <span class="icon"><span class="material-icons" aria-hidden="true">account_circle</span></span>
-        <span>Sign in with Microsoft</span>
-      </a>
+{# 1. HERO #}
+<section class="pub-hero">
+  <div class="pub-hero-inner">
+    <div class="pub-hero-copy">
+      <h1>Event Based Asset Management</h1>
+      <p class="pub-hero-lead">Let your Maintenance, Inventory and Dispatching tell a story.</p>
+      <p class="pub-hero-sub">
+        Powerful, Intuitive, Customizable asset management to track every bolt, every request, and every dollar in real time.
+      </p>
+      <div class="pub-hero-btns">
+        <a href="{% url 'public_pricing' %}" class="button is-primary is-medium">Request a demo username and password</a>
+      </div>
+      <nav class="pub-hero-cta-links" aria-label="Try or explore EBAMS">
+        <a href="#pub-login-card">Test for yourself</a>
+        <span class="pub-hero-cta-sep" aria-hidden="true">·</span>
+        <a href="{% url 'public_features' %}">View features</a>
+        <span class="pub-hero-cta-sep" aria-hidden="true">·</span>
+        <a href="{% url 'public_pricing' %}">View pricing</a>
+      </nav>
     </div>
+    <div class="pub-hero-login">
+      <div class="pub-login-card" id="pub-login-card">
+        <h2>Login to EBAMS Core</h2>
 
-    <div style="text-align:center; font-size:0.78rem; color:var(--bulma-text-weak); margin-bottom:1rem;">
-      or use username and password
+        <div class="mb-4">
+          <a href="{% url 'oidc_authentication_init' %}" class="button is-link is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">account_circle</span></span>
+            <span>Sign in with Microsoft</span>
+          </a>
+        </div>
+        <div style="text-align:center; font-size:0.78rem; color:var(--bulma-text-weak); margin-bottom:1rem;">
+          or use username and password
+        </div>
+
+        <form method="post" action="{% url 'public_home' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="login">
+          {% if form.non_field_errors %}
+            <div class="notification is-danger is-light mb-3" style="padding:0.6rem 0.85rem;">{{ form.non_field_errors }}</div>
+          {% endif %}
+          <div class="field">
+            <label class="label is-small" for="id_username">Username</label>
+            <div class="control">
+              {{ form.username }}
+            </div>
+            {% if form.username.errors %}<p class="help is-danger">{{ form.username.errors }}</p>{% endif %}
+          </div>
+          <div class="field">
+            <label class="label is-small" for="id_password">Password</label>
+            <div class="control">
+              {{ form.password }}
+            </div>
+            {% if form.password.errors %}<p class="help is-danger">{{ form.password.errors }}</p>{% endif %}
+          </div>
+          <div class="field mt-4">
+            <button type="submit" class="button is-link is-fullwidth">
+              <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+              <span>Sign in</span>
+            </button>
+          </div>
+        </form>
+        <p class="pub-login-extras">Forgot password? · Create account (contact your administrator)</p>
+      </div>
     </div>
-
-    <form method="post" action="{% url 'public_home' %}">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="login">
-      {% if form.non_field_errors %}
-        <div class="notification is-danger is-light mb-3" style="padding:0.6rem 0.85rem;">{{ form.non_field_errors }}</div>
-      {% endif %}
-      <div class="field">
-        <label class="label is-small" for="id_username">Username</label>
-        <div class="control">
-          {{ form.username }}
-        </div>
-        {% if form.username.errors %}<p class="help is-danger">{{ form.username.errors }}</p>{% endif %}
-      </div>
-      <div class="field">
-        <label class="label is-small" for="id_password">Password</label>
-        <div class="control">
-          {{ form.password }}
-        </div>
-        {% if form.password.errors %}<p class="help is-danger">{{ form.password.errors }}</p>{% endif %}
-      </div>
-      <div class="field mt-4">
-        <button type="submit" class="button is-link is-fullwidth">
-          <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
-          <span>Sign in</span>
-        </button>
-      </div>
-    </form>
   </div>
-</div>
+</section>
+
+{# 2. SIX-PILLAR FEATURE GRID #}
+<section class="pub-section">
+  <div class="pub-section-wrap">
+    <div class="pub-pillar-grid">
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+        <h3>Maintenance Hub</h3>
+        <p>Planned maintenance runs on automated scheduling and clear priorities. Standardize work with reusable procedure templates, and give every role an intuitive portal from assignment through sign-off.</p>
+        <span class="pub-fcard-action">Focus: <strong>Plan, Template &amp; Execute</strong></span>
+      </div>
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+        <h3>Dispatching</h3>
+        <p>Dispatch sits on the same platform as maintenance and configuration, so coordinators see open work, asset state, and constraints together—supporting confident assignments and outcomes for each mission.</p>
+        <span class="pub-fcard-action">Focus: <strong>Decide with Full Context</strong></span>
+      </div>
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+        <h3>Part Demand Hub</h3>
+        <p>One pipeline ties maintenance and dispatch demand to approval, purchasing, and visibility end to end.</p>
+        <span class="pub-fcard-action">Focus: <strong>One Pipeline for All Demand</strong></span>
+      </div>
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">grid_view</span></div>
+        <h3>Inventory Control</h3>
+        <p>Graphical stocking and picking experiences mirror how product actually lives in the storeroom. Follow each line from work-originated demand through purchase, receipt, placement, and issue without losing the trail.</p>
+        <span class="pub-fcard-action">Focus: <strong>Layout-Aware Stock Flow</strong></span>
+      </div>
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">layers</span></div>
+        <h3>Asset Lifecycle</h3>
+        <p>Modular detail tables capture what each asset needs—by type, make, model, and your own fields—without rigid one-size-fits-all records.</p>
+        <span class="pub-fcard-action">Focus: <strong>Configurable Asset Depth</strong></span>
+      </div>
+      <div class="pub-fcard">
+        <div class="pub-fcard-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+        <h3>Configuration Management</h3>
+        <p>Record how assets are built from components and subassemblies, then attach capabilities and operational limits. Planners and dispatchers draw on that structure when matching equipment to the job.</p>
+        <span class="pub-fcard-action">Focus: <strong>Structure, Capability &amp; Limits</strong></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# 3. FEATURE SPOTLIGHTS #}
+<section class="pub-section pub-spotlights">
+  <div class="pub-section-wrap">
+    <h2 class="pub-section-headline">What EBAMS delivers</h2>
+    <p class="pub-spotlights-sub">The same modules you will see on the product tour—event history, assets, maintenance work, and inventory flow in one place.</p>
+
+    <article class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image11.png' %}" alt="EBAMS Event Timeline showing chronological asset history" loading="lazy">
+          <figcaption>Event Timeline — Complete asset history in context</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Core</h3>
+          <p class="pub-spotlight-tagline">Event-based record of everything that happens to an asset</p>
+          <p>Major asset events—dispatches, maintenance, part arrivals, installations, and more—roll into a single timeline so leaders read a story, not scattered logs. Comments and attachments sit alongside automated history, with clear separation between human context and system-generated audit entries.</p>
+          <ul>
+            <li>Chronological narrative view for informed decisions</li>
+            <li>Comments, attachments, and human vs. automated differentiation</li>
+            <li>Foundation for users, locations, assets, and shared event infrastructure</li>
+          </ul>
+          <a href="{% url 'public_features' %}#module-core" class="pub-spotlight-more">Screenshots &amp; detail →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="pub-spotlight">
+      <div class="pub-module-showcase pub-module-showcase--reverse">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image8.png' %}" alt="EBAMS asset detail view with meters, events, and media" loading="lazy">
+          <figcaption>Asset detail — Meters, recent events, and rich asset-specific data</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Asset Lifecycle</h3>
+          <p class="pub-spotlight-tagline">Modular detail tables for what each asset actually needs</p>
+          <p>Assets carry type, make, model, location, and status while modular detail tables and media capture the fields your operation cares about—without forcing every fleet into the same fixed schema. Recent events and meter readings stay on the same record so lifecycle context is always one click away.</p>
+          <ul>
+            <li>Configurable detail and imagery per asset</li>
+            <li>Event history and capability or configuration changes in context</li>
+            <li>Extensible structure aligned to asset type and model</li>
+          </ul>
+          <a href="{% url 'public_features' %}#module-assets" class="pub-spotlight-more">Screenshots &amp; detail →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="pub-spotlight">
+      <div class="pub-module-showcase">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image22.png' %}" alt="EBAMS Maintenance work portal showing action items and progress" loading="lazy">
+          <figcaption>Maintenance Work Portal — Technician-focused execution interface</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Maintenance</h3>
+          <p class="pub-spotlight-tagline">Intuitive execution, templates, and automated planning</p>
+          <p>The work experience is built for technicians to record outcomes reliably, including temporary changes and capability or limitation tracking. Planning can run on time, usage, or both. The module spans the work portal, template design, scheduled scans that surface overdue work, and integration with a technical library.</p>
+          <ul>
+            <li>Visual, workflow-oriented work platform with action checklists</li>
+            <li>Automatic maintenance planning with conditional logic (time/usage)</li>
+            <li>Template builder for reusable procedures and proto-action libraries</li>
+          </ul>
+          <a href="{% url 'public_features' %}#module-maintenance" class="pub-spotlight-more">Screenshots &amp; detail →</a>
+        </div>
+      </div>
+    </article>
+
+    <article class="pub-spotlight">
+      <div class="pub-module-showcase pub-module-showcase--reverse">
+        <figure class="pub-module-figure">
+          <img src="{% static 'img/modules/image33.png' %}" alt="EBAMS Move Inventory GUI with graphical warehouse layout" loading="lazy">
+          <figcaption>Move Inventory GUI — Visual warehouse layout and location selector</figcaption>
+        </figure>
+        <div class="pub-module-copy">
+          <h3>Inventory</h3>
+          <p class="pub-spotlight-tagline">From demand to PO, stocking, and issue—with honest status</p>
+          <p>Maintenance or dispatch drives part demand; demands connect to purchase orders; arrivals are received, stocked, and ultimately issued against demand. Visual tools expose how records link, including advance POs tied back to events as they appear. Multi-dimensional status covers approval, purchasing, and physical issue so informal picks can be detected and corrected. Layout imagery can be parsed into locations and bins for graphical stocking and finding parts.</p>
+          <ul>
+            <li>Demand → PO → arrival → stocking → issue loop</li>
+            <li>Portal-style linkage and truth tracking for stock reality</li>
+            <li>Visual warehouse layout with graphical location assignment</li>
+          </ul>
+          <a href="{% url 'public_features' %}#module-inventory" class="pub-spotlight-more">Screenshots &amp; detail →</a>
+        </div>
+      </div>
+    </article>
+
+    <p class="has-text-centered mt-2"><a href="{% url 'public_features' %}" class="pub-spotlight-more">All features &amp; modules →</a></p>
+  </div>
+</section>
+
+{# 4. INVENTORY CTA #}
+<section class="pub-cta-banner">
+  <div class="pub-section-wrap pub-cta-inner">
+    <div class="pub-cta-copy">
+      <h2>Stop Losing Time to Missing Parts</h2>
+      <p>Our Context-Agnostic Part Demand Hub ensures parts are ordered, approved, and tracked across all maintenance and dispatch activities.</p>
+    </div>
+    <div class="pub-cta-action">
+      <a href="{% url 'public_features' %}#module-inventory" class="button is-light is-medium">See the Inventory Workflow</a>
+    </div>
+  </div>
+</section>
+
+{# WHY CHOOSE #}
+<section class="pub-section">
+  <div class="pub-section-wrap">
+    <h2 class="pub-section-headline">Why Choose EBAMS Core?</h2>
+    <div class="pub-why-grid">
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">history</span>
+        <div>
+          <strong>Reduce Downtime</strong>
+          <span>Preventive scheduling and predictive parts ordering keep assets running.</span>
+        </div>
+      </div>
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">speed</span>
+        <div>
+          <strong>Increase Efficiency</strong>
+          <span>Automated workflows eliminate double-entry and manual hand-offs.</span>
+        </div>
+      </div>
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">assessment</span>
+        <div>
+          <strong>Data-Driven Decisions</strong>
+          <span>Real-time dashboards and event histories turn raw data into action.</span>
+        </div>
+      </div>
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">verified_user</span>
+        <div>
+          <strong>Enterprise Security</strong>
+          <span>Feature-level RBAC, audit trails, and rate-limited endpoints.</span>
+        </div>
+      </div>
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">account_tree</span>
+        <div>
+          <strong>Scalable Architecture</strong>
+          <span>Layered design allows horizontal scaling without rewrites.</span>
+        </div>
+      </div>
+      <div class="pub-why-item">
+        <span class="material-icons" aria-hidden="true">power</span>
+        <div>
+          <strong>Open Integration</strong>
+          <span>REST APIs and event hooks for ERP, GPS, and telematics systems.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# FOOTER #}
+<footer class="pub-footer">
+  <div class="pub-section-wrap">
+    <div class="pub-footer-grid">
+      <div class="pub-footer-col">
+        <h4>Product</h4>
+        <a href="{% url 'public_features' %}">Features</a>
+        <a href="{% url 'public_get_started' %}">Get started</a>
+        <a href="{% url 'public_learn_more' %}">API Docs</a>
+        <a href="#">Release Notes</a>
+      </div>
+      <div class="pub-footer-col">
+        <h4>Company</h4>
+        <a href="{% url 'public_about' %}">About Us</a>
+        <a href="{% url 'public_pricing' %}">Contact</a>
+        <a href="{% url 'public_pricing' %}">Support</a>
+      </div>
+      <div class="pub-footer-col">
+        <h4>Legal</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Access Control Policy</a>
+      </div>
+    </div>
+    <div class="pub-footer-bottom">
+      <p>&copy; 2026 EBAMS Core. All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+
 {% endif %}
 
 </body>

@@ -1,0 +1,63 @@
+{% extends "parts/base.html" %}
+{% block title %}Supplier Items{% endblock %}
+{% block nav_supplier_items %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Supplier Items</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+    <div><h1 class="page-title">Find a Supplier Item</h1><p class="page-subtitle">Filter by vendor part number, name, manufacturer, or the internal part it's mapped to.</p></div></div>
+</div></div>
+
+<div class="notification is-info is-light is-size-7">
+  A single part can have multiple supplier items — one per vendor that provides it — or just one, if it's a simple part. A basic part is made up of three pieces: the base part reference, a supplier item, and a manufacturer. By default, a simple part is a join across all three: one part, one supplier item, one manufacturer.
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Vendor Part Number</label>
+            <input class="input is-small is-family-monospace" type="search" name="mpn" value="{{ mpn }}" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Name</label>
+            <input class="input is-small" type="search" name="name" value="{{ name }}" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Manufacturer</label>
+            <input class="input is-small" type="search" name="manufacturer" value="{{ manufacturer }}" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Internal Part Number</label>
+            <input class="input is-small is-family-monospace" type="search" name="part_number" value="{{ part_number }}" autocomplete="off">
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span></button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Supplier Items ({{ supplier_items|length }})</div></div>
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Vendor Part Number</th><th>Mapped Part</th><th>Name</th><th>Manufacturer</th><th>Active</th></tr></thead>
+      <tbody>
+        {% for item in supplier_items %}
+        <tr>
+          <td><a href="{% url 'supplier_item_detail' item_id=item.id %}">{{ item.manufacturer_part_number }}</a></td>
+          <td><a href="{% url 'part_detail' part_id=item.internal_part_id %}">{{ item.internal_part.part_number }}</a></td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.part_manufacturer.name }}</td>
+          <td>{% include "assets/_status_tag.html" with value=item.is_active|yesno:"Active,Inactive" %}</td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="has-text-grey has-text-centered py-5">No supplier items match your filters.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+</div>
+{% endblock %}

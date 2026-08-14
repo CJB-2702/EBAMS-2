@@ -1,0 +1,131 @@
+{% extends "procurement/base.html" %}
+{% load static %}
+{% block title %}New Demand{% endblock %}
+{% block nav_demand_create %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'demand_index' %}">Demands</a></li>
+<li class="is-active"><a href="#" aria-current="page">New Demand</a></li>
+{% endblock %}
+
+{% block extra_head %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_circle</span></div>
+      <div>
+        <h1 class="page-title">New Demand</h1>
+        <p class="page-subtitle">Record what's needed. Purchasing and approval happen after this.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'demand_index' %}" class="button is-small is-light">← Back</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>Demand Identity</div></div>
+    <div class="card-content">
+      <form method="post" action="{% url 'demand_create' %}" id="demand-create-form">
+        {% csrf_token %}
+
+        <div class="field">
+          <label class="label is-small">Part</label>
+          <div class="control">
+            <search-dropdown
+                id="part-picker"
+                name="part_id"
+                placeholder="search parts by number or name…"
+                hx-get="{% url 'demand_create' %}?format=htmx-search-results"
+                hx-trigger="keyup changed delay:300ms, search"
+                required>
+            </search-dropdown>
+          </div>
+        </div>
+
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Quantity Requested</label>
+            <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity_requested" value="1" required>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Priority</label>
+            <div class="select is-small is-fullwidth">
+              <select name="priority">
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if value == "medium" %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Needed By</label>
+            <input class="input is-small" type="datetime-local" name="needed_by" value="{{ default_needed_by }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Serial Tracking Required</label>
+            <label class="checkbox is-size-7" style="margin-top:0.6rem; display:block;">
+              <input type="checkbox" name="serial_number_tracking_required"> Track by serial number
+            </label>
+          </div>
+        </div>
+
+        {% if show_domain_picker %}
+        <div class="field">
+          <label class="label is-small">Domain</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select name="domain_id" required>
+                {% for d in domains %}
+                <option value="{{ d.id }}" {% if forloop.first %}selected{% endif %}>{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
+        <p class="has-text-grey is-size-7">Domain: <strong>{{ single_domain.name|default:"—" }}</strong> (resolved from your assignment)</p>
+        {% endif %}
+
+        <div class="field">
+          <label class="label is-small">Notes</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="notes" rows="3"></textarea>
+          </div>
+        </div>
+
+        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
+          <div class="card-footer-secondaries">
+            <a href="{% url 'demand_index' %}" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+            </a>
+          </div>
+          <button type="submit" class="button is-primary card-footer-primary" id="demand-create-submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Create Demand</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+document.getElementById("demand-create-form").addEventListener("submit", (e) => {
+  const btn = document.getElementById("demand-create-submit");
+  if (btn.disabled) {
+    e.preventDefault();
+    return;
+  }
+  btn.disabled = true;
+  btn.classList.add("is-loading");
+});
+</script>
+{% endblock %}

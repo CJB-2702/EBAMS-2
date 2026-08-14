@@ -1,0 +1,112 @@
+<nav class="app-topnav" role="navigation" aria-label="Public navigation">
+  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS2</a>
+
+  <div class="tabs app-portals" role="tablist">
+    <ul>
+
+      <li role="tab">
+        <button class="portal-tab-btn" commandfor="portal-pub-webcomponents" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">widgets</span></span> Web Components <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-pub-webcomponents" popover="auto" class="portal-dropdown">
+          <p class="portal-dropdown-label">Web Components Library</p>
+          <div class="portal-dropdown-inner">
+            <a href="{% url 'kitchen_sink_wc_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Library Home</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='collapsable-side-bar' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">menu_open</span></span> collapsable-side-bar</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='dual-listbox' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">swap_horiz</span></span> dual-listbox</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='image-carousel' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_carousel</span></span> image-carousel</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='list-box' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> list-box</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='search-dropdown' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> search-dropdown</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='toast-alert' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">notification_important</span></span> toast-alert</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='file-browser' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">folder</span></span> file-browser</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='file-upload' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span> file-upload</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='info-popover' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">help_outline</span></span> info-popover</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='mini-gallery' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span> mini-gallery</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='tag-list-editor' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> tag-list-editor</a>
+            <a href="{% url 'kitchen_sink_wc_detail' component_name='add-comment' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span> add-comment</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab">
+        <button class="portal-tab-btn" commandfor="portal-pub-uiux" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">palette</span></span> UI / UX <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-pub-uiux" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Design System</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'kitchen_sink' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">science</span></span> Kitchen Sink Home</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Design Patterns</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'kitchen_sink_dp_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> Design Patterns Index</a>
+                <a href="{% url 'kitchen_sink_dp_detail' pattern_name='work-portal-example' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business_center</span></span> Work Portal Example</a>
+                <a href="{% url 'kitchen_sink_dp_detail' pattern_name='search-page-example' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Search Page Example</a>
+                <a href="{% url 'kitchen_sink_dp_detail' pattern_name='index-example' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span> Index / Portal Hub Example</a>
+                <a href="{% url 'kitchen_sink_dp_detail' pattern_name='popovers' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">web</span></span> Popovers API</a>
+                <a href="{% url 'kitchen_sink_dp_detail' pattern_name='list-management' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span> List Management</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab">
+        <button class="portal-tab-btn" commandfor="portal-pub-docs" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">menu_book</span></span> Docs <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-pub-docs" popover="auto" class="portal-dropdown">
+          <p class="portal-dropdown-label">Administration Docs</p>
+          <div class="portal-dropdown-inner">
+            <a href="{% url 'docs_administration_overview' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span> How Access Control Works</a>
+            <a href="{% url 'docs_administration_roles' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Roles &amp; Permission Groups</a>
+            <a href="{% url 'docs_administration_data_domains' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span> Data Domains &amp; Scope</a>
+            <a href="{% url 'docs_administration_domain_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span> Domain Templates</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab">
+        <button class="portal-tab-btn" commandfor="portal-pub-product" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">storefront</span></span> Product <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-pub-product" popover="auto" class="portal-dropdown">
+          <p class="portal-dropdown-label">Product</p>
+          <div class="portal-dropdown-inner">
+            <a href="{% url 'public_features' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">grid_view</span></span> Features</a>
+            <a href="{% url 'public_get_started' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">rocket_launch</span></span> Get Started</a>
+            <a href="{% url 'public_learn_more' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span> Learn More</a>
+            <a href="{% url 'public_pricing' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">sell</span></span> Pricing</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab">
+        <a href="{% url 'public_about' %}" class="portal-tab-btn"><span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">info</span></span> About</a>
+      </li>
+
+    </ul>
+  </div>
+
+  <div class="app-topnav-right">
+    {% if request.user.is_authenticated or user.is_authenticated %}
+    <button class="app-user-btn" type="button">
+      <div class="app-user-avatar">{% if request.user.is_authenticated %}{{ request.user.username|slice:":2"|upper }}{% elif user.is_authenticated %}{{ user.username|slice:":2"|upper }}{% endif %}</div>
+      <span>{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}{{ user.username }}{% endif %}</span>
+    </button>
+    <form method="post" action="{% url 'public_logout' %}" style="display:flex; height:100%;">
+      {% csrf_token %}
+      <button class="app-logout-btn" type="submit" aria-label="Sign out" title="Sign out">⎋ Sign out</button>
+    </form>
+    {% else %}
+    <button class="app-user-btn" type="button" commandfor="public-login-modal" command="show-modal">
+      <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
+      <span>Login</span>
+    </button>
+    {% endif %}
+  </div>
+</nav>

@@ -51,9 +51,9 @@ If no starter kit exists for the topic, say so and recommend `/kit-builder` firs
 
 The project's visual and interaction rules are already settled. **Cite them; do not restate or reinvent them.**
 
-- [harness/UX_UI/components/multi_step_flows.md](../../harness/UX_UI/components/multi_step_flows.md) — one route, vertical scroll, progressive enablement, session drafts; the multi-card wizard trigger rule.
-- [harness/UX_UI/components/modals.md](../../harness/UX_UI/components/modals.md) — when a modal is appropriate, and why assignment never goes in one.
-- [harness/UX_UI/Examples/left_heavy_assignment_card_pair.md](../../harness/UX_UI/Examples/left_heavy_assignment_card_pair.md) — the in-page assignment pattern.
+- [harness/UX_UI/design_patterns/multi_step_flows.md](../../harness/UX_UI/design_patterns/multi_step_flows.md) — one route, vertical scroll, progressive enablement, session drafts; the multi-card wizard trigger rule.
+- [harness/UX_UI/design_patterns/modals.md](../../harness/UX_UI/design_patterns/modals.md) — when a modal is appropriate, and why assignment never goes in one.
+- [harness/UX_UI/design_patterns/left_heavy_assignment_card_pair.md](../../harness/UX_UI/design_patterns/left_heavy_assignment_card_pair.md) — the in-page assignment pattern.
 - [harness/UX_UI/components/dual_listbox.md](../../harness/UX_UI/components/dual_listbox.md) — the auditable many-to-many control.
 - [harness/UX_UI/format_contract.md](../../harness/UX_UI/format_contract.md) — `format=` density and the HTMX-fragment rule.
 - [harness/UX_UI/page_structure.md](../../harness/UX_UI/page_structure.md) — page shell, hero, sidebars.

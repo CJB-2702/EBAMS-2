@@ -1,0 +1,622 @@
+{% extends "procurement/base.html" %}
+{% load static procurement_tags %}
+{% block title %}New Purchase Order{% endblock %}
+{% block nav_po_create %}is-active{% endblock %}
+{% block breadcrumb %}
+  <li><a href="{% url 'purchase_order_index' %}">Purchase Orders</a></li>
+  <li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% endblock %}
+
+{% comment %}
+THE CREATE-PO WIZARD — one route, vertical scroll, progressive enablement,
+session-backed draft. Per D44 this is the highest-traffic Buyer surface in the
+application.
+
+Nothing on this page touches the database until "Save as Draft". Every control
+posts to this same URL, mutates `request.session`, and redirects back here, so a
+refresh at any point restores exactly what the Buyer had staged. Later cards are
+SHOWN but disabled until earlier ones validate — server-side, from the draft, not
+from JavaScript, because a JS-only gate fails the moment the page reloads.
+{% endcomment %}
+
+{% block extra_css %}
+  /* Left-heavy assignment pair: fixed geometry so headers and filter bars stay
+     put while only the row lists scroll. */
+  .alloc-scroll { position: relative; }
+  .alloc-scroll table thead th {
+    position: sticky; top: 0; z-index: 10;
+    background-color: var(--bulma-table-background-color, var(--bulma-scheme-main));
+    box-shadow: inset 0 -2px 0 var(--bulma-border);
+  }
+  .wizard-step-disabled { opacity: 0.55; }
+{% endblock %}
+
+{% block content %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+
+<div class="page-hero">
+  <div class="page-hero-content">
+    <h1 class="page-title">New Purchase Order</h1>
+    <p class="page-subtitle">Turn approved demand into a commercial order. Nothing is saved until the last card.</p>
+  </div>
+  <div class="page-hero-actions">
+    <a href="{% url 'purchase_order_index' %}" class="button is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+      <span>Back to list</span>
+    </a>
+    {% if draft.vendor_id or draft.lines %}
+    <form method="post" action="{% url 'purchase_order_create' %}" style="margin:0;"
+          onsubmit="return confirm('Discard this draft purchase order? Nothing has been saved, so this cannot be undone.');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="clear">
+      <button type="submit" class="button is-small is-danger is-light" style="max-width:8rem;">
+        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+        <span>Discard draft</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% include "procurement/prices/_picker_modal_shell.html" %}
+
+{# ================= CARD 1 — Vendor & header. Always enabled. ================= #}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">storefront</span></span>
+    1 · Vendor &amp; header
+  </div>
+  {% if has_vendor %}<span class="tag is-small is-success mr-3">Set</span>{% endif %}
+  </div>
+  {% comment %}
+  Autosave, not a save button: every change on this form posts straight to
+  the session draft and re-renders in place, so card 2 unlocks the instant
+  vendor + domain are both set — no explicit "Save" click in between. The
+  sr-only button is a no-JS fallback only; it is never shown.
+  {% endcomment %}
+  <form method="post" action="{% url 'purchase_order_create' %}"
+        hx-post="{% url 'purchase_order_create' %}" hx-trigger="change"
+        hx-target="#procurement-main-content" hx-select="#procurement-main-content">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_header">
+    <div class="card-content">
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-6">
+          <label class="label is-small" for="vendor-picker">Vendor <span class="has-text-danger">*</span></label>
+          <search-dropdown id="vendor-picker" name="vendor_id"
+                           placeholder="{% if vendor %}{{ vendor.name }}{% else %}search vendors…{% endif %}"
+                           hx-get="{% url 'vendor_index' %}?format=htmx-search-results"
+                           hx-trigger="keyup changed delay:300ms, search"></search-dropdown>
+          <p class="help">
+            {% if vendor %}Currently <strong>{{ vendor.name }}</strong>. {% endif %}
+            Missing a vendor? <a href="{% url 'vendor_create' %}" target="_blank" rel="noopener">Register it</a>.
+          </p>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="po-domain">Buying domain <span class="has-text-danger">*</span></label>
+          {% comment %} D61: one buying domain per PO, chosen once, here. It also scopes every demand search downstream. {% endcomment %}
+          <div class="select is-small is-fullwidth"><select id="po-domain" name="domain_id" required>
+            <option value="">Choose a domain…</option>
+            {% for domain in domains %}
+              <option value="{{ domain.pk }}" {% if draft.domain_id == domain.pk %}selected{% endif %}>{{ domain.name }}</option>
+            {% endfor %}
+          </select></div>
+          <p class="help">Scopes which demands this order may claim.</p>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="vendor-contact">Vendor contact</label>
+          <input id="vendor-contact" class="input is-small is-family-monospace" type="text" name="vendor_contact" value="{{ draft.vendor_contact }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="vendor-po-id">Vendor's own PO number
+            <info-popover direction="top" hover="true">
+              <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">info_outline</span></span></detail>
+              <summary><p class="is-size-7">Optional. The number the vendor uses — not unique, they reuse and mistype them.</p></summary>
+            </info-popover>
+          </label>
+          <input id="vendor-po-id" class="input is-small is-family-monospace" type="text" name="vendor_po_id" value="{{ draft.vendor_po_id }}">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="order-date">Order date</label>
+          <input id="order-date" class="input is-small" type="date" name="order_date" value="{{ draft.order_date|default:'' }}">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="expected-date">Expected delivery</label>
+          <input id="expected-date" class="input is-small" type="date" name="expected_delivery_date" value="{{ draft.expected_delivery_date|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="shipping-cost">Shipping</label>
+          <input id="shipping-cost" class="input is-small is-family-monospace" type="number" step="0.01" name="shipping_cost" value="{{ draft.shipping_cost|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="tax-amount">Tax</label>
+          <input id="tax-amount" class="input is-small is-family-monospace" type="number" step="0.01" name="tax_amount" value="{{ draft.tax_amount|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="other-amount">Other fees / discounts</label>
+          <input id="other-amount" class="input is-small is-family-monospace" type="number" step="0.01" name="other_amount" value="{{ draft.other_amount|default:'' }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small" for="po-notes">Notes</label>
+          <textarea id="po-notes" class="textarea is-small" rows="2" name="notes">{{ draft.notes }}</textarea>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="is-sr-only">Save vendor &amp; header</button>
+  </form>
+</div>
+
+{% comment %} CARD 2 — Item selection. Enabled once a vendor exists. {% endcomment %}
+<div class="card {% if not has_vendor %}wizard-step-disabled{% endif %}">
+  {% if not has_vendor %}
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+    2 · Item selection
+  </div>
+  <span class="tag is-small is-light mr-3">Save a vendor first</span>
+  </div>
+  <div class="card-content"><p class="has-text-grey is-size-7">
+    Pick a vendor and a buying domain above. Both are needed before demands can be searched —
+    the domain is what scopes the search.
+  </p></div>
+  {% else %}
+
+  {% comment %}
+  header_multi_select_card: the header IS the picker between the two ways to
+  add a line, instead of a fixed "2 · Item selection" title — see the Kitchen
+  Sink cards library. This card only adds lines; card 3 is where each line
+  gets edited, allocated, or deleted. A toggle, not a modal: the legacy app
+  put the unlinked-part form in a popup and this kit's modal rule forbids
+  that for anything that composes with the rest of the page. Real hrefs plus
+  hx-get keep it F5-safe — a no-JS load still lands on the right tab via the
+  querystring.
+  {% endcomment %}
+  <div class="card-header is-multiselect">
+    <div class="card-header-multiselect">
+      <a href="{% url 'purchase_order_create' %}?tab=demands"
+         class="button {% if request.GET.tab != 'unlinked' %}is-primary{% else %}is-light{% endif %}"
+         aria-pressed="{% if request.GET.tab != 'unlinked' %}true{% else %}false{% endif %}"
+         hx-get="{% url 'purchase_order_create' %}?tab=demands"
+         hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">assignment</span></span>
+        <span>From demands</span>
+      </a>
+      <a href="{% url 'purchase_order_create' %}?tab=unlinked"
+         class="button {% if request.GET.tab == 'unlinked' %}is-primary{% else %}is-light{% endif %}"
+         aria-pressed="{% if request.GET.tab == 'unlinked' %}true{% else %}false{% endif %}"
+         hx-get="{% url 'purchase_order_create' %}?tab=unlinked"
+         hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">add_box</span></span>
+        <span>Unlinked</span>
+      </a>
+    </div>
+  </div>
+
+  {% if request.GET.tab == 'unlinked' %}
+  {% comment %}
+  Unlinked segment: a plain inline add form. Zero demands on a line is
+  valid (D14) and this is the intended path for it.
+  {% endcomment %}
+  <form method="post" action="{% url 'purchase_order_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_unlinked_line">
+    <div class="card-content">
+      <p class="has-text-grey is-size-7 mb-3">
+        A line with no demand behind it is a normal line — proactive stock, a vendor
+        minimum order quantity, or reserve for a demand that does not exist yet.
+      </p>
+      <div class="columns is-variable is-2 is-multiline">
+        <div class="column is-4">
+          <label class="label is-small" for="unlinked-part">Part <span class="has-text-danger">*</span></label>
+          <search-dropdown id="unlinked-part" name="part_id" placeholder="search parts…"
+                           hx-get="{% url 'purchase_order_create' %}?format=htmx-part-results"
+                           hx-trigger="keyup changed delay:300ms, search"></search-dropdown>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="unlinked-qty">Quantity <span class="has-text-danger">*</span></label>
+          <input id="unlinked-qty" class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity_ordered" required>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="unlinked-cost">Unit cost <span class="has-text-danger">*</span>
+            <info-popover direction="top" hover="true">
+              <detail><a href="#" id="unlinked-price-link" class="icon has-text-info" title="View price history"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">history</span></span></a></detail>
+              <summary><p class="is-size-7">View price history for selected part</p></summary>
+            </info-popover>
+          </label>
+          {% comment %} A normal required field, not a separate "confirm price" ritual — unlike the legacy portal's per-part confirmation gate. {% endcomment %}
+          <input id="unlinked-cost" class="input is-small is-family-monospace" type="number" step="0.01" min="0" name="unit_cost" required>
+          <div id="price-chip-unlinked" class="is-size-7 mt-1"></div>
+          <input type="hidden" id="unlinked-cost-source" name="unit_cost_source">
+          <input type="hidden" id="unlinked-cost-asserted-at" name="unit_cost_asserted_at">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="unlinked-date">Delivery date</label>
+          <input id="unlinked-date" class="input is-small" type="date" name="expected_delivery_date">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="unlinked-notes">Notes</label>
+          <input id="unlinked-notes" class="input is-small" type="text" name="line_notes">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries"></div>
+      <button type="submit" class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>Add line</span>
+      </button>
+    </footer>
+  </form>
+
+  {% else %}
+  {% comment %}
+  From-demands segment: top-heavy — a filter row over a multi-select results
+  table. Picking demands for a part both creates/grows that part's line and
+  pre-populates card 3's allocation for exactly those demands.
+  {% endcomment %}
+  <form method="get" action="{% url 'purchase_order_create' %}" class="px-4 pt-4"
+        hx-get="{% url 'purchase_order_create' %}"
+        hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+    <input type="hidden" name="tab" value="demands">
+    <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
+      <div style="flex:2;min-width:200px;">
+        <label class="label is-small" for="pool-q">Search demands</label>
+        <input id="pool-q" class="input is-small is-family-monospace" type="search" name="pool_q" value="{{ pool_filters.q }}" placeholder="part number, name, notes…">
+      </div>
+      <div style="flex:1;min-width:140px;">
+        <label class="label is-small" for="pool-priority">Priority</label>
+        <div class="select is-small is-fullwidth"><select id="pool-priority" name="pool_priority">
+          <option value="">Any</option>
+          {% for value, label in priority_choices %}
+            <option value="{{ value }}" {% if pool_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select></div>
+      </div>
+      <div style="flex:1;min-width:120px;">
+        <label class="label is-small" for="pool-part">Part id</label>
+        <input id="pool-part" class="input is-small is-family-monospace" type="number" name="pool_part_id" value="{{ pool_filters.part_id|default:'' }}">
+      </div>
+      <button type="submit" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Filter</span>
+      </button>
+    </div>
+  </form>
+
+  <form method="post" action="{% url 'purchase_order_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_from_demands">
+    <div class="card-content is-flush" style="max-height:380px;overflow-y:auto;">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr>
+          <th style="width:2.5rem;"></th>
+          <th>Demand</th><th>Part</th><th>Priority</th><th>Needed by</th>
+          <th class="has-text-right">Requested</th>
+          <th class="has-text-right">Outstanding</th>
+          <th style="width:8rem;">Unit cost</th>
+        </tr></thead>
+        <tbody>
+          {% for demand in demand_pool %}
+          <tr>
+            <td><input type="checkbox" name="demand_ids" value="{{ demand.pk }}" aria-label="Select demand {{ demand.pk }}"></td>
+            <td class="is-family-monospace">#{{ demand.pk }}</td>
+            <td>{{ demand.part.part_number }} <span class="has-text-grey">{{ demand.part.name }}</span></td>
+            <td>{{ demand.get_priority_display }}</td>
+            <td>{{ demand.needed_by|date:"Y-m-d"|default:"—" }}</td>
+            <td class="has-text-right is-family-monospace">{{ demand.quantity_requested }}</td>
+            <td class="has-text-right is-family-monospace">{{ demand.outstanding_qty }}</td>
+            <td>
+              <input id="unit-cost-{{ demand.part_id }}" class="input is-small is-family-monospace" type="number" step="0.01" min="0"
+                     name="unit_cost_{{ demand.part_id }}" value="{{ demand.expected_cost|default_if_none:'' }}"
+                     aria-label="Unit cost for part {{ demand.part.part_number }}">
+              {% with facts=price_facts|dict_get:demand.part_id %}
+              {% include "procurement/prices/_price_chip.html" with facts=facts part_id=demand.part_id vendor=vendor handle=demand.price_chip_handle %}
+              {% endwith %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="has-text-grey has-text-centered py-5">
+            No open demands match these filters in your domains.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <span class="is-size-7 has-text-grey is-align-self-center">
+          Each pick adds its outstanding quantity to that part's line and pre-allocates it.
+        </span>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not demand_pool %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+        <span>Add selected to lines</span>
+      </button>
+    </footer>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% if not has_lines %}
+<div class="wizard-step-disabled">
+  <p class="has-text-grey is-size-7">Add at least one line above. Each line gets its own card here.</p>
+</div>
+{% else %}
+<p class="has-text-grey is-size-7 mb-4">
+  Linking part demands is optional (D14) — a line with nothing linked is valid, it just
+  buys stock ahead of any request.
+</p>
+
+{% for line in lines %}
+<div class="card mb-4" id="line-{{ line.index }}">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+            Line {{ forloop.counter }} ·
+            {% if line.part %}{{ line.part.part_number }} <span class="has-text-grey has-text-weight-normal ml-2">{{ line.part.name }}</span>{% else %}<span class="has-text-danger">Part missing</span>{% endif %}
+          </div>
+          <span class="is-size-7 has-text-grey mr-3">{{ line.line_total|floatformat:2 }}</span>
+          <form method="post" action="{% url 'purchase_order_create' %}" style="margin:0;"
+                onsubmit="return confirm('Remove this line and any of its allocations?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_line">
+            <input type="hidden" name="line_index" value="{{ line.index }}">
+            <button type="submit" class="button is-small is-light" title="Delete this line">
+              <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">delete</span></span>
+            </button>
+          </form>
+        </div>
+        <div class="card-content">
+          {% comment %}
+          Autosave, same as card 1's header: every change here posts straight
+          to the session draft and re-renders — no separate "Save line" button.
+          {% endcomment %}
+          <form method="post" action="{% url 'purchase_order_create' %}"
+                hx-post="{% url 'purchase_order_create' %}" hx-trigger="change"
+                hx-target="#procurement-main-content" hx-select="#procurement-main-content">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_line">
+            <input type="hidden" name="line_index" value="{{ line.index }}">
+            <div class="columns is-variable is-2 is-multiline mb-0">
+              <div class="column is-2">
+                <label class="label is-small" for="line-qty-{{ line.index }}">Ordered <span class="has-text-danger">*</span></label>
+                <input id="line-qty-{{ line.index }}" class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity_ordered" value="{{ line.quantity_ordered }}">
+              </div>
+              <div class="column is-2">
+                <label class="label is-small" for="line-cost-{{ line.index }}">Unit cost <span class="has-text-danger">*</span>
+                  {% if line.part %}
+                  <info-popover direction="top" hover="true">
+                    <detail><a href="{% url 'price_hub' %}?q={{ line.part.part_number }}" class="icon has-text-info" title="View price history for {{ line.part.part_number }}"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">history</span></span></a></detail>
+                    <summary><p class="is-size-7">View price history for {{ line.part.part_number }}</p></summary>
+                  </info-popover>
+                  {% endif %}
+                </label>
+                <input id="line-cost-{{ line.index }}" class="input is-small is-family-monospace" type="number" step="0.01" min="0" name="unit_cost" value="{{ line.unit_cost }}">
+                <input type="hidden" id="line-cost-{{ line.index }}-source" name="unit_cost_source">
+                <input type="hidden" id="line-cost-{{ line.index }}-asserted-at" name="unit_cost_asserted_at">
+                {% with facts=price_facts|dict_get:line.part.id %}
+                {% include "procurement/prices/_price_chip.html" with facts=facts part_id=line.part.id vendor=vendor handle=line.price_chip_handle %}
+                {% endwith %}
+              </div>
+              <div class="column is-3">
+                <label class="label is-small" for="line-date-{{ line.index }}">Delivery date</label>
+                <input id="line-date-{{ line.index }}" class="input is-small" type="date" name="expected_delivery_date" value="{{ line.expected_delivery_date|default:'' }}">
+              </div>
+              <div class="column is-3">
+                <label class="label is-small" for="line-notes-{{ line.index }}">Notes</label>
+                <input id="line-notes-{{ line.index }}" class="input is-small" type="text" name="line_notes" value="{{ line.notes }}">
+              </div>
+              <div class="column is-2">
+                <label class="label is-small">Allocated</label>
+                <p class="is-family-monospace is-size-7" style="padding-top:0.5rem;">
+                  {{ line.allocated_total }}{% if line.unallocated > 0 %}<span class="has-text-grey"> ({{ line.unallocated }} open)</span>{% endif %}
+                </p>
+              </div>
+            </div>
+            <button type="submit" class="is-sr-only">Save line</button>
+          </form>
+
+          <details class="mt-4">
+            <summary class="is-size-7 has-text-link" style="cursor:pointer;">
+              <span class="icon is-small" style="vertical-align:middle;"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">call_split</span></span>
+              Find part demands to link ({{ line.allocations|length }} linked)
+            </summary>
+
+            {% comment %}
+            Left-heavy assignment card pair: 2/3 pool, 1/3 target. NOT a dual
+            listbox — the systemwide open-demand pool runs to the hundreds,
+            past where a dual listbox degrades, and every pick carries a
+            quantity.
+            {% endcomment %}
+            <div class="columns is-variable is-4 mt-1">
+
+              {% comment %}
+              LEFT (2/3): the filterable pool — client-side default, with a
+              server-side sibling for the "already linked" search.
+              {% endcomment %}
+              <div class="column is-8">
+                {% url 'purchase_order_create' as po_create_url %}
+                <div id="lh-pair-{{ line.unique_id }}">
+                  {% include "procurement/demands/components/client_side_filtered_demand_left_heavy_assignment.html" with unique_id=line.unique_id pool=line.pool part=line.part consumer="po_create" line_ref=line.index line_field_name="line_index" allocate_url=po_create_url exclude_purchase_order="" exclude_ids=line.allocated_ids %}
+                </div>
+                {% include "procurement/demands/components/_left_heavy_linked_warning_dialog.html" with unique_id=line.unique_id part=line.part consumer="po_create" line_ref=line.index exclude_purchase_order="" exclude_ids=line.allocated_ids %}
+              </div>
+
+              {# RIGHT (1/3): allocated to this line #}
+              <div class="column">
+                <div class="card" style="display:flex;flex-direction:column;height:360px;overflow:hidden;">
+                  <div class="card-header">
+                    <div class="card-header-title">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+                      Allocated
+                    </div>
+                    <span class="is-size-7 has-text-grey pr-3">{{ line.allocated_total }} / {{ line.quantity_ordered }}</span>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;min-height:0;" class="p-3">
+                    {% for allocation in line.allocations %}
+                    <div class="box p-2 mb-2" style="border-radius:0;">
+                      <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                        <span class="is-family-monospace is-size-7">#{{ allocation.demand_id }}</span>
+                        <form method="post" action="{% url 'purchase_order_create' %}" style="margin:0;">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="remove_allocation">
+                          <input type="hidden" name="line_index" value="{{ line.index }}">
+                          <input type="hidden" name="demand_id" value="{{ allocation.demand_id }}">
+                          <button type="submit" class="button is-small is-light" title="Remove this allocation">
+                            <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+                          </button>
+                        </form>
+                      </div>
+                      <form method="post" action="{% url 'purchase_order_create' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="allocate">
+                        <input type="hidden" name="line_index" value="{{ line.index }}">
+                        <input type="hidden" name="demand_id" value="{{ allocation.demand_id }}">
+                        <div class="field has-addons mb-1">
+                          <div class="control is-expanded">
+                            <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                                   name="quantity_allocated" value="{{ allocation.quantity_allocated }}"
+                                   aria-label="Allocated quantity for demand {{ allocation.demand_id }}">
+                          </div>
+                          <div class="control">
+                            <button type="submit" class="button is-small is-light" title="Update quantity">
+                              <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+                            </button>
+                          </div>
+                        </div>
+                        {% comment %}
+                        D42's opt-out. Auto-approval is silent by default; a
+                        Buyer who wants the strict approve-first process for
+                        this item unticks it and Gate 1 holds.
+
+                        The hidden field comes FIRST on purpose: an unchecked
+                        box sends nothing, so the hidden "0" is the only
+                        value and the view reads False; a checked box
+                        appends "1" after it, and QueryDict.get returns the
+                        last value. Reverse the order and every tick
+                        silently reads as an opt-out.
+                        {% endcomment %}
+                        <input type="hidden" name="auto_approve" value="0">
+                        <label class="checkbox is-size-7">
+                          <input type="checkbox" name="auto_approve" value="1" {% if allocation.auto_approve %}checked{% endif %}>
+                          Auto-approve this demand
+                        </label>
+                      </form>
+                      {% if allocation.raise_request %}
+                      <p class="is-size-7 has-text-warning mt-1">
+                        <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">trending_up</span></span>
+                        Request will be raised on save.
+                      </p>
+                      {% endif %}
+                      {% if allocation.demand %}
+                      <p class="is-size-7 has-text-grey mt-1">
+                        requested {{ allocation.demand.quantity_requested }} · on order {{ allocation.demand.purchased_qty }}
+                      </p>
+                      {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="has-text-grey is-size-7">
+                      Nothing allocated. That is a valid line — it just buys stock no demand has claimed.
+                    </p>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </details>
+        </div>
+      </div>
+{% endfor %}
+{% endif %}
+
+{# ================== CARD 4 — Review & submit ================== #}
+<div class="card {% if not can_submit %}wizard-step-disabled{% endif %}">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+    4 · Review &amp; submit
+  </div></div>
+  <form method="post" action="{% url 'purchase_order_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="submit">
+    <div class="card-content">
+      {% if not can_submit %}
+        <p class="has-text-grey is-size-7">Add a vendor and at least one line to submit.</p>
+      {% else %}
+        <dl class="kv is-size-7 mb-4">
+          <dt>Vendor</dt><dd>{{ vendor.name }}{% if draft.vendor_contact %} · {{ draft.vendor_contact }}{% endif %}</dd>
+          <dt>Vendor's number</dt><dd class="is-family-monospace">{{ draft.vendor_po_id|default:"—" }}</dd>
+          <dt>Order date</dt><dd>{{ draft.order_date|default:"today" }}</dd>
+          <dt>Expected delivery</dt><dd>{{ draft.expected_delivery_date|default:"—" }}</dd>
+          <dt>Lines</dt><dd>{{ lines|length }}</dd>
+        </dl>
+        <table class="table is-fullwidth is-size-7">
+          <thead><tr><th>Part</th><th class="has-text-right">Qty</th><th class="has-text-right">Unit</th><th class="has-text-right">Total</th><th>Allocations</th></tr></thead>
+          <tbody>
+            {% for line in lines %}
+            <tr>
+              <td>{% if line.part %}{{ line.part.part_number }}{% else %}—{% endif %}</td>
+              <td class="has-text-right is-family-monospace">{{ line.quantity_ordered }}</td>
+              <td class="has-text-right is-family-monospace">{{ line.unit_cost }}</td>
+              <td class="has-text-right is-family-monospace">{{ line.line_total|floatformat:2 }}</td>
+              <td class="is-size-7">
+                {% for allocation in line.allocations %}#{{ allocation.demand_id }}&nbsp;×{{ allocation.quantity_allocated }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="has-text-grey">unclaimed stock</span>{% endfor %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot><tr>
+            <th colspan="3" class="has-text-right">Total (incl. shipping, tax, other)</th>
+            <th class="has-text-right is-family-monospace">{{ draft_total|floatformat:2 }}</th>
+            <th></th>
+          </tr></tfoot>
+        </table>
+        <article class="message is-info is-small">
+          <div class="message-body is-size-7">
+            This saves the order as a <strong>Draft</strong>, not as placed (D52). It also opens
+            <strong>Unsubmitted</strong> on the approval axis — submit it for approval from its
+            detail page, then place it once a purchasing manager approves.
+          </div>
+        </article>
+      {% endif %}
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'purchase_order_index' %}" class="button is-small is-light">Cancel</a>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_submit %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Save as Draft</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+{% include "procurement/purchase_orders/_cap_decision_modal.html" %}
+{% endblock %}
+
+{% block body_scripts %}
+{% include "procurement/demands/components/_left_heavy_assignment_scripts.html" %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var picker = document.getElementById("unlinked-part");
+  if (picker) {
+    picker.addEventListener("change", function () {
+      refreshPriceChip(
+        "price-chip-unlinked",
+        "{% url 'part_price_history' 999999999 %}",
+        picker.value,
+        {{ price_vendor_id|default:"null" }},
+        "unlinked-cost"
+      );
+
+      var priceLinkElement = document.getElementById("unlinked-price-link");
+      if (priceLinkElement && picker.value) {
+        priceLinkElement.href = "{% url 'part_price_history' 999999999 %}".replace("999999999", picker.value);
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

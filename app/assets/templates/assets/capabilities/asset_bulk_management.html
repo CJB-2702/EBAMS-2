@@ -46,9 +46,9 @@
 <div class="body-grid full-width">
   <form method="post" id="bulk-assignment-form">{% csrf_token %}
 
-    <!-- ROW 1: Assigned Classes & Assigned Models Side-by-Side (Top 1/3 and 2/3) -->
+    {# ROW 1: Assigned Classes & Assigned Models Side-by-Side (Top 1/3 and 2/3) #}
     <div class="columns is-variable is-4">
-      <!-- LEFT Card: Assigned Classes (1/3 width -> column is-4) -->
+      {# LEFT Card: Assigned Classes (1/3 width -> column is-4) #}
       <div class="column is-4">
         <div class="card" style="display:flex;flex-direction:column;height:250px;overflow:hidden">
           <div class="card-header">
@@ -81,7 +81,7 @@
         </div>
       </div>
 
-      <!-- RIGHT Card: Assigned Models (2/3 width -> column is-8) -->
+      {# RIGHT Card: Assigned Models (2/3 width -> column is-8) #}
       <div class="column is-8">
         <div class="card" style="display:flex;flex-direction:column;height:250px;overflow:hidden">
           <div class="card-header">
@@ -91,7 +91,7 @@
             </div>
             <span class="is-size-7 has-text-grey">{{ assigned_models|length }} models</span>
           </div>
-          <!-- Filter & Search Bar -->
+          {# Filter & Search Bar #}
           <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
             <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
               <div class="control has-icons-left" style="flex:1;min-width:140px">
@@ -138,7 +138,7 @@
       </div>
     </div>
 
-    <!-- ROW 2: Currently Assigned Assets Search Card (Single full-width row) -->
+    {# ROW 2: Currently Assigned Assets Search Card (Single full-width row) #}
     <div class="columns is-variable is-4 mt-4">
       <div class="column is-12">
         <div class="card" style="display:flex;flex-direction:column;height:400px;overflow:hidden">
@@ -149,14 +149,14 @@
             </div>
             <span class="is-size-7 has-text-grey"><span id="assigned-count">0</span> applied</span>
           </div>
-          <!-- Filter + Search Bar -->
+          {# Filter + Search Bar #}
           <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
             <div class="control has-icons-left">
               <input type="search" id="search-assigned-assets" class="input is-small" placeholder="Search assigned assets by name, serial, or model…" autocomplete="off">
               <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
             </div>
           </div>
-          <!-- Scrollable Table -->
+          {# Scrollable Table #}
           <div id="assigned-scroll" style="flex:1;overflow-y:auto;min-height:0">
             <table id="assigned-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
               <thead>
@@ -213,7 +213,7 @@
               </tbody>
             </table>
           </div>
-          <!-- Footer with Bulk Remove -->
+          {# Footer with Bulk Remove #}
           <footer class="card-footer custom-card-footer">
             <div class="card-footer-secondaries pl-0 pr-3">
               <button type="button" id="btn-select-all-assigned" class="button is-small is-light">Select All</button>
@@ -227,7 +227,7 @@
       </div>
     </div>
 
-    <!-- ROW 3: All Assets (Search & Assign) Card (Full row) -->
+    {# ROW 3: All Assets (Search & Assign) Card (Full row) #}
     <div class="columns is-variable is-4 mt-4">
       <div class="column is-12">
         <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
@@ -238,15 +238,15 @@
             </div>
             <span class="is-size-7 has-text-grey"><span id="avail-count">0</span> shown</span>
           </div>
-          <!-- Filter + Search Bar -->
+          {# Filter + Search Bar #}
           <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
             <div class="is-flex is-align-items-center" style="gap:0.5rem;flex-wrap:wrap">
-              <!-- Search name/serial -->
+              {# Search name/serial #}
               <div class="control has-icons-left" style="flex:1;min-width:140px">
                 <input type="search" id="search-assets" class="input is-small" placeholder="Search name or serial…" autocomplete="off">
                 <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
               </div>
-              <!-- Class Filter -->
+              {# Class Filter #}
               <div class="select is-small">
                 <select id="filter-asset-class" aria-label="Filter by asset class">
                   <option value="">All Classes</option>
@@ -255,7 +255,7 @@
                   {% endfor %}
                 </select>
               </div>
-              <!-- Model Filter -->
+              {# Model Filter #}
               <div class="select is-small">
                 <select id="filter-asset-model" aria-label="Filter by model">
                   <option value="">All Models</option>
@@ -266,7 +266,7 @@
               </div>
             </div>
           </div>
-          <!-- Scrollable Table -->
+          {# Scrollable Table #}
           <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
             <table id="avail-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
               <thead>
@@ -297,7 +297,7 @@
               </tbody>
             </table>
           </div>
-          <!-- Left Footer with Bulk Assign -->
+          {# Left Footer with Bulk Assign #}
           <footer class="card-footer custom-card-footer">
             <div class="card-footer-secondaries pl-0 pr-3">
               <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
@@ -311,7 +311,7 @@
       </div>
     </div>
 
-    <!-- Actions -->
+    {# Actions #}
     <div class="field is-grouped mt-4">
       <p class="control"><button type="submit" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Assignments</span></button></p>
       <p class="control"><a href="{% url 'capability_definition_detail' definition_id=definition.id %}" class="button is-small is-light">Cancel</a></p>

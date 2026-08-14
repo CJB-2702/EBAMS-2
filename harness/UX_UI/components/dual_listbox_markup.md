@@ -1,14 +1,14 @@
 ---
 type: "UX Example"
 title: "Dual listbox markup"
-description: "Canonical fragments for the component described in [../dual_listbox.md](../dual_listbox.md)."
+description: "Canonical fragments for the component described in dual_listbox.md."
 tags: [ux-ui, ux-example, examples]
 context_tier: 3
 ---
 
 # Dual listbox markup
 
-Canonical fragments for the component described in [../dual_listbox.md](../dual_listbox.md).
+Canonical fragments for the component described in [dual_listbox.md](dual_listbox.md).
 
 ## Fragment template (`_<relationship>_dlb_only.html`)
 

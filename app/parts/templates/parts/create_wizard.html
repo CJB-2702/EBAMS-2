@@ -1,0 +1,422 @@
+{% extends "parts/base.html" %}
+{% load static %}
+{% block title %}New Part{% endblock %}
+{% block nav_create %}is-active{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">New Part</a></li>
+{% endblock %}
+
+{% block content %}
+<script src="{% static 'web_components/search_dropdown.js' %}" defer></script>
+
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_box</span></div>
+    <div><h1 class="page-title">New Part</h1>
+      <p class="page-subtitle">Establishes the internal engineering record and its base revision (1.0). Photos, documents, and additional revisions are added from the part's edit screen afterward.</p>
+    </div></div>
+  <div class="page-header-actions"><a href="{% url 'part_bulk_upload' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span><span>Bulk upload instead</span></a></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="card mb-5" id="part-creation-wizard">
+    <div class="card-content">
+      <form method="post" id="part-creation-form">
+        {% csrf_token %}
+
+        {# 1. Part identity #}
+        <div class="card depth-2 mb-4">
+          <div class="card-header"><div class="card-header-title">1. Part identity</div></div>
+          <div class="card-content">
+            <div class="columns">
+              <div class="column is-4">
+                <label class="label is-small">Part Number</label>
+                <input class="input is-small" type="text" name="part_number" required>
+              </div>
+              <div class="column is-8">
+                <label class="label is-small">Name</label>
+                <input class="input is-small" type="text" name="name" required>
+              </div>
+            </div>
+            <div class="columns">
+              <div class="column is-4">
+                <label class="label is-small">Part Type</label>
+                <input class="input is-small" type="text" name="part_type">
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">Category</label>
+                <input class="input is-small" type="text" name="category">
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">&nbsp;</label>
+                <label class="checkbox is-size-7"><input type="checkbox" name="is_active" checked> Active</label>
+                &nbsp;&nbsp;
+                <label class="checkbox is-size-7"><input type="checkbox" id="is-domain-restricted-toggle"> Restrict to specific domains</label>
+              </div>
+            </div>
+            <label class="label is-small">Description</label>
+            <textarea class="textarea is-small" name="description"></textarea>
+          </div>
+        </div>
+
+        {% comment %}
+        ── 2. Domains — hidden until "Restrict to specific domains" is checked above.
+        Left-heavy assignment card pair per harness/UX_UI/search/left_heavy_assignment_card_pair.md,
+        staged client-side (no Part id exists yet) into hidden domain_ids inputs at submit time.
+        {% endcomment %}
+        <div class="card depth-2 mb-4" id="domains-card" hidden>
+          <div class="card-header"><div class="card-header-title">2. Domains</div></div>
+          <div class="card-content">
+            <p class="help mb-3">Assign this part to specific domains, or apply a template — not both. With nothing assigned, the part stays global.</p>
+            {% if domain_templates %}
+            <label class="label is-small">Apply a domain template</label>
+            <div class="select is-small is-fullwidth mb-3">
+              <select name="domain_template_id" id="domain-template-select">
+                <option value="">— none —</option>
+                {% for t in domain_templates %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <p class="help mb-3">Or pick individually:</p>
+            {% endif %}
+
+            <div id="domain-ids-hidden-inputs"></div>
+
+            <div class="columns is-variable is-4" id="domain-assignment-row">
+              <div class="column is-8">
+                <div class="card" style="display:flex;flex-direction:column;height:320px;overflow:hidden">
+                  <div class="card-header">
+                    <div class="card-header-title">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+                      Available Domains
+                    </div>
+                    <span class="is-size-7 has-text-grey"><span id="domain-avail-count">0</span> shown</span>
+                  </div>
+                  <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+                    <div class="control has-icons-left">
+                      <input type="search" id="domain-search" class="input is-small" placeholder="Search domains…" autocomplete="off">
+                      <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+                    </div>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;min-height:0;position:relative">
+                    <table class="table is-fullwidth is-hoverable" style="margin:0">
+                      <thead>
+                        <tr>
+                          <th style="width:2.5rem;position:sticky;top:0;background-color:var(--bulma-table-background-color, var(--bulma-scheme-main));z-index:10">
+                            <input type="checkbox" id="domain-avail-header-check" aria-label="Select all visible">
+                          </th>
+                          <th style="position:sticky;top:0;background-color:var(--bulma-table-background-color, var(--bulma-scheme-main));z-index:10">Name</th>
+                        </tr>
+                      </thead>
+                      <tbody id="domain-avail-body">
+                        {% for d in domains %}
+                        <tr class="domain-avail-row" data-domain-id="{{ d.id }}" data-domain-name="{{ d.name|lower }}">
+                          <td><input type="checkbox" class="domain-avail-check"></td>
+                          <td>{{ d.name }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="is-size-7 has-text-grey">No domains defined.</td></tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  <footer class="card-footer custom-card-footer">
+                    <div class="card-footer-secondaries pl-0 pr-3">
+                      <button type="button" id="domain-btn-select-all" class="button is-small is-light">Select All</button>
+                    </div>
+                    <button type="button" id="domain-btn-assign" class="button is-link card-footer-primary">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+                      <span>Assign Selected</span>
+                    </button>
+                  </footer>
+                </div>
+              </div>
+
+              <div class="column">
+                <div class="card" style="display:flex;flex-direction:column;height:320px;overflow:hidden">
+                  <div class="card-header">
+                    <div class="card-header-title">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+                      Assigned
+                    </div>
+                    <span class="is-size-7 has-text-grey"><span id="domain-assigned-count">0</span> applied</span>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;min-height:0">
+                    <table class="table is-fullwidth is-hoverable" style="margin:0">
+                      <tbody id="domain-assigned-body"></tbody>
+                    </table>
+                  </div>
+                  <footer class="card-footer" style="padding:0">
+                    <button type="button" id="domain-btn-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+                      <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+                      <span>Remove Selected</span>
+                    </button>
+                  </footer>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# 3. Manufacturer / Supplier items (repeatable, zero or more) #}
+        <div class="card depth-2 mb-4">
+          <div class="card-header"><div class="card-header-title">3. Manufacturer &amp; supplier items</div></div>
+          <div class="card-content">
+            <p class="help mb-3">At least one manufacturer and manufacturer part number is required.</p>
+            <input type="hidden" name="supplier_item_count" id="supplier-item-count" value="1">
+            <div id="supplier-item-rows">
+              <div class="card depth-1 mb-3" data-supplier-item-row="0">
+                <div class="card-content">
+                  <div id="supplier-item-manufacturer-slot-0">
+                    {% include "parts/manufacturers/_manufacturer_picker.html" with field_name="supplier_items-0-part_manufacturer_id" target_id="supplier-item-manufacturer-slot-0" selected_manufacturer=None %}
+                  </div>
+                  <label class="label is-small mt-3">Manufacturer Part Number</label>
+                  <input class="input is-small" type="text" name="supplier_items-0-manufacturer_part_number">
+                  <label class="label is-small">Name</label>
+                  <input class="input is-small" type="text" name="supplier_items-0-name">
+                  <label class="label is-small">Description</label>
+                  <textarea class="textarea is-small" name="supplier_items-0-description" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="button is-small is-light" id="add-supplier-item-row">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+              <span>Add another supplier item</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button type="submit" class="button is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Create Part</span>
+          </button>
+          <a href="{% url 'parts_hub' %}" class="button is-light">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+Cloneable row template for "Add another supplier item" — __ROW__ is a literal token, not
+a real index; JS replaces it with the next row number on clone. Reuses the same
+_manufacturer_picker.html include as row 0 so both stay in sync automatically.
+{% endcomment %}
+<template id="supplier-item-row-template">
+  <div class="card depth-1 mb-3" data-supplier-item-row="__ROW__">
+    <div class="card-content">
+      <div id="supplier-item-manufacturer-slot-__ROW__">
+        {% include "parts/manufacturers/_manufacturer_picker.html" with field_name="supplier_items-__ROW__-part_manufacturer_id" target_id="supplier-item-manufacturer-slot-__ROW__" selected_manufacturer=None %}
+      </div>
+      <label class="label is-small mt-3">Manufacturer Part Number</label>
+      <input class="input is-small" type="text" name="supplier_items-__ROW__-manufacturer_part_number">
+      <label class="label is-small">Name</label>
+      <input class="input is-small" type="text" name="supplier_items-__ROW__-name">
+      <label class="label is-small">Description</label>
+      <textarea class="textarea is-small" name="supplier_items-__ROW__-description" rows="2"></textarea>
+    </div>
+  </div>
+</template>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function () {
+  const wizard = document.getElementById("part-creation-wizard");
+  if (!wizard) return;
+
+  // Manufacturer quick-create show/hide — generic per-row via closest(), shared with
+  // supplier_items/new.html's identical handler.
+  wizard.addEventListener("click", (e) => {
+    const showBtn = e.target.closest('[data-action="show-quick-create"]');
+    if (showBtn) {
+      e.preventDefault();
+      showBtn.closest(".mfr-picker").querySelector(".mfr-quick-create-fields").hidden = false;
+    }
+    const hideBtn = e.target.closest('[data-action="hide-quick-create"]');
+    if (hideBtn) {
+      hideBtn.closest(".mfr-picker").querySelector(".mfr-quick-create-fields").hidden = true;
+    }
+  });
+
+  // "Restrict to specific domains" checkbox pops the Domains card in/out.
+  const domainsCard = document.getElementById("domains-card");
+  const restrictToggle = document.getElementById("is-domain-restricted-toggle");
+  if (restrictToggle && domainsCard) {
+    restrictToggle.addEventListener("change", () => {
+      domainsCard.hidden = !restrictToggle.checked;
+    });
+  }
+
+  // Left-heavy assignment card pair (harness/UX_UI/search/left_heavy_assignment_card_pair.md),
+  // staged client-side — no Part id exists yet, so nothing persists until final submit.
+  const availBody = document.getElementById("domain-avail-body");
+  const assignedBody = document.getElementById("domain-assigned-body");
+  const hiddenInputs = document.getElementById("domain-ids-hidden-inputs");
+  const headerCheck = document.getElementById("domain-avail-header-check");
+  const btnSelectAll = document.getElementById("domain-btn-select-all");
+  const btnAssign = document.getElementById("domain-btn-assign");
+  const btnRemove = document.getElementById("domain-btn-remove");
+  const searchInput = document.getElementById("domain-search");
+  const templateSelect = document.getElementById("domain-template-select");
+
+  function updateCounts() {
+    document.getElementById("domain-avail-count").textContent =
+      availBody.querySelectorAll(".domain-avail-row:not([hidden])").length;
+    document.getElementById("domain-assigned-count").textContent =
+      assignedBody.querySelectorAll("tr").length;
+  }
+
+  function syncHiddenInputs() {
+    hiddenInputs.innerHTML = "";
+    assignedBody.querySelectorAll("tr").forEach((row) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "domain_ids";
+      input.value = row.dataset.domainId;
+      hiddenInputs.appendChild(input);
+    });
+  }
+
+  function updateHeaderCheckState() {
+    if (!headerCheck) return;
+    const visible = Array.from(availBody.querySelectorAll(".domain-avail-row:not([hidden]) .domain-avail-check"));
+    if (visible.length === 0) {
+      headerCheck.checked = false;
+      headerCheck.indeterminate = false;
+      if (btnSelectAll) btnSelectAll.textContent = "Select All";
+      return;
+    }
+    const checkedCount = visible.filter((cb) => cb.checked).length;
+    headerCheck.checked = checkedCount === visible.length;
+    headerCheck.indeterminate = checkedCount > 0 && checkedCount < visible.length;
+    if (btnSelectAll) btnSelectAll.textContent = checkedCount === visible.length ? "Deselect All" : "Select All";
+  }
+
+  if (headerCheck) {
+    headerCheck.addEventListener("change", () => {
+      availBody.querySelectorAll(".domain-avail-row:not([hidden]) .domain-avail-check").forEach((cb) => {
+        cb.checked = headerCheck.checked;
+      });
+      if (btnSelectAll) btnSelectAll.textContent = headerCheck.checked ? "Deselect All" : "Select All";
+    });
+  }
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener("click", () => {
+      const visible = Array.from(availBody.querySelectorAll(".domain-avail-row:not([hidden]) .domain-avail-check"));
+      const allChecked = visible.length > 0 && visible.every((cb) => cb.checked);
+      visible.forEach((cb) => { cb.checked = !allChecked; });
+      updateHeaderCheckState();
+    });
+  }
+  availBody.addEventListener("change", (e) => {
+    if (e.target.classList.contains("domain-avail-check")) updateHeaderCheckState();
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const term = searchInput.value.trim().toLowerCase();
+      availBody.querySelectorAll(".domain-avail-row").forEach((row) => {
+        row.hidden = term.length > 0 && !row.dataset.domainName.includes(term);
+      });
+      updateHeaderCheckState();
+      updateCounts();
+    });
+  }
+
+  function buildRow(name, checkboxClass) {
+    const tr = document.createElement("tr");
+    const tdCheck = document.createElement("td");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = checkboxClass;
+    tdCheck.appendChild(checkbox);
+    const tdName = document.createElement("td");
+    tdName.textContent = name;
+    tr.appendChild(tdCheck);
+    tr.appendChild(tdName);
+    return tr;
+  }
+
+  if (btnAssign) {
+    btnAssign.addEventListener("click", () => {
+      availBody.querySelectorAll(".domain-avail-check:checked").forEach((cb) => {
+        const row = cb.closest("tr");
+        const name = row.querySelector("td:nth-child(2)").textContent;
+        const newRow = buildRow(name, "domain-assigned-check");
+        newRow.dataset.domainId = row.dataset.domainId;
+        assignedBody.appendChild(newRow);
+        row.remove();
+      });
+      updateHeaderCheckState();
+      syncHiddenInputs();
+      updateCounts();
+    });
+  }
+  if (btnRemove) {
+    btnRemove.addEventListener("click", () => {
+      assignedBody.querySelectorAll(".domain-assigned-check:checked").forEach((cb) => {
+        const row = cb.closest("tr");
+        const name = row.querySelector("td:nth-child(2)").textContent;
+        const newRow = buildRow(name, "domain-avail-check");
+        newRow.classList.add("domain-avail-row");
+        newRow.dataset.domainId = row.dataset.domainId;
+        newRow.dataset.domainName = name.trim().toLowerCase();
+        availBody.appendChild(newRow);
+        row.remove();
+      });
+      updateHeaderCheckState();
+      syncHiddenInputs();
+      updateCounts();
+    });
+  }
+
+  // Template select vs. manual assignment are mutually exclusive.
+  if (templateSelect) {
+    templateSelect.addEventListener("change", () => {
+      const chosen = !!templateSelect.value;
+      [headerCheck, btnSelectAll, btnAssign, btnRemove, searchInput].forEach((el) => {
+        if (el) el.disabled = chosen;
+      });
+      availBody.querySelectorAll(".domain-avail-check").forEach((cb) => { cb.disabled = chosen; });
+      assignedBody.querySelectorAll(".domain-assigned-check").forEach((cb) => { cb.disabled = chosen; });
+    });
+  }
+
+  updateCounts();
+
+  // "Add another supplier item" — clone the <template> row, bump the row index.
+  const rowsContainer = document.getElementById("supplier-item-rows");
+  const rowTemplate = document.getElementById("supplier-item-row-template");
+  const countField = document.getElementById("supplier-item-count");
+  document.getElementById("add-supplier-item-row").addEventListener("click", () => {
+    const nextIndex = parseInt(countField.value, 10);
+    const html = rowTemplate.innerHTML.replaceAll("__ROW__", String(nextIndex));
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+    const row = wrapper.firstElementChild;
+    rowsContainer.appendChild(row);
+    if (window.htmx) window.htmx.process(row); // wire up hx-get/hx-post on the cloned row
+    countField.value = String(nextIndex + 1);
+  });
+
+  // Require at least one complete manufacturer/supplier-item row before submit —
+  // the server enforces the same rule (PartCreationWizardFactory), this just saves
+  // the round trip.
+  const form = document.getElementById("part-creation-form");
+  form.addEventListener("submit", (e) => {
+    const formData = new FormData(form);
+    let hasCompleteRow = false;
+    rowsContainer.querySelectorAll("[data-supplier-item-row]").forEach((row) => {
+      const idx = row.dataset.supplierItemRow;
+      const mpn = (formData.get(`supplier_items-${idx}-manufacturer_part_number`) || "").toString().trim();
+      const mfr = (formData.get(`supplier_items-${idx}-part_manufacturer_id`) || "").toString().trim();
+      if (mpn && mfr) hasCompleteRow = true;
+    });
+    if (!hasCompleteRow) {
+      e.preventDefault();
+      alert("At least one manufacturer and manufacturer part number is required.");
+    }
+  });
+})();
+</script>
+{% endblock %}

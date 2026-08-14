@@ -32,9 +32,9 @@
 </div>
 
 <div class="body-grid has-rail">
-  <!-- MAIN -->
+  {# MAIN #}
   <div>
-    <!-- Identity -->
+    {# Identity #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Identity &amp; Status</div></div>
       <div class="card-content">
@@ -51,7 +51,7 @@
       </div>
     </div>
 
-    <!-- Meters -->
+    {# Meters #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Meters</div>
         <a href="{% url 'asset_meter_history' asset_id=asset.id %}" class="button is-small is-light">History</a>
@@ -69,11 +69,11 @@
       </div>
     </div>
 
-    <!-- Image carousel -->
+    {# Image carousel #}
     <script src="{% static 'web_components/image_carousel.js' %}" defer></script>
     {% include "events/fragments/gallery_card.html" with images=image_documents title="Images" dom_id=asset.id %}
 
-    <!-- Capabilities (resolved) -->
+    {# Capabilities (resolved) #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (resolved)</div>
         <a href="{% url 'asset_capabilities_detail' asset_id=asset.id %}" class="button is-small is-light">Manage</a>
@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <!-- Current configuration -->
+    {# Current configuration #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Current Configuration</div>
         <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light">Open</a>
@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    <!-- Extensions panel (HTMX-loaded from /detail_extensions/asset/<id>/?format=htmx-panel) -->
+    {# Extensions panel (HTMX-loaded from /detail_extensions/asset/<id>/?format=htmx-panel) #}
     <div class="card">
       <div class="card-header">
         <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">extension</span></span>Detail Extensions</div>
@@ -130,7 +130,7 @@
     </div>
   </div>
 
-  <!-- RAIL -->
+  {# RAIL #}
   <div class="body-rail">
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span>Data Domain</div></div>

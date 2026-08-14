@@ -1,0 +1,98 @@
+{% comment %}
+Left-heavy assignment: server-side search path. Swapped in for the
+client-side sibling (replacing #lh-pair-{{ unique_id }}'s content) once the
+warning dialog is confirmed. Unlike the client-side component, this pool has
+no fixed upper bound worth shipping whole, so every filter change round-trips
+to the shared canonical URL (demand_index) with format=htmx-left-heavy&
+render=rows, per harness/UX_UI.md's "one canonical URL per resource, branch
+on format=" rule — this is the same view as the client-side component's
+initial render, just a different `mode`.
+
+Required context: identical to the client-side component, plus
+po_status_choices (a filter the client-side component has no use for, since
+it never ships demands with a linked PO in the first place).
+{% endcomment %}
+<div class="card lh-server" style="display:flex;flex-direction:column;height:360px;overflow:hidden;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">travel_explore</span></span>
+      Search all open demands for this part
+    </div>
+    <div>
+      <button type="button" class="button is-small is-light" title="Back to the default search"
+              hx-get="{% url 'demand_index' %}?format=htmx-left-heavy&mode=client&unique_id={{ unique_id }}&consumer={{ consumer }}&part_id={{ part.pk }}&line_ref={{ line_ref }}&exclude_purchase_order={{ exclude_purchase_order|default:'' }}&exclude_ids={{ exclude_ids|default:'' }}"
+              hx-target="#lh-pair-{{ unique_id }}"
+              hx-swap="innerHTML">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back</span>
+      </button>
+    </div>
+  </div>
+  <form class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis);"
+        hx-get="{% url 'demand_index' %}"
+        hx-trigger="change, keyup changed delay:350ms from:input"
+        hx-target="#lh-server-body-{{ unique_id }}"
+        hx-swap="innerHTML">
+    <input type="hidden" name="format" value="htmx-left-heavy">
+    <input type="hidden" name="mode" value="server">
+    <input type="hidden" name="render" value="rows">
+    <input type="hidden" name="unique_id" value="{{ unique_id }}">
+    <input type="hidden" name="consumer" value="{{ consumer }}">
+    <input type="hidden" name="part_id" value="{{ part.pk }}">
+    <input type="hidden" name="line_ref" value="{{ line_ref }}">
+    <input type="hidden" name="exclude_purchase_order" value="{{ exclude_purchase_order|default:'' }}">
+    <input type="hidden" name="exclude_ids" value="{{ exclude_ids|default:'' }}">
+    <div class="columns is-variable is-2 is-multiline mb-0">
+      <div class="column is-3">
+        <input class="input is-small is-family-monospace" type="text" value="{{ part.part_number }}" disabled
+               aria-label="Part — fixed to this line">
+      </div>
+      <div class="column is-2">
+        <input class="input is-small is-family-monospace" type="number" name="demand_id" placeholder="Demand ID"
+               aria-label="Filter by demand id">
+      </div>
+      <div class="column is-2">
+        <div class="select is-small is-fullwidth">
+          <select name="demand_state" aria-label="Filter by demand status">
+            <option value="">Any status</option>
+            {% for value, label in demand_status_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <div class="select is-small is-fullwidth">
+          <select name="po_status" aria-label="Filter by the linked purchase order's status">
+            <option value="">Any PO status</option>
+            {% for value, label in po_status_choices %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-1">
+        <input class="input is-small" type="date" name="created_from" aria-label="Created on or after" title="Created on or after">
+      </div>
+      <div class="column is-1">
+        <input class="input is-small" type="date" name="created_to" aria-label="Created on or before" title="Created on or before">
+      </div>
+    </div>
+    <p class="help is-size-7 has-text-warning mt-1">
+      <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">warning</span></span>
+      Includes demands already linked to another purchase order.
+    </p>
+  </form>
+  <div class="alloc-scroll" style="flex:1;overflow-y:auto;min-height:0;">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr>
+        <th>Demand</th><th>Priority</th><th>Needed by</th>
+        <th class="has-text-right">Outstanding</th>
+        <th style="width:11rem;">Allocate</th>
+      </tr></thead>
+      <tbody id="lh-server-body-{{ unique_id }}">
+        {% include "procurement/demands/components/_left_heavy_pool_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>

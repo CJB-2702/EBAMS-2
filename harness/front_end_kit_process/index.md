@@ -69,9 +69,9 @@ Coverage analysis (table × CRUD, role × capability) is **advisory**. Report th
 
 The front-end kit **applies** the project's visual and interaction rules. It does not invent them. Cite these rather than restating them:
 
-- [../UX_UI/components/multi_step_flows.md](../UX_UI/components/multi_step_flows.md) — one route, vertical scroll, progressive enablement, session drafts; the multi-card wizard trigger rule.
-- [../UX_UI/components/modals.md](../UX_UI/components/modals.md) — when a modal is appropriate, and why assignment never goes in one.
-- [../UX_UI/Examples/left_heavy_assignment_card_pair.md](../UX_UI/Examples/left_heavy_assignment_card_pair.md) — the in-page assignment pattern.
+- [../UX_UI/design_patterns/multi_step_flows.md](../UX_UI/design_patterns/multi_step_flows.md) — one route, vertical scroll, progressive enablement, session drafts; the multi-card wizard trigger rule.
+- [../UX_UI/design_patterns/modals.md](../UX_UI/design_patterns/modals.md) — when a modal is appropriate, and why assignment never goes in one.
+- [../UX_UI/design_patterns/left_heavy_assignment_card_pair.md](../UX_UI/design_patterns/left_heavy_assignment_card_pair.md) — the in-page assignment pattern.
 - [../UX_UI/components/dual_listbox.md](../UX_UI/components/dual_listbox.md) — the auditable many-to-many control.
 - [../UX_UI/format_contract.md](../UX_UI/format_contract.md) — the `format=` density and HTMX-fragment contract.
 - [../UX_UI/page_structure.md](../UX_UI/page_structure.md) — page shell, hero, sidebars.

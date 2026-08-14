@@ -4,14 +4,24 @@ app/static/web_components/file_browser.js) as the default card format —
 same component used for direct thread attachments in events/fragments/event_card.html.
 
 Generic contract (see app/events/presentation_layer/tools/generic_cards.py):
-  documents   list of document dicts: {file_id, filename, icon, file_size, ...}
-  title       optional, default "Files"
+  documents         list of document dicts: {file_id, filename, icon, file_size, ...}
+  title             optional, default "Files"
+  upload_modal_id   optional; when set, renders an "Upload" button in the card
+                    header that opens the dialog with this id (commandfor/command)
 {% endcomment %}
 <div class="card">
   <div class="card-header">
     <div class="card-header-title">
       <span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>{{ title|default:"Files" }} ({{ documents|length }})
     </div>
+    {% if upload_modal_id %}
+    <div class="card-header-icon">
+      <button type="button" class="button is-small is-link" commandfor="{{ upload_modal_id }}" command="show-modal">
+        <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span>
+        <span>Upload</span>
+      </button>
+    </div>
+    {% endif %}
   </div>
   <div class="card-content">
     <file-browser default-view="list" storage-key="files-card-view">

@@ -1,0 +1,188 @@
+/* ── Public marketing pages: home, features, get-started, learn-more, pricing ── */
+
+.pub-section-wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+.pub-section { padding: 3rem 0; }
+.pub-section-headline {
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--bulma-text-strong);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.pub-section-sub { text-align: center; color: var(--bulma-text-weak); font-size: 0.9rem; margin-bottom: 2rem; }
+
+/* ── Hero (home page) ── */
+.pub-hero {
+  background: var(--bulma-scheme-main);
+  border-bottom: 1px solid var(--bulma-border-weak);
+  padding: 3.5rem 0;
+}
+.pub-hero-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 1.5rem;
+  display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 3rem; align-items: start;
+}
+@media (max-width: 900px) { .pub-hero-inner { grid-template-columns: 1fr; } }
+.pub-hero-copy h1 {
+  font-size: 2.2rem; font-weight: 800;
+  color: var(--bulma-text-strong);
+  line-height: 1.15; margin-bottom: 0.75rem;
+}
+.pub-hero-lead { font-size: 1.15rem; font-weight: 600; color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
+.pub-hero-sub { font-size: 0.95rem; color: var(--bulma-text-weak); margin-bottom: 1.5rem; line-height: 1.6; }
+.pub-hero-btns { margin-bottom: 1rem; }
+.pub-hero-cta-links a { color: var(--bulma-link); font-size: 0.85rem; }
+.pub-hero-cta-sep { margin: 0 0.5rem; color: var(--bulma-text-weak); }
+
+.pub-login-card {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  border-top: 4px solid var(--bulma-primary);
+  padding: 1.75rem 2rem;
+}
+.pub-login-card h2 { font-size: 1.15rem; font-weight: 700; color: var(--bulma-text-strong); margin-bottom: 1rem; }
+.pub-login-extras { font-size: 0.72rem; color: var(--bulma-text-weak); text-align: center; margin-top: 1rem; }
+
+/* ── Simple marketing page hero (features / get-started / learn-more / pricing) ── */
+.pub-page-hero {
+  background: var(--bulma-scheme-main);
+  border-bottom: 1px solid var(--bulma-border-weak);
+  padding: 2.5rem 0;
+  text-align: center;
+}
+.pub-page-hero h1 { font-size: 1.9rem; font-weight: 800; color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
+.pub-page-hero p { font-size: 0.95rem; color: var(--bulma-text-weak); max-width: 40rem; margin: 0 auto; }
+
+/* ── Six-pillar / jump grid ── */
+.pub-pillar-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+}
+@media (max-width: 900px) { .pub-pillar-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .pub-pillar-grid { grid-template-columns: 1fr; } }
+.pub-fcard {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  padding: 1.5rem;
+  height: 100%;
+}
+a.pub-fcard-link { display: block; }
+a.pub-fcard-link:hover .pub-fcard { border-color: var(--bulma-link); }
+.pub-fcard-icon { font-size: 1.9rem; color: var(--bulma-link); margin-bottom: 0.5rem; }
+.pub-fcard h3 { font-size: 1rem; font-weight: 700; color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
+.pub-fcard p { font-size: 0.82rem; color: var(--bulma-text-weak); margin-bottom: 0.75rem; line-height: 1.5; }
+.pub-fcard-action { font-size: 0.72rem; color: var(--bulma-text-weak); }
+
+/* ── Feature / module spotlights (with screenshots) ── */
+.pub-spotlights { background: var(--bulma-scheme-main); border-top: 1px solid var(--bulma-border-weak); border-bottom: 1px solid var(--bulma-border-weak); }
+.pub-spotlights-sub { text-align: center; color: var(--bulma-text-weak); font-size: 0.9rem; margin-bottom: 2rem; }
+
+.pub-spotlight { padding: 2rem 0; border-top: 1px solid var(--bulma-border-weak); }
+.pub-spotlight:first-of-type { border-top: none; }
+.pub-spotlight h3 { font-size: 1.2rem; font-weight: 700; color: var(--bulma-text-strong); }
+.pub-spotlight-tagline { font-size: 0.88rem; font-weight: 600; color: var(--bulma-link); margin-bottom: 0.5rem; }
+.pub-spotlight p { font-size: 0.88rem; color: var(--bulma-text-weak); line-height: 1.6; margin-bottom: 0.5rem; }
+.pub-spotlight ul { margin: 0.5rem 0 0 1.25rem; font-size: 0.85rem; color: var(--bulma-text-weak); line-height: 1.7; }
+.pub-spotlight-more { display: inline-block; margin-top: 0.75rem; font-size: 0.82rem; color: var(--bulma-link); }
+
+/* Spotlight with a screenshot: two columns, image + copy, alternating sides */
+.pub-module-showcase {
+  display: grid; grid-template-columns: 5fr 7fr; gap: 2rem; align-items: start;
+}
+@media (max-width: 800px) { .pub-module-showcase { grid-template-columns: 1fr; } }
+.pub-module-showcase.pub-module-showcase--reverse .pub-module-figure { order: 2; }
+.pub-module-showcase.pub-module-showcase--reverse .pub-module-copy { order: 1; }
+.pub-module-figure img {
+  width: 100%; height: auto; display: block;
+  border: 1px solid var(--bulma-border-weak);
+}
+.pub-module-figure figcaption { font-size: 0.75rem; color: var(--bulma-text-weak); margin-top: 0.5rem; }
+
+/* ── CTA banner ── */
+.pub-cta-banner { background: var(--bulma-scheme-invert); color: var(--bulma-scheme-main); padding: 2.5rem 0; }
+.pub-cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.pub-cta-copy h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.4rem; }
+.pub-cta-copy p { font-size: 0.88rem; opacity: 0.85; max-width: 40rem; }
+.pub-cta-banner.pub-cta-banner--light { background: var(--bulma-scheme-main); color: var(--bulma-text); border: 1px solid var(--bulma-border-weak); }
+.pub-cta-banner--light .pub-cta-copy h2 { color: var(--bulma-text-strong); }
+.pub-cta-banner--light .pub-cta-copy p { opacity: 1; color: var(--bulma-text-weak); }
+.pub-cta-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+/* ── Why-choose grid ── */
+.pub-why-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+@media (max-width: 900px) { .pub-why-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .pub-why-grid { grid-template-columns: 1fr; } }
+.pub-why-item { display: flex; align-items: flex-start; gap: 0.85rem; }
+.pub-why-item .material-icons { font-size: 1.6rem; color: var(--bulma-link); }
+.pub-why-item strong { display: block; font-size: 0.9rem; color: var(--bulma-text-strong); margin-bottom: 0.2rem; }
+.pub-why-item span:not(.material-icons) { font-size: 0.8rem; color: var(--bulma-text-weak); }
+
+/* ── Get Started: prerequisite / step cards ── */
+.pub-prereq-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+@media (max-width: 700px) { .pub-prereq-grid { grid-template-columns: 1fr; } }
+.pub-step-card {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  border-left: 4px solid var(--bulma-primary);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.pub-step-card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; }
+.pub-step-number {
+  width: 2rem; height: 2rem; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bulma-primary); color: #fff;
+  font-weight: 700; font-size: 0.9rem;
+}
+.pub-step-card h3 { font-size: 1.05rem; font-weight: 700; color: var(--bulma-text-strong); margin: 0; }
+.pub-code-block {
+  font-family: monospace; font-size: 0.82rem;
+  background: var(--bulma-scheme-main-ter);
+  border: 1px solid var(--bulma-border-weak);
+  padding: 0.85rem 1rem;
+  white-space: pre; overflow-x: auto;
+  color: var(--bulma-text); line-height: 1.6;
+}
+.pub-next-steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+@media (max-width: 700px) { .pub-next-steps-grid { grid-template-columns: 1fr; } }
+.pub-next-step-card { text-align: center; background: var(--bulma-scheme-main); border: 1px solid var(--bulma-border-weak); padding: 1.5rem; }
+.pub-next-step-card .material-icons { font-size: 2rem; color: var(--bulma-link); margin-bottom: 0.5rem; }
+.pub-next-step-card h4 { font-size: 0.95rem; font-weight: 700; color: var(--bulma-text-strong); margin-bottom: 0.4rem; }
+.pub-next-step-card p { font-size: 0.8rem; color: var(--bulma-text-weak); margin-bottom: 0.85rem; }
+
+/* ── Learn More: two/four-column info grids ── */
+.pub-info-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem 2rem; }
+.pub-info-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+.pub-info-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+@media (max-width: 900px) { .pub-info-grid-2, .pub-info-grid-3, .pub-info-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .pub-info-grid-2, .pub-info-grid-3, .pub-info-grid-4 { grid-template-columns: 1fr; } }
+.pub-info-card {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  padding: 1.25rem 1.5rem;
+}
+.pub-info-card.has-text-centered { text-align: center; }
+.pub-info-card h4, .pub-info-card h5 { color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
+.pub-info-card p, .pub-info-card ul { font-size: 0.85rem; color: var(--bulma-text-weak); line-height: 1.6; }
+.pub-info-card .material-icons { font-size: 1.5rem; color: var(--bulma-link); margin-bottom: 0.4rem; }
+
+/* ── Pricing tiers ── */
+.pub-pricing-row { display: grid; gap: 1.25rem; margin-bottom: 1.5rem; }
+.pub-pricing-row--featured { grid-template-columns: repeat(2, 1fr); }
+.pub-pricing-row--secondary { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 700px) { .pub-pricing-row--featured, .pub-pricing-row--secondary { grid-template-columns: 1fr; } }
+.pub-pricing-tier {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  padding: 1.5rem;
+}
+.pub-pricing-tier--featured { border-top: 4px solid var(--bulma-primary); }
+.pub-pricing-tier-label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bulma-text-weak); margin-bottom: 0.75rem; }
+.pub-pricing-tier .material-icons { font-size: 1.7rem; color: var(--bulma-link); margin-bottom: 0.5rem; }
+.pub-pricing-tier h3 { font-size: 1.05rem; font-weight: 700; color: var(--bulma-text-strong); margin-bottom: 0.4rem; }
+.pub-pricing-tier p { font-size: 0.85rem; color: var(--bulma-text-weak); }
+
+/* ── Footer ── */
+.pub-footer { background: var(--bulma-scheme-main); border-top: 1px solid var(--bulma-border-weak); padding: 2.5rem 0 1.5rem; }
+.pub-footer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 1.5rem; }
+@media (max-width: 600px) { .pub-footer-grid { grid-template-columns: 1fr; } }
+.pub-footer-col h4 { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bulma-text-weak); margin-bottom: 0.6rem; }
+.pub-footer-col a { display: block; font-size: 0.85rem; color: var(--bulma-text); margin-bottom: 0.4rem; }
+.pub-footer-bottom { border-top: 1px solid var(--bulma-border-weak); padding-top: 1rem; text-align: center; font-size: 0.75rem; color: var(--bulma-text-weak); }

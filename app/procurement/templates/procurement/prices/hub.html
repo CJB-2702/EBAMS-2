@@ -1,0 +1,118 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}Prices{% endblock %}
+{% block nav_price_hub %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Prices</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">attach_money</span></div>
+        <div>
+          <h1 class="page-title">Prices</h1>
+          <p class="page-subtitle">Record what parts actually cost, and search what has been recorded.</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        <a href="{% url 'price_bulk_grid' %}" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>
+          <span>Record prices</span>
+        </a>
+        <a href="{% url 'unpriced_parts' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+          <span>Browse unpriced</span>
+        </a>
+      </div>
+    </div>
+    <div class="page-hero-metrics">
+      <table class="hero-metrics-table">
+        <thead><tr>
+          <th>Unpriced parts</th>
+          {% if can_establish %}<th>Unverified assertions</th>{% endif %}
+        </tr></thead>
+        <tbody><tr>
+          <td>{{ unpriced_count }}</td>
+          {% if can_establish %}<td>{{ unverified_count }}</td>{% endif %}
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>Filters
+  </div></div>
+  <form method="get" action="{% url 'price_hub' %}"
+        hx-get="{% url 'price_hub' %}?format=htmx-results" hx-trigger="change"
+        hx-target="#price-hub-results" hx-select="#price-hub-results" hx-push-url="true">
+    <div class="card-content">
+      <div class="columns is-variable is-2 is-multiline">
+        <div class="column is-3">
+          <label class="label is-small">Search</label>
+          <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="search part, vendor…">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Vendor</label>
+          <div class="select is-small is-fullwidth"><select name="vendor_id">
+            <option value="">All vendors</option>
+            {% for vendor in vendors %}<option value="{{ vendor.pk }}" {% if filters.vendor_id == vendor.pk %}selected{% endif %}>{{ vendor.name }}</option>{% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Domain</label>
+          <div class="select is-small is-fullwidth"><select name="domain_id">
+            <option value="">All your domains</option>
+            {% for domain in domains %}<option value="{{ domain.pk }}" {% if filters.domain_id == domain.pk %}selected{% endif %}>{{ domain.name }}</option>{% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Source</label>
+          <div class="select is-small is-fullwidth"><select name="source_type">
+            <option value="">Any source</option>
+            {% for value, label in source_types %}<option value="{{ value }}" {% if filters.source_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Confidence</label>
+          <div class="select is-small is-fullwidth"><select name="confidence">
+            <option value="">Any confidence</option>
+            {% for value, label in confidences %}<option value="{{ value }}" {% if filters.confidence == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select></div>
+        </div>
+        <div class="column is-1">
+          <label class="label is-small">Verified?</label>
+          <div class="select is-small is-fullwidth"><select name="is_verified">
+            <option value="">Any</option>
+            <option value="verified" {% if filters.is_verified == "verified" %}selected{% endif %}>Verified</option>
+            <option value="unverified" {% if filters.is_verified == "unverified" %}selected{% endif %}>Unverified</option>
+          </select></div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Observed from</label>
+          <input class="input is-small" type="date" name="observed_from" value="{{ filters.observed_from|default_if_none:'' }}">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Observed to</label>
+          <input class="input is-small" type="date" name="observed_to" value="{{ filters.observed_to|default_if_none:'' }}">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'price_hub' %}" class="button is-small is-light">Clear</a>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Apply filters</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+<div id="price-hub-results" class="mt-5">
+  {% include "procurement/prices/_hub_results.html" %}
+</div>
+{% endblock %}

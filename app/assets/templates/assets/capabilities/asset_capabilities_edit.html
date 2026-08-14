@@ -50,7 +50,7 @@
   <form method="post" id="capabilities-form">{% csrf_token %}
 
     <div class="columns is-variable is-4">
-      <!-- LEFT Card: Available Capabilities (6/12 width) -->
+      {# LEFT Card: Available Capabilities (6/12 width) #}
       <div class="column is-6">
         <div class="card" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
           <div class="card-header">
@@ -60,14 +60,14 @@
             </div>
             <span class="is-size-7 has-text-grey"><span id="avail-count">0</span> available</span>
           </div>
-          <!-- Filter/Search Bar -->
+          {# Filter/Search Bar #}
           <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
             <div class="control has-icons-left">
               <input type="search" id="search-caps" class="input is-small" placeholder="Search capabilities by name or code…" autocomplete="off">
               <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
             </div>
           </div>
-          <!-- Table -->
+          {# Table #}
           <div id="avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
             <table id="avail-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
               <thead>
@@ -88,7 +88,7 @@
               </tbody>
             </table>
           </div>
-          <!-- Footer with Assign -->
+          {# Footer with Assign #}
           <footer class="card-footer custom-card-footer">
             <div class="card-footer-secondaries pl-0 pr-3">
               <button type="button" id="btn-select-all" class="button is-small is-light">Select All</button>
@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- RIGHT Card: Direct Capability Assignments (6/12 width) -->
+      {# RIGHT Card: Direct Capability Assignments (6/12 width) #}
       <div class="column is-6">
         <div class="card" style="display:flex;flex-direction:column;height:480px;overflow:hidden">
           <div class="card-header">
@@ -111,7 +111,7 @@
             </div>
             <span class="is-size-7 has-text-grey"><span id="assigned-count">0</span> assigned</span>
           </div>
-          <!-- Scrollable Table -->
+          {# Scrollable Table #}
           <div id="assigned-scroll" style="flex:1;overflow-y:auto;min-height:0">
             <table id="assigned-table" class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
               <thead>
@@ -156,7 +156,7 @@
               </tbody>
             </table>
           </div>
-          <!-- Footer with Remove -->
+          {# Footer with Remove #}
           <footer class="card-footer custom-card-footer">
             <div class="card-footer-secondaries pl-0 pr-3">
               <button type="button" id="btn-select-all-assigned" class="button is-small is-light">Select All</button>
@@ -170,7 +170,7 @@
       </div>
     </div>
 
-    <!-- Inherited Capabilities Reference (Read-only bottom info) -->
+    {# Inherited Capabilities Reference (Read-only bottom info) #}
     <div class="card mt-4">
       <div class="card-header">
         <div class="card-header-title">
@@ -207,7 +207,7 @@
       </div>
     </div>
 
-    <!-- Form Actions -->
+    {# Form Actions #}
     <div class="field is-grouped mt-5">
       <p class="control">
         <button type="submit" class="button is-small is-link">
