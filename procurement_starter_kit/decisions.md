@@ -903,3 +903,124 @@ The `po_number`/`package_number` requirement ("system-generated identifier plus 
 entered string") was already satisfied by the existing columns plus their Factories'
 `generate_po_number`/`generate_package_number` classmethods — no third column was needed, only the
 buyer-entered strings above (`vendor_po_id`, `shipment_id`) which did not exist yet.
+
+---
+
+## Graph materialization, Shipment rename, and inventory mirror (2026-08-13)
+
+Raised reviewing three architecture-review documents (external, PDF) proposing a materialized
+graph-summary model for the Demand ↔ PO Line ↔ Package Line network, plus a dramatic scope
+change: renaming the package/receiving concept to "Shipments" end-to-end and duplicating its UI
+into `app/inventory/`.
+
+**D79 — `PoDemandAssociationGraphResolver`'s on-demand BFS design (D70) is reversed. The
+Demand/PO-Line/Shipment-Line network is now materialized as a `GraphSummary` row per connected
+component, with `graph_id` stored directly on each of the three entity tables (entity-level
+pointer, not an edge/allocation-level pointer).**
+
+D70 chose an on-demand resolver deliberately, to keep routine reads shallow and avoid a maintained
+cluster column. That reasoning is superseded: the same sparsity argument D70 used to justify "should
+resolve fast" (D58 one-line-per-part, D28's allocation cap, real purchasing data staying mostly
+one-hop) is now read as evidence that materialization is cheap to maintain rather than as evidence
+resolving on read is fine. An entity-level `graph_id` gives every routine page (list views, PO
+detail, demand detail) a plain `WHERE graph_id = X` for cluster-wide numbers, with no join fan-out
+and no risk of a resolver silently walking a larger-than-expected graph on a hot request path.
+`PoDemandAssociationGraphResolver` (D70 §3.5) is **not** built — the graph visualizer reads the
+materialized `GraphSummary` plus its member rows instead of doing a traversal at render time.
+
+Placement choice — entity-level over edge/allocation-level — follows the same reasoning the
+reviewed documents give: this domain's connected clusters stay small (the same real-world sparsity
+D70 §3.4 already established), so the O(N) cost of a merge/split touching every member row is
+negligible, and it buys every routine read an O(1) lookup instead of a join through
+`PurchaseOrderDemandLink`/`ShipmentLine`.
+
+**D80 — `GraphSummary` lives in `app/procurement/`, alongside the models it summarizes.** Same
+placement reasoning as D63 (packages/shipments in procurement, not inventory) — the graph is a
+procurement-side execution-tracking concept; inventory reads it, never owns or writes it.
+
+**D81 — `GraphSummary` carries eight metric columns, mapped onto existing fields, not the PDFs'
+generic totals or their entropy score:**
+
+| `GraphSummary` column | Derivation |
+| :--- | :--- |
+| `demand_qty` | `Σ PartDemand.quantity_requested` across member demands |
+| `po_qty_waiting_for_purchase` | `Σ PurchaseOrderLine.quantity_ordered` on member lines whose `PurchaseOrder.status` is still `Draft`/pre-`Placed` |
+| `po_qty_purchased` | `Σ PurchaseOrderLine.quantity_ordered` on member lines whose `PurchaseOrder.status` has reached `Placed` or later (not `Cancelled`) |
+| `qty_shipments_in_route` | `Σ ShipmentLine.quantity` on member lines whose `Shipment.status` is after `Awaiting Shipment` and before `Delivered to Local Receiving Location`/`Accepted` (i.e. `Shipped`/`Delivered to Depot`/`Backordered`) |
+| `qty_shipments_delivered` | `Σ ShipmentLine.quantity` on member lines whose `Shipment.status` is `Delivered to Local Receiving Location` or `Accepted` |
+| `qty_accepted` | `Σ ShipmentLine.quantity_accepted` (excluding `null`) on member lines |
+| `qty_rejected` | `Σ (ShipmentLine.quantity - ShipmentLine.quantity_accepted)` on member lines where `quantity_accepted` is not null (the inspected-and-short/damaged remainder — there is no separate "rejected" column, D-package-line design already treats the shipped/accepted delta as the rejection) |
+| `intake_qty_recorded` | `0` for every row in this build. No intake table exists yet (D47, unchanged) — the column exists now so the metric has a home, and is wired up when the Inventory intake build lands. Documented as always-zero in the model docstring, not silently omitted, so a future reader does not mistake it for a bug. |
+
+The PDFs' `entropy_score`/`Egraph` weighting formula is **not** adopted — no operational-drift
+scoring for this pass. `GraphSummary.status` is kept as a simple derived label (`BALANCED` /
+`AWAITING_PURCHASE` / `AWAITING_SHIPMENT` / `AWAITING_ACCEPTANCE`), recomputed the same pass as the
+quantity columns, not a weighted composite.
+
+**D82 — Graph maintenance mechanics: node-init on isolated creation, coalescing merge on link
+creation, BFS split on unlink, and a single recalculation entrypoint — mirroring the reviewed
+documents' merge/split shape, adapted to this schema's actual write paths.**
+
+- **Node init**: creating a `PartDemand`, `PurchaseOrderLine`, or `ShipmentLine` with no link yet
+  gets its own new single-member `GraphSummary` in the same transaction as its own creation.
+- **Merge**: creating an active `PurchaseOrderDemandLink`, or assigning/reassigning a
+  `ShipmentLine.purchase_order_line` to a line in a different graph, coalesces the two graphs —
+  every member row of the smaller graph is re-pointed to the surviving `graph_id`, the absorbed
+  `GraphSummary` row is deleted, and the surviving row is recalculated.
+- **Split**: soft-deleting/deactivating a `PurchaseOrderDemandLink`, or a `ShipmentLine`
+  reassignment away from a line, may sever the only bridge between two parts of a graph. The write
+  path runs a bounded BFS over the graph's remaining active edges (`PurchaseOrderDemandLink`,
+  `ShipmentLine.purchase_order_line`) from an arbitrary surviving member; if the reachable set is
+  smaller than the graph's full membership, the unreached rows are re-pointed to a newly created
+  `GraphSummary`, and both resulting summaries are recalculated. Reuses the same "small clusters, an
+  O(N) BFS on unlink is negligible" reasoning as D79/D70 §3.4 — no separate safety cap needed here
+  the way D70 §3.5's resolver needed one, because membership is already bounded by the graph itself,
+  not an unbounded traversal target.
+- **Recalculate**: one function/manager method, `GraphSummaryManager.recalculate(graph_id)`,
+  computing D81's eight columns plus `status` from current member rows. Called at the end of every
+  node-init/merge/split above — never left for a caller to remember separately.
+
+These hooks are wired into `PurchaseOrderDemandLinkManager` (create/deactivate) and
+`ShipmentLineManager`/`ShipmentLineSplitHandler` (create/reassign/split), the existing control-layer
+seams that already own those writes — no new write path is introduced solely for graph maintenance.
+
+**D83 — `Package`/`PackageLine` are fully renamed to `Shipment`/`ShipmentLine` throughout the
+codebase — models, `db_table`s, migrations (full reset per this project's migration strategy),
+control-layer class names, guards/managers/narrators/factories, `urls_packages.py` →
+`urls_shipments.py`, entrypoints, templates, and tests. `PackageStatus` → `ShipmentStatus`,
+`package_number` → `shipment_number`, `PurchaseOrder.packages` related_name → `PurchaseOrder.shipments`.**
+
+Not a relabel-only change — the earlier "UI label only" option was considered and rejected in
+favor of the full rename, so the codebase's naming matches the UI end to end rather than carrying a
+permanent Package/Shipment naming mismatch between the database and the screen. The `receive`
+permission codename (D78) and its docstring ("Can create packages...") are updated to say
+"shipments"; the codename itself (`procurement.receive`) is unchanged, since renaming a permission
+codename after any group fixture references it is a migration hazard this pass avoids — only the
+human-readable name changes.
+
+**Scope reaffirmed, not changed:** a `Shipment` still tracks pre-possession only — from the moment
+a PO exists (or a shipment is received reactively ahead of one, D74) through
+`Delivered to Local Receiving Location`/`Accepted`. Intake (put-away, bin, stock levels) is still
+out of scope (D47), unchanged by the rename.
+
+**D84 — The Inventory side of "Shipments" is a thin duplicate view/edit surface, not a
+second owned table.** `app/inventory/` gains a mirrored URL surface at `inventory/shipments/...`
+(paralleling `procurement/shipments/...`) that reads and manually edits the **same**
+`Shipment`/`ShipmentLine` rows procurement owns — there is no `inventory.Shipment` model. Consistent
+with this app's existing one-directional-dependency rule (D7, D46) — Inventory is the one app
+allowed to depend on Procurement's data, not the reverse — and avoids a second source of truth that
+would need reconciling with procurement's own shipment records. "Manual editing of columns" for this
+pass means direct field edits through the mirrored UI (no new business rules, no new guard beyond
+what `ShipmentContext`/`ShipmentLineManager` already enforce) — the promised heavier
+Inventory-side logic (intake, stocking, movement) is future work, not this pass's job.
+
+**D85 — The graph visualizer page (`procurement/graph/<graph_id>/` or similar) renders a
+mermaid.js swimlane diagram of the graph's Demand/PO-Line/Shipment-Line membership and edges, above
+a three-column summary (Demand headers+rows, PO headers+rows, Shipment headers+rows) — same visual
+shape D70 §5 already specified for the (now unbuilt) resolver-backed visualizer, re-pointed at the
+materialized `GraphSummary`'s member rows instead of a live traversal.** `mermaid.js` is vendored
+into `app/static/` (no CDN dependency at runtime, consistent with this project having no external
+JS package pipeline) and rendered client-side from a small edge-list the view serializes into the
+page. This is the only page in the app that visualizes `GraphSummary` membership directly; every
+other page keeps using the entity's own `graph_id`-scoped rollup numbers (D81), never a rendered
+graph.
