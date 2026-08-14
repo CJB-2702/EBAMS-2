@@ -12,9 +12,11 @@ from app.procurement.models.demand.enums import (
 )
 from app.procurement.models.demand.part_demand import PartDemand
 from app.procurement.models.demand.part_demand_update import PartDemandUpdate
-from app.procurement.models.packages.enums import PackageStatus
-from app.procurement.models.packages.package import Package
-from app.procurement.models.packages.package_line import PackageLine
+from app.procurement.models.graph.enums import GraphSummaryStatus
+from app.procurement.models.graph.graph_summary import GraphSummary
+from app.procurement.models.shipments.enums import ShipmentStatus
+from app.procurement.models.shipments.shipment import Shipment
+from app.procurement.models.shipments.shipment_line import ShipmentLine
 from app.procurement.models.pricing.enums import (
     UNIT_COST_SOURCE_UNSET,
     PriceConfidence,
@@ -46,10 +48,12 @@ __all__ = [
     "DemandPriority",
     "DemandSourceModule",
     "DemandState",
+    "GraphSummary",
+    "GraphSummaryStatus",
     "IssuanceState",
-    "Package",
-    "PackageLine",
-    "PackageStatus",
+    "Shipment",
+    "ShipmentLine",
+    "ShipmentStatus",
     "PartDemand",
     "PartDemandUpdate",
     "PartPriceObservation",

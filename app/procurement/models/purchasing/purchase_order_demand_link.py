@@ -23,7 +23,7 @@ class PurchaseOrderDemandLink(AuditFieldsMixin, SoftDeleteMixin):
     arrive: the units are fungible, nobody decided whose they were, and any
     attribution a receiver typed would be an invention recorded as an
     observation. Arrival is recorded once, physically, on
-    PackageLine.quantity_accepted, and per-demand arrival is derived — exact
+    ShipmentLine.quantity_accepted, and per-demand arrival is derived — exact
     for a sole-demand line, a shared demand session otherwise. See
     procurement_starter_kit/shared_demand_sessions.md.
     """

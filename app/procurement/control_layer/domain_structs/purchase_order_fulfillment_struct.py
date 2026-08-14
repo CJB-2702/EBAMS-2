@@ -1,8 +1,8 @@
-"""Struct: the four quantities, per-line attribution mode, and package rollups.
+"""Struct: the four quantities, per-line attribution mode, and shipment rollups.
 
-Since packages live in procurement (D59/D60) this is an ordinary within-app
+Since shipments live in procurement (D59/D60) this is an ordinary within-app
 read. It was previously specced as a cross-app `# DELIBERATE ANTI-PATTERN`
-reading inventory; moving Package/PackageLine into this app removed the need
+reading inventory; moving Shipment/ShipmentLine into this app removed the need
 for the exception entirely.
 
 --------------------------------------------------------------------------
@@ -13,7 +13,7 @@ THE ATTRIBUTION RULE (D55). Read shared_demand_sessions.md before changing it.
 this system, and for a large fraction of demands IT IS NOT ANSWERABLE — not
 because data is missing, but because the fact does not exist.
 
-A line buys 100 units. Three demands are allocated: 50, 30, 20. A package
+A line buys 100 units. Three demands are allocated: 50, 30, 20. A shipment
 arrives with 60 accepted units. Which demand got them? There is no answer. The
 units are fungible, nobody at the vendor decided whose they were, and every
 available invention is worse than silence:
@@ -54,8 +54,8 @@ from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import Coalesce
 
 from app.procurement.models import (
-    Package,
-    PackageLine,
+    Shipment,
+    ShipmentLine,
     PartDemand,
     PurchaseOrder,
     PurchaseOrderDemandLink,
@@ -66,16 +66,16 @@ _DECIMAL = DecimalField(max_digits=14, decimal_places=3)
 
 
 def _accepted_subquery():
-    """Accepted package quantity per PO line, as a CORRELATED SUBQUERY.
+    """Accepted shipment quantity per PO line, as a CORRELATED SUBQUERY.
 
-    It must not be a joined Sum(). Annotating a Sum over package_lines
+    It must not be a joined Sum(). Annotating a Sum over shipment_lines
     alongside any other multi-row join (allocations) makes the database emit
     one row per combination, so each accepted quantity is counted once per
     allocation — a line with 55 accepted and 2 demands reported 110, which then
     tripped the over-receipt flag on a number that never happened.
     """
     return Subquery(
-        PackageLine.objects.filter(
+        ShipmentLine.objects.filter(
             purchase_order_line=OuterRef("pk"), deleted_at__isnull=True
         )
         .values("purchase_order_line")
@@ -99,14 +99,14 @@ class _LineQuantities:
     part_number: str
     qty_ordered: Decimal
     qty_allocated: Decimal
-    qty_from_accepted_packages: Decimal
+    qty_from_accepted_shipments: Decimal
     qty_issued: Decimal
 
     @property
     def over_received(self) -> bool:
         """Legal — vendors over-ship — but flagged for visibility (D13: report,
         never block)."""
-        return self.qty_from_accepted_packages > self.qty_ordered
+        return self.qty_from_accepted_shipments > self.qty_ordered
 
 
 @dataclass(frozen=True)
@@ -144,12 +144,12 @@ class SharedSessionLineFulfillment(_LineQuantities):
 
 
 @dataclass(frozen=True)
-class PackageRollup:
+class ShipmentRollup:
     """Answers the manager's direct question: how many items came in for this
-    package."""
+    shipment."""
 
-    package_id: int
-    package_number: str
+    shipment_id: int
+    shipment_number: str
     status: str
     line_count: int
     total_shipped: Decimal
@@ -163,9 +163,9 @@ class PurchaseOrderFulfillmentStruct:
     po_number: str
     status: str
     lines: tuple[_LineQuantities, ...] = ()
-    packages: tuple[PackageRollup, ...] = ()
+    shipments: tuple[ShipmentRollup, ...] = ()
     #: Arrived, not yet pointed at any PO line. Surfaced, never dropped.
-    unassigned_package_line_ids: tuple[int, ...] = ()
+    unassigned_shipment_line_ids: tuple[int, ...] = ()
 
     @classmethod
     def load(cls, *, purchase_order_id: int) -> "PurchaseOrderFulfillmentStruct":
@@ -238,7 +238,7 @@ class PurchaseOrderFulfillmentStruct:
                 "part_number": line.part.part_number,
                 "qty_ordered": line.quantity_ordered,
                 "qty_allocated": line.allocated_total,
-                "qty_from_accepted_packages": line.accepted_total,
+                "qty_from_accepted_shipments": line.accepted_total,
                 # Deliberately a rollup of the DEMAND side, not an inventory
                 # number: it answers "has this order's material reached
                 # anyone", which is the manager's real question, and it comes
@@ -268,17 +268,17 @@ class PurchaseOrderFulfillmentStruct:
                     )
                 )
 
-        packages = tuple(
-            PackageRollup(
-                package_id=pkg.pk,
-                package_number=pkg.package_number,
+        shipments = tuple(
+            ShipmentRollup(
+                shipment_id=pkg.pk,
+                shipment_number=pkg.shipment_number,
                 status=pkg.status,
                 line_count=pkg.line_count,
                 total_shipped=pkg.shipped_total,
                 total_accepted=pkg.accepted_total,
                 mixed_po_assignments=pkg.mixed_po_assignments,
             )
-            for pkg in Package.objects.filter(
+            for pkg in Shipment.objects.filter(
                 purchase_order=po, deleted_at__isnull=True
             ).annotate(
                 line_count=Count(
@@ -301,8 +301,8 @@ class PurchaseOrderFulfillmentStruct:
         )
 
         unassigned = tuple(
-            PackageLine.objects.filter(
-                package__purchase_order=po,
+            ShipmentLine.objects.filter(
+                shipment__purchase_order=po,
                 purchase_order_line__isnull=True,
                 deleted_at__isnull=True,
             ).values_list("pk", flat=True)
@@ -313,8 +313,8 @@ class PurchaseOrderFulfillmentStruct:
             po_number=po.po_number,
             status=po.status,
             lines=tuple(line_structs),
-            packages=packages,
-            unassigned_package_line_ids=unassigned,
+            shipments=shipments,
+            unassigned_shipment_line_ids=unassigned,
         )
 
     def to_dict(self) -> dict:
@@ -323,19 +323,19 @@ class PurchaseOrderFulfillmentStruct:
             "po_number": self.po_number,
             "status": self.status,
             "lines": [cls_to_dict(line) for line in self.lines],
-            "packages": [
+            "shipments": [
                 {
-                    "package_id": p.package_id,
-                    "package_number": p.package_number,
+                    "shipment_id": p.shipment_id,
+                    "shipment_number": p.shipment_number,
                     "status": p.status,
                     "line_count": p.line_count,
                     "total_shipped": p.total_shipped,
                     "total_accepted": p.total_accepted,
                     "mixed_po_assignments": p.mixed_po_assignments,
                 }
-                for p in self.packages
+                for p in self.shipments
             ],
-            "unassigned_package_line_ids": list(self.unassigned_package_line_ids),
+            "unassigned_shipment_line_ids": list(self.unassigned_shipment_line_ids),
         }
 
 
@@ -352,7 +352,7 @@ def cls_to_dict(line: _LineQuantities) -> dict:
         "part_number": line.part_number,
         "qty_ordered": line.qty_ordered,
         "qty_allocated": line.qty_allocated,
-        "qty_from_accepted_packages": line.qty_from_accepted_packages,
+        "qty_from_accepted_shipments": line.qty_from_accepted_shipments,
         "qty_issued": line.qty_issued,
         "attribution_mode": line.attribution_mode,
         "over_received": line.over_received,

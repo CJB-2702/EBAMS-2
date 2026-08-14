@@ -158,10 +158,10 @@ class PurchaseOrderNarrator:
         )
 
     @staticmethod
-    def package_line_split(
-        *, package_number: str, part_number: str, quantity, target_line_number: int
+    def shipment_line_split(
+        *, shipment_number: str, part_number: str, quantity, target_line_number: int
     ) -> str:
         return (
-            f"Package {package_number}: {quantity} x {part_number} split onto line "
+            f"Shipment {shipment_number}: {quantity} x {part_number} split onto line "
             f"{target_line_number}."
         )

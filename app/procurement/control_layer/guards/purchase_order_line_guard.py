@@ -6,7 +6,7 @@ presents, and the control layer does not refuse. The rule is about pricing
 simplicity (one part, one price, one line) rather than data integrity, so the
 day split delivery dates or tiered pricing justify relaxing it, that should be
 a guard change rather than a migration against live data. A duplicate that gets
-through degrades gracefully — arriving package lines land unassigned rather
+through degrades gracefully — arriving shipment lines land unassigned rather
 than mis-assigned.
 
 The quantity floor is the ONE HARD STOP in line editing (D57). It is not a
@@ -22,7 +22,7 @@ from decimal import Decimal
 from django.db.models import Sum
 
 from app.procurement.control_layer.errors import ProcurementValidationError
-from app.procurement.models import PackageLine, PurchaseOrderLine
+from app.procurement.models import ShipmentLine, PurchaseOrderLine
 
 
 @dataclass(frozen=True)
@@ -62,8 +62,8 @@ class PurchaseOrderLineValidator:
     @classmethod
     def check_quantity_floor(cls, *, line, new_quantity_ordered: Decimal) -> None:
         """Hard stop: a line's quantity_ordered cannot drop below what has
-        already been accepted against it in packages."""
-        accepted = PackageLine.objects.filter(
+        already been accepted against it in shipments."""
+        accepted = ShipmentLine.objects.filter(
             purchase_order_line=line, deleted_at__isnull=True
         ).aggregate(total=Sum("quantity_accepted"))["total"] or Decimal("0")
 

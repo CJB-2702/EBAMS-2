@@ -21,6 +21,9 @@ from decimal import Decimal
 from app.procurement.control_layer.guards.purchase_order_demand_link_guard import (
     PurchaseOrderDemandLinkValidator,
 )
+from app.procurement.control_layer.managers.graph_summary_manager import (
+    GraphSummaryManager,
+)
 from app.procurement.control_layer.managers.part_demand_quantity_manager import (
     PartDemandQuantityManager,
 )
@@ -108,6 +111,18 @@ class PurchaseOrderDemandLinkManager:
                 notes=notes,
                 created_by=actor,
                 updated_by=actor,
+            )
+
+        # D82 merge: an active link is a new (or reactivated) edge between a
+        # demand and a PO line. If the two sides were not already in the same
+        # graph, coalesce them. A no-op once a cluster has grown past its
+        # first link, since a second allocation on an already-shared line
+        # lands both sides in the same graph already.
+        demand.refresh_from_db(fields=["graph_id"])
+        line.refresh_from_db(fields=["graph_id"])
+        if demand.graph_id != line.graph_id:
+            GraphSummaryManager.merge(
+                graph_id_a=demand.graph_id, graph_id_b=line.graph_id, actor=actor
             )
 
         cls._auto_update_line_quantity_if_needed(
@@ -219,6 +234,7 @@ class PurchaseOrderDemandLinkManager:
             actor=actor,
         )
 
+        line = link.purchase_order_line
         link.deleted_at = timezone.now()
         link.updated_by = actor
         link.save(update_fields=["deleted_at", "updated_by", "updated_at"])
@@ -228,13 +244,19 @@ class PurchaseOrderDemandLinkManager:
         )
         # purchasing_state deliberately does NOT roll backward here.
 
+        # D82 split: the edge just removed may have been the only bridge
+        # holding the demand's graph together.
+        GraphSummaryManager.split_if_disconnected(
+            graph_id=line.graph_id, seed_entity=line, actor=actor
+        )
+
     @classmethod
     def release_for_purchase_order(
         cls, *, purchase_order, actor=None, commit: bool = True
     ) -> int:
         """Release every allocation on a cancelled PO.
 
-        Nothing physical is reversed: package lines already accepted against
+        Nothing physical is reversed: shipment lines already accepted against
         the PO's lines keep their quantity_accepted. What arrived, arrived,
         regardless of what happens to the PO administratively afterward.
         """
@@ -246,11 +268,18 @@ class PurchaseOrderDemandLinkManager:
 
         count = 0
         for link in links:
+            po_line = link.purchase_order_line
             link.is_active = False
             link.updated_by = actor
             link.save(update_fields=["is_active", "updated_by", "updated_at"])
             PartDemandQuantityManager.refresh_purchased_qty(
                 demand=link.part_demand, actor=actor, commit=commit
+            )
+            # D82 split: is_active=False is a deactivation the same as a
+            # soft-delete for graph purposes (the adjacency query filters on
+            # both) — check whether this severed the graph's last bridge.
+            GraphSummaryManager.split_if_disconnected(
+                graph_id=po_line.graph_id, seed_entity=po_line, actor=actor
             )
             count += 1
         return count
@@ -299,6 +328,14 @@ class PurchaseOrderDemandLinkManager:
                 commit=False,
             )
             count += 1
+
+        if count:
+            # D82 split: every demand link on this line just deactivated —
+            # the line itself may now be the graph's only remaining member,
+            # or the graph may otherwise have split apart.
+            GraphSummaryManager.split_if_disconnected(
+                graph_id=line.graph_id, seed_entity=line, actor=actor
+            )
         return count
 
     @staticmethod

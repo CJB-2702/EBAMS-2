@@ -10,7 +10,7 @@ The seed deliberately produces one of each interesting shape:
 
   PO-A  Placed, two lines. Line 1 serves ONE demand      -> attributable
         Line 2 serves TWO demands                        -> shared session
-        A package arrives against it, partially accepted.
+        A shipment arrives against it, partially accepted.
   PO-B  Draft, one line, one allocation with the D42 opt-out — so a demand
         sits unapproved with purchasing_state still unset, which is what Gate 1
         blocking looks like in practice.
@@ -41,22 +41,22 @@ from app.procurement.control_layer.adapters.purchase_order_draft_adaptor import 
     DraftLine,
     PurchaseOrderDraft,
 )
-from app.procurement.control_layer.factories.package_factory import PackageFactory
+from app.procurement.control_layer.factories.shipment_factory import ShipmentFactory
 from app.procurement.control_layer.factories.part_demand_factory import (
     PartDemandFactory,
 )
 from app.procurement.control_layer.factories.purchase_order_factory import (
     PurchaseOrderFactory,
 )
-from app.procurement.control_layer.package_context import PackageContext
+from app.procurement.control_layer.shipment_context import ShipmentContext
 from app.procurement.control_layer.part_demand_context import PartDemandContext
 from app.procurement.control_layer.purchase_order_context import PurchaseOrderContext
 from app.procurement.models import (
     DemandPriority,
     DemandSourceModule,
     IssuanceState,
-    Package,
-    PackageStatus,
+    Shipment,
+    ShipmentStatus,
     PartDemand,
     PurchaseOrder,
     PurchasingState,
@@ -83,7 +83,7 @@ SEED_MARKER = "[seeded by seed_procurement_dev]"
 
 
 class Command(BaseCommand):
-    help = "Seed dev Procurement data: demands, purchase orders, packages, issuance."
+    help = "Seed dev Procurement data: demands, purchase orders, shipments, issuance."
 
     def handle(self, *args, **options):
         actor = (
@@ -163,7 +163,7 @@ class Command(BaseCommand):
         )
 
     def _seed_attributable_and_shared(self, *, actor, vendor, parts, domain) -> None:
-        """PO-A: one attributable line, one shared demand session, one package."""
+        """PO-A: one attributable line, one shared demand session, one shipment."""
         sole = self._demand(
             part=parts[0],
             domain=domain,
@@ -230,9 +230,9 @@ class Command(BaseCommand):
         po_context.approve_order(actor=actor)
         po_context.place(actor=actor)
 
-        # A package arrives: the sole-demand line in full, the shared line
+        # A shipment arrives: the sole-demand line in full, the shared line
         # short and partly damaged.
-        package = PackageFactory.create(
+        shipment = ShipmentFactory.create(
             purchase_order=po,
             actor=actor,
             carrier="Overnight Freight",
@@ -242,11 +242,11 @@ class Command(BaseCommand):
                 {"part_id": parts[1].pk, "quantity": Decimal("60")},
             ],
         )
-        context = PackageContext(package.pk)
-        context.advance(to_status=PackageStatus.SHIPPED, actor=actor)
-        context.advance(to_status=PackageStatus.DELIVERED_TO_LOCAL, actor=actor)
+        context = ShipmentContext(shipment.pk)
+        context.advance(to_status=ShipmentStatus.SHIPPED, actor=actor)
+        context.advance(to_status=ShipmentStatus.DELIVERED_TO_LOCAL, actor=actor)
 
-        lines = list(package.lines.order_by("id"))
+        lines = list(shipment.lines.order_by("id"))
         context.accept_line(
             line=lines[0], quantity_accepted=Decimal("10"), actor=actor
         )

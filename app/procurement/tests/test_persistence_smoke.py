@@ -30,22 +30,22 @@ from app.procurement.control_layer.adapters.purchase_order_draft_adaptor import 
     DraftLine,
     PurchaseOrderDraft,
 )
-from app.procurement.control_layer.factories.package_factory import PackageFactory
+from app.procurement.control_layer.factories.shipment_factory import ShipmentFactory
 from app.procurement.control_layer.factories.part_demand_factory import (
     PartDemandFactory,
 )
 from app.procurement.control_layer.factories.purchase_order_factory import (
     PurchaseOrderFactory,
 )
-from app.procurement.control_layer.package_context import PackageContext
+from app.procurement.control_layer.shipment_context import ShipmentContext
 from app.procurement.control_layer.purchase_order_context import PurchaseOrderContext
 from app.procurement.models import (
     DemandDimension,
     DemandState,
     IssuanceState,
-    Package,
-    PackageLine,
-    PackageStatus,
+    Shipment,
+    ShipmentLine,
+    ShipmentStatus,
     PartDemand,
     PartDemandUpdate,
     PurchaseOrder,
@@ -203,28 +203,28 @@ class ProcurementPersistenceSmokeTests(TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # Package
+    # Shipment
     # ------------------------------------------------------------------ #
 
-    def test_package_factory_persists_the_package_and_copies_the_po_link(self):
+    def test_shipment_factory_persists_the_shipment_and_copies_the_po_link(self):
         demand = self._demand(quantity="10")
         po = self._purchase_order(demand=demand, quantity="10", ordered="10")
         self._place(po)
 
-        package = PackageFactory.create(
+        shipment = ShipmentFactory.create(
             purchase_order=po,
             actor=self.user,
             carrier="Test Freight",
             lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
         )
 
-        stored = Package.objects.get(pk=package.pk)
+        stored = Shipment.objects.get(pk=shipment.pk)
         self.assertEqual(stored.purchase_order_id, po.pk)
-        self.assertEqual(stored.status, PackageStatus.AWAITING_SHIPMENT)
-        self.assertTrue(stored.package_number.startswith("PKG-"))
+        self.assertEqual(stored.status, ShipmentStatus.AWAITING_SHIPMENT)
+        self.assertTrue(stored.shipment_number.startswith("SHP-"))
         self.assertFalse(stored.mixed_po_assignments)
 
-        line = PackageLine.objects.get(package_id=package.pk)
+        line = ShipmentLine.objects.get(shipment_id=shipment.pk)
         # Copied from the header PO automatically — the common case needs no
         # per-line assignment.
         self.assertIsNotNone(line.purchase_order_line_id)
@@ -232,19 +232,19 @@ class ProcurementPersistenceSmokeTests(TestCase):
         # Uninspected is NULL, which differs meaningfully from 0.
         self.assertIsNone(line.quantity_accepted)
 
-    def test_accepting_a_package_line_persists_the_accepted_quantity(self):
+    def test_accepting_a_shipment_line_persists_the_accepted_quantity(self):
         demand = self._demand(quantity="10")
         po = self._purchase_order(demand=demand, quantity="10", ordered="10")
         self._place(po)
-        package = PackageFactory.create(
+        shipment = ShipmentFactory.create(
             purchase_order=po,
             actor=self.user,
             lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
         )
 
-        context = PackageContext(package.pk)
-        context.advance(to_status=PackageStatus.SHIPPED, actor=self.user)
-        line = PackageLine.objects.get(package_id=package.pk)
+        context = ShipmentContext(shipment.pk)
+        context.advance(to_status=ShipmentStatus.SHIPPED, actor=self.user)
+        line = ShipmentLine.objects.get(shipment_id=shipment.pk)
         context.accept_line(
             line=line,
             quantity_accepted=Decimal("8"),
@@ -252,11 +252,11 @@ class ProcurementPersistenceSmokeTests(TestCase):
             rejection_notes="2 damaged.",
         )
 
-        stored = PackageLine.objects.get(pk=line.pk)
+        stored = ShipmentLine.objects.get(pk=line.pk)
         self.assertEqual(stored.quantity_accepted, Decimal("8.000"))
         self.assertEqual(stored.rejection_notes, "2 damaged.")
         self.assertEqual(
-            Package.objects.get(pk=package.pk).status, PackageStatus.SHIPPED
+            Shipment.objects.get(pk=shipment.pk).status, ShipmentStatus.SHIPPED
         )
         # Any accepted quantity makes a placed order Partially Received.
         self.assertEqual(

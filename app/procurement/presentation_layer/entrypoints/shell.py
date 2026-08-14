@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 
 from app.procurement.models import (
     DemandState,
-    Package,
+    Shipment,
     PurchaseOrder,
     PurchaseOrderApprovalState,
     PurchaseOrderStatus,
@@ -47,7 +47,7 @@ def procurement_hub(request: HttpRequest) -> HttpResponse:
 
     demand_stats = PartDemandAgg.for_domains(domain_ids)
     po_stats = _po_stats(domain_ids)
-    package_stats = _package_stats(domain_ids)
+    shipment_stats = _shipment_stats(domain_ids)
     can_buy_prices = can_buy(request)
 
     return render(
@@ -58,8 +58,8 @@ def procurement_hub(request: HttpRequest) -> HttpResponse:
             "demands_pending_approval": demand_stats["pending_approval"],
             "pos_pending_approval": po_stats["pending_approval"],
             "draft_pos": po_stats["draft"],
-            "packages_in_transit": package_stats["in_transit"],
-            "drift_flagged_packages": package_stats["drift_flagged"],
+            "shipments_in_transit": shipment_stats["in_transit"],
+            "drift_flagged_shipments": shipment_stats["drift_flagged"],
             "can_buy_prices": can_buy_prices,
             # D87: viewer-relative — see the unpriced page's own caveat.
             "unpriced_parts_count": (
@@ -103,9 +103,9 @@ def _po_stats(domain_ids: list[int]) -> dict[str, int]:
     return agg
 
 
-def _package_stats(domain_ids: list[int]) -> dict[str, int]:
+def _shipment_stats(domain_ids: list[int]) -> dict[str, int]:
     in_transit_statuses = ("awaiting_shipment", "shipped", "delivered_to_depot")
-    agg = Package.objects.filter(
+    agg = Shipment.objects.filter(
         domain_id__in=domain_ids, deleted_at__isnull=True
     ).aggregate(
         in_transit=Count("pk", filter=Q(status__in=in_transit_statuses)),

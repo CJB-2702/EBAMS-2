@@ -11,7 +11,7 @@ class PurchaseOrderLine(AuditFieldsMixin, SoftDeleteMixin):
     No line-level status column (D51). The legacy line carried its own status
     cascaded from the header, so header, line, and demand each held a partial
     copy of the same fact and could disagree. A line's state is its header's
-    status; arrival progress is physical — PackageLine.quantity_accepted
+    status; arrival progress is physical — ShipmentLine.quantity_accepted
     against this line.
 
     Cancellation is a soft delete plus an audit comment, not a status value
@@ -24,10 +24,10 @@ class PurchaseOrderLine(AuditFieldsMixin, SoftDeleteMixin):
     Two reasons: the rule is about pricing simplicity (one part, one price, one
     line) rather than data integrity, so relaxing it later for split delivery
     dates or tiered pricing should be a guard change and not a migration; and
-    package-line assignment resolves part -> PO line, which is only unambiguous
+    shipment-line assignment resolves part -> PO line, which is only unambiguous
     while the rule holds — the soft version keeps that failure visible rather
     than impossible. A duplicate that gets through degrades gracefully:
-    arriving package lines land unassigned rather than mis-assigned.
+    arriving shipment lines land unassigned rather than mis-assigned.
 
     No is_fake_for_inventory_adjustments. The legacy line had a boolean marking
     synthetic lines created purely to book an inventory adjustment; a flag that
@@ -72,8 +72,23 @@ class PurchaseOrderLine(AuditFieldsMixin, SoftDeleteMixin):
         max_length=10, choices=PriceConfidence.choices, blank=True, default=""
     )
 
+    # ── Graph materialization (D79-D82) ─────────────────────────────────────
+    # Nullable is a TECHNICAL NECESSITY of the create sequence, not a real
+    # "can be ungraphed" state: GraphSummaryManager.initialize_node() assigns
+    # this in the same transaction as the line's own creation (D82), so a
+    # PurchaseOrderLine is never actually observed with graph_id unset outside
+    # that one transaction. Never assigned directly by any other caller — only
+    # GraphSummaryManager writes this column (node-init, merge, split).
+    graph = models.ForeignKey(
+        "procurement.GraphSummary",
+        on_delete=models.PROTECT,
+        related_name="purchase_order_lines",
+        null=True,
+        blank=True,
+    )
+
     # Derived values — line_total, quantity_allocated_total,
-    # quantity_unallocated, qty_from_accepted_packages, qty_issued — live on
+    # quantity_unallocated, qty_from_accepted_shipments, qty_issued — live on
     # PurchaseOrderLineStruct / PurchaseOrderFulfillmentStruct, never here
     # (D53). The legacy model exposed each as an @property issuing its own
     # query, so rendering a 40-line PO cost well over a hundred queries.

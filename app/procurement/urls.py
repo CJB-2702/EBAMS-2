@@ -3,7 +3,7 @@
 A shared parent including each wave's own url module plus the `/procurement`
 hub page and the graph-visualizer placeholder (route declared here, page
 built in Phase 4). Each wave edits only its own module
-(urls_demands.py / urls_purchase_orders.py / urls_packages.py).
+(urls_demands.py / urls_purchase_orders.py / urls_shipments.py).
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ urlpatterns = [
     path("", procurement_hub, name="procurement_hub"),
     path("demands/", include("app.procurement.urls_demands")),
     path("purchase-orders/", include("app.procurement.urls_purchase_orders")),
-    path("packages/", include("app.procurement.urls_packages")),
+    path("shipments/", include("app.procurement.urls_shipments")),
     path("vendors/", vendor_index, name="vendor_index"),
     path("vendors/create/", vendor_create, name="vendor_create"),
     path("prices/", include("app.procurement.urls_prices")),

@@ -4,7 +4,7 @@
   ---------------------  --------------------  ---------------------------
   Draft                  stays unset           Request Not Sent
   Placed                 -> Purchased          -> Request Received by Vendor
-  Partially Received     unchanged             unchanged (packages drive it)
+  Partially Received     unchanged             unchanged (shipments drive it)
   Received               unchanged             -> Delivered to Local (explicit)
   Cancelled              -> Cancelled          unchanged
 

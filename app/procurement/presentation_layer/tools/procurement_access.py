@@ -34,7 +34,7 @@ PERM_REQUEST = "procurement.request"
 #: their domain, not only their own.
 PERM_DEMAND_MANAGE = "procurement.demand_manage"
 
-#: Receiving staff — create packages, advance package status, inspect/accept
+#: Receiving staff — create shipments, advance shipment status, inspect/accept
 #: lines. Declared here for completeness even though this wave (demands) never
 #: gates on it.
 PERM_RECEIVE = "procurement.receive"
@@ -85,11 +85,11 @@ def require_request(request: HttpRequest) -> None:
 
 
 def require_receive(request: HttpRequest) -> None:
-    """Gates package creation (both paths), status advance, line acceptance,
-    and every mutation on the package edit page (Phase 0 §5)."""
+    """Gates shipment creation (both paths), status advance, line acceptance,
+    and every mutation on the shipment edit page (Phase 0 §5)."""
     if not can_receive(request):
         raise PermissionDenied(
-            "Recording or changing a package requires the 'receive' permission."
+            "Recording or changing a shipment requires the 'receive' permission."
         )
 
 

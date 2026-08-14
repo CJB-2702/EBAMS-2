@@ -1,0 +1,463 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}Shipment Manager — {{ po.po_number }}{% endblock %}
+{% block nav_po_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'purchase_order_index' %}">Purchase Orders</a></li>
+<li><a href="{% url 'purchase_order_detail' pk=po.pk %}">{{ po.po_number }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Shipment Manager</a></li>
+{% endblock %}
+
+{% comment %}
+THE BASIC SHIPMENT MANAGER — forward-looking.
+
+This is a Buyer reading a vendor's shipping confirmation and laying out the
+boxes that are GOING to arrive. It is not a receiver with a carton in hand —
+that job is /procurement/shipments/receive.
+
+NOTHING ON THIS PAGE WRITES UNTIL SUBMIT. The create-shipment form appends a
+session-only card. Chips move between cards in the session. The whole layout is
+committed once, all or nothing, by BasicShipmentManagerSubmitHandler.
+
+DRAG-AND-DROP IS THE FAST PATH, NEVER THE ONLY PATH. Every gesture has a plain
+form equivalent posting to the same server actions — the drag layer at the
+bottom of this file literally submits those forms. That is what keeps the F5
+rule true here, and it is why the drag layer cannot develop behaviour the
+no-JavaScript path lacks.
+
+THE LOCK RULE (D69). A card is red and read-only when its shipment is Delivered
+to Local / Accepted, OR when it carries a split — either condition alone. Lost
+is NOT a lock trigger. Locked cards still render and their lines still count
+toward "already shipped", because a Buyer who cannot see the boxes they may
+not edit will cheerfully plan the same units twice.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+      <div>
+        <h1 class="page-title">Shipment Manager</h1>
+        <p class="page-subtitle is-family-monospace">{{ po.po_number }} · {{ po.vendor.name }} · {{ po.get_status_display }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'purchase_order_detail' pk=po.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to order</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<article class="message is-info">
+  <div class="message-body is-size-7">
+    <strong>Nothing here is saved until you submit.</strong>
+    Lay out the boxes the vendor says are coming, then commit the whole plan in one go. If any part
+    of it is rejected, none of it is written — so you never have to work out which half landed.
+  </div>
+</article>
+
+{% if card_errors %}
+<article class="message is-danger">
+  <div class="message-body is-size-7">
+    <strong>The plan was rejected and nothing was saved.</strong>
+    Your layout is exactly as you left it. The problems are marked on the cards below.
+  </div>
+</article>
+{% endif %}
+
+<div class="columns is-variable is-4">
+
+  {# ============ Left 1/3: PO lines as draggable chips ============ #}
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+        Order lines
+      </div></div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <tbody>
+            {% for entry in chips %}
+            <tr>
+              <td>
+                <div class="depth-2 p-2" draggable="true"
+                     data-source-chip
+                     data-po-line-id="{{ entry.line.line_id }}"
+                     data-remaining="{{ entry.unplanned }}"
+                     style="cursor:grab;">
+                  <span class="is-family-monospace">{{ entry.line.line_number }}. {{ entry.line.part_number }}</span>
+                  <span class="is-block has-text-grey">{{ entry.line.part_name }}</span>
+                  <div class="is-flex is-size-7 mt-1" style="gap:0.75rem;flex-wrap:wrap;">
+                    <span>ordered <strong class="is-family-monospace">{{ entry.line.qty_ordered }}</strong></span>
+                    <span>planned <strong class="is-family-monospace">{{ entry.planned }}</strong></span>
+                    <span class="{% if entry.unplanned > 0 %}has-text-warning-dark{% else %}has-text-grey{% endif %}">
+                      unplanned <strong class="is-family-monospace">{{ entry.unplanned }}</strong>
+                    </span>
+                  </div>
+                  {% if entry.planned > entry.line.qty_ordered %}
+                  <p class="has-text-grey is-size-7 mt-1">
+                    More planned than ordered. Legal — vendors over-ship — just worth knowing.
+                  </p>
+                  {% endif %}
+                </div>
+
+                {% comment %}
+                THE EXPLICIT EQUIVALENT OF THE DRAG GESTURE. Always present,
+                never hidden behind a "no JS" branch — one path, tested by
+                everyone who uses it.
+                {% endcomment %}
+                <form method="post" class="mt-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="assign">
+                  <input type="hidden" name="po_line_id" value="{{ entry.line.line_id }}">
+                  <div class="field has-addons mb-0">
+                    <div class="control">
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                             name="quantity" value="{{ entry.unplanned|default:entry.line.qty_ordered }}"
+                             style="max-width:6rem;"
+                             aria-label="Quantity of {{ entry.line.part_number }} to assign">
+                    </div>
+                    <div class="control is-expanded">
+                      <div class="select is-small is-fullwidth">
+                        <select name="temp_id" aria-label="Assign {{ entry.line.part_number }} to">
+                          {% for entry_card in cards %}
+                            {% if not entry_card.card.locked %}
+                            <option value="{{ entry_card.card.temp_id }}">
+                              {{ entry_card.card.shipment_number|default:"New shipment" }}
+                              {% if entry_card.card.shipment_id %}({{ entry_card.card.shipment_id }}){% endif %}
+                            </option>
+                            {% endif %}
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-link" title="Assign to shipment">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">east</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td class="has-text-grey has-text-centered py-5">
+              This order has no lines to shipment. Add them on the order page first.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ============ Right 2/3: the shipment workspace ============ #}
+  <div class="column">
+
+    {# Create-shipment form. WRITES NOTHING — appends a session card. #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_box</span></span>
+        Add a shipment to the plan
+      </div></div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_shipment">
+        <div class="card-content">
+          <div class="columns is-variable is-3 is-multiline">
+            <div class="column is-3">
+              <label class="label is-small" for="new-shipment">Shipment / tracking ID</label>
+              <input id="new-shipment" class="input is-small is-family-monospace" type="text" name="shipment_id">
+            </div>
+            <div class="column is-3">
+              <label class="label is-small" for="new-carrier">Carrier</label>
+              <input id="new-carrier" class="input is-small" type="text" name="carrier">
+            </div>
+            <div class="column is-3">
+              <label class="label is-small" for="new-shipped">Shipped</label>
+              <input id="new-shipped" class="input is-small" type="date" name="shipped_date">
+            </div>
+            <div class="column is-3">
+              <label class="label is-small" for="new-expected">Expected</label>
+              <input id="new-expected" class="input is-small" type="date" name="expected_arrival_date">
+            </div>
+            <div class="column is-12">
+              <label class="label is-small" for="new-notes">Notes</label>
+              <input id="new-notes" class="input is-small" type="text" name="notes">
+            </div>
+          </div>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <span class="is-size-7 has-text-grey" style="align-self:center;">
+              Appends an empty box to the plan. Nothing is written yet.
+            </span>
+          </div>
+          <button type="submit" class="button is-link card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            <span>Add shipment</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+
+    {# One card per shipment #}
+    {% for entry in cards %}
+    <div class="card {% if entry.card.locked %}has-background-danger-light{% endif %}"
+         data-shipment-card
+         data-temp-id="{{ entry.card.temp_id }}"
+         data-locked="{{ entry.card.locked|yesno:"1,0" }}"
+         style="border-left:4px solid {% if entry.card.locked %}var(--bulma-danger, #cc0f35){% else %}var(--bulma-success, #257953){% endif %};">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">
+            {% if entry.card.locked %}lock{% else %}inventory_2{% endif %}
+          </span></span>
+          {% if entry.card.shipment_id %}
+            <a href="{% url 'shipment_detail' pk=entry.card.shipment_id %}">{{ entry.card.shipment_number }}</a>
+          {% else %}
+            New shipment <span class="tag is-small is-light ml-2">not saved yet</span>
+          {% endif %}
+        </div>
+        <div class="is-flex pr-3" style="gap:0.5rem;align-items:center;">
+          {% shipment_status_tag entry.card.status %}
+          {% if entry.card.shipment_id %}
+          <a href="{% url 'shipment_edit' pk=entry.card.shipment_id %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+            <span>Edit this shipment</span>
+          </a>
+          {% else %}
+          <form method="post" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_shipment">
+            <input type="hidden" name="temp_id" value="{{ entry.card.temp_id }}">
+            <button type="submit" class="button is-small is-light" title="Drop this planned shipment">
+              <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">close</span></span>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if card_errors|length %}
+        {% for error_temp_id, error_list in card_errors.items %}
+          {% if error_temp_id == entry.card.temp_id %}
+          <div class="card-content pb-0">
+            <article class="message is-danger is-small mb-0"><div class="message-body is-size-7">
+              {% for error in error_list %}<p>{{ error }}</p>{% endfor %}
+            </div></article>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if entry.card.locked %}
+      <div class="card-content">
+        <p class="is-size-7">{{ entry.card.lock_reason }}</p>
+        <p class="has-text-grey is-size-7 mt-2">
+          Its lines still count toward the "planned" totals on the left, so what you see there is the
+          whole picture — you just cannot change this box from here.
+        </p>
+      </div>
+      {% endif %}
+
+      <div class="card-content {% if entry.card.locked %}pt-0{% endif %}">
+        {% if not entry.card.locked %}
+        {# Header fields stay editable on an unlocked card. #}
+        <form method="post" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_shipment">
+          <input type="hidden" name="temp_id" value="{{ entry.card.temp_id }}">
+          <div class="columns is-variable is-2 is-multiline">
+            <div class="column is-3">
+              <input class="input is-small is-family-monospace" type="text" name="shipment_id"
+                     value="{{ entry.card.shipment_id }}" placeholder="shipment id" aria-label="Shipment id">
+            </div>
+            <div class="column is-3">
+              <input class="input is-small" type="text" name="carrier"
+                     value="{{ entry.card.carrier }}" placeholder="carrier" aria-label="Carrier">
+            </div>
+            <div class="column is-2">
+              <input class="input is-small" type="date" name="shipped_date"
+                     value="{{ entry.card.shipped_date }}" aria-label="Shipped date">
+            </div>
+            <div class="column is-2">
+              <input class="input is-small" type="date" name="expected_arrival_date"
+                     value="{{ entry.card.expected_arrival_date }}" aria-label="Expected arrival">
+            </div>
+            <div class="column is-2">
+              <button type="submit" class="button is-small is-light is-fullwidth">
+                <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+                <span>Apply</span>
+              </button>
+            </div>
+            <div class="column is-12">
+              <input class="input is-small" type="text" name="notes"
+                     value="{{ entry.card.notes }}" placeholder="notes" aria-label="Notes">
+            </div>
+          </div>
+        </form>
+        {% endif %}
+
+        {# The drop zone: this card's chips #}
+        <div {% if not entry.card.locked %}data-drop-zone{% endif %}
+             class="depth-2 p-3"
+             style="min-height:4.5rem;{% if entry.card.locked %}opacity:0.75;{% endif %}">
+          {% for chip in entry.chips %}
+          <div class="depth-3 p-2 mb-2 is-flex is-align-items-center" style="gap:0.75rem;flex-wrap:wrap;">
+            <span class="is-family-monospace is-size-7" style="flex:1;min-width:10rem;">
+              {{ chip.label }}
+              <span class="is-block has-text-grey">{{ chip.part_name }}</span>
+              {% if chip.orphaned %}
+              <span class="tag is-small is-danger is-light">No longer on this order</span>
+              {% endif %}
+            </span>
+            {% if entry.card.locked %}
+              <span class="is-family-monospace is-size-7">{{ chip.quantity }}</span>
+            {% else %}
+              <form method="post" class="field has-addons mb-0">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="set_quantity">
+                <input type="hidden" name="temp_id" value="{{ entry.card.temp_id }}">
+                <input type="hidden" name="po_line_id" value="{{ chip.po_line_id }}">
+                <div class="control">
+                  <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+                         name="quantity" value="{{ chip.quantity }}" style="max-width:6rem;"
+                         aria-label="Quantity of {{ chip.label }} in this shipment">
+                </div>
+                <div class="control">
+                  <button type="submit" class="button is-small is-light" title="Set quantity">
+                    <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+                  </button>
+                </div>
+              </form>
+              <form method="post" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="unassign">
+                <input type="hidden" name="temp_id" value="{{ entry.card.temp_id }}">
+                <input type="hidden" name="po_line_id" value="{{ chip.po_line_id }}">
+                <button type="submit" class="button is-small is-light" title="Take out of this shipment">
+                  <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">close</span></span>
+                </button>
+              </form>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7 has-text-centered">
+            {% if entry.card.locked %}
+              No order lines from this order are in this box.
+            {% else %}
+              Empty. Drag an order line here, or use the arrow button on the left.
+            {% endif %}
+          </p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="card">
+      <div class="card-content">
+        <p class="has-text-grey is-size-7">
+          No shipments planned or recorded for this order yet. Add one above.
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+
+    {# Submit the whole plan #}
+    <div class="card">
+      <div class="card-content">
+        <p class="is-size-7">
+          Submitting applies every change on this page in one transaction: shipments created, lines
+          moved, quantities corrected. <strong>If anything fails, none of it is written</strong> and
+          your plan stays exactly as it is.
+        </p>
+      </div>
+      <footer class="card-footer custom-card-footer">
+        <div class="card-footer-secondaries">
+          <form method="post" style="margin:0;"
+                onsubmit="return confirm('Discard your unsaved plan and start again from what is on file?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset">
+            <button type="submit" class="button is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">restart_alt</span></span>
+              <span>Reset plan</span>
+            </button>
+          </form>
+        </div>
+        <form method="post" style="margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="submit">
+          <button type="submit" class="button is-primary card-footer-primary" {% if not can_receive %}disabled{% endif %}>
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+            <span>Save shipment plan</span>
+          </button>
+        </form>
+      </footer>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+The drag layer. It builds and submits the SAME form actions the buttons above
+post, so there is no behaviour here that the plain path lacks — a drop is just
+a faster way to press "assign".
+{% endcomment %}
+<script>
+(function () {
+  const csrf = document.querySelector('input[name="csrfmiddlewaretoken"]');
+  if (!csrf) return;
+
+  let dragged = null;
+
+  document.querySelectorAll('[data-source-chip]').forEach(function (chip) {
+    chip.addEventListener('dragstart', function (event) {
+      dragged = chip;
+      event.dataTransfer.effectAllowed = 'copy';
+      // Some browsers refuse to start a drag with no payload set.
+      event.dataTransfer.setData('text/plain', chip.dataset.poLineId);
+    });
+    chip.addEventListener('dragend', function () { dragged = null; });
+  });
+
+  document.querySelectorAll('[data-drop-zone]').forEach(function (zone) {
+    zone.addEventListener('dragover', function (event) {
+      event.preventDefault();
+      zone.classList.add('depth-3');
+    });
+    zone.addEventListener('dragleave', function () {
+      zone.classList.remove('depth-3');
+    });
+    zone.addEventListener('drop', function (event) {
+      event.preventDefault();
+      zone.classList.remove('depth-3');
+      if (!dragged) return;
+
+      const card = zone.closest('[data-shipment-card]');
+      if (!card || card.dataset.locked === '1') return;
+
+      const remaining = dragged.dataset.remaining;
+      const quantity = window.prompt(
+        'How much of this line goes in that shipment?', remaining
+      );
+      if (quantity === null || quantity.trim() === '') return;
+
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.style.display = 'none';
+      form.innerHTML =
+        '<input name="csrfmiddlewaretoken" value="' + csrf.value + '">' +
+        '<input name="action" value="assign">' +
+        '<input name="temp_id" value="' + card.dataset.tempId + '">' +
+        '<input name="po_line_id" value="' + dragged.dataset.poLineId + '">' +
+        '<input name="quantity" value="' + quantity + '">';
+      document.body.appendChild(form);
+      form.submit();
+    });
+  });
+})();
+</script>
+{% endblock %}

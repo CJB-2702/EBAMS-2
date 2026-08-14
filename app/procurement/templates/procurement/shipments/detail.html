@@ -1,0 +1,378 @@
+{% extends "procurement/base.html" %}
+{% load procurement_tags %}
+{% block title %}{{ shipment.shipment_number }}{% endblock %}
+{% block nav_shipment_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'shipment_index' %}">Shipments</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ shipment.shipment_number }}</a></li>
+{% endblock %}
+
+{% comment %}
+Work portal (3/4 + 1/4). This page has exactly two verbs: ADVANCE STATUS and
+ACCEPT A LINE. Everything else — reassignment, splitting, header edits,
+deletions — is a link to the edit page, so there is one place a mutation can
+come from and one place the audit rules live.
+
+THE ARRIVAL DISPLAY IS A COLUMN, NOT A CARD. An earlier draft gave "demand
+arrival for this shipment's lines" its own card; folded into the lines table as
+"Attributed to" it says the same thing with one less card — and on a PO-less
+shipment the standalone card would be empty on every row, which reads as broken
+rather than as "nothing is claimed yet".
+
+The three Event cards are the shared events/fragments/*, not reimplementations.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+      <div>
+        <h1 class="page-title">{{ shipment.shipment_number }}</h1>
+        <p class="page-subtitle is-family-monospace">
+          {% if shipment.shipment_id %}{{ shipment.shipment_id }}{% else %}<span class="has-text-grey">no shipment id</span>{% endif %}
+          {% if shipment.carrier %} · {{ shipment.carrier }}{% endif %}
+          · {{ detail.total_shipped }} shipped
+        </p>
+        <div class="mt-2">
+          {% shipment_status_tag shipment.status %}
+          {% if shipment.has_splits %}<span class="tag is-small is-light" title="At least one line has been split across order lines.">Split lineage</span>{% endif %}
+          {% if not shipment.purchase_order_id %}<span class="tag is-small is-warning is-light">No purchase order</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'shipment_edit' pk=shipment.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit &amp; Linkage</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+Non-blocking by design: mixed_po_assignments is a FLAG, NOT A CONSTRAINT. One
+physical box routinely holds items from several orders to the same vendor. The
+banner names the divergent lines, because a banner that only says "something
+diverged" is noise.
+{% endcomment %}
+{% if shipment.mixed_po_assignments %}
+<article class="message is-warning">
+  <div class="message-body is-size-7">
+    <strong>Lines on this shipment point at more than one purchase order.</strong>
+    Nothing is blocked — one box holding items from several orders to the same vendor is normal.
+    Divergent line(s):
+    {% for line in detail.drifted_lines %}
+      <span class="is-family-monospace">{{ line.part_number }} → {{ line.po_number }} line {{ line.po_line_number }}</span>{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+  </div>
+</article>
+{% endif %}
+
+<div class="body-grid has-rail">
+  <div>
+
+    {# Advance status #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">timeline</span></span>
+        Movement
+      </div></div>
+      <div class="card-content">
+        {% if not can_receive %}
+          <p class="has-text-grey is-size-7">Advancing a shipment's status requires the 'receive' permission.</p>
+        {% elif not next_statuses %}
+          <p class="has-text-grey is-size-7">
+            {{ shipment.get_status_display }} is the end of the line — there is nowhere further to
+            move this shipment.
+          </p>
+        {% else %}
+        <form method="post" class="is-flex is-align-items-flex-end" style="gap:0.75rem;flex-wrap:wrap;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="advance_status">
+          <div>
+            <label class="label is-small" for="advance-to">Move to</label>
+            {% comment %}
+            Constrained to the CURRENTLY LEGAL next stage(s). Not a stepper,
+            not jump-to-any-stage: a list offering illegal moves teaches
+            people to expect a refusal.
+            {% endcomment %}
+            <div class="select is-small"><select id="advance-to" name="to_status" required>
+              {% for value, label in next_statuses %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select></div>
+          </div>
+          <button type="submit" class="button is-small is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Advance</span>
+          </button>
+          <p class="has-text-grey is-size-7" style="flex:1;min-width:16rem;">
+            Moving a shipment moves the demands behind it — each takes the
+            <strong>least advanced</strong> status among every box carrying its material.
+          </p>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Lines #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+          Lines
+        </div>
+        <span class="is-size-7 has-text-grey pr-3">
+          {{ detail.total_accepted }} accepted of {{ detail.total_shipped }} shipped
+        </span>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>Part</th>
+            <th class="has-text-right">Shipped</th>
+            <th>Accepted</th>
+            <th>Assigned to</th>
+            <th>Attributed to</th>
+            <th style="width:16rem;">Inspect</th>
+          </tr></thead>
+          <tbody>
+            {% for line in detail.lines %}
+            <tr>
+              <td>
+                <span class="is-family-monospace">{{ line.part_number }}</span>
+                <span class="is-block has-text-grey">{{ line.part_name }}</span>
+                {% if line.split_from_id %}
+                  <span class="tag is-small is-light mt-1" title="This row was produced by splitting an arriving line.">Split from #{{ line.split_from_id }}</span>
+                {% endif %}
+                {% if line.split_child_count %}
+                  <span class="tag is-small is-light mt-1">Split into {{ line.split_child_count }}</span>
+                {% endif %}
+              </td>
+              <td class="has-text-right is-family-monospace">{{ line.quantity }}</td>
+              <td>
+                {% accepted_quantity_cell line.quantity_accepted line.quantity %}
+                {% if line.rejection_notes %}
+                  <span class="is-block has-text-grey is-size-7">{{ line.rejection_notes }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if line.purchase_order_line_id %}
+                  {% demand_in_domain line.purchase_order_domain_id as po_ok %}
+                  {% if po_ok %}
+                    <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=line.purchase_order_id %}?line_id={{ line.purchase_order_line_id }}">{{ line.po_number }}</a>
+                  {% else %}
+                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ line.po_number }}</span>
+                  {% endif %}
+                  <span class="is-block has-text-grey">line {{ line.po_line_number }}</span>
+                  {% if line.is_drifted %}<span class="tag is-small is-warning is-light">Other order</span>{% endif %}
+                {% else %}
+                  <span class="tag is-small is-light">Unassigned</span>
+                {% endif %}
+                <a class="is-block is-size-7 mt-1" href="{% url 'shipment_edit' pk=shipment.pk %}?line_id={{ line.line_id }}">Edit assignment →</a>
+              </td>
+              <td>
+                {% comment %}
+                THE ATTRIBUTION RULE (D55), rendered. Never a per-demand split on
+                the shared branch — not even labelled as an estimate. The units
+                in the box are fungible and nobody at the vendor decided whose
+                they were, so a session total and a member list is the honest
+                answer and a divided number is a fabricated one.
+                {% endcomment %}
+                {% if line.attribution.mode == "attributable" %}
+                  {% demand_in_domain line.attribution.demand_domain_id as demand_ok %}
+                  {% if demand_ok %}
+                    <a class="is-family-monospace" href="{% url 'demand_detail' pk=line.attribution.demand_id %}">Demand #{{ line.attribution.demand_id }}</a>
+                  {% else %}
+                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">Demand #{{ line.attribution.demand_id }}</span>
+                  {% endif %}
+                {% elif line.attribution.mode == "shared_session" %}
+                  <details>
+                    <summary class="tag is-small is-info is-light" style="cursor:pointer;">
+                      Shared session ({{ line.attribution.member_count }})
+                    </summary>
+                    <div class="depth-2 p-2 mt-1 is-size-7">
+                      <p class="has-text-grey mb-1">
+                        {{ line.attribution.session_arrived }} arrived against
+                        {{ line.attribution.session_allocated }} allocated across
+                        {{ line.attribution.member_count }} demands. <strong>No per-demand share
+                        exists</strong> — the goods are fungible and none of them was earmarked.
+                      </p>
+                      <ul>
+                        {% for member_id, member_domain_id, member_qty in line.attribution.session_members %}
+                        <li>
+                          {% demand_in_domain member_domain_id as member_ok %}
+                          {% if member_ok %}
+                            <a class="is-family-monospace" href="{% url 'demand_detail' pk=member_id %}">#{{ member_id }}</a>
+                          {% else %}
+                            <span class="is-family-monospace">#{{ member_id }}</span>
+                          {% endif %}
+                          <span class="has-text-grey">— {{ member_qty }} allocated</span>
+                        </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </details>
+                {% else %}
+                  <span class="has-text-grey">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if can_receive %}
+                <form method="post" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="accept_line">
+                  <input type="hidden" name="line_id" value="{{ line.line_id }}">
+                  <div class="field has-addons mb-1">
+                    <div class="control is-expanded">
+                      {% comment %}
+                      DELIBERATELY NOT DEFAULTED TO 0 or to the shipped
+                      quantity. A blank box means "not inspected", and the
+                      handler refuses a blank rather than reading it as a
+                      write-off.
+                      {% endcomment %}
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+                             name="quantity_accepted"
+                             value="{% if line.is_inspected %}{{ line.quantity_accepted }}{% endif %}"
+                             placeholder="qty accepted"
+                             aria-label="Accepted quantity for {{ line.part_number }}">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-link" title="Record inspection">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+                      </button>
+                    </div>
+                  </div>
+                  <input class="input is-small" type="text" name="rejection_notes"
+                         value="{{ line.rejection_notes }}" placeholder="why the difference, if any"
+                         aria-label="Rejection notes for {{ line.part_number }}">
+                </form>
+                {% else %}
+                <span class="has-text-grey is-size-7">Receiving staff only</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="has-text-grey has-text-centered py-5">
+              No lines on this shipment yet. Add them on the
+              <a href="{% url 'shipment_edit' pk=shipment.pk %}">edit page</a>.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if detail.unassigned_lines %}
+      <div class="card-content pt-0">
+        <article class="message is-info is-small mb-0"><div class="message-body is-size-7">
+          {{ detail.unassigned_lines|length }} line(s) are not pointed at any order line. They are
+          surfaced, never dropped — assign them from
+          <a href="{% url 'shipment_edit' pk=shipment.pk %}">Edit &amp; Linkage</a> when you know where
+          they belong.
+        </div></article>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ============================ Rail (1/4) ============================ #}
+  <aside>
+
+    {# Primary PO / quick facts #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+        Purchase order
+      </div></div>
+      <div class="card-content">
+        {% if shipment.purchase_order_id %}
+          <dl class="kv">
+            <dt>Order</dt>
+            <dd>
+              {% if po_linkable %}
+                <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=shipment.purchase_order_id %}">{{ shipment.purchase_order.po_number }}</a>
+              {% else %}
+                <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ shipment.purchase_order.po_number }}</span>
+              {% endif %}
+            </dd>
+            <dt>Vendor</dt><dd>{{ detail.vendor_name|default:"—" }}</dd>
+            <dt>Order status</dt><dd>{{ shipment.purchase_order.get_status_display }}</dd>
+          </dl>
+        {% else %}
+          <p class="has-text-grey is-size-7">
+            No purchase order attached. That is a legitimate state — the box arrived before its
+            paperwork.
+          </p>
+          <a href="{% url 'shipment_edit' pk=shipment.pk %}" class="button is-small is-light mt-2">
+            <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+            <span>Attach one</span>
+          </a>
+        {% endif %}
+        <hr class="my-3">
+        <dl class="kv">
+          <dt>Domain</dt><dd>{{ shipment.domain.name }}</dd>
+          <dt>Shipment ID</dt><dd class="is-family-monospace">{{ shipment.shipment_id|default:"—" }}</dd>
+          <dt>Carrier</dt><dd>{{ shipment.carrier|default:"—" }}</dd>
+          <dt>Shipped</dt><dd>{{ shipment.shipped_date|date:"Y-m-d"|default:"—" }}</dd>
+          <dt>Expected</dt><dd>{{ shipment.expected_arrival_date|date:"Y-m-d"|default:"—" }}</dd>
+          <dt>Received</dt><dd>{{ shipment.received_date|date:"Y-m-d"|default:"—" }}</dd>
+          <dt>Created</dt><dd>{{ shipment.created_at|date:"Y-m-d H:i" }} by {{ shipment.created_by|default:"—" }}</dd>
+        </dl>
+        <a class="is-size-7" href="{% url 'procurement_graph_visualizer' %}?shipment_id={{ shipment.pk }}">
+          See this shipment in the association graph →
+        </a>
+      </div>
+    </div>
+
+    {% comment %}
+    ---- Status history stepper. Kept ALONGSIDE the comments card, never
+    merged into it: one answers "where is it" at a glance, the other
+    answers "why" in prose. ----
+    {% endcomment %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+        Status history
+      </div></div>
+      <div class="card-content">
+        <ul class="is-size-7">
+          {% for step in status_history %}
+          <li class="is-flex is-align-items-center mb-2" style="gap:0.5rem;">
+            <span class="icon is-small">
+              {% if step.state == "done" %}<span class="material-icons has-text-success" aria-hidden="true">check_circle</span>
+              {% elif step.state == "current" %}<span class="material-icons has-text-link" aria-hidden="true">radio_button_checked</span>
+              {% else %}<span class="material-icons has-text-grey-light" aria-hidden="true">radio_button_unchecked</span>{% endif %}
+            </span>
+            <span class="{% if step.state == 'future' %}has-text-grey-light{% elif step.state == 'current' %}has-text-weight-semibold{% endif %}">{{ step.label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    {% comment %}
+    ---- The shipment's OWN Event stream (D68). Shipment-lifecycle machine
+    comments live here now, not on the PO's thread. ----
+    {% endcomment %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">forum</span></span>
+        Activity
+      </div></div>
+      <div class="card-content">
+        {% if comments_card %}
+          {% include "events/fragments/comments_card.html" with card=comments_card next=request.get_full_path row_depth="depth-3" action_depth="depth-4" %}
+        {% else %}
+          <p class="has-text-grey is-size-7">No activity thread on this shipment.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Files: shipping PDFs, customs forms. #}
+    {% include "events/fragments/files_card.html" with documents=documents title="Files" %}
+
+    {# Photos: in-transit and condition shots. #}
+    {% include "events/fragments/gallery_card.html" with images=images title="Photos" dom_id=shipment.pk %}
+
+  </aside>
+</div>
+{% endblock %}

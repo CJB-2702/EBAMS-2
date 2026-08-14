@@ -7,6 +7,9 @@ from decimal import Decimal
 
 from django.db import transaction
 
+from app.procurement.control_layer.managers.graph_summary_manager import (
+    GraphSummaryManager,
+)
 from app.procurement.control_layer.managers.part_demand_state_manager import (
     PartDemandStateManager,
 )
@@ -86,6 +89,13 @@ class PartDemandFactory:
             PartDemandStateManager.initialize(
                 demand=demand, actor=actor, commit=False
             )
+            # D82 node-init: a demand created directly (no link yet) gets its
+            # own fresh single-member graph in the same transaction as its
+            # own creation. A caller that immediately links this demand (a
+            # wizard step) still goes through this path first, then folds the
+            # single-member graph into the other side's via
+            # PurchaseOrderDemandLinkManager.allocate()'s merge.
+            GraphSummaryManager.initialize_node(entity=demand, actor=actor)
             return demand
 
         if commit:

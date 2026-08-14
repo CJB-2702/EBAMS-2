@@ -25,7 +25,7 @@ from app.procurement.models import (
     DemandPriority,
     DemandState,
     IssuanceState,
-    PackageStatus,
+    ShipmentStatus,
     PriceConfidence,
     PurchasingState,
     ShipmentState,
@@ -33,25 +33,25 @@ from app.procurement.models import (
 
 register = template.Library()
 
-#: Package movement reads calm all the way along — a box in transit is the
+#: Shipment movement reads calm all the way along — a box in transit is the
 #: normal case, not a problem. Only Lost earns the danger treatment, and only
 #: Accepted earns success: it is the one status that means "done, and intact".
-_PACKAGE_STATUS_CLASS = {
-    PackageStatus.AWAITING_SHIPMENT: "is-light",
-    PackageStatus.BACKORDERED: "is-warning is-light",
-    PackageStatus.SHIPPED: "is-info is-light",
-    PackageStatus.DELIVERED_TO_DEPOT: "is-info is-light",
-    PackageStatus.DELIVERED_TO_LOCAL: "is-link is-light",
-    PackageStatus.ACCEPTED: "is-success is-light",
-    PackageStatus.LOST: "is-danger is-light",
-    PackageStatus.CANCELLED: "is-danger is-light",
+_SHIPMENT_STATUS_CLASS = {
+    ShipmentStatus.AWAITING_SHIPMENT: "is-light",
+    ShipmentStatus.BACKORDERED: "is-warning is-light",
+    ShipmentStatus.SHIPPED: "is-info is-light",
+    ShipmentStatus.DELIVERED_TO_DEPOT: "is-info is-light",
+    ShipmentStatus.DELIVERED_TO_LOCAL: "is-link is-light",
+    ShipmentStatus.ACCEPTED: "is-success is-light",
+    ShipmentStatus.LOST: "is-danger is-light",
+    ShipmentStatus.CANCELLED: "is-danger is-light",
 }
 
 
 @register.simple_tag
-def package_status_tag(status: str):
-    css = _PACKAGE_STATUS_CLASS.get(status, "is-light")
-    label = dict(PackageStatus.choices).get(status, status or "—")
+def shipment_status_tag(status: str):
+    css = _SHIPMENT_STATUS_CLASS.get(status, "is-light")
+    label = dict(ShipmentStatus.choices).get(status, status or "—")
     return format_html('<span class="tag is-small {}">{}</span>', css, label)
 
 

@@ -2,7 +2,7 @@
 
 This is the only class in either app carrying the Orchestrator suffix, which is
 correct — it is the one place a *write* workflow legitimately crosses an app
-boundary. Package classes call into procurement too, but they live in
+boundary. Shipment classes call into procurement too, but they live in
 procurement now, so there is no crossing at all.
 
     PartIssuanceOrchestrator.issue(demand_id, issued_to, quantity, actor)

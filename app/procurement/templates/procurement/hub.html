@@ -40,16 +40,16 @@
   </div>
   <div class="card">
     <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Track packages</p>
+      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Track shipments</p>
       <p class="has-text-grey is-size-7">Everything in transit or delivered.</p>
-      <a href="{% url 'package_index' %}" class="button is-small is-link mt-2">Track packages</a>
+      <a href="{% url 'shipment_index' %}" class="button is-small is-link mt-2">Track shipments</a>
     </div>
   </div>
   <div class="card">
     <div class="card-content">
       <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a shipment</p>
       <p class="has-text-grey is-size-7">Log what arrived, even with no purchase order on file yet.</p>
-      <a href="{% url 'package_receive' %}" class="button is-small is-link mt-2">Receive a shipment</a>
+      <a href="{% url 'shipment_receive' %}" class="button is-small is-link mt-2">Receive a shipment</a>
     </div>
   </div>
   {% if can_buy_prices %}
@@ -81,12 +81,12 @@
     <p class="stat-label">Draft POs</p>
   </div>
   <div class="stat-tile">
-    <p class="stat-value">{{ packages_in_transit }}</p>
-    <p class="stat-label">Packages in transit</p>
+    <p class="stat-value">{{ shipments_in_transit }}</p>
+    <p class="stat-label">Shipments in transit</p>
   </div>
   <div class="stat-tile">
-    <p class="stat-value">{{ drift_flagged_packages }}</p>
-    <p class="stat-label">Drift-flagged packages</p>
+    <p class="stat-value">{{ drift_flagged_shipments }}</p>
+    <p class="stat-label">Drift-flagged shipments</p>
   </div>
   {% if can_buy_prices %}
   <div class="stat-tile">

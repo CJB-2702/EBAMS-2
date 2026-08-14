@@ -121,6 +121,21 @@ class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
         related_name="part_demands",
     )
 
+    # ── Graph materialization (D79-D82) ─────────────────────────────────────
+    # Nullable is a TECHNICAL NECESSITY of the create sequence, not a real
+    # "can be ungraphed" state: GraphSummaryManager.initialize_node() assigns
+    # this in the same transaction as the row's own creation (D82), so a
+    # PartDemand is never actually observed with graph_id unset outside that
+    # one transaction. Never assigned directly by any other caller — only
+    # GraphSummaryManager writes this column (node-init, merge, split).
+    graph = models.ForeignKey(
+        "procurement.GraphSummary",
+        on_delete=models.PROTECT,
+        related_name="demands",
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         db_table = "part_demand"
         ordering = ["-created_at"]

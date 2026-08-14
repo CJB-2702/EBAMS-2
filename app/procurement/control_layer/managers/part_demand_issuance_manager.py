@@ -43,7 +43,7 @@ class PartDemandIssuanceManager:
         NEVER auto-flips from comparing issued_qty to anything (D30, D36): a
         demand can reach Issued at 4 units against 10 purchased, because the
         job only needed 4. Whoever handles the material closes it out
-        explicitly. purchased_qty, issued_qty, and every accepted package
+        explicitly. purchased_qty, issued_qty, and every accepted shipment
         quantity are informational inputs to that judgment, never a gate on it.
         """
         PartDemandQuantityManager.apply_issued_qty(

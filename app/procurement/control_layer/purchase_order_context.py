@@ -145,7 +145,7 @@ class PurchaseOrderContext:
         )
 
     def mark_partially_received(self, *, actor=None) -> None:
-        """Computed, not chosen: it follows from any accepted package quantity
+        """Computed, not chosen: it follows from any accepted shipment quantity
         existing against this PO at all. Only the terminal close-out is human."""
         po = self.purchase_order
         if po.status != PurchaseOrderStatus.PLACED:

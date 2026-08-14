@@ -49,7 +49,7 @@ class ShipmentState(models.TextChoices):
     """Where is the material physically, in transit? (D35)
 
     This build drives the chain up through Shipped/Backordered/Lost from
-    PurchaseOrder.status and Package.status (D40), plus an explicit close-out at
+    PurchaseOrder.status and Shipment.status (D40), plus an explicit close-out at
     DELIVERED_TO_LOCAL. IN_STOCK is an enum surface for the later Inventory
     build and is never written here.
     """

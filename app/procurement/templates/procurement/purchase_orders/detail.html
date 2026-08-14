@@ -157,7 +157,7 @@ WARNING, never a block.
                 {{ line.struct.qty_allocated }}{% if line.unallocated > 0 %}<span class="has-text-grey"> ({{ line.unallocated }} unclaimed)</span>{% endif %}
               </td>
               <td class="has-text-right is-family-monospace">
-                {{ line.struct.qty_from_accepted_packages }}
+                {{ line.struct.qty_from_accepted_shipments }}
                 {% if line.struct.over_received %}<span class="tag is-small is-warning ml-1">over</span>{% endif %}
               </td>
               <td>
@@ -253,24 +253,24 @@ WARNING, never a block.
       <div class="card-header">
         <div class="card-header-title">
           <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
-          Packages
+          Shipments
         </div>
-        <a href="{% url 'basic_package_manager' po.pk %}" class="button is-small is-link">
+        <a href="{% url 'basic_shipment_manager' po.pk %}" class="button is-small is-link">
           <span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>
           <span>Manage</span>
         </a>
       </div>
       <div class="card-content">
-        {% for package in packages %}
+        {% for shipment in shipments %}
         <div class="card depth-2 mb-3">
           <div class="card-header">
             <div class="card-header-title is-size-7">
               <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">local_shipping</span></span>
-              {{ package.package_number }}
+              {{ shipment.shipment_number }}
             </div>
             <div class="is-flex is-align-items-center pr-3" style="gap:0.35rem;">
-              {% include "assets/_status_tag.html" with value=package.status %}
-              {% if package.mixed_po_assignments %}<span class="tag is-small is-warning">Mixed POs</span>{% endif %}
+              {% include "assets/_status_tag.html" with value=shipment.status %}
+              {% if shipment.mixed_po_assignments %}<span class="tag is-small is-warning">Mixed POs</span>{% endif %}
             </div>
           </div>
           <div class="card-content is-flush">
@@ -279,7 +279,7 @@ WARNING, never a block.
                 <th>Part</th><th class="has-text-right">Shipped</th><th class="has-text-right">Accepted</th>
               </tr></thead>
               <tbody>
-                {% for pline in package_lines_by_package|dict_get:package.package_id %}
+                {% for pline in shipment_lines_by_shipment|dict_get:shipment.shipment_id %}
                 <tr>
                   <td>{{ pline.part.part_number }}{% if pline.purchase_order_line %} <span class="has-text-grey">→ line {{ pline.purchase_order_line.line_number }}</span>{% endif %}</td>
                   <td class="has-text-right is-family-monospace">{{ pline.quantity }}</td>
@@ -296,10 +296,10 @@ WARNING, never a block.
         <p class="has-text-grey is-size-7">Nothing has arrived against this order yet.</p>
         {% endfor %}
 
-        {% if unassigned_package_line_ids %}
+        {% if unassigned_shipment_line_ids %}
         <article class="message is-warning is-small mb-0"><div class="message-body is-size-7">
-          {{ unassigned_package_line_ids|length }} arrived package line(s) are not pointed at any
-          line of this order. They are surfaced, never dropped — resolve them in the package manager.
+          {{ unassigned_shipment_line_ids|length }} arrived shipment line(s) are not pointed at any
+          line of this order. They are surfaced, never dropped — resolve them in the shipment manager.
         </div></article>
         {% endif %}
       </div>

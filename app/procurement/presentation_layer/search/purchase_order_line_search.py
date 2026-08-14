@@ -21,7 +21,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 
-from app.procurement.models import PackageLine, PurchaseOrderLine, PurchaseOrderStatus
+from app.procurement.models import ShipmentLine, PurchaseOrderLine, PurchaseOrderStatus
 
 _DECIMAL = DecimalField(max_digits=14, decimal_places=3)
 
@@ -63,12 +63,12 @@ class PurchaseOrderLineSearch:
             .select_related("purchase_order", "purchase_order__vendor", "part")
             .annotate(
                 # A correlated subquery, not a joined Sum: annotating a Sum
-                # over package_lines alongside the allocations Count below
+                # over shipment_lines alongside the allocations Count below
                 # would fan out and multiply the accepted quantity by the
                 # number of allocations.
-                qty_from_accepted_packages=Coalesce(
+                qty_from_accepted_shipments=Coalesce(
                     Subquery(
-                        PackageLine.objects.filter(
+                        ShipmentLine.objects.filter(
                             purchase_order_line=OuterRef("pk"),
                             deleted_at__isnull=True,
                         )
@@ -93,7 +93,7 @@ class PurchaseOrderLineSearch:
                 # quantity_ordered is a per-row field — subtract directly
                 # rather than aggregating it across a join.
                 outstanding_qty=F("quantity_ordered")
-                - F("qty_from_accepted_packages"),
+                - F("qty_from_accepted_shipments"),
             )
         )
 

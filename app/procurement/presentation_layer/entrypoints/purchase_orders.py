@@ -49,7 +49,7 @@ from app.procurement.control_layer.policies.part_price_policy import PartPricePo
 from app.procurement.control_layer.purchase_order_context import PurchaseOrderContext
 from app.procurement.models import (
     DemandPriority,
-    PackageLine,
+    ShipmentLine,
     PartDemand,
     PurchaseOrder,
     PurchaseOrderDemandLink,
@@ -795,7 +795,7 @@ def purchase_order_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 
 def _detail_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpResponse:
-    # ONE annotated read for the whole page — lines, allocations, packages, the
+    # ONE annotated read for the whole page — lines, allocations, shipments, the
     # four quantities, per-line attribution mode.
     fulfillment = PurchaseOrderFulfillmentStruct.load(purchase_order_id=purchase_order.pk)
 
@@ -860,11 +860,11 @@ def _detail_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpR
             }
         )
 
-    package_lines_by_package: dict[int, list] = {}
-    for package_line in PackageLine.objects.filter(
-        package__purchase_order=purchase_order, deleted_at__isnull=True
+    shipment_lines_by_shipment: dict[int, list] = {}
+    for shipment_line in ShipmentLine.objects.filter(
+        shipment__purchase_order=purchase_order, deleted_at__isnull=True
     ).select_related("part", "purchase_order_line"):
-        package_lines_by_package.setdefault(package_line.package_id, []).append(package_line)
+        shipment_lines_by_shipment.setdefault(shipment_line.shipment_id, []).append(shipment_line)
 
     part_demands = [
         {
@@ -884,9 +884,9 @@ def _detail_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpR
             "fulfillment": fulfillment,
             "lines": lines,
             "part_demands": part_demands,
-            "packages": fulfillment.packages,
-            "package_lines_by_package": package_lines_by_package,
-            "unassigned_package_line_ids": fulfillment.unassigned_package_line_ids,
+            "shipments": fulfillment.shipments,
+            "shipment_lines_by_shipment": shipment_lines_by_shipment,
+            "unassigned_shipment_line_ids": fulfillment.unassigned_shipment_line_ids,
             "comments_card": comments_card,
             "cap_decision": _pop_cap_decision(request),
             # D57: a placed order stays editable. The banner warns; nothing is
@@ -1415,7 +1415,7 @@ def _edit_save_header(request: HttpRequest, purchase_order: PurchaseOrder) -> No
     messages.success(request, "Purchase order header saved.")
 
 
-# The Basic Package Manager's route is declared in this wave's URL module
+# The Basic Shipment Manager's route is declared in this wave's URL module
 # because it is PO-scoped, but the page belongs to Phase 3 and its view lives
-# in `entrypoints/packages.py` alongside the rest of the package sector. PO
+# in `entrypoints/shipments.py` alongside the rest of the shipment sector. PO
 # detail links to it by name.

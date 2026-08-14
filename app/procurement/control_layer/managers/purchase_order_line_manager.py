@@ -22,6 +22,9 @@ from django.utils import timezone
 from app.procurement.control_layer.guards.purchase_order_line_guard import (
     PurchaseOrderLineValidator,
 )
+from app.procurement.control_layer.managers.graph_summary_manager import (
+    GraphSummaryManager,
+)
 from app.procurement.control_layer.managers.purchase_order_cost_manager import (
     PurchaseOrderCostManager,
 )
@@ -98,6 +101,13 @@ class PurchaseOrderLineManager:
             created_by=actor,
             updated_by=actor,
         )
+
+        # D82 node-init: a line is always created with no demand link yet
+        # (allocation is a separate subsequent step, even inside the PO
+        # wizard's single transaction) — it always gets its own fresh
+        # single-member graph here, later merged by
+        # PurchaseOrderDemandLinkManager.allocate() once/if it is allocated.
+        GraphSummaryManager.initialize_node(entity=line, actor=actor)
 
         PurchaseOrderCostManager.recompute(
             purchase_order=purchase_order, actor=actor, commit=commit

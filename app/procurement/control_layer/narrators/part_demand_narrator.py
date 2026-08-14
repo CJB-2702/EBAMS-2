@@ -74,8 +74,8 @@ class PartDemandNarrator:
         return f"Followed from purchase order {po_number}."
 
     @classmethod
-    def propagated_from_package(cls, *, package_number: str) -> str:
-        return f"Followed from package {package_number}."
+    def propagated_from_shipment(cls, *, shipment_number: str) -> str:
+        return f"Followed from shipment {shipment_number}."
 
     @classmethod
     def issuance_recorded(cls, *, net_issued_qty) -> str:

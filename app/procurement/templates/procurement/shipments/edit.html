@@ -1,0 +1,557 @@
+{% extends "procurement/base.html" %}
+{% load static procurement_tags %}
+{% block title %}Edit &amp; Linkage — {{ shipment.shipment_number }}{% endblock %}
+{% block nav_shipment_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'shipment_index' %}">Shipments</a></li>
+<li><a href="{% url 'shipment_detail' pk=shipment.pk %}">{{ shipment.shipment_number }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit &amp; Linkage</a></li>
+{% endblock %}
+
+{% comment %}
+The PO sector's Edit & Linkage, INVERTED: this links THIS SHIPMENT'S lines to PO
+lines, potentially across several vendors' open orders.
+
+THIS PAGE ABSORBS THE OLD LINE-SPLITTING WIZARD ENTIRELY. There is no
+/shipments/<id>/lines/<id>/split route. Assign with a partial quantity IS a
+split; assign with the full remaining quantity is a reassignment. One decision,
+one control — the user should not have to pick a verb before picking a target.
+
+NO DRAG-AND-DROP HERE. This page's job is "find the right PO line for this one
+arriving line", which is a search problem, not a sorting problem. The bulk
+sorting tool is the Basic Shipment Manager.
+
+Selection round-trips through ?line_id= so a reload or a bookmark reproduces it,
+and so shipment detail's per-line "Edit assignment" can deep-link straight in.
+{% endcomment %}
+
+{% block extra_head %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit_note</span></div>
+      <div>
+        <h1 class="page-title">Edit &amp; Linkage</h1>
+        <p class="page-subtitle is-family-monospace">
+          {{ shipment.shipment_number }}
+          {% if detail.po_number %} · {{ detail.po_number }}{% else %} · <span class="has-text-grey">no purchase order</span>{% endif %}
+        </p>
+        <div class="mt-2">{% shipment_status_tag shipment.status %}</div>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'shipment_detail' pk=shipment.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to shipment</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+The audited-mutation rule, stated up front rather than discovered on submit.
+This page is the ONLY one that can mutate a delivered or split shipment, and
+every such change costs a mandatory human comment plus a pre-state snapshot
+posted to the shipment's own Event in the same request. Nothing is blocked.
+{% endcomment %}
+{% if requires_audit_comment %}
+<article class="message is-warning">
+  <div class="message-body is-size-7">
+    <strong>This shipment has been delivered or split.</strong>
+    It is still fully editable — nothing here is disabled — but every change needs a stated reason,
+    which is recorded on the shipment's history along with a snapshot of what it looked like
+    beforehand. One change at a time.
+  </div>
+</article>
+{% endif %}
+
+{# ==================== Top row, full width — header edit ==================== #}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+    Shipment details
+  </div></div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_header">
+    <input type="hidden" name="line_id" value="{{ selected_line_id|default:'' }}">
+    <div class="card-content">
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-3">
+          <label class="label is-small">Shipment number</label>
+          <p class="is-family-monospace">{{ shipment.shipment_number }}</p>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Status</label>
+          {% comment %}
+          Read-only here on purpose. Advancing status is its own action on
+          the view page — the same edit-vs-status-action split the PO sector
+          draws.
+          {% endcomment %}
+          <p>{{ shipment.get_status_display }}</p>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="edit-shipment-id">Shipment / tracking ID</label>
+          <input id="edit-shipment-id" class="input is-small is-family-monospace" type="text"
+                 name="shipment_id" value="{{ shipment.shipment_id }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="edit-carrier">Carrier</label>
+          <input id="edit-carrier" class="input is-small" type="text" name="carrier" value="{{ shipment.carrier }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="edit-shipped">Shipped date</label>
+          <input id="edit-shipped" class="input is-small" type="date" name="shipped_date"
+                 value="{{ shipment.shipped_date|date:'Y-m-d' }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="edit-expected">Expected arrival</label>
+          <input id="edit-expected" class="input is-small" type="date" name="expected_arrival_date"
+                 value="{{ shipment.expected_arrival_date|date:'Y-m-d' }}">
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="edit-notes">Notes</label>
+          <textarea id="edit-notes" class="textarea is-small" rows="1" name="notes">{{ shipment.notes }}</textarea>
+        </div>
+
+        {% if requires_audit_comment %}
+        <div class="column is-12">
+          <label class="label is-small" for="edit-audit">Reason for this change <span class="has-text-danger">*</span></label>
+          <input id="edit-audit" class="input is-small" type="text" name="audit_comment" required
+                 placeholder="why these details are changing after delivery">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'shipment_detail' pk=shipment.pk %}" class="button is-small is-light">Cancel</a>
+        <button type="button" class="button is-small is-danger is-light"
+                commandfor="delete-shipment-modal" command="show-modal">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete shipment</span>
+        </button>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_receive %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Save details</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+{# ==================== Attach a purchase order ==================== #}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+    Purchase order
+  </div></div>
+  <div class="card-content">
+    {% if shipment.purchase_order_id %}
+      <p class="is-size-7">
+        Attached to
+        <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=shipment.purchase_order_id %}">{{ detail.po_number }}</a>
+        · {{ detail.vendor_name }}.
+        Individual lines can still point at other orders — that is what the drift flag records, and
+        it blocks nothing.
+      </p>
+    {% else %}
+      <form method="post" class="is-flex is-align-items-flex-end" style="gap:0.75rem;flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="attach_purchase_order">
+        <div style="flex:2;min-width:260px;">
+          <label class="label is-small">Attach a purchase order</label>
+          <search-dropdown
+              name="purchase_order_id"
+              placeholder="search open orders by number or vendor…"
+              hx-get="{% url 'shipment_edit' pk=shipment.pk %}?format=htmx-po-results"
+              hx-trigger="keyup changed delay:300ms, search"
+              required>
+          </search-dropdown>
+        </div>
+        {% if requires_audit_comment %}
+        <div style="flex:2;min-width:220px;">
+          <label class="label is-small">Reason <span class="has-text-danger">*</span></label>
+          <input class="input is-small" type="text" name="audit_comment" required>
+        </div>
+        {% endif %}
+        <button type="submit" class="button is-small is-link" {% if not can_receive %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+          <span>Attach</span>
+        </button>
+      </form>
+      <p class="help is-size-7 mt-2">
+        On attach, every unassigned line is linked to the order line whose part matches. No match,
+        <strong>or more than one matching active line</strong>, leaves that line unassigned — a safe
+        failure, because a wrong guess is invisible and a blank is not.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="columns is-variable is-4">
+
+  {# Items column (1/3): every line, selectable #}
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+          Items
+        </div>
+        <button type="button" class="button is-small is-light mr-3" commandfor="add-line-modal" command="show-modal"
+                {% if not can_receive %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+          <span>Add line</span>
+        </button>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <tbody>
+            {% for line in detail.lines %}
+            <tr class="{% if line.line_id == selected_line_id %}is-selected{% endif %}">
+              <td>
+                {% comment %}
+                hx-push-url keeps the selection in the URL, so a reload or a
+                bookmark reproduces it exactly.
+                {% endcomment %}
+                <a href="?line_id={{ line.line_id }}"
+                   hx-get="?line_id={{ line.line_id }}"
+                   hx-target="#procurement-main-content"
+                   hx-select="#procurement-main-content"
+                   hx-push-url="true"
+                   class="is-block">
+                  <span class="is-family-monospace">{{ line.part_number }}</span>
+                  <span class="is-block has-text-grey">{{ line.part_name }}</span>
+                  <span class="is-block has-text-grey">qty {{ line.quantity }}</span>
+                  {% if line.is_assigned %}
+                    <span class="tag is-small mt-1 {% if line.is_drifted %}is-warning is-light{% else %}is-success is-light{% endif %}">
+                      {{ line.po_number }} line {{ line.po_line_number }}
+                    </span>
+                  {% else %}
+                    <span class="tag is-small is-light mt-1">Unassigned</span>
+                  {% endif %}
+                  {% if line.split_from_id or line.split_child_count %}
+                    <span class="tag is-small is-light mt-1" title="This line is part of a split.">Split lineage</span>
+                  {% endif %}
+                </a>
+                {% if can_receive %}
+                <form method="post" style="margin:0.35rem 0 0;"
+                      onsubmit="return confirm('{% if line.split_from_id or line.split_child_count %}This line carries split lineage — removing it leaves the rest of the split behind.{% elif line.is_inspected %}This line has an inspection result recorded against it.{% else %}Remove this line from the shipment?{% endif %} It is soft-deleted, never erased. Continue?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_line">
+                  <input type="hidden" name="line_id" value="{{ line.line_id }}">
+                  <input class="input is-small mb-1" type="text" name="reason" placeholder="reason (optional)">
+                  {% if requires_audit_comment %}
+                  <input class="input is-small mb-1" type="text" name="audit_comment" required placeholder="reason — required *">
+                  {% endif %}
+                  <button type="submit" class="button is-small is-light">
+                    <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">delete</span></span>
+                    <span>Remove line</span>
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td class="has-text-grey has-text-centered py-5">
+              Nothing recorded in this shipment yet. Add a line above.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# PO search &amp; select (2/3), on selection #}
+  <div class="column">
+    {% if not selected %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        Assignment
+      </div></div>
+      <div class="card-content">
+        <p class="has-text-grey is-size-7">
+          Choose a line on the left. Nothing here is interactive until one is selected — an
+          assignment belongs to a line, not to the shipment.
+        </p>
+      </div>
+    </div>
+    {% else %}
+
+    {# Current assignment for the selected line #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+          {{ selected.part_number }} — qty {{ selected.quantity }}
+        </div>
+        <span class="is-size-7 has-text-grey pr-3">
+          {% if selected.is_assigned %}assigned to {{ selected.po_number }} line {{ selected.po_line_number }}{% else %}unassigned{% endif %}
+        </span>
+      </div>
+      <div class="card-content">
+        {% if selected.is_assigned %}
+          <p class="is-size-7 mb-3">
+            Currently answering for
+            <span class="is-family-monospace">{{ selected.po_number }}</span> line {{ selected.po_line_number }}.
+            {% if selected.is_drifted %}
+              <span class="tag is-small is-warning is-light">A different order to this shipment's header</span>
+            {% endif %}
+          </p>
+          {% if can_receive %}
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="unassign">
+            <input type="hidden" name="line_id" value="{{ selected.line_id }}">
+            {% if requires_audit_comment %}
+            <input class="input is-small mb-1" type="text" name="audit_comment" required
+                   placeholder="reason for unassigning — required *">
+            {% endif %}
+            <button type="submit" class="button is-small is-light">
+              <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">link_off</span></span>
+              <span>Unassign</span>
+            </button>
+          </form>
+          <p class="help is-size-7">
+            An unassigned line still counts as arrived. It just does not answer for any order line.
+          </p>
+          {% endif %}
+        {% else %}
+          <p class="has-text-grey is-size-7">
+            Not assigned to any order line. Pick a target below — or leave it, if this really is a
+            substitution or a bonus item nobody ordered.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% comment %}
+    ---- Candidate PO lines as WIDE SEARCH-SELECT CARDS. Each candidate
+    needs three quantities to judge against — ordered, already accepted,
+    outstanding — which a compact row cannot carry, and the pool is too
+    large and too filter-dependent for a typeahead. ----
+    {% endcomment %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        Where does {{ selected.part_number }} belong?
+      </div></div>
+
+      <form method="get" class="card-content pb-2"
+            hx-get="{% url 'shipment_edit' pk=shipment.pk %}"
+            hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        <input type="hidden" name="line_id" value="{{ selected.line_id }}">
+        <div class="is-flex is-align-items-flex-end" style="gap:0.75rem;flex-wrap:wrap;">
+          <div style="min-width:200px;">
+            <label class="label is-small" for="vendor-scope">Vendor scope</label>
+            <div class="select is-small is-fullwidth"><select id="vendor-scope" name="vendor_scope">
+              <option value="any" {% if search_filters.vendor_scope == "any" %}selected{% endif %}>Any vendor</option>
+              <option value="header" {% if search_filters.vendor_scope == "header" %}selected{% endif %}>This shipment's vendor only</option>
+            </select></div>
+          </div>
+          <label class="checkbox is-size-7" style="padding-bottom:0.4rem;">
+            <input type="checkbox" name="include_draft" value="1" {% if search_filters.include_draft %}checked{% endif %}>
+            Include draft orders
+          </label>
+          <button type="submit" class="button is-small is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>
+            <span>Filter</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="card-content" style="max-height:520px;overflow-y:auto;">
+        {% for candidate in candidates %}
+        <div class="card depth-2 mb-3">
+          <div class="card-content">
+            <div class="is-flex is-justify-content-space-between is-align-items-flex-start" style="gap:1rem;flex-wrap:wrap;">
+              <div>
+                <p class="is-family-monospace">
+                  {{ candidate.purchase_order.po_number }} — line {{ candidate.line_number }}
+                </p>
+                <p class="has-text-grey is-size-7">
+                  {{ candidate.purchase_order.vendor.name }} ·
+                  {{ candidate.purchase_order.get_status_display }} ·
+                  ordered {{ candidate.purchase_order.order_date|date:"Y-m-d" }}
+                </p>
+              </div>
+              <div class="is-flex is-size-7" style="gap:1.25rem;">
+                <div>
+                  <p class="has-text-grey">Ordered</p>
+                  <p class="is-family-monospace">{{ candidate.quantity_ordered }}</p>
+                </div>
+                <div>
+                  <p class="has-text-grey">Accepted so far</p>
+                  <p class="is-family-monospace">{{ candidate.qty_from_accepted_shipments }}</p>
+                </div>
+                <div>
+                  <p class="has-text-grey">Outstanding</p>
+                  <p class="is-family-monospace {% if candidate.outstanding_qty <= 0 %}has-text-grey{% endif %}">{{ candidate.outstanding_qty }}</p>
+                </div>
+                <div>
+                  <p class="has-text-grey">Demands on it</p>
+                  <p class="is-family-monospace">{{ candidate.active_allocation_count }}</p>
+                </div>
+              </div>
+            </div>
+
+            {% if can_receive %}
+            <form method="post" class="mt-3">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="assign">
+              <input type="hidden" name="line_id" value="{{ selected.line_id }}">
+              <input type="hidden" name="purchase_order_line_id" value="{{ candidate.pk }}">
+              <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
+                <div style="min-width:10rem;">
+                  <label class="label is-small">Quantity to assign</label>
+                  {% comment %}
+                  Defaulted to the WHOLE line, which is the common case and
+                  produces a plain reassignment. Type less and it becomes a
+                  split — same control, one decision.
+                  {% endcomment %}
+                  <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                         name="quantity" value="{{ selected.quantity }}"
+                         aria-label="Quantity of {{ selected.part_number }} to assign here">
+                </div>
+                {% if requires_audit_comment %}
+                <div style="flex:1;min-width:14rem;">
+                  <label class="label is-small">Reason <span class="has-text-danger">*</span></label>
+                  <input class="input is-small" type="text" name="audit_comment" required>
+                </div>
+                {% endif %}
+                <button type="submit" class="button is-small is-link">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">call_merge</span></span>
+                  <span>Assign</span>
+                </button>
+              </div>
+              <p class="help is-size-7">
+                Less than {{ selected.quantity }} splits this line in two, leaving the remainder
+                still looking for a home. The full amount just moves it.
+              </p>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7 has-text-centered py-5">
+          No open order line buys {{ selected.part_number }}. Widen the vendor scope or include draft
+          orders — or leave the line unassigned, which is the honest answer for a substitution.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{# ==================== Modals ==================== #}
+
+{% comment %}
+Both modals are single-field captures with a confirmation, which is exactly what
+modals.md permits. The ASSIGNMENT interaction itself is not in a modal — it is
+the in-page master-detail above.
+{% endcomment %}
+
+<dialog id="add-line-modal" class="card modal-styled" style="padding:0; max-width:580px;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_line">
+    <input type="hidden" name="line_id" value="{{ selected_line_id|default:'' }}">
+    <header class="card-header">
+      <p class="card-header-title">Add a line to this shipment</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="add-line-modal" command="close"></button>
+    </header>
+      <div class="card-content">
+        <div class="field">
+          <label class="label is-small">Part</label>
+          <search-dropdown
+              name="part_id"
+              placeholder="search parts by number or name…"
+              hx-get="{% url 'shipment_edit' pk=shipment.pk %}?format=htmx-search-results"
+              hx-trigger="keyup changed delay:300ms, search"
+              required>
+          </search-dropdown>
+        </div>
+        <div class="field">
+          <label class="label is-small">Quantity shipped</label>
+          <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                 name="quantity" required>
+        </div>
+        {% if selected %}
+        <label class="checkbox is-size-7">
+          <input type="checkbox" name="purchase_order_line_id" value="{{ selected.purchase_order_line_id|default:'' }}"
+                 {% if not selected.purchase_order_line_id %}disabled{% endif %}>
+          Assign it to the same order line as the selected item
+          {% if not selected.purchase_order_line_id %}<span class="has-text-grey">(the selected item is unassigned)</span>{% endif %}
+        </label>
+        {% endif %}
+        {% if requires_audit_comment %}
+        <div class="field mt-3">
+          <label class="label is-small">Reason <span class="has-text-danger">*</span></label>
+          <input class="input is-small" type="text" name="audit_comment" required>
+        </div>
+        {% endif %}
+        <p class="help is-size-7">
+          A new line lands unassigned unless you tick the box. Assign it properly from the search
+          tool once it exists.
+        </p>
+      </div>
+      <footer class="card-footer custom-card-footer">
+        <div class="card-footer-secondaries">
+          <button type="button" class="button is-light" commandfor="add-line-modal" command="close">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+          </button>
+        </div>
+        <button type="submit" class="button is-link card-footer-primary">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add line</span>
+        </button>
+      </footer>
+  </form>
+</dialog>
+
+<dialog id="delete-shipment-modal" class="card modal-styled" style="padding:0; max-width:520px;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_shipment">
+    <header class="card-header">
+      <p class="card-header-title has-text-danger">Delete {{ shipment.shipment_number }}</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="delete-shipment-modal" command="close"></button>
+    </header>
+      <div class="card-content">
+        <p class="is-size-7">
+          The shipment and every line on it are soft-deleted — the rows survive, they simply stop
+          counting. {% if detail.total_accepted %}<strong>Careful:</strong> lines on this shipment
+          already carry accepted quantities, which currently count toward their order lines'
+          fulfilment. Deleting removes that.{% endif %}
+        </p>
+        <div class="field mt-3">
+          <label class="label is-small">Reason <span class="has-text-danger">*</span></label>
+          {% comment %}
+          MANDATORY ALWAYS, not only on a delivered shipment: a shipment
+          record vanishing with no stated reason is the case where the
+          history is most needed and least recoverable.
+          {% endcomment %}
+          <input class="input is-small" type="text" name="reason" required
+                 placeholder="why this shipment should not exist">
+        </div>
+      </div>
+      <footer class="card-footer custom-card-footer">
+        <div class="card-footer-secondaries">
+          <button type="button" class="button is-light" commandfor="delete-shipment-modal" command="close">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
+          </button>
+        </div>
+        <button type="submit" class="button is-danger card-footer-primary">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete shipment</span>
+        </button>
+      </footer>
+  </form>
+</dialog>
+{% endblock %}

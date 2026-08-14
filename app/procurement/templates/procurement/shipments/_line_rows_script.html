@@ -1,0 +1,45 @@
+{% comment %}
+Progressive enhancement for the line table: add a row, clear a row. The form
+works with none of this — five rows are rendered server-side and blank ones are
+skipped — so this only removes friction for a receiver typing a long packing
+slip.
+{% endcomment %}
+<script>
+(function () {
+  const tbody = document.getElementById('shipment-line-rows');
+  if (!tbody) return;
+
+  document.querySelectorAll('[data-add-line-row]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const template = tbody.querySelector('.shipment-line-row');
+      if (!template) return;
+      const row = template.cloneNode(true);
+      row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+      // A cloned <search-dropdown> keeps the original's internal state, so it
+      // is replaced with a fresh element rather than reset in place.
+      row.querySelectorAll('search-dropdown').forEach(function (old) {
+        const fresh = document.createElement('search-dropdown');
+        for (const attribute of old.attributes) {
+          fresh.setAttribute(attribute.name, attribute.value);
+        }
+        old.replaceWith(fresh);
+      });
+      tbody.appendChild(row);
+    });
+  });
+
+  tbody.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-remove-line-row]');
+    if (!button) return;
+    const row = button.closest('.shipment-line-row');
+    if (!row) return;
+    // Always leave one row standing, or the table becomes unusable without a
+    // reload.
+    if (tbody.querySelectorAll('.shipment-line-row').length > 1) {
+      row.remove();
+    } else {
+      row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+    }
+  });
+})();
+</script>
