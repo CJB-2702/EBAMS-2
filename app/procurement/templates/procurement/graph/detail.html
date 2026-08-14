@@ -1,0 +1,164 @@
+{% extends "procurement/base.html" %}
+{% load static %}
+{% block title %}Graph #{{ summary.pk }}{% endblock %}
+{% block breadcrumb %}
+<li class="is-active"><a href="#" aria-current="page">Graph #{{ summary.pk }}</a></li>
+{% endblock %}
+
+{% comment %}
+D85 — the ONLY page in the app that renders GraphSummary membership directly.
+Every other page keeps using an entity's own graph_id-scoped rollup numbers
+(D81); this one exists purely to show the shape of the connected component
+those numbers summarize.
+
+MATERIALIZED, NOT LIVE. The diagram below is built server-side from
+GraphSummary's member rows at request time (graph.py's MermaidSwimlaneBuilder)
+and rendered client-side by a locally-vendored mermaid.js (no CDN — D85). This
+page never traverses the graph itself; GraphSummaryManager already did that
+work when it wrote graph_id onto every member row.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">hub</span></div>
+      <div>
+        <h1 class="page-title">Graph #{{ summary.pk }}</h1>
+        <p class="page-subtitle">
+          {{ demands|length }} demand{{ demands|length|pluralize }} ·
+          {{ po_lines|length }} PO line{{ po_lines|length|pluralize }} ·
+          {{ shipment_lines|length }} shipment line{{ shipment_lines|length|pluralize }}
+        </p>
+        <div class="mt-2">
+          <span class="tag is-small {% if summary.status == 'balanced' %}is-success{% elif summary.status == 'awaiting_purchase' %}is-warning{% elif summary.status == 'awaiting_shipment' %}is-info{% elif summary.status == 'awaiting_acceptance' %}is-link{% else %}is-light{% endif %}">
+            {{ summary.get_status_display }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# D81's eight metric columns + status, up top and glanceable. #}
+<div class="stat-grid mb-5">
+  {% for metric in metrics %}
+  <div class="stat-tile">
+    <p class="stat-value">{{ metric.value }}</p>
+    <p class="stat-label">{{ metric.label }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% comment %}
+The swimlane diagram (D85). Mermaid source is built server-side; mermaid.js
+itself is a local vendored file, initialized and run below (no CDN).
+{% endcomment %}
+<div class="card mb-5">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span>Membership &amp; edges</div></div>
+  <div class="card-content" style="overflow-x:auto;">
+    <pre class="mermaid">{{ mermaid_source }}</pre>
+  </div>
+</div>
+
+{% comment %}
+D85 §5 — three-column member summary: each PO/shipment row carries its own
+header info alongside its line-level facts, per the PDF-derived spec.
+{% endcomment %}
+<div class="columns">
+  <div class="column">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Demands</div></div>
+      <div class="card-content">
+        {% if demands %}
+        <ul>
+          {% for demand in demands %}
+          <li class="mb-3">
+            {% if demand.is_linkable %}
+              <a class="is-family-monospace" href="{% url 'demand_detail' demand.pk %}">#{{ demand.pk }}</a>
+            {% else %}
+              <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">#{{ demand.pk }}</span>
+            {% endif %}
+            <br>
+            <span class="is-size-7">{{ demand.part.part_number }} — {{ demand.part.name }}</span><br>
+            <span class="is-size-7 has-text-grey">qty requested {{ demand.quantity_requested }} · {{ demand.get_demand_state_display }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="has-text-grey is-size-7">No demands in this graph.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="column">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">PO Lines</div></div>
+      <div class="card-content">
+        {% if po_lines %}
+        <ul>
+          {% for line in po_lines %}
+          <li class="mb-3">
+            {% if line.is_linkable %}
+              <a class="is-family-monospace" href="{% url 'purchase_order_detail' line.purchase_order_id %}">{{ line.purchase_order.po_number }}</a>
+            {% else %}
+              <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ line.purchase_order.po_number }}</span>
+            {% endif %}
+            <span class="tag is-small is-light">{{ line.purchase_order.get_status_display }}</span><br>
+            <span class="is-size-7 has-text-grey">{{ line.purchase_order.vendor.name }}</span><br>
+            <span class="is-size-7">line {{ line.line_number }} — {{ line.part.part_number }} — {{ line.part.name }}</span><br>
+            <span class="is-size-7 has-text-grey">qty ordered {{ line.quantity_ordered }} · qty allocated {{ line.qty_allocated }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="has-text-grey is-size-7">No PO lines in this graph.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="column">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Shipment Lines</div></div>
+      <div class="card-content">
+        {% if shipment_lines %}
+        <ul>
+          {% for shipment_line in shipment_lines %}
+          <li class="mb-3">
+            {% if shipment_line.is_linkable %}
+              <a class="is-family-monospace" href="{% url 'shipment_detail' shipment_line.shipment_id %}">{{ shipment_line.shipment.shipment_number }}</a>
+            {% else %}
+              <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ shipment_line.shipment.shipment_number }}</span>
+            {% endif %}
+            <span class="tag is-small is-light">{{ shipment_line.shipment.get_status_display }}</span><br>
+            <span class="is-size-7 has-text-grey">{{ shipment_line.shipment.carrier|default:"no carrier" }}</span><br>
+            <span class="is-size-7">{{ shipment_line.part.part_number }} — {{ shipment_line.part.name }}</span><br>
+            <span class="is-size-7 has-text-grey">
+              qty {{ shipment_line.quantity }} ·
+              accepted {% if shipment_line.quantity_accepted is not None %}{{ shipment_line.quantity_accepted }}{% else %}not inspected{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="has-text-grey is-size-7">No shipment lines in this graph.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="{% static 'vendor/mermaid/mermaid.min.js' %}"></script>
+<script>
+  // Local-only per D85 — no CDN dependency at runtime. Theme follows the
+  // page; mermaid has no dark/light auto-detect of its own so this always
+  // renders the "default" theme, matching this project's other vendored
+  // widgets that do not attempt to track prefers-color-scheme.
+  mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
+  mermaid.run({ querySelector: ".mermaid" });
+</script>
+{% endblock %}

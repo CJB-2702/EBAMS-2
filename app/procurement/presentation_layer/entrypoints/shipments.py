@@ -442,6 +442,21 @@ def shipment_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
     detail = ShipmentDetailStruct.load(shipment_id=shipment.pk)
 
+    # D85 — a graph (D79-D82) lives on each ShipmentLine's own graph_id, not
+    # on the Shipment header, since a shipment's lines are not guaranteed to
+    # share one connected component. Distinct, non-null graph ids across this
+    # shipment's active lines, so the sidebar can link to each one (usually
+    # just one).
+    graph_ids = sorted(
+        gid
+        for gid in ShipmentLine.objects.filter(
+            shipment=shipment, deleted_at__isnull=True
+        )
+        .values_list("graph_id", flat=True)
+        .distinct()
+        if gid is not None
+    )
+
     comments_card = None
     attachments = []
     if shipment.event_id:
@@ -466,6 +481,7 @@ def shipment_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "images": [a for a in attachments if a["is_image"]],
             "next_statuses": _next_status_choices(shipment),
             "status_history": _status_history(shipment),
+            "graph_ids": graph_ids,
             "can_receive": can_receive(request),
             # Cross-domain rule: a PO in another domain renders its identifying
             # data as plain text with no link through.

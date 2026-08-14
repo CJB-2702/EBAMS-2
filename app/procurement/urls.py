@@ -1,8 +1,7 @@
 """Parent URL conf for the procurement app (Phase 0 §6).
 
 A shared parent including each wave's own url module plus the `/procurement`
-hub page and the graph-visualizer placeholder (route declared here, page
-built in Phase 4). Each wave edits only its own module
+hub page and the graph visualizer (D85). Each wave edits only its own module
 (urls_demands.py / urls_purchase_orders.py / urls_shipments.py).
 """
 
@@ -10,8 +9,10 @@ from __future__ import annotations
 
 from django.urls import include, path
 
+from app.procurement.presentation_layer.entrypoints.graph import (
+    procurement_graph_visualizer,
+)
 from app.procurement.presentation_layer.entrypoints.shell import (
-    not_built_yet,
     procurement_hub,
 )
 from app.procurement.presentation_layer.entrypoints.vendors import (
@@ -27,9 +28,12 @@ urlpatterns = [
     path("vendors/", vendor_index, name="vendor_index"),
     path("vendors/create/", vendor_create, name="vendor_create"),
     path("prices/", include("app.procurement.urls_prices")),
+    # D85 — a graph is identified by its GraphSummary id, not an entity id.
+    # Entity detail pages (demand/PO/shipment) each link in via their own
+    # `.graph_id`.
     path(
-        "graph-association-visualizer/",
-        not_built_yet,
+        "graph/<int:graph_id>/",
+        procurement_graph_visualizer,
         name="procurement_graph_visualizer",
     ),
 ]

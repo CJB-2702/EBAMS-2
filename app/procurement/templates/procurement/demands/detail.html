@@ -17,6 +17,11 @@
       </div>
     </div>
     <div class="page-header-actions">
+      {% if demand.graph_id %}
+      <a href="{% url 'procurement_graph_visualizer' graph_id=demand.graph_id %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span><span>View graph</span>
+      </a>
+      {% endif %}
       <a href="{% url 'demand_edit' pk=demand.pk %}" class="button is-small is-link">
         <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span>
       </a>

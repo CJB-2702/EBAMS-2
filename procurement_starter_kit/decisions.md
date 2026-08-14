@@ -1041,3 +1041,26 @@ calls the spec above left open.**
 - `dev_auth_groups.json` referenced the old `procurement.package`/`packageline` content types and
   needed a fixture fix as part of the rename (caught by `refresh_project.py`, not a design decision,
   noted here only because it's a real gotcha for the next person touching this fixture).
+
+**D87 — Implementation notes from the D84 inventory-mirror build session (2026-08-13).**
+
+- `inventory/shipments/` reads via a new `InventoryShipmentSearch.index_list` (plain ORM over
+  `procurement.Shipment`), not procurement's own `ShipmentSearch`/`ShipmentDetailStruct` — keeps
+  Inventory decoupled from procurement's presentation-layer internals, reading only
+  `models`/`control_layer`, which is the boundary `harness/Architecture/overview.md`'s layer table
+  actually draws (presentation layer is app-internal, not a cross-app surface).
+- Editable fields write through `ShipmentContext`'s existing verbs
+  (`accept_line`/`advance`/`update_header`) wherever one exists. One exception:
+  `Shipment.received_date` has no control-layer verb anywhere, so it's a plain guarded
+  `save(update_fields=[...])` from the Inventory entrypoint — flagged as a real gap, not a pattern to
+  extend. If Inventory's later intake build needs to compute anything off `received_date`, add a real
+  `ShipmentContext` verb (or relocate the field) then, rather than growing more plain-model-update
+  exceptions around it.
+- `inventory/presentation_layer/tools/inventory_access.py` re-declares the `procurement.receive`
+  permission codename string locally rather than importing procurement's `procurement_access.py` —
+  same "presentation layer is app-internal" reading as above. The codename string now exists in two
+  places; acceptable for this pass, worth a shared constant if a third consumer shows up.
+- No `Inventory` tab was added to the shared global portal nav (`shared/topnav.html`) — reachable
+  only by direct URL or via a link back to procurement from Inventory's own minimal
+  `templates/inventory/base.html`. Deliberately deferred per D84's "don't over-build navigation
+  infrastructure" scoping; the next real Inventory feature should add the portal tab for real.

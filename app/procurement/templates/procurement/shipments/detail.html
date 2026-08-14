@@ -317,9 +317,15 @@ diverged" is noise.
           <dt>Received</dt><dd>{{ shipment.received_date|date:"Y-m-d"|default:"—" }}</dd>
           <dt>Created</dt><dd>{{ shipment.created_at|date:"Y-m-d H:i" }} by {{ shipment.created_by|default:"—" }}</dd>
         </dl>
-        <a class="is-size-7" href="{% url 'procurement_graph_visualizer' %}?shipment_id={{ shipment.pk }}">
-          See this shipment in the association graph →
+        {% if graph_ids %}
+        <p class="is-size-7 mb-1">Graph{{ graph_ids|length|pluralize }} (D85):</p>
+        {% for graph_id in graph_ids %}
+        <a class="is-size-7 mr-2" href="{% url 'procurement_graph_visualizer' graph_id=graph_id %}">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">hub</span></span>
+          #{{ graph_id }}
         </a>
+        {% endfor %}
+        {% endif %}
       </div>
     </div>
 

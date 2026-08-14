@@ -109,10 +109,12 @@ WARNING, never a block.
           <dt>Vendor contact</dt><dd>{{ po.vendor_contact|default:"—" }}</dd>
           <dt>Notes</dt><dd>{{ po.notes|default:"—" }}</dd>
         </dl>
-        <a href="{% url 'procurement_graph_visualizer' %}?po_id={{ po.pk }}" class="button is-small is-light mt-3">
-          <span class="icon"><span class="material-icons" aria-hidden="true">hub</span></span>
-          <span>View full association network</span>
-        </a>
+        {% comment %}
+        A graph (D79-D82) is a connected component of the Demand/PO-Line/
+        Shipment-Line network — it lives on each LINE's own graph_id, not on
+        the PO header, since a PO's lines are not guaranteed to share one
+        component. Each line below carries its own "View graph" link (D85).
+        {% endcomment %}
       </div>
       <div class="column is-4">
         <dl class="kv is-size-7">
@@ -145,7 +147,7 @@ WARNING, never a block.
             <th>#</th><th>Part</th>
             <th class="has-text-right">Ordered</th><th class="has-text-right">Allocated</th>
             <th class="has-text-right">Accepted</th><th>Attribution</th>
-            <th class="has-text-right">Unit cost</th><th class="has-text-right">Line total</th>
+            <th class="has-text-right">Unit cost</th><th class="has-text-right">Line total</th><th></th>
           </tr></thead>
           <tbody>
             {% for line in lines %}
@@ -183,9 +185,16 @@ WARNING, never a block.
               </td>
               <td class="has-text-right is-family-monospace">{{ line.unit_cost|default:"—" }}</td>
               <td class="has-text-right is-family-monospace">{{ line.line_total|floatformat:2|default:"—" }}</td>
+              <td class="has-text-right">
+                {% if line.row.graph_id %}
+                <a href="{% url 'procurement_graph_visualizer' graph_id=line.row.graph_id %}" title="View graph" class="is-size-7">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">hub</span></span>
+                </a>
+                {% endif %}
+              </td>
             </tr>
             {% empty %}
-            <tr><td colspan="8" class="has-text-grey has-text-centered py-5">
+            <tr><td colspan="9" class="has-text-grey has-text-centered py-5">
               No lines on this order.
             </td></tr>
             {% endfor %}
