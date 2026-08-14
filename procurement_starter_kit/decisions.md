@@ -1064,3 +1064,31 @@ calls the spec above left open.**
   only by direct URL or via a link back to procurement from Inventory's own minimal
   `templates/inventory/base.html`. Deliberately deferred per D84's "don't over-build navigation
   infrastructure" scoping; the next real Inventory feature should add the portal tab for real.
+
+**D88 — Implementation notes from the D85 graph-visualizer build session (2026-08-13/14).**
+
+- Route: `procurement/graph/<int:graph_id>/` → `procurement_graph_visualizer`, keyed on
+  `GraphSummary.pk`. Diagram built server-side by a pure string-assembly `MermaidSwimlaneBuilder`
+  (no business logic) into `flowchart LR` mermaid source with three subgraphs; vendored **mermaid.js
+  v10.9.1** UMD bundle at `app/static/vendor/mermaid/mermaid.min.js`, no runtime CDN reference.
+- **Correction to D85's "using that entity's own `.graph_id`" phrasing**: only `PurchaseOrderLine`
+  and `ShipmentLine` carry the `graph` FK — `PurchaseOrder` and `Shipment` headers do not (confirmed
+  against the actual models, not assumed). The "View graph" link on a PO/Shipment detail page is
+  therefore per-line (usually resolving to one link since a PO/Shipment's lines are typically one
+  graph), not a single header-level link. `PartDemand` does carry the FK directly, so its detail page
+  link is the simple case D85 described.
+- Fixed two pre-existing stale links on PO detail and shipment detail that pointed at the old
+  no-arg `procurement_graph_visualizer` route (the `not_built_yet` placeholder never took an
+  argument) — these would have raised `NoReverseMatch` once the route gained its required
+  `graph_id` parameter.
+- Real bug caught and avoided in the new template: multi-line `{# ... #}` Django template comments
+  leak into rendered HTML — only `{% comment %}...{% endcomment %}` is safe across lines. Worth
+  keeping in mind generally, not specific to this page.
+- **Process note, not a design decision**: this session ran three background agents against one
+  shared, non-worktree-isolated working directory. A `git add -A` run by the orchestrating session
+  between two agent completions swept this agent's uncommitted, already-tested files into an
+  unrelated commit (`ba39b63`, titled after the *other* agent's D87 fold). Nothing was lost — `git
+  show ba39b63 --stat` contains exactly the right file set — but the commit message doesn't describe
+  half its own contents, and the collision was pure luck-of-timing, not something the process
+  prevented. Future multi-agent overnight runs touching the same repo should either serialize commits
+  through the orchestrator only (no agent-side `git commit`) or use isolated worktrees per agent.
