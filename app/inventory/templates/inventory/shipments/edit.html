@@ -1,0 +1,119 @@
+{% extends "inventory/base.html" %}
+{% load procurement_tags %}
+{% block title %}Edit physical fields — {{ shipment.shipment_number }}{% endblock %}
+{% block nav_shipment_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_shipment_index' %}">Shipments</a></li>
+<li><a href="{% url 'inventory_shipment_detail' pk=shipment.pk %}">{{ shipment.shipment_number }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit physical fields</a></li>
+{% endblock %}
+
+{% comment %}
+D84: header edit, narrowed to the physical/received-side fields. No PO
+attach, no line add/reassign/delete, no shipment delete — those stay
+procurement-only. Two forms on this page call two different write paths:
+
+  - "Shipment details" posts to `save_header`, which calls
+    `ShipmentContext.update_header` — the existing control-layer verb.
+  - "Received date" posts to `set_received_date`, which is a PLAIN GUARDED
+    MODEL UPDATE, not a control-layer call — `received_date` has no
+    control-layer verb anywhere in ShipmentContext/ShipmentLineManager.
+    D84 explicitly allows this for a field with no existing verb, documented
+    here rather than silently bypassing a guard that does not exist.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit_note</span></div>
+      <div>
+        <h1 class="page-title">Edit physical fields</h1>
+        <p class="page-subtitle is-family-monospace">{{ shipment.shipment_number }}</p>
+        <div class="mt-2">{% shipment_status_tag shipment.status %}</div>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_shipment_detail' pk=shipment.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Back to shipment</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+    Shipment details
+  </div></div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_header">
+    <div class="card-content">
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-3">
+          <label class="label is-small" for="inv-edit-shipment-id">Shipment / tracking ID</label>
+          <input id="inv-edit-shipment-id" class="input is-small is-family-monospace" type="text"
+                 name="shipment_id" value="{{ shipment.shipment_id }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="inv-edit-carrier">Carrier</label>
+          <input id="inv-edit-carrier" class="input is-small" type="text" name="carrier" value="{{ shipment.carrier }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="inv-edit-shipped">Shipped date</label>
+          <input id="inv-edit-shipped" class="input is-small" type="date" name="shipped_date"
+                 value="{{ shipment.shipped_date|date:'Y-m-d' }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="inv-edit-expected">Expected arrival</label>
+          <input id="inv-edit-expected" class="input is-small" type="date" name="expected_arrival_date"
+                 value="{{ shipment.expected_arrival_date|date:'Y-m-d' }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small" for="inv-edit-notes">Notes</label>
+          <textarea id="inv-edit-notes" class="textarea is-small" rows="2" name="notes">{{ shipment.notes }}</textarea>
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'inventory_shipment_detail' pk=shipment.pk %}" class="button is-small is-light">Cancel</a>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_receive %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Save details</span>
+      </button>
+    </footer>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span>
+    Received date
+  </div></div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="set_received_date">
+    <div class="card-content">
+      <div class="field">
+        <label class="label is-small" for="inv-edit-received">When it physically showed up</label>
+        <input id="inv-edit-received" class="input is-small" type="date" name="received_date"
+               value="{{ shipment.received_date|date:'Y-m-d' }}">
+        <p class="help is-size-7">
+          Recorded here as a plain field edit — no control-layer verb sets this column yet.
+        </p>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries"></div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_receive %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Save received date</span>
+      </button>
+    </footer>
+  </form>
+</div>
+{% endblock %}

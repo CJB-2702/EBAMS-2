@@ -1,0 +1,66 @@
+{% load procurement_tags %}
+{% comment %}
+The results card. Included directly by index.html on a full page load, and
+returned directly (no OOB wrapper needed — this page has no hero metrics to
+refresh) for the `format=htmx-search-results` path.
+{% endcomment %}
+<div class="card" id="inv-shipment-results-container">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+    Shipments ({{ page.paginator.count }})
+  </div></div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Shipment</th><th>Shipment ID</th><th>Purchase Order</th><th>Carrier</th>
+          <th>Status</th><th class="has-text-right">Lines</th>
+          <th class="has-text-right">Shipped</th><th class="has-text-right">Accepted</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shp in shipments %}
+        <tr>
+          <td><a class="is-family-monospace" href="{% url 'inventory_shipment_detail' pk=shp.pk %}">{{ shp.shipment_number }}</a></td>
+          <td class="is-family-monospace">{{ shp.shipment_id|default:"—" }}</td>
+          <td>
+            {% if shp.purchase_order_id %}
+              <span class="is-family-monospace">{{ shp.purchase_order.po_number }}</span>
+              <span class="has-text-grey">{{ shp.purchase_order.vendor.name }}</span>
+            {% else %}
+              <span class="tag is-small is-light">Not attached</span>
+            {% endif %}
+          </td>
+          <td>{{ shp.carrier|default:"—" }}</td>
+          <td>{% shipment_status_tag shp.status %}</td>
+          <td class="has-text-right is-family-monospace">{{ shp.line_count }}</td>
+          <td class="has-text-right is-family-monospace">{{ shp.total_shipped }}</td>
+          <td class="has-text-right is-family-monospace">{{ shp.total_accepted }}</td>
+          <td class="has-text-right">
+            <a class="button is-small is-light" href="{% url 'inventory_shipment_detail' pk=shp.pk %}" title="Open">
+              <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="has-text-grey has-text-centered py-5">
+          No shipments match your filters.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+    <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+        <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>

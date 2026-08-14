@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Inventory{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <style>
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% comment %}
+D84: Inventory has no dedicated tab in shared/topnav.html yet — that is
+global-nav infrastructure this pass deliberately does not build (the task
+scope is "host these pages", not stand up a whole app portal). Sign-in
+context still comes through via current_app_group="" the same way
+public_app's home page does when it has no matching tab.
+{% endcomment %}
+{% include "shared/topnav.html" with current_app_group="" %}
+
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav hx-boost="true" hx-target="#inventory-main-content" hx-select="#inventory-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Shipments</p>
+      <a href="{% url 'inventory_shipment_index' %}" class="sidebar-link {% block nav_shipment_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Shipments</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'shipment_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span> Procurement Shipments</a>
+      <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Parts</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="inventory-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'inventory_shipment_index' %}">Inventory</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,205 @@
+{% extends "inventory/base.html" %}
+{% load procurement_tags %}
+{% block title %}{{ shipment.shipment_number }}{% endblock %}
+{% block nav_shipment_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_shipment_index' %}">Shipments</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ shipment.shipment_number }}</a></li>
+{% endblock %}
+
+{% comment %}
+D84: the Inventory work portal, narrowed to two verbs — ADVANCE STATUS and
+ACCEPT A LINE — the same two verbs procurement's own shipment_detail page
+exposes, since those are the physical/received-side actions. Order-linkage
+(reassign, split, PO attach, delete) is NOT here; it stays a link out to
+procurement's own edit page.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+      <div>
+        <h1 class="page-title">{{ shipment.shipment_number }}</h1>
+        <p class="page-subtitle is-family-monospace">
+          {% if shipment.shipment_id %}{{ shipment.shipment_id }}{% else %}<span class="has-text-grey">no shipment id</span>{% endif %}
+          {% if shipment.carrier %} · {{ shipment.carrier }}{% endif %}
+        </p>
+        <div class="mt-2">
+          {% shipment_status_tag shipment.status %}
+          {% if not shipment.purchase_order_id %}<span class="tag is-small is-warning is-light">No purchase order</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_shipment_edit' pk=shipment.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit physical fields</span>
+      </a>
+      {% if po_linkable or shipment.purchase_order_id %}
+      <a href="{% url 'shipment_edit' pk=shipment.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span><span>Order linkage (Procurement)</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="body-grid has-rail">
+  <div>
+
+    {# Advance status #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">timeline</span></span>
+        Movement
+      </div></div>
+      <div class="card-content">
+        {% if not can_receive %}
+          <p class="has-text-grey is-size-7">Advancing a shipment's status requires the 'receive' permission.</p>
+        {% elif not next_statuses %}
+          <p class="has-text-grey is-size-7">
+            {{ shipment.get_status_display }} is the end of the line — there is nowhere further to
+            move this shipment.
+          </p>
+        {% else %}
+        <form method="post" class="is-flex is-align-items-flex-end" style="gap:0.75rem;flex-wrap:wrap;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="advance_status">
+          <div>
+            <label class="label is-small" for="inv-advance-to">Move to</label>
+            <div class="select is-small"><select id="inv-advance-to" name="to_status" required>
+              {% for value, label in next_statuses %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select></div>
+          </div>
+          <button type="submit" class="button is-small is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Advance</span>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Lines #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>
+          Lines
+        </div>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr>
+            <th>Part</th>
+            <th class="has-text-right">Shipped</th>
+            <th>Accepted</th>
+            <th>Assigned to</th>
+            <th style="width:16rem;">Inspect</th>
+          </tr></thead>
+          <tbody>
+            {% for line in lines %}
+            <tr>
+              <td>
+                <span class="is-family-monospace">{{ line.part.part_number }}</span>
+                <span class="is-block has-text-grey">{{ line.part.name }}</span>
+              </td>
+              <td class="has-text-right is-family-monospace">{{ line.quantity }}</td>
+              <td>
+                {% accepted_quantity_cell line.quantity_accepted line.quantity %}
+                {% if line.rejection_notes %}
+                  <span class="is-block has-text-grey is-size-7">{{ line.rejection_notes }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if line.purchase_order_line_id %}
+                  <span class="is-family-monospace">{{ line.purchase_order_line.purchase_order.po_number }}</span>
+                  <span class="is-block has-text-grey">line {{ line.purchase_order_line.line_number }}</span>
+                {% else %}
+                  <span class="tag is-small is-light">Unassigned</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if can_receive %}
+                <form method="post" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="accept_line">
+                  <input type="hidden" name="line_id" value="{{ line.pk }}">
+                  <div class="field has-addons mb-1">
+                    <div class="control is-expanded">
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+                             name="quantity_accepted"
+                             value="{% if line.quantity_accepted is not None %}{{ line.quantity_accepted }}{% endif %}"
+                             placeholder="qty accepted"
+                             aria-label="Accepted quantity for {{ line.part.part_number }}">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-link" title="Record inspection">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+                      </button>
+                    </div>
+                  </div>
+                  <input class="input is-small" type="text" name="rejection_notes"
+                         value="{{ line.rejection_notes }}" placeholder="why the difference, if any"
+                         aria-label="Rejection notes for {{ line.part.part_number }}">
+                </form>
+                {% else %}
+                <span class="has-text-grey is-size-7">Receiving staff only</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="has-text-grey has-text-centered py-5">
+              No lines on this shipment.
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ============================ Rail (1/4) ============================ #}
+  <aside>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+        Quick facts
+      </div></div>
+      <div class="card-content">
+        {% if shipment.purchase_order_id %}
+          <dl class="kv">
+            <dt>Order</dt>
+            <dd>
+              {% if po_linkable %}
+                <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=shipment.purchase_order_id %}">{{ shipment.purchase_order.po_number }}</a>
+              {% else %}
+                <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ shipment.purchase_order.po_number }}</span>
+              {% endif %}
+            </dd>
+            <dt>Vendor</dt><dd>{{ shipment.purchase_order.vendor.name|default:"—" }}</dd>
+          </dl>
+          <hr class="my-3">
+        {% else %}
+          <p class="has-text-grey is-size-7">
+            No purchase order attached. That is a legitimate state — the box arrived before its
+            paperwork.
+          </p>
+          <hr class="my-3">
+        {% endif %}
+        <dl class="kv">
+          <dt>Domain</dt><dd>{{ shipment.domain.name }}</dd>
+          <dt>Shipment ID</dt><dd class="is-family-monospace">{{ shipment.shipment_id|default:"—" }}</dd>
+          <dt>Carrier</dt><dd>{{ shipment.carrier|default:"—" }}</dd>
+          <dt>Shipped</dt><dd>{{ shipment.shipped_date|date:"Y-m-d"|default:"—" }}</dd>
+          <dt>Expected</dt><dd>{{ shipment.expected_arrival_date|date:"Y-m-d"|default:"—" }}</dd>
+          <dt>Received</dt><dd>{{ shipment.received_date|date:"Y-m-d"|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
