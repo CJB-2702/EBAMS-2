@@ -10,89 +10,111 @@
 </div>
 
 <div class="body-grid full-width">
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Create a demand</p>
-      <p class="has-text-grey is-size-7">Raise a need for a part.</p>
-      <a href="{% url 'demand_create' %}" class="button is-small is-link mt-2">Create a demand</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Review demands</p>
-      <p class="has-text-grey is-size-7">Open demands awaiting a decision.</p>
-      <a href="{% url 'demand_index' %}?demand_state=required" class="button is-small is-link mt-2">Review demands</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> Build a purchase order</p>
-      <p class="has-text-grey is-size-7">Buy against open demands, or stock proactively.</p>
-      <a href="{% url 'purchase_order_create' %}" class="button is-small is-link mt-2">Build a purchase order</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span> Purchase orders</p>
-      <p class="has-text-grey is-size-7">Every order, drafted or placed.</p>
-      <a href="{% url 'purchase_order_index' %}" class="button is-small is-link mt-2">Purchase orders</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Track shipments</p>
-      <p class="has-text-grey is-size-7">Everything in transit or delivered.</p>
-      <a href="{% url 'shipment_index' %}" class="button is-small is-link mt-2">Track shipments</a>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a shipment</p>
-      <p class="has-text-grey is-size-7">Log what arrived, even with no purchase order on file yet.</p>
-      <a href="{% url 'shipment_receive' %}" class="button is-small is-link mt-2">Receive a shipment</a>
-    </div>
-  </div>
-  {% if can_buy_prices %}
-  <div class="card">
-    <div class="card-content">
-      <p class="title is-6"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span> Prices</p>
-      <p class="has-text-grey is-size-7">Record what parts actually cost, and see what has no price on record.</p>
-      <a href="{% url 'price_hub' %}" class="button is-small is-link mt-2">Prices</a>
-    </div>
-  </div>
-  {% endif %}
-</div>
 
-<div class="stat-grid mt-5">
-  <div class="stat-tile">
-    <p class="stat-value">{{ open_demands }}</p>
-    <p class="stat-label">Open demands</p>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>Demands</div></div>
+    <div class="card-content">
+      <div class="columns is-mobile">
+        <div class="column is-two-thirds">
+          <p class="has-text-grey is-size-7 mb-3">Raise a need for a part, and work through what's awaiting a decision.</p>
+          <div class="buttons">
+            <a href="{% url 'demand_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span><span>Create a demand</span></a>
+            <a href="{% url 'demand_index' %}?demand_state=required" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Review demands</span></a>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <p class="stat-value">{{ open_demands }}</p>
+              <p class="stat-label">Open demands</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value">{{ demands_pending_approval }}</p>
+              <p class="stat-label">Pending approval</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="stat-tile">
-    <p class="stat-value">{{ demands_pending_approval }}</p>
-    <p class="stat-label">Demands pending approval</p>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>Purchase orders</div></div>
+    <div class="card-content">
+      <div class="columns is-mobile">
+        <div class="column is-two-thirds">
+          <p class="has-text-grey is-size-7 mb-3">Buy against open demands, or stock proactively, then track every order drafted or placed.</p>
+          <div class="buttons">
+            <a href="{% url 'purchase_order_create' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span><span>Build a purchase order</span></a>
+            <a href="{% url 'purchase_order_index' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span><span>Purchase orders</span></a>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <p class="stat-value">{{ pos_pending_approval }}</p>
+              <p class="stat-label">Pending approval</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value">{{ draft_pos }}</p>
+              <p class="stat-label">Draft POs</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="stat-tile">
-    <p class="stat-value">{{ pos_pending_approval }}</p>
-    <p class="stat-label">POs pending approval</p>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Shipments</div></div>
+    <div class="card-content">
+      <div class="columns is-mobile">
+        <div class="column is-two-thirds">
+          <p class="has-text-grey is-size-7 mb-3">Track everything in transit or delivered, and log what arrived — even with no purchase order on file yet.</p>
+          <div class="buttons">
+            <a href="{% url 'shipment_index' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span><span>Track shipments</span></a>
+            <a href="{% url 'shipment_receive' %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span><span>Receive a shipment</span></a>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <p class="stat-value">{{ shipments_in_transit }}</p>
+              <p class="stat-label">In transit</p>
+            </div>
+            <div class="stat-tile">
+              <p class="stat-value">{{ drift_flagged_shipments }}</p>
+              <p class="stat-label">Drift-flagged</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="stat-tile">
-    <p class="stat-value">{{ draft_pos }}</p>
-    <p class="stat-label">Draft POs</p>
-  </div>
-  <div class="stat-tile">
-    <p class="stat-value">{{ shipments_in_transit }}</p>
-    <p class="stat-label">Shipments in transit</p>
-  </div>
-  <div class="stat-tile">
-    <p class="stat-value">{{ drift_flagged_shipments }}</p>
-    <p class="stat-label">Drift-flagged shipments</p>
-  </div>
+
   {% if can_buy_prices %}
-  <div class="stat-tile">
-    <p class="stat-value">{{ unpriced_parts_count }}</p>
-    <p class="stat-label">Unpriced parts</p>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span>Prices</div></div>
+    <div class="card-content">
+      <div class="columns is-mobile">
+        <div class="column is-two-thirds">
+          <p class="has-text-grey is-size-7 mb-3">Record what parts actually cost, and see what has no price on record.</p>
+          <div class="buttons">
+            <a href="{% url 'price_hub' %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span><span>Prices</span></a>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <div class="stat-grid">
+            <div class="stat-tile">
+              <p class="stat-value">{{ unpriced_parts_count }}</p>
+              <p class="stat-label">Unpriced parts</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   {% endif %}
+
 </div>
 {% endblock %}

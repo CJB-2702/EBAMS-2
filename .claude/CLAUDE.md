@@ -134,6 +134,18 @@ Activate a focused persona with one of these slash commands. Each loads the corr
 
 These same agents are also spawnable via the Task/Agent tool when you want to delegate a single task in isolation.
 
+## Exploring the codebase
+
+Before doing a broad `grep`/`Glob` sweep or a string of speculative file
+reads across a sub-app you haven't already loaded context for this session,
+use the **`codebase-map`** skill first (`.claude/skills/codebase-map/SKILL.md`).
+It generates a compact file-tree + class-name + docstring summary of the
+target app/directory for a fraction of the token cost, and tells you which
+file to open next instead of guessing from filenames. Use plain grep for
+literal string/usage searches (e.g. "who calls X") — the map shows what
+exists, not who references it. Once the map points at a file, Read it in
+full before editing.
+
 ## Operational slash commands
 
 - `/refresh-project` — **Preferred:** clears pycache, database, uploads, and migrations, then optionally rebuilds from scratch. Pass `--delete` to only clean without rebuilding.

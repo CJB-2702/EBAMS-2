@@ -1092,3 +1092,59 @@ calls the spec above left open.**
   half its own contents, and the collision was pure luck-of-timing, not something the process
   prevented. Future multi-agent overnight runs touching the same repo should either serialize commits
   through the orchestrator only (no agent-side `git commit`) or use isolated worktrees per agent.
+
+---
+
+## Diagram caching and the eleven seed graph shapes (2026-08-14)
+
+**D89 — `GraphSummary.swimlane_diagram` caches the rendered mermaid source; `MermaidSwimlaneBuilder`
+moves from the presentation layer into `control_layer/domain_structs/graph_diagram_struct.py`, and
+`seed_procurement_dev.py` gains ten new scenarios covering every distinct node configuration the
+schema supports.**
+
+`swimlane_diagram` is a `TextField(blank=True, default="")`, same derived-only discipline as
+`GraphSummary`'s other columns — written only by `GraphSummaryManager.recalculate()`, which now also
+loads the graph's member rows/edges and regenerates the diagram text as its last step. The graph
+visualizer view (D85/D88) just reads `summary.swimlane_diagram` — it no longer rebuilds the diagram
+per request. `MermaidSwimlaneBuilder` had to move out of `presentation_layer/entrypoints/graph.py` to
+be callable from `GraphSummaryManager` (control layer cannot depend on presentation layer) — pure
+string assembly, no behavior change, same "struct assembles, never decides" shape it already had.
+
+**Seed scenarios added** (`seed_procurement_dev.py`, ten new `_seed_graph_*` methods, all built
+through real control-layer calls — `PartDemandFactory`, `PurchaseOrderDraft`/
+`PurchaseOrderFactory.create_from_draft`, `PurchaseOrderContext`, `ShipmentFactory`,
+`ShipmentContext` — never raw ORM inserts): simple 1:1:1; demand split across two POs; split shipment
+against one PO line; shipment-line split across two PO lines; mixed-PO shipment; proactive PO with
+zero demands; pure unpurchased demand; orphan shipment line; a real graph split via
+`PurchaseOrderDemandLinkManager.delink()`/`PurchaseOrderContext`'s delink verb; and a three-demand,
+two-PO multi-hop chain. 21 `GraphSummary` rows exist after a full seed run. Confirmed concretely, not
+assumed: scenario 2's demand bridges one graph (`graph_id=18`) across two different vendors' POs;
+scenario 9's delink genuinely produces two live graphs (demand on `graph_id=47`, its former PO
+line/shipment line on `graph_id=44`).
+
+**Real gaps surfaced while building the seed, not fixed in this pass:**
+
+- `PurchaseOrderDemandLinkValidator._check_cap` only accepts an allocation that claims a demand's
+  **entire** current outstanding quantity in one call — there is no partial-allocation path through
+  the normal guard. Splitting one demand across two POs (scenarios 2, 10) required the first
+  allocation to pass `allow_raise_request=True` to get past the cap, via direct
+  `PurchaseOrderContext.allocate()` calls rather than `PurchaseOrderDraft.allocations` (which would
+  have raised `quantity_requested` instead of respecting the existing outstanding amount). Worth a
+  real decision later on whether a genuine partial-allocation path belongs in the guard, since D28
+  already describes the intended behavior in terms that assume it's possible.
+- **Shipment-line splitting does not merge the resulting graphs.** `ShipmentLineSplitHandler.split()`
+  only folds each new sibling into its *target* PO line's graph — the original arriving line (never
+  itself assigned to any PO line) has no edge to either target, so splitting one line across two PO
+  lines leaves **two separate graphs**, not one. This is current, confirmed behavior (scenario 4),
+  not a bug introduced by this session — flagged because it may be counter to what a reader expects
+  from "one physical box, two destinations."
+- **A fully-consumed, never-assigned original split line leaves a permanently orphaned, empty
+  `GraphSummary` row behind.** `split_if_disconnected` is only called when
+  `line.purchase_order_line_id is not None` — an unassigned original line's own single-member graph
+  (from its own node-init) is never cleaned up once the line soft-deletes to zero. Confirmed by
+  direct query in this seed run (an empty graph with only a soft-deleted member). Not fixed here;
+  worth a future decision on whether stale empty `GraphSummary` rows get garbage-collected, or
+  whether node-init should be deferred for a shipment line created with no PO-line target in the
+  first place (which would also address the orphan-shipment-line scenario more directly).
+- `seed_parts_dev`'s minimum-parts requirement in `seed_procurement_dev.py` was bumped from `< 4` to
+  `< 15` — the new scenarios need 15 distinct parts, and the parts seed already provides 16.
