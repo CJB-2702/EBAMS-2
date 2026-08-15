@@ -51,9 +51,14 @@ maintenance):
                       Shipment) — never a joined Sum() alongside another
                       multi-row relation in the same queryset, the exact bug
                       class D67 already caught once in
-                      PurchaseOrderFulfillmentStruct. Called at the end of
-                      every operation above — never left for a caller to
-                      remember separately.
+                      PurchaseOrderFulfillmentStruct. Also rebuilds and caches
+                      the mermaid swimlane diagram source onto
+                      `swimlane_diagram` (D88 follow-up), via
+                      MermaidSwimlaneBuilder in domain_structs/, so the graph
+                      visualizer view reads a cached column instead of
+                      rebuilding the diagram on every request. Called at the
+                      end of every operation above — never left for a caller
+                      to remember separately.
 
 No `commit` parameter anywhere here (D66): every method below writes
 immediately, participating in whatever transaction the caller already holds,
@@ -68,6 +73,9 @@ from decimal import Decimal
 from django.db.models import DecimalField, F, Sum
 from django.db.models.functions import Coalesce
 
+from app.procurement.control_layer.domain_structs.graph_diagram_struct import (
+    MermaidSwimlaneBuilder,
+)
 from app.procurement.models import (
     GraphSummary,
     GraphSummaryStatus,
@@ -293,6 +301,7 @@ class GraphSummaryManager:
             qty_accepted=qty_accepted,
             qty_rejected=qty_rejected,
         )
+        summary.swimlane_diagram = cls._build_swimlane_diagram(graph_id=graph_id)
         summary.save(
             update_fields=[
                 "demand_qty",
@@ -304,10 +313,72 @@ class GraphSummaryManager:
                 "qty_rejected",
                 "intake_qty_recorded",
                 "status",
+                "swimlane_diagram",
                 "updated_at",
             ]
         )
         return summary
+
+    @staticmethod
+    def _build_swimlane_diagram(*, graph_id: int) -> str:
+        """Load the graph's member rows and edges (same queries the graph
+        visualizer view used before D88's follow-up) and hand them to
+        MermaidSwimlaneBuilder for pure string assembly. Cached onto
+        `swimlane_diagram` so the view never rebuilds it on every request."""
+        demands = list(
+            PartDemand.objects.filter(graph_id=graph_id, deleted_at__isnull=True)
+            .select_related("part", "domain")
+            .order_by("pk")
+        )
+        po_lines = list(
+            PurchaseOrderLine.objects.filter(
+                graph_id=graph_id, deleted_at__isnull=True
+            )
+            .select_related(
+                "purchase_order",
+                "purchase_order__vendor",
+                "purchase_order__domain",
+                "part",
+            )
+            .order_by("pk")
+        )
+        shipment_lines = list(
+            ShipmentLine.objects.filter(graph_id=graph_id, deleted_at__isnull=True)
+            .select_related("shipment", "shipment__domain", "purchase_order_line", "part")
+            .order_by("pk")
+        )
+
+        demand_ids = {d.pk for d in demands}
+        po_line_ids = {l.pk for l in po_lines}
+
+        demand_po_edges = []
+        if po_line_ids:
+            demand_po_edges = [
+                (demand_id, po_line_id)
+                for demand_id, po_line_id in PurchaseOrderDemandLink.objects.filter(
+                    is_active=True,
+                    deleted_at__isnull=True,
+                    purchase_order_line_id__in=po_line_ids,
+                ).values_list("part_demand_id", "purchase_order_line_id")
+                # Defensive: only edges whose demand side is also a member of
+                # this graph. A materialized graph should never disagree with
+                # itself, but this guards against a read landing mid-recalc.
+                if demand_id in demand_ids
+            ]
+
+        po_shipment_edges = [
+            (sl.purchase_order_line_id, sl.pk)
+            for sl in shipment_lines
+            if sl.purchase_order_line_id in po_line_ids
+        ]
+
+        return MermaidSwimlaneBuilder.build(
+            demands=demands,
+            po_lines=po_lines,
+            shipment_lines=shipment_lines,
+            demand_po_edges=demand_po_edges,
+            po_shipment_edges=po_shipment_edges,
+        )
 
     # ------------------------------------------------------------------ #
     # Internal helpers

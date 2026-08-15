@@ -57,6 +57,14 @@ class GraphSummary(AuditFieldsMixin):
         default=GraphSummaryStatus.BALANCED,
     )
 
+    # Derived-only cache of the mermaid `flowchart LR` swimlane diagram
+    # source for this graph's membership and edges (D88). Never set by a
+    # caller directly — same discipline as every other column on this model.
+    # Recomputed by GraphSummaryManager.recalculate() alongside `status`
+    # above, so the graph visualizer view never has to rebuild it from
+    # scratch on every request.
+    swimlane_diagram = models.TextField(blank=True, default="")
+
     class Meta:
         db_table = "graph_summary"
         ordering = ["-created_at"]

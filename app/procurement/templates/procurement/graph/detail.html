@@ -11,11 +11,13 @@ Every other page keeps using an entity's own graph_id-scoped rollup numbers
 (D81); this one exists purely to show the shape of the connected component
 those numbers summarize.
 
-MATERIALIZED, NOT LIVE. The diagram below is built server-side from
-GraphSummary's member rows at request time (graph.py's MermaidSwimlaneBuilder)
-and rendered client-side by a locally-vendored mermaid.js (no CDN — D85). This
-page never traverses the graph itself; GraphSummaryManager already did that
-work when it wrote graph_id onto every member row.
+MATERIALIZED, NOT LIVE. The diagram below is read straight off
+GraphSummary.swimlane_diagram — cached by GraphSummaryManager.recalculate()
+via MermaidSwimlaneBuilder (control_layer/domain_structs/graph_diagram_struct.py,
+D88 follow-up) — and rendered client-side by a locally-vendored mermaid.js (no
+CDN — D85). This page never traverses the graph itself, and no longer
+rebuilds the diagram string on every request; GraphSummaryManager already did
+that work when it wrote graph_id onto every member row and recalculated.
 {% endcomment %}
 
 {% block content %}
