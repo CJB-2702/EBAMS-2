@@ -128,6 +128,11 @@ def rebuild_database():
         return False
     print("   ✓ Migrations applied")
 
+    return True
+
+
+def seed_database():
+    """Load dev fixtures and run seed commands (default post-step after every rebuild)"""
     print("\n8. Loading fixtures...")
     fixtures = [
         'dev_auth_groups',
@@ -167,7 +172,6 @@ def rebuild_database():
             print(f"   ℹ {seed_cmd} not available or failed")
 
     print("   ✓ Seeding complete")
-    return True
 
 
 def stop_server():
@@ -185,6 +189,20 @@ def stop_server():
                 print(f"   ⚠ {result.stdout.strip()}")
     else:
         print("   ℹ stop.sh not found, skipping")
+
+
+def start_server():
+    """Start the dev server via ./run.sh, mirroring stop_server()."""
+    print("\n10. Starting dev server...")
+    run_script = Path('run.sh')
+    if run_script.exists():
+        result = subprocess.run(['bash', 'run.sh'], capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"   ✓ {result.stdout.strip()}")
+        else:
+            print(f"   ⚠ Failed to start server: {result.stderr.strip()}")
+    else:
+        print("   ℹ run.sh not found, skipping")
 
 
 def main():
@@ -216,6 +234,11 @@ def main():
         if not success:
             print("\n✗ Rebuild failed!")
             return 1
+        seed_database()
+
+    # Restart the server we stopped at the start, so the refresh is a
+    # single stop → clear → reseed → restart pass with no manual follow-up.
+    start_server()
 
     print("\n" + "=" * 60)
     if delete_only:

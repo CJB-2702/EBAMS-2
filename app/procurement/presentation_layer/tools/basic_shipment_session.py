@@ -45,32 +45,32 @@ from app.procurement.models import Shipment, ShipmentStatus
 
 SESSION_KEY = "basic_shipment_session"
 
-#: A shipment at or past local delivery is a physical fact, not a plan, and a
-#: split shipment's line structure no longer maps onto one chip per PO line.
-#: Either condition alone locks the card out of this tool (D69). `Lost` is NOT
-#: a lock trigger on its own — a lost box is still a plan that went wrong.
+#: A shipment at or past local delivery is a physical fact, not a plan, and is
+#: locked out of this tool (D69). `Lost` is NOT a lock trigger on its own — a
+#: lost box is still a plan that went wrong.
+#:
+#: The has_splits half of this test is gone with the column (D90). Shipment
+#: structure that the planner's one-chip-per-PO-line model cannot express is
+#: still refused, but it is now detected from the allocations themselves in
+#: BasicShipmentManagerSubmitHandler._current_lines rather than pre-declared by
+#: a flag — which also means an ordinary shipment stops being permanently
+#: locked by one allocation edit that has since been undone.
 _LOCKED_STATUSES = frozenset(
     {ShipmentStatus.DELIVERED_TO_LOCAL, ShipmentStatus.ACCEPTED}
 )
 
 
 def is_locked(shipment: Shipment) -> bool:
-    return shipment.status in _LOCKED_STATUSES or shipment.has_splits
+    return shipment.status in _LOCKED_STATUSES
 
 
 def lock_reason(shipment: Shipment) -> str:
     """Why a card is red. A lock with no stated reason reads as a bug."""
-    reasons = []
-    if shipment.status in _LOCKED_STATUSES:
-        reasons.append(f"it is {shipment.get_status_display()}")
-    if shipment.has_splits:
-        reasons.append("one of its lines has been split")
-    if not reasons:
+    if shipment.status not in _LOCKED_STATUSES:
         return ""
     return (
-        "This shipment is read-only in the planner because "
-        + " and ".join(reasons)
-        + ". Edit it on its own page instead."
+        f"This shipment is read-only in the planner because it is "
+        f"{shipment.get_status_display()}. Edit it on its own page instead."
     )
 
 
@@ -113,27 +113,43 @@ def load(request, *, purchase_order) -> dict:
 def _seed_from_db(purchase_order) -> list[dict]:
     shipments = (
         Shipment.objects.filter(purchase_order=purchase_order, deleted_at__isnull=True)
-        .prefetch_related("lines")
+        .prefetch_related(
+            "lines",
+            "lines__purchase_order_links",
+            # Needed for the same-order test below; without it each allocation
+            # costs a query to find out whose line it points at.
+            "lines__purchase_order_links__purchase_order_line",
+        )
         .order_by("pk")
     )
     seeded = []
     for shipment in shipments:
-        # AGGREGATED BY PO LINE, not one chip per row. A split shipment carries
-        # several rows against the same PO line, and the planner's whole model
-        # is one chip per line — showing two chips for one line would invite a
-        # Buyer to edit half of a split. Split shipments are locked anyway, so
-        # this only ever affects what a red card displays, and the total is the
+        # AGGREGATED BY PO LINE over ALLOCATIONS, not one chip per row. A
+        # shipment may carry several allocations against the same PO line, and
+        # the planner's whole model is one chip per line — showing two chips
+        # for one line would invite a Buyer to edit half of a receiver's
+        # deliberate allocation. The submit handler refuses such a card
+        # outright; this only governs what gets displayed, and the total is the
         # honest thing to display.
         totals: dict[int, Decimal] = {}
         for line in shipment.lines.all():
-            if line.deleted_at is not None or line.purchase_order_line_id is None:
-                # Lines pointing at nothing, or at another order's line, have
-                # no chip to sit on here. They are left entirely alone — see
-                # BasicShipmentManagerSubmitHandler's diff.
+            if line.deleted_at is not None:
                 continue
-            totals[line.purchase_order_line_id] = (
-                totals.get(line.purchase_order_line_id, Decimal("0")) + line.quantity
-            )
+            for link in line.purchase_order_links.all():
+                if link.deleted_at is not None:
+                    continue
+                if (
+                    link.purchase_order_line.purchase_order_id
+                    != purchase_order.pk
+                ):
+                    # Allocations against another order's line have no chip to
+                    # sit on here. They are left entirely alone — see
+                    # BasicShipmentManagerSubmitHandler's diff.
+                    continue
+                totals[link.purchase_order_line_id] = (
+                    totals.get(link.purchase_order_line_id, Decimal("0"))
+                    + link.quantity_allocated
+                )
         lines = [
             {"po_line_id": po_line_id, "quantity": str(quantity)}
             for po_line_id, quantity in totals.items()

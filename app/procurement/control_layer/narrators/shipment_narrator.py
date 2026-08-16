@@ -62,15 +62,24 @@ class ShipmentNarrator:
         return f"{part_number} shipped {quantity}, accepted {quantity_accepted}."
 
     @staticmethod
-    def line_split(*, part_number: str, quantity, target_line_number: int) -> str:
-        return f"{quantity} x {part_number} split onto line {target_line_number}."
+    def line_allocated(*, part_number: str, quantity, target_line_number: int) -> str:
+        return f"{quantity} x {part_number} allocated to line {target_line_number}."
+
+    @staticmethod
+    def allocation_released(
+        *, part_number: str, quantity, target_line_number: int
+    ) -> str:
+        return (
+            f"{quantity} x {part_number} released from line {target_line_number} "
+            f"and returned to this shipment's unallocated quantity."
+        )
 
     @staticmethod
     def line_added(*, part_number: str, quantity, po_line_number: int | None) -> str:
         target = (
-            f"assigned to line {po_line_number}"
+            f"allocated to line {po_line_number}"
             if po_line_number
-            else "not assigned to any order line yet"
+            else "not allocated to any order line yet"
         )
         return f"Line added: {quantity} x {part_number}, {target}."
 

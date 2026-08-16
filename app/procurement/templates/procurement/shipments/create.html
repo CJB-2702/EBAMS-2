@@ -1,167 +1,822 @@
 {% extends "procurement/base.html" %}
 {% load static %}
 {% block title %}New Shipment{% endblock %}
-{% block nav_shipment_index %}is-active{% endblock %}
+{% block nav_shipment_create %}is-active{% endblock %}
 {% block breadcrumb %}
-<li><a href="{% url 'shipment_index' %}">Shipments</a></li>
-<li class="is-active"><a href="#" aria-current="page">New Shipment</a></li>
+  <li><a href="{% url 'shipment_index' %}">Shipments</a></li>
+  <li class="is-active"><a href="#" aria-current="page">New</a></li>
 {% endblock %}
 
 {% comment %}
-A SIMPLE FORM WITH AN EMBEDDED LINE TABLE — deliberately not a wizard. Shipment
-has exactly one reverse FK a user populates at creation (its lines) and no
-secondary signal pushing it over the multi-card trigger.
+THE CREATE-SHIPMENT WIZARD — one route, vertical scroll, progressive
+enablement, session-backed draft. The create-PO wizard's mirror, one level down
+the chain: that page finds open DEMANDS and associates them with the order lines
+it is building; this page finds open ORDER LINES and associates them with the
+arriving lines it is building.
 
-There is no line-level demand picker and no per-line PO-line picker. That is the
-whole point of copy-on-create: a line whose part matches exactly one active line
-on the header PO is linked automatically, and where the match is ambiguous the
-line lands unassigned rather than mis-assigned. Assignments get reviewed on the
-edit page, which is where this form redirects.
+Nothing on this page touches the database until "Create Shipment". Every control
+posts to this same URL, mutates `request.session`, and redirects back here, so a
+refresh at any point restores exactly what the receiver had staged. Later cards
+are SHOWN but disabled until earlier ones validate — server-side, from the draft,
+not from JavaScript, because a JS-only gate fails the moment the page reloads.
 
-The steering banner appears TWICE — top and beside submit — because a Buyer who
-has a PO in hand almost always wants the planner instead. It is a nudge, not a
-gate: this form works end to end on its own.
+WHAT CHANGED FROM THE FLAT FORM. Copy-on-create still exists and is still the
+default: a line nobody allocates by hand is matched to the header order's line
+by part at commit, exactly as before. What the flat form could not do was let
+the receiver say otherwise BEFORE the record existed — every correction meant
+creating the shipment, landing on the edit page, and undoing a guess. The
+ambiguous cases (two order lines for the same part, material split across two
+orders, a part the header order does not buy at all) are precisely the ones a
+guess gets wrong, and they are now answerable up front.
 {% endcomment %}
 
-{% block extra_head %}
-<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% block extra_css %}
+  .wizard-step-disabled { opacity: 0.55; }
 {% endblock %}
 
 {% block content %}
+<script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+
 <div class="page-hero">
-  <div class="page-header">
-    <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_box</span></div>
-      <div>
-        <h1 class="page-title">New Shipment</h1>
-        <p class="page-subtitle">Record a shipment against a purchase order.</p>
-      </div>
-    </div>
-    <div class="page-header-actions">
-      <a href="{% url 'shipment_index' %}" class="button is-small is-light">← Back</a>
-    </div>
+  <div class="page-hero-content">
+    <h1 class="page-title">New Shipment</h1>
+    <p class="page-subtitle">Record what is in the box and what each item answers for. Nothing is saved until the last card.</p>
+  </div>
+  <div class="page-hero-actions">
+    <a href="{% url 'shipment_index' %}" class="button is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+      <span>Back to list</span>
+    </a>
+    {% if has_header or draft.lines %}
+    <form method="post" action="{% url 'shipment_create' %}" style="margin:0;"
+          onsubmit="return confirm('Discard this draft shipment? Nothing has been saved, so this cannot be undone.');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="clear">
+      <button type="submit" class="button is-small is-danger is-light" style="max-width:8rem;">
+        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+        <span>Discard draft</span>
+      </button>
+    </form>
+    {% endif %}
   </div>
 </div>
 
-<div class="body-grid full-width">
+{% if purchase_order %}
+<article class="message is-info">
+  <div class="message-body is-size-7">
+    Planning several boxes for {{ purchase_order.po_number }} rather than recording one?
+    <a href="{% url 'basic_shipment_manager' purchase_order.pk %}">The Basic Shipment Manager</a>
+    lays out a whole order's expected shipments at once.
+  </div>
+</article>
+{% endif %}
 
-  {% if preselected_po %}
-  <article class="message is-info">
-    <div class="message-body is-size-7">
-      <strong>Planning several boxes for {{ preselected_po.po_number }}?</strong>
-      The Basic Shipment Manager lays out a whole order's expected shipments at once and
-      splits the ordered quantities between them.
-      <a href="{% url 'basic_shipment_manager' preselected_po.pk %}">Open the shipment manager →</a>
+{# ================= CARD 1 — Base information. Always enabled. ================= #}
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+    1 · Base information
+  </div>
+  {% if has_header %}<span class="tag is-small is-success mr-3">Set</span>{% endif %}
+  </div>
+  {% comment %}
+  THE PURCHASE ORDER IS NOT ON THIS CARD. It used to be, and it was the wrong
+  shape twice over: it was the first field a receiver met, before they had
+  entered anything they could actually read off the box, and it was a typeahead
+  — which cannot show the vendor, booking date and line count that the choice is
+  really made on. It is card 2 now, with a filterable results table.
+
+  What is left is what the receiver can copy off the label without looking
+  anything up. Tracking ID and carrier lead because that is the order the label
+  presents them in.
+
+  Autosave, not a save button: every change posts straight to the session draft
+  and re-renders in place. The sr-only button is a no-JS fallback only.
+  {% endcomment %}
+  <form method="post" action="{% url 'shipment_create' %}"
+        hx-post="{% url 'shipment_create' %}" hx-trigger="change"
+        hx-target="#procurement-main-content" hx-select="#procurement-main-content">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="save_header">
+    <div class="card-content">
+      <div class="columns is-variable is-3 is-multiline">
+        <div class="column is-4">
+          <label class="label is-small" for="pkg-shipment-id">Shipment / tracking ID</label>
+          <input id="pkg-shipment-id" class="input is-small is-family-monospace" type="text" name="shipment_id"
+                 value="{{ draft.shipment_id }}" placeholder="as printed on the label" autocomplete="off">
+          <p class="help is-size-7">Text, not a number — leading zeros matter.</p>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="pkg-carrier">Carrier</label>
+          <input id="pkg-carrier" class="input is-small" type="text" name="carrier" value="{{ draft.carrier }}" autocomplete="off">
+        </div>
+
+        {% if show_domain_picker %}
+        <div class="column is-4">
+          <label class="label is-small" for="pkg-domain">Domain{% if not purchase_order %} <span class="has-text-danger">*</span>{% endif %}</label>
+          <div class="select is-small is-fullwidth"><select id="pkg-domain" name="domain_id">
+            <option value="">Choose a domain…</option>
+            {% for d in domains %}
+            <option value="{{ d.pk }}" {% if draft.domain_id == d.pk %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+          </select></div>
+          <p class="help">Unlocks the order search below. A purchase order overrides it — the order's domain wins.</p>
+        </div>
+        {% else %}
+        {% comment %}
+        A single-domain receiver is never asked, so the draft's domain is seeded
+        server-side on first render rather than waiting for this hidden input to
+        ride along with the first edit — otherwise card 2 would sit locked
+        behind a question that is not on the page.
+        {% endcomment %}
+        <input type="hidden" name="domain_id" value="{{ single_domain.pk }}">
+        <div class="column is-4">
+          <label class="label is-small">Domain</label>
+          <p class="is-size-7">
+            <strong>{{ single_domain.name|default:"—" }}</strong>
+            <span class="has-text-grey">(resolved from your assignment)</span>
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="column is-4">
+          <label class="label is-small" for="pkg-shipped">Shipped date</label>
+          <input id="pkg-shipped" class="input is-small" type="date" name="shipped_date" value="{{ draft.shipped_date|default:'' }}">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="pkg-expected">Expected arrival</label>
+          <input id="pkg-expected" class="input is-small" type="date" name="expected_arrival_date" value="{{ draft.expected_arrival_date|default:'' }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small" for="pkg-notes">Notes</label>
+          <textarea id="pkg-notes" class="textarea is-small" rows="2" name="notes">{{ draft.notes }}</textarea>
+        </div>
+      </div>
     </div>
-  </article>
+    <button type="submit" class="is-sr-only">Save base information</button>
+  </form>
+</div>
+
+{% comment %}
+============ CARD 2 — The primary purchase order. Single-select. ============
+
+SINGLE-SELECT ON PURPOSE, and it is worth being precise about why, because the
+lines below genuinely do span several orders.
+
+The primary order is the paperwork that came WITH THE BOX. It is the one whose
+domain the shipment inherits, the one copy-on-create matches unallocated lines
+against, and the one a receiver names when asked "what is this delivery". There
+is exactly one of those. "Which order lines does this material answer for" is a
+different question with a different answer — often several orders — and the
+per-line cards below card 3 answer it, one line at a time, via the link
+table (D90).
+
+Optional, like it always was (D71/D73): a box may answer no single order.
+{% endcomment %}
+<div class="card {% if not has_header %}wizard-step-disabled{% endif %}">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+    2 · Primary purchase order
+  </div>
+  {% if purchase_order %}<span class="tag is-small is-success mr-3">{{ purchase_order.po_number }}</span>{% endif %}
+  </div>
+
+  {% if not has_header %}
+  <div class="card-content"><p class="has-text-grey is-size-7">
+    Choose a domain in card 1 first. A shipment always belongs to a domain, and the order search
+    here is scoped by it.
+  </p></div>
   {% else %}
-  <article class="message is-info">
-    <div class="message-body is-size-7">
-      <strong>Arrived with no purchase order?</strong>
-      Use <a href="{% url 'shipment_receive' %}">Receive a Shipment</a> instead — it records the box
-      now and attaches the paperwork later.
-    </div>
-  </article>
+
+  {% if purchase_order %}
+  <div class="card-content pb-0">
+    <article class="message is-success is-small">
+      <div class="message-body is-size-7">
+        <strong>{{ purchase_order.po_number }}</strong> — {{ purchase_order.vendor.name }},
+        booked {{ purchase_order.order_date|date:"Y-m-d" }} ({{ purchase_order.get_status_display }}).
+        This shipment's domain is <strong>{{ purchase_order.domain.name }}</strong>, copied from the order.
+        Any line left unallocated below is matched against this order's lines when the shipment is created.
+      </div>
+    </article>
+  </div>
   {% endif %}
 
-  <div class="card">
-    <div class="card-header"><div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
-      Shipment details
-    </div></div>
+  {% comment %}
+  Filters the receiver can answer from the box in their hands: who sent it,
+  roughly when it was booked, and what part is inside. A GET form, so the F5
+  rule holds — the filtered state is a URL, not a JavaScript variable.
+  {% endcomment %}
+  <form method="get" action="{% url 'shipment_create' %}" class="px-4 pt-4"
+        hx-get="{% url 'shipment_create' %}"
+        hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+    {% if request.GET.tab %}<input type="hidden" name="tab" value="{{ request.GET.tab }}">{% endif %}
+    <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
+      <div style="flex:2;min-width:180px;">
+        <label class="label is-small" for="po-q">Order number</label>
+        <input id="po-q" class="input is-small is-family-monospace" type="search" name="po_q"
+               value="{{ po_pool_filters.q }}" placeholder="PO number or vendor…">
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label class="label is-small" for="po-vendor">Vendor</label>
+        <div class="select is-small is-fullwidth"><select id="po-vendor" name="po_vendor_id">
+          <option value="">Any vendor</option>
+          {% for vendor in vendors %}
+          <option value="{{ vendor.pk }}" {% if po_pool_filters.vendor_id == vendor.pk %}selected{% endif %}>{{ vendor.name }}</option>
+          {% endfor %}
+        </select></div>
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label class="label is-small" for="po-part">Part number on a line</label>
+        <input id="po-part" class="input is-small is-family-monospace" type="search" name="po_part_number"
+               value="{{ po_pool_filters.part_number }}" placeholder="what is in the box…">
+      </div>
+      <div>
+        <label class="label is-small" for="po-from">Booked from</label>
+        <input id="po-from" class="input is-small" type="date" name="po_date_from" value="{{ po_pool_filters.date_from }}">
+      </div>
+      <div>
+        <label class="label is-small" for="po-to">Booked to</label>
+        <input id="po-to" class="input is-small" type="date" name="po_date_to" value="{{ po_pool_filters.date_to }}">
+      </div>
+      <button type="submit" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Filter</span>
+      </button>
+    </div>
+  </form>
+
+  <form method="post" action="{% url 'shipment_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="select_po">
+    <div class="card-content is-flush" style="max-height:320px;overflow-y:auto;">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr>
+          <th style="width:2.5rem;"></th>
+          <th>Order</th><th>Vendor</th><th>Booked</th><th>Status</th>
+          <th class="has-text-right">Lines</th>
+          <th class="has-text-right">Ordered</th>
+        </tr></thead>
+        <tbody>
+          {% for candidate in po_pool %}
+          <tr>
+            {% comment %} A radio, not a checkbox — one primary order, by definition. {% endcomment %}
+            <td><input type="radio" name="primary_purchase_order_id" value="{{ candidate.pk }}"
+                       {% if purchase_order and purchase_order.pk == candidate.pk %}checked{% endif %}
+                       aria-label="Make {{ candidate.po_number }} the primary order"></td>
+            <td class="is-family-monospace">{{ candidate.po_number }}</td>
+            <td>{{ candidate.vendor.name }}</td>
+            <td class="is-family-monospace">{{ candidate.order_date|date:"Y-m-d" }}</td>
+            <td>{{ candidate.get_status_display }}</td>
+            <td class="has-text-right is-family-monospace">{{ candidate.line_count }}</td>
+            <td class="has-text-right is-family-monospace">{{ candidate.ordered_total }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="has-text-grey has-text-centered py-5">
+            No open orders match these filters in your domains. Widen the vendor or date scope, or
+            skip this card — a box that answers no single order is a real thing, and adding what is
+            inside still works without one.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% comment %}
+    Two buttons, one radio. The large primary is the common case — the box IS
+    the order — and the small secondary on the left is the deliberate minority:
+    name the order as this shipment's home, but do not pretend to know what is
+    inside it. Same form, distinguished by the `copy_lines` value each button
+    submits, so the receiver's pick travels with either.
+    {% endcomment %}
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="submit" name="copy_lines" value="0" class="button is-small is-light"
+                {% if not po_pool %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+          <span>Only assign as primary order</span>
+        </button>
+        {% if purchase_order %}
+        <button type="submit" form="clear-primary-po" class="button is-small is-light">
+          <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">link_off</span></span>
+          <span>Clear</span>
+        </button>
+        {% endif %}
+        <span class="is-size-7 has-text-grey is-align-self-center">
+          Copying brings across every line still outstanding, at its outstanding quantity.
+        </span>
+      </div>
+      <button type="submit" name="copy_lines" value="1" class="button is-primary card-footer-primary"
+              {% if not po_pool %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span>
+        <span>Select order &amp; copy all lines</span>
+      </button>
+    </footer>
+  </form>
+  {% comment %} Outside the picker form so its radio never rides along with a clear. {% endcomment %}
+  {% if purchase_order %}
+  <form method="post" action="{% url 'shipment_create' %}" id="clear-primary-po" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="clear_po">
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% comment %} CARD 3 — Item selection. Enabled once the shipment has somewhere to live. {% endcomment %}
+<div class="card {% if not has_header %}wizard-step-disabled{% endif %}">
+  {% if not has_header %}
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+    3 · What is in the box
+  </div>
+  <span class="tag is-small is-light mr-3">Pick a domain first</span>
+  </div>
+  <div class="card-content"><p class="has-text-grey is-size-7">
+    Choose a domain in card 1, or a purchase order in card 2. A shipment always belongs to a domain,
+    and the order-line search below is scoped by it.
+  </p></div>
+  {% else %}
+
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+    3 · What is in the box
+  </div>
+  {% if has_lines %}<span class="tag is-small is-success mr-3">{{ lines|length }} line{{ lines|length|pluralize }}</span>{% endif %}
+  </div>
+
+  {% comment %}
+  header_multi_select_card: the header IS the picker between the two ways to add
+  a line. Real hrefs plus hx-get keep it F5-safe — a no-JS load still lands on
+  the right tab via the querystring.
+  {% endcomment %}
+  <div class="card-header is-multiselect">
+    <div class="card-header-multiselect">
+      <a href="{% url 'shipment_create' %}?tab=po-lines"
+         class="button {% if request.GET.tab != 'unlinked' %}is-primary{% else %}is-light{% endif %}"
+         aria-pressed="{% if request.GET.tab != 'unlinked' %}true{% else %}false{% endif %}"
+         hx-get="{% url 'shipment_create' %}?tab=po-lines"
+         hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+        <span>From order lines</span>
+      </a>
+      <a href="{% url 'shipment_create' %}?tab=unlinked"
+         class="button {% if request.GET.tab == 'unlinked' %}is-primary{% else %}is-light{% endif %}"
+         aria-pressed="{% if request.GET.tab == 'unlinked' %}true{% else %}false{% endif %}"
+         hx-get="{% url 'shipment_create' %}?tab=unlinked"
+         hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true">add_box</span></span>
+        <span>Unlinked</span>
+      </a>
+    </div>
+  </div>
+
+  {% if request.GET.tab == 'unlinked' %}
+  {% comment %}
+  Unlinked segment: a plain inline add form. A line answering no order line is
+  a normal line — a substitution, a bonus item, or something whose paperwork
+  has not caught up — and dropping it would be the only genuinely wrong answer.
+  {% endcomment %}
+  <form method="post" action="{% url 'shipment_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_unlinked_line">
     <div class="card-content">
-      <form method="post" action="{% url 'shipment_create' %}" id="shipment-create-form">
-        {% csrf_token %}
+      <p class="has-text-grey is-size-7 mb-3">
+        Something in the box that no open order line accounts for. It is recorded as arrived and
+        left unallocated — you can still point it at an order line from its own card below, or
+        leave it, which is the honest answer for a substitution.
+      </p>
+      <div class="columns is-variable is-2 is-multiline">
+        <div class="column is-6">
+          <label class="label is-small" for="unlinked-part">Part <span class="has-text-danger">*</span></label>
+          <search-dropdown id="unlinked-part" name="part_id" placeholder="search parts by number or name…"
+                           hx-get="{% url 'shipment_create' %}?format=htmx-search-results"
+                           hx-trigger="keyup changed delay:300ms, search"></search-dropdown>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="unlinked-qty">Quantity shipped <span class="has-text-danger">*</span></label>
+          <input id="unlinked-qty" class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity" required>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="unlinked-notes">Notes</label>
+          <input id="unlinked-notes" class="input is-small" type="text" name="line_notes">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries"></div>
+      <button type="submit" class="button is-primary card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>Add line</span>
+      </button>
+    </footer>
+  </form>
 
-        <div class="columns is-multiline is-variable is-3">
-          <div class="column is-6">
-            <label class="label is-small" for="pkg-po">Purchase order</label>
-            <div class="select is-small is-fullwidth">
-              <select id="pkg-po" name="purchase_order_id">
-                <option value="">— none yet —</option>
-                {% for order in purchase_orders %}
-                <option value="{{ order.pk }}" {% if preselected_po and preselected_po.pk == order.pk %}selected{% endif %}>
-                  {{ order.po_number }} — {{ order.vendor.name }} ({{ order.get_status_display }})
-                </option>
-                {% endfor %}
-              </select>
+  {% else %}
+  {% comment %}
+  From-order-lines segment: top-heavy — a filter row over a multi-select results
+  table, the exact counterpart of the PO wizard's demand pool. Picking an order
+  line both creates/grows that part's arriving line and pre-allocates exactly
+  that quantity against it.
+  {% endcomment %}
+  <form method="get" action="{% url 'shipment_create' %}" class="px-4 pt-4"
+        hx-get="{% url 'shipment_create' %}"
+        hx-target="#procurement-main-content" hx-select="#procurement-main-content" hx-push-url="true">
+    <input type="hidden" name="tab" value="po-lines">
+    {% comment %}
+    Marks the filter bar as having been used, so an unticked "This order only"
+    (which submits nothing) is distinguishable from never having been asked.
+    Without it the checkbox's default-on could never be switched off.
+    {% endcomment %}
+    <input type="hidden" name="pool_submitted" value="1">
+    <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
+      <div style="flex:2;min-width:200px;">
+        <label class="label is-small" for="pool-q">Search order lines</label>
+        <input id="pool-q" class="input is-small is-family-monospace" type="search" name="pool_q" value="{{ pool_filters.q }}" placeholder="order number, vendor, part…">
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label class="label is-small" for="pool-vendor">Vendor</label>
+        <div class="select is-small is-fullwidth"><select id="pool-vendor" name="pool_vendor_id">
+          <option value="">Any vendor</option>
+          {% for vendor in vendors %}
+            <option value="{{ vendor.pk }}" {% if pool_filters.vendor_id == vendor.pk %}selected{% endif %}>{{ vendor.name }}</option>
+          {% endfor %}
+        </select></div>
+      </div>
+      {% if purchase_order %}
+      <label class="checkbox is-size-7" style="padding-bottom:0.4rem;">
+        <input type="checkbox" name="pool_this_po_only" value="1" {% if pool_filters.this_po_only %}checked{% endif %}>
+        This order only
+      </label>
+      {% endif %}
+      <label class="checkbox is-size-7" style="padding-bottom:0.4rem;">
+        <input type="checkbox" name="pool_include_draft" value="1" {% if pool_filters.include_draft %}checked{% endif %}>
+        Include draft orders
+      </label>
+      <label class="checkbox is-size-7" style="padding-bottom:0.4rem;">
+        {% comment %}
+        Off by default, not absent: a vendor over-shipping a line nothing is
+        still owed against is a real event, so the row stays reachable rather
+        than being filtered out of existence.
+        {% endcomment %}
+        <input type="checkbox" name="pool_show_satisfied" value="1" {% if pool_filters.show_satisfied %}checked{% endif %}>
+        Show fully-shipped lines
+      </label>
+      <button type="submit" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Filter</span>
+      </button>
+    </div>
+  </form>
+
+  <form method="post" action="{% url 'shipment_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_from_po_lines">
+    <div class="card-content is-flush" style="max-height:380px;overflow-y:auto;">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr>
+          <th style="width:2.5rem;"></th>
+          <th>Order</th><th>Part</th><th>Vendor</th><th>Status</th>
+          <th class="has-text-right">Ordered</th>
+          <th class="has-text-right">Shipped so far</th>
+          <th class="has-text-right">Outstanding</th>
+          <th style="width:8rem;">Quantity in box</th>
+        </tr></thead>
+        <tbody>
+          {% for candidate in po_line_pool %}
+          <tr>
+            <td><input type="checkbox" name="po_line_ids" value="{{ candidate.pk }}" aria-label="Select order line {{ candidate.pk }}"></td>
+            <td class="is-family-monospace">{{ candidate.purchase_order.po_number }} · {{ candidate.line_number }}</td>
+            <td>{{ candidate.part.part_number }} <span class="has-text-grey">{{ candidate.part.name }}</span></td>
+            <td>{{ candidate.purchase_order.vendor.name }}</td>
+            <td>{{ candidate.purchase_order.get_status_display }}</td>
+            <td class="has-text-right is-family-monospace">{{ candidate.quantity_ordered }}</td>
+            <td class="has-text-right is-family-monospace">{{ candidate.qty_allocated_from_shipments }}</td>
+            <td class="has-text-right is-family-monospace {% if candidate.outstanding_qty <= 0 %}has-text-grey{% endif %}">{{ candidate.outstanding_qty }}</td>
+            <td>
+              {% comment %}
+              Defaulted to the outstanding balance, which is what a complete
+              shipment against that line looks like. A partial box is a matter
+              of typing the smaller number here — the remainder simply stays
+              outstanding on the order.
+              {% endcomment %}
+              <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                     name="quantity_{{ candidate.pk }}" value="{{ candidate.outstanding_qty }}"
+                     aria-label="Quantity of {{ candidate.part.part_number }} in this box">
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9" class="has-text-grey has-text-centered py-5">
+            No open order lines match these filters in your domains. Widen the vendor scope, include
+            draft orders, or add the item on the Unlinked tab.
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <span class="is-size-7 has-text-grey is-align-self-center">
+          Each pick adds that quantity to the box and allocates it to that order line.
+        </span>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not po_line_pool %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+        <span>Add selected to the box</span>
+      </button>
+    </footer>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+
+{% if not has_lines %}
+<div class="wizard-step-disabled">
+  <p class="has-text-grey is-size-7">Add at least one line above. Each line gets its own card here.</p>
+</div>
+{% else %}
+<p class="has-text-grey is-size-7 mb-4">
+  Allocating a line to an order line is optional — an unallocated line is still a real thing that
+  arrived, it just does not answer for any order yet. One line can answer several order lines at
+  once; that is what the allocations below are.
+</p>
+
+{% for line in lines %}
+<div class="card mb-4" id="line-{{ line.index }}">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+      Line {{ forloop.counter }} ·
+      {% if line.part %}{{ line.part.part_number }} <span class="has-text-grey has-text-weight-normal ml-2">{{ line.part.name }}</span>{% else %}<span class="has-text-danger">Part missing</span>{% endif %}
+    </div>
+    <span class="is-size-7 has-text-grey mr-3">
+      {{ line.allocated_total }} / {{ line.quantity }} allocated
+    </span>
+    <form method="post" action="{% url 'shipment_create' %}" style="margin:0;"
+          onsubmit="return confirm('Remove this line and any of its allocations?');">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="remove_line">
+      <input type="hidden" name="line_index" value="{{ line.index }}">
+      <button type="submit" class="button is-small is-light" title="Delete this line">
+        <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">delete</span></span>
+      </button>
+    </form>
+  </div>
+  <div class="card-content">
+    {% comment %} Autosave, same as card 1's header — no separate "Save line" button. {% endcomment %}
+    <form method="post" action="{% url 'shipment_create' %}"
+          hx-post="{% url 'shipment_create' %}" hx-trigger="change"
+          hx-target="#procurement-main-content" hx-select="#procurement-main-content">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit_line">
+      <input type="hidden" name="line_index" value="{{ line.index }}">
+      <div class="columns is-variable is-2 is-multiline mb-0">
+        <div class="column is-3">
+          <label class="label is-small" for="line-qty-{{ line.index }}">Quantity shipped <span class="has-text-danger">*</span></label>
+          <input id="line-qty-{{ line.index }}" class="input is-small is-family-monospace" type="number" step="0.001" min="0.001" name="quantity" value="{{ line.quantity }}">
+        </div>
+        <div class="column is-6">
+          <label class="label is-small" for="line-notes-{{ line.index }}">Notes</label>
+          <input id="line-notes-{{ line.index }}" class="input is-small" type="text" name="line_notes" value="{{ line.notes }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Unallocated</label>
+          <p class="is-family-monospace is-size-7" style="padding-top:0.5rem;">
+            {{ line.unallocated }}{% if line.unallocated > 0 %}<span class="has-text-grey"> still open</span>{% endif %}
+          </p>
+        </div>
+      </div>
+      <button type="submit" class="is-sr-only">Save line</button>
+    </form>
+
+    <details class="mt-4" {% if line.unallocated > 0 %}open{% endif %}>
+      <summary class="is-size-7 has-text-link" style="cursor:pointer;">
+        <span class="icon is-small" style="vertical-align:middle;"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">call_merge</span></span>
+        Find order lines to link ({{ line.allocations|length }} linked)
+      </summary>
+
+      {% comment %}
+      Left-heavy assignment pair: 2/3 candidates, 1/3 allocated. NOT a dual
+      listbox and NOT a typeahead — each candidate needs three quantities to
+      judge against (ordered, shipped so far, outstanding), which neither
+      carries, and every pick carries a quantity of its own.
+      {% endcomment %}
+      <div class="columns is-variable is-4 mt-1">
+
+        {# LEFT (2/3): candidate order lines for this part #}
+        <div class="column is-8">
+          <div class="card" style="display:flex;flex-direction:column;height:360px;overflow:hidden;">
+            <div class="card-header">
+              <div class="card-header-title">
+                <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+                Where does {% if line.part %}{{ line.part.part_number }}{% else %}this part{% endif %} belong?
+              </div>
             </div>
-            <p class="help is-size-7">
-              The shipment's domain is copied from the order. Leave this blank and choose a domain
-              instead — the shipment is still a real record, it just has no order to answer to yet.
-            </p>
-          </div>
-
-          {% if show_domain_picker %}
-          <div class="column is-6">
-            <label class="label is-small" for="pkg-domain">Domain <span class="has-text-danger">*</span></label>
-            <div class="select is-small is-fullwidth">
-              <select id="pkg-domain" name="domain_id">
-                {% for d in domains %}
-                <option value="{{ d.id }}">{{ d.name }}</option>
-                {% endfor %}
-              </select>
+            <div style="flex:1;overflow-y:auto;min-height:0;" class="p-3">
+              {% for candidate in line.pool %}
+              <div class="box p-3 mb-2" style="border-radius:0;">
+                <div class="is-flex is-justify-content-space-between is-align-items-flex-start" style="gap:1rem;flex-wrap:wrap;">
+                  <div>
+                    <p class="is-family-monospace is-size-7">
+                      {{ candidate.purchase_order.po_number }} — line {{ candidate.line_number }}
+                    </p>
+                    <p class="has-text-grey is-size-7">
+                      {{ candidate.purchase_order.vendor.name }} ·
+                      {{ candidate.purchase_order.get_status_display }} ·
+                      ordered {{ candidate.purchase_order.order_date|date:"Y-m-d" }}
+                    </p>
+                  </div>
+                  <div class="is-flex is-size-7" style="gap:1rem;">
+                    <div>
+                      <p class="has-text-grey">Ordered</p>
+                      <p class="is-family-monospace">{{ candidate.quantity_ordered }}</p>
+                    </div>
+                    <div>
+                      <p class="has-text-grey">Shipped</p>
+                      <p class="is-family-monospace">{{ candidate.qty_allocated_from_shipments }}</p>
+                    </div>
+                    <div>
+                      <p class="has-text-grey">Outstanding</p>
+                      <p class="is-family-monospace {% if candidate.outstanding_qty <= 0 %}has-text-grey{% endif %}">{{ candidate.outstanding_qty }}</p>
+                    </div>
+                  </div>
+                </div>
+                <form method="post" action="{% url 'shipment_create' %}" class="mt-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="allocate">
+                  <input type="hidden" name="line_index" value="{{ line.index }}">
+                  <input type="hidden" name="purchase_order_line_id" value="{{ candidate.pk }}">
+                  <div class="field has-addons mb-0">
+                    <div class="control is-expanded">
+                      {% comment %}
+                      Defaulted to what is still UNALLOCATED on the arriving
+                      line, not to its whole quantity: allocating twice is
+                      normal, and the full quantity would fail the cap every
+                      time on the second pick.
+                      {% endcomment %}
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                             name="quantity" value="{{ line.unallocated }}"
+                             aria-label="Quantity to allocate to this order line">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-link">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">call_merge</span></span>
+                        <span>Allocate</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              {% empty %}
+              <p class="has-text-grey is-size-7">
+                No open order line buys this part{% if not pool_filters.include_draft %} — tick "Include draft
+                orders" in card 3 to widen the search{% endif %}. Leaving it unallocated is the honest
+                answer for a substitution or a bonus item.
+              </p>
+              {% endfor %}
             </div>
-            <p class="help is-size-7">Ignored when a purchase order is chosen — the order's domain wins.</p>
-          </div>
-          {% else %}
-          <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
-          <div class="column is-6">
-            <label class="label is-small">Domain</label>
-            <p class="is-size-7">
-              <strong>{{ single_domain.name|default:"—" }}</strong>
-              <span class="has-text-grey">(resolved from your assignment)</span>
-            </p>
-          </div>
-          {% endif %}
-
-          <div class="column is-3">
-            <label class="label is-small" for="pkg-shipment-id">Shipment / tracking ID</label>
-            <input id="pkg-shipment-id" class="input is-small is-family-monospace" type="text" name="shipment_id"
-                   placeholder="as printed on the label" autocomplete="off">
-            <p class="help is-size-7">Text, not a number — leading zeros matter.</p>
-          </div>
-          <div class="column is-3">
-            <label class="label is-small" for="pkg-carrier">Carrier</label>
-            <input id="pkg-carrier" class="input is-small" type="text" name="carrier" autocomplete="off">
-          </div>
-          <div class="column is-3">
-            <label class="label is-small" for="pkg-shipped">Shipped date</label>
-            <input id="pkg-shipped" class="input is-small" type="date" name="shipped_date">
-          </div>
-          <div class="column is-3">
-            <label class="label is-small" for="pkg-expected">Expected arrival</label>
-            <input id="pkg-expected" class="input is-small" type="date" name="expected_arrival_date">
-          </div>
-
-          <div class="column is-12">
-            <label class="label is-small" for="pkg-notes">Notes</label>
-            <textarea id="pkg-notes" class="textarea is-small" name="notes" rows="2"></textarea>
           </div>
         </div>
 
-        {% include "procurement/shipments/_line_rows.html" with search_url_name="shipment_create" %}
-
-        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
-          <div class="card-footer-secondaries">
-            <a href="{% url 'shipment_index' %}" class="button is-small is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span><span>Cancel</span>
-            </a>
-            {% if preselected_po %}
-            <a href="{% url 'basic_shipment_manager' preselected_po.pk %}" class="button is-small is-light">
-              <span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>
-              <span>Use the shipment manager instead</span>
-            </a>
-            {% endif %}
+        {# RIGHT (1/3): allocated from this line #}
+        <div class="column">
+          <div class="card" style="display:flex;flex-direction:column;height:360px;overflow:hidden;">
+            <div class="card-header">
+              <div class="card-header-title">
+                <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+                Allocated
+              </div>
+              <span class="is-size-7 has-text-grey pr-3">{{ line.allocated_total }} / {{ line.quantity }}</span>
+            </div>
+            <div style="flex:1;overflow-y:auto;min-height:0;" class="p-3">
+              {% for allocation in line.allocations %}
+              <div class="box p-2 mb-2" style="border-radius:0;">
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                  <span class="is-family-monospace is-size-7">
+                    {% if allocation.purchase_order_line %}
+                      {{ allocation.purchase_order_line.purchase_order.po_number }} · {{ allocation.purchase_order_line.line_number }}
+                    {% else %}#{{ allocation.purchase_order_line_id }}{% endif %}
+                  </span>
+                  <form method="post" action="{% url 'shipment_create' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="remove_allocation">
+                    <input type="hidden" name="line_index" value="{{ line.index }}">
+                    <input type="hidden" name="purchase_order_line_id" value="{{ allocation.purchase_order_line_id }}">
+                    <button type="submit" class="button is-small is-light" title="Remove this allocation">
+                      <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+                    </button>
+                  </form>
+                </div>
+                <form method="post" action="{% url 'shipment_create' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="allocate">
+                  <input type="hidden" name="line_index" value="{{ line.index }}">
+                  <input type="hidden" name="purchase_order_line_id" value="{{ allocation.purchase_order_line_id }}">
+                  <div class="field has-addons mb-1">
+                    <div class="control is-expanded">
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                             name="quantity" value="{{ allocation.quantity_allocated }}"
+                             aria-label="Allocated quantity">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-light" title="Update quantity">
+                        <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                {% if allocation.purchase_order_line %}
+                <p class="is-size-7 has-text-grey">
+                  {{ allocation.purchase_order_line.purchase_order.vendor.name }} ·
+                  ordered {{ allocation.purchase_order_line.quantity_ordered }}
+                </p>
+                {% endif %}
+              </div>
+              {% empty %}
+              <p class="has-text-grey is-size-7">
+                Nothing allocated. If this line's part is on the header order, it will still be
+                linked automatically when the shipment is created.
+              </p>
+              {% endfor %}
+            </div>
           </div>
-          <button type="submit" class="button is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Create Shipment</span>
-          </button>
-        </footer>
-      </form>
-    </div>
+        </div>
+
+      </div>
+    </details>
   </div>
 </div>
+{% endfor %}
+{% endif %}
 
-{% include "procurement/shipments/_line_rows_script.html" %}
+{# ================== CARD 4 — Review & submit ================== #}
+<div class="card {% if not can_submit %}wizard-step-disabled{% endif %}">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+    4 · Review &amp; create
+  </div></div>
+  <form method="post" action="{% url 'shipment_create' %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="submit">
+    <div class="card-content">
+      {% if not can_submit %}
+        <p class="has-text-grey is-size-7">Fill in the base information and add at least one line to create the shipment. The primary purchase order stays optional.</p>
+      {% else %}
+        <dl class="kv is-size-7 mb-4">
+          <dt>Tracking ID</dt><dd class="is-family-monospace">{{ draft.shipment_id|default:"—" }}</dd>
+          <dt>Carrier</dt><dd>{{ draft.carrier|default:"—" }}</dd>
+          <dt>Primary purchase order</dt><dd>{% if purchase_order %}{{ purchase_order.po_number }} · {{ purchase_order.vendor.name }}{% else %}<span class="has-text-grey">none — this box answers no single order</span>{% endif %}</dd>
+          <dt>Shipped</dt><dd>{{ draft.shipped_date|default:"—" }}</dd>
+          <dt>Expected arrival</dt><dd>{{ draft.expected_arrival_date|default:"—" }}</dd>
+          <dt>Lines</dt><dd>{{ lines|length }}</dd>
+        </dl>
+        <table class="table is-fullwidth is-size-7">
+          <thead><tr><th>Part</th><th class="has-text-right">Quantity</th><th class="has-text-right">Unallocated</th><th>Answers for</th></tr></thead>
+          <tbody>
+            {% for line in lines %}
+            <tr>
+              <td>{% if line.part %}{{ line.part.part_number }}{% else %}—{% endif %}</td>
+              <td class="has-text-right is-family-monospace">{{ line.quantity }}</td>
+              <td class="has-text-right is-family-monospace {% if line.unallocated > 0 %}has-text-warning-dark{% endif %}">{{ line.unallocated }}</td>
+              <td class="is-size-7">
+                {% for allocation in line.allocations %}{% if allocation.purchase_order_line %}{{ allocation.purchase_order_line.purchase_order.po_number }}&nbsp;·&nbsp;{{ allocation.purchase_order_line.line_number }}{% else %}#{{ allocation.purchase_order_line_id }}{% endif %}&nbsp;×{{ allocation.quantity_allocated }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="has-text-grey">{% if purchase_order %}matched on create, if the order buys it{% else %}unallocated{% endif %}</span>{% endfor %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if unallocated_line_count %}
+        <article class="message is-warning is-small">
+          <div class="message-body is-size-7">
+            {{ unallocated_line_count }} line(s) still carry unallocated quantity. That is not an
+            error — it counts as arrived either way. Where a line is left entirely unallocated and
+            the header order buys its part, it is linked automatically on create; anything still
+            open after that can be allocated from the shipment's Edit &amp; Linkage page.
+          </div>
+        </article>
+        {% endif %}
+        <article class="message is-info is-small">
+          <div class="message-body is-size-7">
+            The shipment opens as <strong>Awaiting shipment</strong>. Advance its status and record
+            what actually survived the trip from its detail page — creating it records what the
+            paperwork claims, not what an inspection found.
+          </div>
+        </article>
+      {% endif %}
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'shipment_index' %}" class="button is-small is-light">Cancel</a>
+        {% if purchase_order %}
+        <a href="{% url 'basic_shipment_manager' purchase_order.pk %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>
+          <span>Use the shipment manager instead</span>
+        </a>
+        {% endif %}
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary" {% if not can_submit %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>Create Shipment</span>
+      </button>
+    </footer>
+  </form>
+</div>
 {% endblock %}

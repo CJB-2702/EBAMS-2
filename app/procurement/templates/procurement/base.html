@@ -28,6 +28,7 @@
       <p class="sidebar-section-label">Demands</p>
       <a href="{% url 'demand_index' %}" class="sidebar-link {% block nav_demand_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
       <a href="{% url 'demand_create' %}" class="sidebar-link {% block nav_demand_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+      <a href="{% url 'procurement_graph_index' %}" class="sidebar-link {% block nav_graph_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">share</span></span> View Graphs</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Purchasing</p>
@@ -39,7 +40,7 @@
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Shipments</p>
       <a href="{% url 'shipment_index' %}" class="sidebar-link {% block nav_shipment_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Shipments</a>
-      <a href="{% url 'shipment_receive' %}" class="sidebar-link {% block nav_shipment_receive %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Receive a Shipment</a>
+      <a href="{% url 'shipment_create' %}" class="sidebar-link {% block nav_shipment_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_box</span></span> New Shipment</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Other Portals</p>

@@ -1,0 +1,61 @@
+{% extends "procurement/base.html" %}
+{% block title %}Graphs{% endblock %}
+{% block nav_graph_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Graphs</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero"><div class="page-header">
+  <div class="page-header-title-wrap"><div class="page-header-icon"><span class="material-icons" aria-hidden="true">share</span></div>
+    <div><h1 class="page-title">Graphs</h1><p class="page-subtitle">Connected components of the Demand / PO-Line / Shipment-Line execution network. No create action — a graph forms as a side effect of demand, purchase order, and shipment writes.</p></div></div>
+</div></div>
+
+<div class="body-grid full-width">
+  <div class="card"><div class="card-content"><form method="get" class="field is-grouped">
+    <div class="control">
+      <div class="select is-small">
+        <select name="resolution_state">
+          <option value="">Any resolution</option>
+          {% for value, label in resolution_states %}
+          <option value="{{ value }}" {% if filters.resolution_state == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="control">
+      <label class="checkbox is-size-7">
+        <input type="checkbox" name="manually_flagged" value="1" {% if filters.manually_flagged == "1" %}checked{% endif %}>
+        Flagged only
+      </label>
+    </div>
+    <div class="control"><button class="button is-small is-link" type="submit">Filter</button></div>
+  </form></div></div>
+
+  <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Graphs ({{ page.paginator.count }})</div></div>
+    <div class="card-content is-flush"><table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead><tr><th>Graph</th><th>Part</th><th>Domain</th><th>Linear status</th><th>PO imbalance</th><th>Shipment imbalance</th><th>Resolution</th><th>Priority</th></tr></thead>
+      <tbody>
+        {% for graph in graphs %}
+        <tr>
+          <td><a href="{% url 'procurement_graph_visualizer' graph_id=graph.pk %}" class="is-family-monospace">#{{ graph.pk }}</a>{% if graph.manually_flagged %} <span class="icon has-text-warning"><span class="material-icons" aria-hidden="true" title="Flagged">flag</span></span>{% endif %}</td>
+          <td>{% if graph.part %}{{ graph.part.part_number }} — {{ graph.part.name }}{% else %}—{% endif %}</td>
+          <td>{{ graph.primary_domain.name|default:"—" }}</td>
+          <td>{{ graph.get_linear_status_display }}</td>
+          <td>{{ graph.get_po_imbalance_state_display }}</td>
+          <td>{{ graph.get_shipment_imbalance_state_display }}</td>
+          <td>{{ graph.get_resolution_state_display }}</td>
+          <td>{{ graph.get_priority_display|default:"—" }}</td>
+        </tr>
+        {% empty %}<tr><td colspan="8" class="has-text-grey has-text-centered py-5">No graphs.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+  <nav class="pagination is-small" role="navigation" aria-label="pagination">
+    {% if page.has_previous %}<a class="pagination-previous" href="?page={{ page.previous_page_number }}">Previous</a>{% endif %}
+    {% if page.has_next %}<a class="pagination-next" href="?page={{ page.next_page_number }}">Next</a>{% endif %}
+    <span class="is-size-7 has-text-grey ml-2">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

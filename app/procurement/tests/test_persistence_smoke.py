@@ -44,6 +44,7 @@ from app.procurement.models import (
     DemandState,
     IssuanceState,
     Shipment,
+    PurchaseOrderShipmentLink,
     ShipmentLine,
     ShipmentStatus,
     PartDemand,
@@ -225,9 +226,13 @@ class ProcurementPersistenceSmokeTests(TestCase):
         self.assertFalse(stored.mixed_po_assignments)
 
         line = ShipmentLine.objects.get(shipment_id=shipment.pk)
-        # Copied from the header PO automatically — the common case needs no
-        # per-line assignment.
-        self.assertIsNotNone(line.purchase_order_line_id)
+        # Allocated to the header PO's matching line automatically — the
+        # common case needs no per-line work (D90).
+        allocation = PurchaseOrderShipmentLink.objects.get(
+            shipment_line=line, deleted_at__isnull=True
+        )
+        self.assertEqual(allocation.purchase_order_line.purchase_order_id, po.pk)
+        self.assertEqual(allocation.quantity_allocated, Decimal("10.000"))
         self.assertEqual(line.quantity, Decimal("10.000"))
         # Uninspected is NULL, which differs meaningfully from 0.
         self.assertIsNone(line.quantity_accepted)

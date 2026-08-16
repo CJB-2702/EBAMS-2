@@ -863,7 +863,9 @@ def _detail_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpR
     shipment_lines_by_shipment: dict[int, list] = {}
     for shipment_line in ShipmentLine.objects.filter(
         shipment__purchase_order=purchase_order, deleted_at__isnull=True
-    ).select_related("part", "purchase_order_line"):
+    ).select_related("part").prefetch_related(
+        "purchase_order_links__purchase_order_line"
+    ):
         shipment_lines_by_shipment.setdefault(shipment_line.shipment_id, []).append(shipment_line)
 
     part_demands = [

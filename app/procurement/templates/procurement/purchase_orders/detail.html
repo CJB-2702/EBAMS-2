@@ -290,7 +290,7 @@ WARNING, never a block.
               <tbody>
                 {% for pline in shipment_lines_by_shipment|dict_get:shipment.shipment_id %}
                 <tr>
-                  <td>{{ pline.part.part_number }}{% if pline.purchase_order_line %} <span class="has-text-grey">→ line {{ pline.purchase_order_line.line_number }}</span>{% endif %}</td>
+                  <td>{{ pline.part.part_number }}{% for link in pline.purchase_order_links.all %} <span class="has-text-grey">→ line {{ link.purchase_order_line.line_number }} ({{ link.quantity_allocated }})</span>{% endfor %}</td>
                   <td class="has-text-right is-family-monospace">{{ pline.quantity }}</td>
                   <td class="has-text-right is-family-monospace">{{ pline.quantity_accepted|default:"—" }}</td>
                 </tr>

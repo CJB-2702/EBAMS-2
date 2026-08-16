@@ -11,6 +11,7 @@ from app.procurement.models.demand.enums import (
     PurchasingState,
     ShipmentState,
 )
+from app.procurement.models.graph.enums import LinearStatus
 
 
 class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
@@ -79,6 +80,28 @@ class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
         max_length=40,
         choices=IssuanceState.choices,
         default=IssuanceState.NOT_ISSUED,
+    )
+
+    # ── Pipeline position, inherited from the parent graph ──────────────────
+    # A FIFTH STATUS, independent of the four axes above and deliberately not
+    # one of them. The axes are about approval, funding, physical logistics,
+    # and hand-off — four specialist questions. This answers the one question
+    # a non-procurement reader actually asks: "where is this in the pipeline?"
+    #
+    # DERIVED FROM THE PARENT GRAPH, not from this row. A demand's fulfillment
+    # progress is a property of the whole cluster it belongs to — the PO lines
+    # covering it and the shipments arriving against them are graph members,
+    # not demand columns. Refreshed whenever graph membership changes (merge,
+    # split, node-init) and whenever the parent graph recalculates.
+    #
+    # Never assigned directly by a caller, same discipline as the four axes,
+    # but note it does NOT go through PartDemandStateManager.transition() and
+    # writes no journal row — it is a cache of someone else's derivation, not
+    # a state this demand transitions through on its own.
+    linear_status = models.CharField(
+        max_length=40,
+        choices=LinearStatus.choices,
+        default=LinearStatus.UNLINKED,
     )
 
     # ── Quantities ──────────────────────────────────────────────────────────

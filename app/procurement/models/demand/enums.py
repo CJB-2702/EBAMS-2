@@ -14,13 +14,37 @@ from django.db import models
 
 
 class DemandState(models.TextChoices):
-    """Is this need real, and authorized? (D33)"""
+    """Is this need real, and authorized? Tracks the approval workflow. (D33)
+
+    COMPLETED IS NO LONGER PART OF THE MANUAL WORKFLOW, but it is still a value
+    on this axis and still the terminal state. Nobody transitions a demand into
+    it by hand any more: it is written automatically when the parent graph's
+    linear_status reaches DELIVERED and issuance_state is set to anything other
+    than NOT_ISSUED — the material arrived AND it reached the person who asked
+    for it. See DemandCompletionHandler.
+
+    Once COMPLETED the demand is LOCKED and its state stops moving, even if the
+    parent graph's linear_status later changes. A demand's fulfillment is a
+    point-in-time fact — "I received X units on date Y and they went to the
+    requester" — and unlike the graph, which merges, splits, and re-derives
+    constantly, that fact should not rewrite itself.
+
+    KNOWN, ACCEPTED DIVERGENCE: because the demand is frozen and the graph is
+    not, a locked demand can read COMPLETED/DELIVERED while its parent graph
+    reads something earlier — a merge brought in new members, or more material
+    arrived. The alternative is either rewriting a completion record (which
+    breaks the audit trail) or snapshotting the demand at completion time
+    (a bigger change than this pass). Revisit if users report confusion about a
+    demand looking finished while its graph needs attention.
+    """
 
     PROJECTED = "projected", "Projected"
     REQUIRED = "required", "Required"
     APPROVED = "approved", "Approved"
     REJECTED = "rejected", "Rejected"
     CANCELLED = "cancelled", "Cancelled"
+    # Automatic only — never a manual transition target. See the class
+    # docstring for the locking rule and the divergence it accepts.
     COMPLETED = "completed", "Completed"
 
 

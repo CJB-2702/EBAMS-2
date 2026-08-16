@@ -68,8 +68,8 @@ User = get_user_model()
 # Domains named the way the authorization model actually reads: a data fence
 # for a specific shop at a specific facility.
 DOMAIN_SPECS = [
-    ("San Diego — Electronics Shop", "sd-ele"),
-    ("San Diego — Mechanical Shop", "sd-mech"),
+    ("North Acme Ltd — Site A", "north-acme-site-a"),
+    ("North Acme Ltd — Site B", "north-acme-site-b"),
 ]
 
 # Standalone commercial suppliers — unrelated to parts.PartManufacturer.
@@ -148,7 +148,7 @@ class Command(BaseCommand):
         self._seed_graph_split_shipment_one_po_line(
             actor=actor, vendor=vendors[1], part=parts[6], domain=mechanical
         )
-        self._seed_graph_shipment_line_split_across_po_lines(
+        self._seed_graph_shipment_line_allocated_across_po_lines(
             actor=actor, vendor=vendors[2], part=parts[7], domain=mechanical
         )
         self._seed_graph_mixed_po_shipment(
@@ -431,7 +431,7 @@ class Command(BaseCommand):
 
     def _seed_graph_simple_triangle(self, *, actor, vendor, part, domain) -> None:
         """Scenario 1: the plainest possible graph — one demand, one PO line
-        on its own PO, one shipment line. No splits, no sharing. A contrast
+        on its own PO, one shipment line, one allocation. No sharing. A contrast
         case against the tangled graphs below when reviewing the visualizer."""
         demand = self._demand(
             part=part,
@@ -668,22 +668,28 @@ class Command(BaseCommand):
         )
 
         assert (
-            early.lines.first().purchase_order_line_id
-            == backorder.lines.first().purchase_order_line_id
+            early.lines.first()
+            .purchase_order_links.get(deleted_at__isnull=True)
+            .purchase_order_line_id
+            == backorder.lines.first()
+            .purchase_order_links.get(deleted_at__isnull=True)
+            .purchase_order_line_id
             == po_line.pk
         ), "Both shipments were supposed to auto-resolve onto the same PO line."
 
-    def _seed_graph_shipment_line_split_across_po_lines(
+    def _seed_graph_shipment_line_allocated_across_po_lines(
         self, *, actor, vendor, part, domain
     ) -> None:
         """Scenario 4: one shipment line arrives claiming a quantity that
         actually belongs to two different PO lines on the same PO (D58's
         "one active line per part" rule is soft, not enforced — two lines for
-        the same part is exactly the ambiguous case the splitting wizard
-        exists for). The arriving line lands unassigned automatically
+        the same part is exactly the ambiguous case the allocation tool
+        exists for). The arriving line lands unallocated automatically
         (resolve_purchase_order_line refuses to guess between two
-        candidates), then ShipmentContext.split_line resolves each half
-        explicitly, producing a sibling row with split_from set."""
+        candidates), then ShipmentContext.assign_line allocates each share
+        explicitly — TWO ALLOCATION ROWS AGAINST ONE UNCHANGED ARRIVING LINE
+        (D90), where the pre-D90 seed produced two sibling shipment lines and
+        rewrote the original's quantity."""
         demand_1 = self._demand(
             part=part,
             domain=domain,
@@ -741,22 +747,31 @@ class Command(BaseCommand):
             lines=[{"part_id": part.pk, "quantity": Decimal("15")}],
         )
         arriving_line = shipment.lines.order_by("id").first()
-        assert arriving_line.purchase_order_line_id is None, (
+        assert not arriving_line.purchase_order_links.filter(
+            deleted_at__isnull=True
+        ).exists(), (
             "Two active lines for the same part should leave the arriving "
-            "shipment line unassigned pending the splitting wizard."
+            "shipment line unallocated pending the allocation tool."
         )
 
         shipment_context = ShipmentContext(shipment.pk)
-        sibling = shipment_context.split_line(
+        shipment_context.assign_line(
             line=arriving_line, quantity=Decimal("9"), purchase_order_line=line_1, actor=actor
         )
-        # split() mutates `arriving_line` in place (reduces its quantity to
-        # the 6 remaining), so the same instance is reused for the second
-        # split rather than re-fetched.
-        shipment_context.split_line(
+        shipment_context.assign_line(
             line=arriving_line, quantity=Decimal("6"), purchase_order_line=line_2, actor=actor
         )
-        assert sibling.split_from_id == arriving_line.pk
+        # The physical row is UNTOUCHED by either call — still one line, still
+        # 15, exactly as the packing slip said. That is the whole point of D90:
+        # the pre-D90 version of this scenario ended with three shipment-line
+        # rows and an original whose quantity had been rewritten to 6.
+        arriving_line.refresh_from_db()
+        assert arriving_line.quantity == Decimal("15"), (
+            "Allocating must never rewrite the arrived quantity."
+        )
+        assert arriving_line.purchase_order_links.filter(
+            deleted_at__isnull=True
+        ).count() == 2, "Scenario 4 was supposed to produce two allocations."
 
     def _seed_graph_mixed_po_shipment(
         self, *, actor, vendor_a, vendor_b, part_a, part_b, domain
@@ -830,8 +845,8 @@ class Command(BaseCommand):
         secondary_line = secondary_po.lines.order_by("id").first()
 
         # Header PO is the primary; part_a's line auto-resolves onto it.
-        # part_b matches nothing on the primary PO, so it lands unassigned,
-        # then gets reassigned explicitly onto the secondary PO's line —
+        # part_b matches nothing on the primary PO, so it lands unallocated,
+        # then gets allocated explicitly onto the secondary PO's line —
         # the packaging-level entanglement the scenario is demonstrating.
         shipment = ShipmentFactory.create(
             purchase_order=primary_po,
@@ -844,14 +859,14 @@ class Command(BaseCommand):
             ],
         )
         stray_line = shipment.lines.filter(part_id=part_b.pk).first()
-        ShipmentContext(shipment.pk).reassign_line(
+        ShipmentContext(shipment.pk).assign_line(
             line=stray_line, purchase_order_line=secondary_line, actor=actor
         )
 
         shipment.refresh_from_db(fields=["mixed_po_assignments"])
         assert shipment.mixed_po_assignments is True, (
             "Graph demo scenario 5 was supposed to flip mixed_po_assignments "
-            "True once a line was reassigned onto a different PO's line."
+            "True once a line was allocated onto a different PO's line."
         )
 
     def _seed_graph_proactive_no_demands(self, *, actor, vendor, part, domain) -> None:
@@ -910,7 +925,7 @@ class Command(BaseCommand):
         assert demand.graph_id is not None
 
     def _seed_graph_orphan_shipment_line(self, *, actor, part, domain) -> None:
-        """Scenario 8: a shipment line created with purchase_order_line=None
+        """Scenario 8: a shipment line created with no allocation at all
         (arrived matching nothing, no header PO either).
 
         ShipmentLineManager.add_line unconditionally calls
@@ -930,10 +945,10 @@ class Command(BaseCommand):
             lines=[{"part_id": part.pk, "quantity": Decimal("1")}],
         )
         line = shipment.lines.order_by("id").first()
-        assert line.purchase_order_line_id is None
+        assert not line.purchase_order_links.filter(deleted_at__isnull=True).exists()
         assert line.graph_id is not None, (
             "ShipmentLineManager.add_line initializes a node even for an "
-            "unassigned line — the orphan line still gets its own "
+            "unallocated line — the orphan line still gets its own "
             "single-member graph, not a null graph_id."
         )
 

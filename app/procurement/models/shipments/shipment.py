@@ -68,12 +68,12 @@ class Shipment(AuditFieldsMixin, SoftDeleteMixin):
     shipment_id = models.CharField(max_length=200, blank=True, db_index=True)
     carrier = models.CharField(max_length=200, blank=True)
 
-    # Set True the moment a split creates a sibling row for one of this
-    # shipment's lines (D69). A plain full-quantity reassignment does NOT set
-    # it — only an actual split does. Maintained by ShipmentLineSplitHandler,
-    # never set by a caller. Locks the shipment out of the bulk drag-and-drop
-    # tool alongside a Delivered/Accepted status.
-    has_splits = models.BooleanField(default=False)
+    # D69's has_splits column is gone (D90). It existed to lock a shipment out
+    # of the bulk drag-and-drop planner once splitting had broken the
+    # one-row-per-physical-line-item mapping the planner's chips rely on.
+    # Nothing splits any more — an arriving line keeps its identity and its
+    # quantity for life — so the mapping never breaks and there is nothing to
+    # lock out. Delivered/Accepted status still locks the planner on its own.
 
     status = models.CharField(
         max_length=30,
@@ -81,12 +81,12 @@ class Shipment(AuditFieldsMixin, SoftDeleteMixin):
         default=ShipmentStatus.AWAITING_SHIPMENT,
     )
 
-    # Drift flag. A shipment's lines COPY their PO link from the header at
-    # creation; lines can then be reassigned to a line on a different PO, which
-    # is legitimate — one physical box routinely holds items from several
-    # orders to the same vendor. Set True whenever any line's PO differs from
-    # the header's. Maintained by ShipmentLineManager on every line write, never
-    # set by a caller.
+    # Drift flag. A shipment's lines are ALLOCATED to their header PO's lines
+    # at creation; allocations can then be added against a line on a different
+    # PO, which is legitimate — one physical box routinely holds items from
+    # several orders to the same vendor. Set True whenever any allocation's PO
+    # differs from the header's. Maintained by ShipmentLineManager on every
+    # allocation write, never set by a caller.
     #
     # It is a FLAG, NOT A CONSTRAINT. Nothing is blocked. It exists so the
     # condition is queryable rather than discovered by someone puzzling over

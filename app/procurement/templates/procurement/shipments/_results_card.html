@@ -46,8 +46,7 @@ duplicates the `shipment-hero-metrics` id and renders the metrics table twice.
           <td class="has-text-right is-family-monospace">{{ pkg.total_accepted }}</td>
           <td>
             {% if pkg.mixed_po_assignments %}<span class="tag is-small is-warning is-light" title="Some lines point at a line on a different order. Nothing is blocked.">Mixed POs</span>{% endif %}
-            {% if pkg.has_splits %}<span class="tag is-small is-light" title="At least one line has been split across order lines.">Split</span>{% endif %}
-            {% if not pkg.mixed_po_assignments and not pkg.has_splits %}<span class="has-text-grey">—</span>{% endif %}
+            {% if not pkg.mixed_po_assignments %}<span class="has-text-grey">—</span>{% endif %}
           </td>
           <td class="has-text-right">
             <a class="button is-small is-light" href="{% url 'shipment_detail' pk=pkg.pk %}" title="Open">

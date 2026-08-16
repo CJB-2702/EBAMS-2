@@ -29,9 +29,6 @@ into an "advanced" drawer, because each one IS a standing job someone does:
       </div>
       <div class="page-header-actions">
         {% if can_receive %}
-        <a href="{% url 'shipment_receive' %}" class="button is-small is-link">
-          <span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span><span>Receive a Shipment</span>
-        </a>
         <a href="{% url 'shipment_create' %}" class="button is-small is-light">
           <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Shipment</span>
         </a>

@@ -62,8 +62,15 @@ class MermaidSwimlaneBuilder:
 
         for demand_id, po_line_id in demand_po_edges:
             lines.append(f"  D{demand_id} --> P{po_line_id}")
-        for po_line_id, shipment_line_id in po_shipment_edges:
-            lines.append(f"  P{po_line_id} --> S{shipment_line_id}")
+        # PO-line -> shipment-line edges are LABELLED with their allocated
+        # quantity (D90). Under the old single-FK design the edge carried no
+        # number — the whole arriving line went to one PO line and the node
+        # label already said how much. Now one arriving line can feed several
+        # PO lines partially, so an unlabelled arrow would hide the split the
+        # diagram exists to show.
+        for po_line_id, shipment_line_id, quantity in po_shipment_edges:
+            label = MermaidSwimlaneBuilder._escape(f"x{quantity}")
+            lines.append(f'  P{po_line_id} -- "{label}" --> S{shipment_line_id}')
 
         return "\n".join(lines)
 

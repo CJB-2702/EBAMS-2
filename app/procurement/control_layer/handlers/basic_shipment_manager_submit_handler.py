@@ -46,7 +46,12 @@ from app.procurement.control_layer.managers.shipment_status_manager import (
     ShipmentStatusManager,
 )
 from app.procurement.control_layer.narrators.shipment_narrator import ShipmentNarrator
-from app.procurement.models import Shipment, ShipmentLine, PurchaseOrderLine
+from app.procurement.models import (
+    PurchaseOrderLine,
+    PurchaseOrderShipmentLink,
+    Shipment,
+    ShipmentLine,
+)
 from django.utils import timezone
 
 
@@ -230,24 +235,41 @@ class BasicShipmentManagerSubmitHandler:
 
     @staticmethod
     def _current_lines(shipment: Shipment) -> dict[int, Decimal] | None:
-        """What is on file, as {po_line_id: quantity}.
+        """What is on file, as {po_line_id: quantity_allocated}.
 
-        Lines with a NULL purchase_order_line, or pointing at another order's
-        line, are deliberately excluded and therefore never touched: they have
-        no chip in this tool, so the diff must not read their absence from the
+        Unallocated lines, and allocations pointing at another order's line,
+        are deliberately excluded and therefore never touched: they have no
+        chip in this tool, so the diff must not read their absence from the
         draft as "delete this".
 
-        Returns None when two active lines share one PO line — the planner's
-        one-chip-per-line model cannot represent that, and guessing which to
-        adjust would silently destroy a split.
+        Returns None when this order's lines are represented by anything other
+        than one arriving line carrying exactly one allocation each (D90). The
+        planner's one-chip-per-line model cannot express a shipment line split
+        across two order lines, nor two arriving lines against one order line,
+        and guessing which to adjust would silently destroy a receiver's
+        deliberate allocation. Refusing the whole card is the safe answer —
+        the same reason the pre-D90 version bailed on duplicate rows.
         """
         current: dict[int, Decimal] = {}
-        for line in shipment.lines.filter(
-            deleted_at__isnull=True, purchase_order_line__isnull=False
-        ):
-            if line.purchase_order_line_id in current:
+        for line in shipment.lines.filter(deleted_at__isnull=True):
+            links = list(
+                line.purchase_order_links.filter(
+                    deleted_at__isnull=True,
+                    purchase_order_line__purchase_order_id=shipment.purchase_order_id,
+                )
+            )
+            if not links:
+                continue
+            if len(links) > 1:
                 return None
-            current[line.purchase_order_line_id] = line.quantity
+            link = links[0]
+            # A partly allocated line is also unrepresentable: its chip would
+            # claim the whole arrived quantity belongs to this order line.
+            if link.quantity_allocated != line.quantity:
+                return None
+            if link.purchase_order_line_id in current:
+                return None
+            current[link.purchase_order_line_id] = link.quantity_allocated
         return current
 
     @staticmethod
@@ -256,18 +278,22 @@ class BasicShipmentManagerSubmitHandler:
         every card, including the read-only ones — but any actual edit is
         refused.
 
-        SUMMED per PO line, not one entry per row, because a split shipment
-        legitimately carries several rows against one line and the session
-        seeds it as a single aggregated chip. Comparing row-by-row against an
-        aggregated draft would flag every split shipment as "changed" and
+        SUMMED per PO line over allocations, not one entry per row, because a
+        shipment legitimately carries several allocations against one line and
+        the session seeds it as a single aggregated chip. Comparing row-by-row
+        against an aggregated draft would flag those shipments as "changed" and
         reject submissions that touched nothing.
         """
         current: dict[int, Decimal] = {}
-        for line in shipment.lines.filter(
-            deleted_at__isnull=True, purchase_order_line__isnull=False
+        for link in PurchaseOrderShipmentLink.objects.filter(
+            shipment_line__shipment=shipment,
+            shipment_line__deleted_at__isnull=True,
+            deleted_at__isnull=True,
+            purchase_order_line__purchase_order_id=shipment.purchase_order_id,
         ):
-            current[line.purchase_order_line_id] = (
-                current.get(line.purchase_order_line_id, Decimal("0")) + line.quantity
+            current[link.purchase_order_line_id] = (
+                current.get(link.purchase_order_line_id, Decimal("0"))
+                + link.quantity_allocated
             )
         return current != desired
 
@@ -361,23 +387,51 @@ class BasicShipmentManagerSubmitHandler:
                 )
                 summary.lines_moved += 1
             elif current[po_line_id] != quantity:
-                line = shipment.lines.get(
-                    purchase_order_line_id=po_line_id, deleted_at__isnull=True
+                # Both numbers move together: _current_lines only admitted this
+                # card because every chip is one arriving line fully allocated
+                # to one order line, so resizing the chip means the box held a
+                # different amount than planned AND all of it still answers
+                # that same line.
+                link = PurchaseOrderShipmentLink.objects.select_related(
+                    "shipment_line"
+                ).get(
+                    shipment_line__shipment=shipment,
+                    shipment_line__deleted_at__isnull=True,
+                    purchase_order_line_id=po_line_id,
+                    deleted_at__isnull=True,
                 )
+                line = link.shipment_line
                 line.quantity = quantity
                 line.updated_by = self.actor
                 line.save(update_fields=["quantity", "updated_by", "updated_at"])
+                link.quantity_allocated = quantity
+                link.updated_by = self.actor
+                link.save(
+                    update_fields=["quantity_allocated", "updated_by", "updated_at"]
+                )
                 summary.lines_moved += 1
 
         removed = set(current) - set(desired)
         if removed:
             now = timezone.now()
-            # Soft delete: a chip dragged out of a box is a plan correction,
-            # and the row it came from is part of that plan's history.
+            # Soft delete both halves: a chip dragged out of a box is a plan
+            # correction, and the row it came from is part of that plan's
+            # history. The allocation goes with it — a live allocation under a
+            # deleted line is the orphan state D90 keeps out.
+            stale_links = list(
+                PurchaseOrderShipmentLink.objects.filter(
+                    shipment_line__shipment=shipment,
+                    shipment_line__deleted_at__isnull=True,
+                    purchase_order_line_id__in=removed,
+                    deleted_at__isnull=True,
+                ).select_related("shipment_line", "purchase_order_line")
+            )
+            for link in stale_links:
+                ShipmentLineManager.deallocate(
+                    link=link, actor=self.actor, commit=False
+                )
             ShipmentLine.objects.filter(
-                shipment=shipment,
-                purchase_order_line_id__in=removed,
-                deleted_at__isnull=True,
+                pk__in=[link.shipment_line_id for link in stale_links]
             ).update(deleted_at=now, updated_by=self.actor, updated_at=now)
             summary.lines_moved += len(removed)
 

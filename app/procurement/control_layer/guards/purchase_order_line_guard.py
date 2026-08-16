@@ -19,10 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from django.db.models import Sum
-
 from app.procurement.control_layer.errors import ProcurementValidationError
-from app.procurement.models import ShipmentLine, PurchaseOrderLine
+from app.procurement.control_layer.domain_structs.arrival_allocation import (
+    accepted_by_purchase_order_line,
+)
+from app.procurement.models import PurchaseOrderLine
 
 
 @dataclass(frozen=True)
@@ -62,10 +63,17 @@ class PurchaseOrderLineValidator:
     @classmethod
     def check_quantity_floor(cls, *, line, new_quantity_ordered: Decimal) -> None:
         """Hard stop: a line's quantity_ordered cannot drop below what has
-        already been accepted against it in shipments."""
-        accepted = ShipmentLine.objects.filter(
-            purchase_order_line=line, deleted_at__isnull=True
-        ).aggregate(total=Sum("quantity_accepted"))["total"] or Decimal("0")
+        already been accepted against it in shipments.
+
+        The accepted figure is derived from allocation shares since D90, so on
+        a multi-allocation arriving line this floor can sit at a fractional
+        value. That is the honest number and the right one to guard with — the
+        alternative, rounding it down, would let a Buyer shrink a line below
+        material that genuinely landed against it.
+        """
+        accepted = accepted_by_purchase_order_line(
+            purchase_order_line_ids=[line.pk]
+        ).get(line.pk, Decimal("0"))
 
         if new_quantity_ordered < accepted:
             raise ProcurementValidationError(

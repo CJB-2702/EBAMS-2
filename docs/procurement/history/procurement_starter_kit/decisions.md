@@ -939,7 +939,7 @@ placement reasoning as D63 (packages/shipments in procurement, not inventory) �
 procurement-side execution-tracking concept; inventory reads it, never owns or writes it.
 
 **D81 — `GraphSummary` carries eight metric columns, mapped onto existing fields, not the PDFs'
-generic totals or their entropy score:**
+generic totals or their weighted drift score:**
 
 | `GraphSummary` column | Derivation |
 | :--- | :--- |
@@ -952,7 +952,7 @@ generic totals or their entropy score:**
 | `qty_rejected` | `Σ (ShipmentLine.quantity - ShipmentLine.quantity_accepted)` on member lines where `quantity_accepted` is not null (the inspected-and-short/damaged remainder — there is no separate "rejected" column, D-package-line design already treats the shipped/accepted delta as the rejection) |
 | `intake_qty_recorded` | `0` for every row in this build. No intake table exists yet (D47, unchanged) — the column exists now so the metric has a home, and is wired up when the Inventory intake build lands. Documented as always-zero in the model docstring, not silently omitted, so a future reader does not mistake it for a bug. |
 
-The PDFs' `entropy_score`/`Egraph` weighting formula is **not** adopted — no operational-drift
+The PDFs' `Egraph` weighting formula is **not** adopted — no operational-drift
 scoring for this pass. `GraphSummary.status` is kept as a simple derived label (`BALANCED` /
 `AWAITING_PURCHASE` / `AWAITING_SHIPMENT` / `AWAITING_ACCEPTANCE`), recomputed the same pass as the
 quantity columns, not a weighted composite.
@@ -1148,3 +1148,78 @@ line/shipment line on `graph_id=44`).
   first place (which would also address the orphan-shipment-line scenario more directly).
 - `seed_parts_dev`'s minimum-parts requirement in `seed_procurement_dev.py` was bumped from `< 4` to
   `< 15` — the new scenarios need 15 distinct parts, and the parts seed already provides 16.
+
+---
+
+## PO line ↔ shipment line becomes a mapped allocation (2026-08-15)
+
+**D90 — `ShipmentLine.purchase_order_line` is replaced by `PurchaseOrderShipmentLink`, a
+many-to-many allocation row carrying `quantity_allocated`. Splitting is removed entirely:
+`ShipmentLineSplitHandler`, `ShipmentLine.split_from`, and `Shipment.has_splits` are gone.**
+
+This reverses `ShipmentLine`'s founding argument. That docstring rejected a link table because an
+arriving line's quantity and the sum of its links can disagree — two numbers for one physical fact,
+the legacy `ArrivalLine.quantity_available_for_linking` problem — and chose splitting so that each
+row's quantity *is* the fact.
+
+The objection does not survive the cap. `ShipmentLineValidator.check_allocation` refuses to let a
+line's active allocations exceed its own quantity, so the difference between them is never a
+discrepancy: it is the **unallocated remainder**, a real and ordinary state meaning "this much
+arrived and nobody has said which order it answers yet." That state already existed under the old
+design as a null FK. The only change is that it is now a quantity rather than a whole-row boolean,
+which is strictly more expressive — the old schema could not say "80 of these 100 are spoken for."
+
+What splitting cost, and this does not: recording a commercial mapping required a **destructive edit
+to a physical record**. The receiver mutated the arrived quantity on the original row and spawned
+siblings, because the physical record and the commercial mapping were the same column. Neither could
+be corrected without rewriting the other. Now the shipment line stays exactly as the packing slip
+described it, for life, and every claim against it is an appendable, soft-deletable row beside it.
+
+**Two bugs D89 flagged as open are dissolved rather than fixed**, which is the strongest evidence
+the shape was wrong:
+
+- *"Shipment-line splitting does not merge the resulting graphs."* There is no longer an unassigned
+  original with no edge to either target — the one arriving line holds both allocations, so both PO
+  lines bridge to it and the graph is genuinely one component. Seed scenario 4 now asserts this.
+- *"A fully-consumed, never-assigned original split line leaves a permanently orphaned, empty
+  `GraphSummary`."* Nothing is ever consumed to zero, so no orphan is produced by this path.
+
+**Acceptance stays on `ShipmentLine`, and per-PO-line arrival is derived by proration.** Inspection
+is physical and happens once, to the box; there is deliberately no per-allocation accepted column,
+following D55's reasoning on `PurchaseOrderDemandLink`. All division lives in exactly one module,
+`control_layer/domain_structs/arrival_allocation.py`, whose docstring states the case at length.
+
+Note this is a real weakening of D55's "never divide" rule and was taken with eyes open. The two
+cases are not identical: a demand allocation is a *claim on future fungible units* whose division has
+no referent, while a shipment allocation *records a physical mapping a receiver already made* — only
+the acceptance shortfall inside it is unobserved. Proportional spreading is symmetric,
+order-independent, and conserves the total exactly. A line with one allocation — the overwhelming
+majority, and always the case when a whole box answers one order — is never prorated at all. **The
+prohibition on dividing a shared demand session among its members is untouched and still absolute.**
+If exact per-PO-line acceptance is ever needed, the answer is a per-allocation inspection column,
+not a better formula; that module is the seam it goes through.
+
+**Consequential changes:**
+
+- `ShipmentContext` loses `reassign_line` and `split_line` for a single `assign_line` (allocate, with
+  `quantity=None` meaning "whatever is unallocated") plus `release_allocation`. Assigning to a second
+  PO line no longer moves material off the first — both allocations coexist, which is the point.
+- `Shipment.has_splits` is gone, so it no longer contributes to the audited-mutation trigger
+  (`ShipmentContext.AUDITED_STATUSES` alone) or the planner lock. Structure the bulk planner cannot
+  express is now *detected* from the allocations in `_current_lines` rather than pre-declared by a
+  flag — which also stops an ordinary shipment being permanently locked by one allocation edit since
+  undone.
+- `PurchaseOrderLineSearch` now reports `qty_allocated_from_shipments` rather than accepted quantity:
+  the allocation tool asks "how much of this line is still waiting to be pointed at material", which
+  an allocation answers immediately, well before anyone inspects.
+- Swimlane diagram edges are labelled with their allocated quantity. Under the single FK the edge
+  needed no number; now an unlabelled arrow would hide the split the diagram exists to show.
+- `GraphSummaryManager` gained a re-read of the PO line's `graph_id` before both merge and split.
+  `merge()` repoints members with a bulk update, so a caller-held instance can name a graph with no
+  members left, and `split_if_disconnected` fails its seed-membership check and silently does
+  nothing. Caught by `test_releasing_the_only_edge_splits_the_shipment_line_onto_its_own_graph`.
+
+**Not addressed here:** the `PurchaseOrderShipmentLink` unique constraint spans `(shipment_line,
+purchase_order_line)` regardless of `deleted_at`, so releasing an allocation and re-creating the same
+pairing collides. This follows `PurchaseOrderDemandLink`'s existing precedent exactly rather than
+diverging from it; if it bites, both tables should change together.

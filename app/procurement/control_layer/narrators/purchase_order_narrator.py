@@ -158,10 +158,10 @@ class PurchaseOrderNarrator:
         )
 
     @staticmethod
-    def shipment_line_split(
+    def shipment_line_allocated(
         *, shipment_number: str, part_number: str, quantity, target_line_number: int
     ) -> str:
         return (
-            f"Shipment {shipment_number}: {quantity} x {part_number} split onto line "
-            f"{target_line_number}."
+            f"Shipment {shipment_number}: {quantity} x {part_number} allocated to "
+            f"line {target_line_number}."
         )

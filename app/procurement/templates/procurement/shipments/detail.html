@@ -9,7 +9,7 @@
 
 {% comment %}
 Work portal (3/4 + 1/4). This page has exactly two verbs: ADVANCE STATUS and
-ACCEPT A LINE. Everything else — reassignment, splitting, header edits,
+ACCEPT A LINE. Everything else — allocation, header edits,
 deletions — is a link to the edit page, so there is one place a mutation can
 come from and one place the audit rules live.
 
@@ -36,7 +36,6 @@ The three Event cards are the shared events/fragments/*, not reimplementations.
         </p>
         <div class="mt-2">
           {% shipment_status_tag shipment.status %}
-          {% if shipment.has_splits %}<span class="tag is-small is-light" title="At least one line has been split across order lines.">Split lineage</span>{% endif %}
           {% if not shipment.purchase_order_id %}<span class="tag is-small is-warning is-light">No purchase order</span>{% endif %}
         </div>
       </div>
@@ -132,7 +131,7 @@ diverged" is noise.
             <th>Part</th>
             <th class="has-text-right">Shipped</th>
             <th>Accepted</th>
-            <th>Assigned to</th>
+            <th>Allocated to</th>
             <th>Attributed to</th>
             <th style="width:16rem;">Inspect</th>
           </tr></thead>
@@ -142,12 +141,7 @@ diverged" is noise.
               <td>
                 <span class="is-family-monospace">{{ line.part_number }}</span>
                 <span class="is-block has-text-grey">{{ line.part_name }}</span>
-                {% if line.split_from_id %}
-                  <span class="tag is-small is-light mt-1" title="This row was produced by splitting an arriving line.">Split from #{{ line.split_from_id }}</span>
-                {% endif %}
-                {% if line.split_child_count %}
-                  <span class="tag is-small is-light mt-1">Split into {{ line.split_child_count }}</span>
-                {% endif %}
+
               </td>
               <td class="has-text-right is-family-monospace">{{ line.quantity }}</td>
               <td>
@@ -157,19 +151,29 @@ diverged" is noise.
                 {% endif %}
               </td>
               <td>
-                {% if line.purchase_order_line_id %}
-                  {% demand_in_domain line.purchase_order_domain_id as po_ok %}
+                {% comment %}
+                ONE ENTRY PER ALLOCATION (D90). An arriving line can answer
+                several order lines at once, so this cell lists them with their
+                quantities rather than naming a single winner. The unallocated
+                remainder is stated explicitly — a partly allocated line reads
+                as fully handled otherwise.
+                {% endcomment %}
+                {% for allocation in line.allocations %}
+                <div class="mb-1">
+                  {% demand_in_domain allocation.purchase_order_domain_id as po_ok %}
                   {% if po_ok %}
-                    <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=line.purchase_order_id %}?line_id={{ line.purchase_order_line_id }}">{{ line.po_number }}</a>
+                    <a class="is-family-monospace" href="{% url 'purchase_order_detail' pk=allocation.purchase_order_id %}?line_id={{ allocation.purchase_order_line_id }}">{{ allocation.po_number }}</a>
                   {% else %}
-                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ line.po_number }}</span>
+                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">{{ allocation.po_number }}</span>
                   {% endif %}
-                  <span class="is-block has-text-grey">line {{ line.po_line_number }}</span>
-                  {% if line.is_drifted %}<span class="tag is-small is-warning is-light">Other order</span>{% endif %}
-                {% else %}
-                  <span class="tag is-small is-light">Unassigned</span>
+                  <span class="is-block has-text-grey">line {{ allocation.po_line_number }} · {{ allocation.quantity_allocated }}</span>
+                  {% if allocation.is_drifted %}<span class="tag is-small is-warning is-light">Other order</span>{% endif %}
+                </div>
+                {% endfor %}
+                {% if not line.is_fully_allocated %}
+                  <span class="tag is-small is-light">{{ line.unallocated_quantity }} unallocated</span>
                 {% endif %}
-                <a class="is-block is-size-7 mt-1" href="{% url 'shipment_edit' pk=shipment.pk %}?line_id={{ line.line_id }}">Edit assignment →</a>
+                <a class="is-block is-size-7 mt-1" href="{% url 'shipment_edit' pk=shipment.pk %}?line_id={{ line.line_id }}">Edit allocations →</a>
               </td>
               <td>
                 {% comment %}
@@ -179,27 +183,31 @@ diverged" is noise.
                 they were, so a session total and a member list is the honest
                 answer and a divided number is a fabricated one.
                 {% endcomment %}
-                {% if line.attribution.mode == "attributable" %}
-                  {% demand_in_domain line.attribution.demand_domain_id as demand_ok %}
+                {% for allocation in line.allocations %}
+                {% if line.allocations|length > 1 %}
+                  <p class="has-text-grey is-size-7">{{ allocation.po_number }} line {{ allocation.po_line_number }}:</p>
+                {% endif %}
+                {% if allocation.attribution.mode == "attributable" %}
+                  {% demand_in_domain allocation.attribution.demand_domain_id as demand_ok %}
                   {% if demand_ok %}
-                    <a class="is-family-monospace" href="{% url 'demand_detail' pk=line.attribution.demand_id %}">Demand #{{ line.attribution.demand_id }}</a>
+                    <a class="is-family-monospace" href="{% url 'demand_detail' pk=allocation.attribution.demand_id %}">Demand #{{ allocation.attribution.demand_id }}</a>
                   {% else %}
-                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">Demand #{{ line.attribution.demand_id }}</span>
+                    <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">Demand #{{ allocation.attribution.demand_id }}</span>
                   {% endif %}
-                {% elif line.attribution.mode == "shared_session" %}
+                {% elif allocation.attribution.mode == "shared_session" %}
                   <details>
                     <summary class="tag is-small is-info is-light" style="cursor:pointer;">
-                      Shared session ({{ line.attribution.member_count }})
+                      Shared session ({{ allocation.attribution.member_count }})
                     </summary>
                     <div class="depth-2 p-2 mt-1 is-size-7">
                       <p class="has-text-grey mb-1">
-                        {{ line.attribution.session_arrived }} arrived against
-                        {{ line.attribution.session_allocated }} allocated across
-                        {{ line.attribution.member_count }} demands. <strong>No per-demand share
+                        {{ allocation.attribution.session_arrived }} arrived against
+                        {{ allocation.attribution.session_allocated }} allocated across
+                        {{ allocation.attribution.member_count }} demands. <strong>No per-demand share
                         exists</strong> — the goods are fungible and none of them was earmarked.
                       </p>
                       <ul>
-                        {% for member_id, member_domain_id, member_qty in line.attribution.session_members %}
+                        {% for member_id, member_domain_id, member_qty in allocation.attribution.session_members %}
                         <li>
                           {% demand_in_domain member_domain_id as member_ok %}
                           {% if member_ok %}
@@ -216,6 +224,9 @@ diverged" is noise.
                 {% else %}
                   <span class="has-text-grey">—</span>
                 {% endif %}
+                {% empty %}
+                  <span class="has-text-grey">—</span>
+                {% endfor %}
               </td>
               <td>
                 {% if can_receive %}
@@ -264,8 +275,8 @@ diverged" is noise.
       {% if detail.unassigned_lines %}
       <div class="card-content pt-0">
         <article class="message is-info is-small mb-0"><div class="message-body is-size-7">
-          {{ detail.unassigned_lines|length }} line(s) are not pointed at any order line. They are
-          surfaced, never dropped — assign them from
+          {{ detail.unassigned_lines|length }} line(s) still have quantity not pointed at any order
+          line — fully or partly. They are surfaced, never dropped — allocate them from
           <a href="{% url 'shipment_edit' pk=shipment.pk %}">Edit &amp; Linkage</a> when you know where
           they belong.
         </div></article>

@@ -11,8 +11,9 @@ mixed_po_assignments drift flag.
   Accepted                                 (no change — acceptance is
                                             inspection, not movement)
 
-The demand path is shipment line -> purchase_order_line ->
-PurchaseOrderDemandLink -> PartDemand, and every write goes through
+The demand path is shipment line -> PurchaseOrderShipmentLink ->
+purchase_order_line -> PurchaseOrderDemandLink -> PartDemand, and every write
+goes through
 PartDemandStateManager.transition() with is_system_generated=True — never a
 direct column assignment.
 
@@ -35,6 +36,7 @@ from app.procurement.models import (
     DemandDimension,
     ShipmentStatus,
     PartDemand,
+    PurchaseOrderShipmentLink,
     ShipmentState,
 )
 
@@ -63,15 +65,21 @@ _SHIPMENT_STATUS_RANK: dict[str, int] = {
 class ShipmentStatusManager:
     @classmethod
     def refresh_mixed_po_assignments(cls, *, shipment, actor=None, commit: bool = True) -> bool:
-        """Set the drift flag if any line points at a line on a different PO.
+        """Set the drift flag if any allocation points at a line on a
+        different PO.
 
         Blocks nothing. It exists so the condition is queryable rather than
         puzzled over.
         """
         drifted = (
-            shipment.lines.filter(deleted_at__isnull=True)
-            .exclude(purchase_order_line__isnull=True)
-            .exclude(purchase_order_line__purchase_order_id=shipment.purchase_order_id)
+            PurchaseOrderShipmentLink.objects.filter(
+                shipment_line__shipment=shipment,
+                shipment_line__deleted_at__isnull=True,
+                deleted_at__isnull=True,
+            )
+            .exclude(
+                purchase_order_line__purchase_order_id=shipment.purchase_order_id
+            )
             .exists()
         )
         if drifted != shipment.mixed_po_assignments:
@@ -97,8 +105,9 @@ class ShipmentStatusManager:
         demands = PartDemand.objects.filter(
             allocations__is_active=True,
             allocations__deleted_at__isnull=True,
-            allocations__purchase_order_line__shipment_lines__shipment=shipment,
-            allocations__purchase_order_line__shipment_lines__deleted_at__isnull=True,
+            allocations__purchase_order_line__shipment_links__shipment_line__shipment=shipment,
+            allocations__purchase_order_line__shipment_links__deleted_at__isnull=True,
+            allocations__purchase_order_line__shipment_links__shipment_line__deleted_at__isnull=True,
             deleted_at__isnull=True,
         ).distinct()
 
@@ -132,10 +141,12 @@ class ShipmentStatusManager:
             demand.allocations.filter(
                 is_active=True,
                 deleted_at__isnull=True,
-                purchase_order_line__shipment_lines__deleted_at__isnull=True,
+                purchase_order_line__shipment_links__deleted_at__isnull=True,
+                purchase_order_line__shipment_links__shipment_line__deleted_at__isnull=True,
             )
             .values_list(
-                "purchase_order_line__shipment_lines__shipment__status", flat=True
+                "purchase_order_line__shipment_links__shipment_line__shipment__status",
+                flat=True,
             )
             .distinct()
         )

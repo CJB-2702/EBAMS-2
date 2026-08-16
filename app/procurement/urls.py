@@ -10,6 +10,7 @@ from __future__ import annotations
 from django.urls import include, path
 
 from app.procurement.presentation_layer.entrypoints.graph import (
+    procurement_graph_index,
     procurement_graph_visualizer,
 )
 from app.procurement.presentation_layer.entrypoints.shell import (
@@ -30,7 +31,8 @@ urlpatterns = [
     path("prices/", include("app.procurement.urls_prices")),
     # D85 — a graph is identified by its GraphSummary id, not an entity id.
     # Entity detail pages (demand/PO/shipment) each link in via their own
-    # `.graph_id`.
+    # `.graph_id`. `graph/` (no id) is the domain-scoped list of all graphs.
+    path("graph/", procurement_graph_index, name="procurement_graph_index"),
     path(
         "graph/<int:graph_id>/",
         procurement_graph_visualizer,

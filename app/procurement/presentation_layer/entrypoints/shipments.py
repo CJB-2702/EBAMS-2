@@ -1,4 +1,4 @@
-"""The Receiving Loop — list / create / receive / detail / edit, plus the
+"""The Receiving Loop — list / create / detail / edit, plus the
 PO-scoped Basic Shipment Manager (Phase 3).
 
 Two boundaries this module holds and must keep holding:
@@ -32,6 +32,10 @@ from django.views.decorators.http import require_http_methods
 
 from app.administration.models import Domain
 from app.parts.models import Part
+from app.procurement.control_layer.domain_structs.arrival_allocation import (
+    allocated_by_purchase_order_line,
+    unallocated_remainder,
+)
 from app.procurement.control_layer.domain_structs.shipment_struct import (
     ShipmentDetailStruct,
     planning_lines_for_order,
@@ -48,6 +52,7 @@ from app.procurement.models import (
     ShipmentStatus,
     PurchaseOrder,
     PurchaseOrderLine,
+    PurchaseOrderShipmentLink,
     PurchaseOrderStatus,
     Vendor,
 )
@@ -59,7 +64,11 @@ from app.procurement.presentation_layer.search.shipment_search import ShipmentSe
 from app.procurement.presentation_layer.search.purchase_order_line_search import (
     PurchaseOrderLineSearch,
 )
+from app.procurement.presentation_layer.search.purchase_order_search import (
+    PurchaseOrderSearch,
+)
 from app.procurement.presentation_layer.tools import basic_shipment_session as session_tool
+from app.procurement.presentation_layer.tools import shipment_wizard_draft as wizard_draft
 from app.procurement.presentation_layer.tools.procurement_access import (
     accessible_domain_ids,
     can_receive,
@@ -138,8 +147,8 @@ def _report(request: HttpRequest, exc: ProcurementValidationError) -> None:
 
 
 def _line_rows_from_post(request: HttpRequest) -> tuple[list[dict], list[str]]:
-    """Parse the repeated `line_part_id[]` / `line_quantity[]` inputs shared by
-    the create and receive forms.
+    """Parse the repeated `line_part_id[]` / `line_quantity[]` inputs used by
+    the create form.
 
     Rows where both fields are blank are skipped rather than refused — a form
     that renders five spare rows must not make the receiver clear them.
@@ -284,110 +293,772 @@ def shipment_index(request: HttpRequest) -> HttpResponse:
 
 
 # --------------------------------------------------------------------------- #
-# 3.2 shipment_create  /  3.3 shipment_receive
+# 3.2 shipment_create
 # --------------------------------------------------------------------------- #
 
 
 @require_http_methods(["GET", "POST"])
 def shipment_create(request: HttpRequest) -> HttpResponse:
-    """Simple form with an embedded line table — deliberately NOT a wizard.
+    """One route, vertical scroll, progressive enablement, session-backed draft
+    — the create-PO wizard's mirror, one level down the chain.
 
-    `Shipment` has exactly one reverse FK a user populates at creation (its
-    lines) and no secondary signal pushing it over the multi-card trigger.
+    The PO wizard searches open PART DEMANDS and links them to the order lines
+    it is building. This searches open PURCHASE ORDER LINES and links them to
+    the arriving lines it is building. Same cards, same gates, same reason for
+    the shape: the receiver is answering "what is in the box, and what does each
+    of those things answer for", and both halves of that need the same screen.
 
-    There is no line-level demand picker here on purpose: that is the whole
-    point of copy-on-create. A line whose part matches exactly one active line
-    on the header PO is linked automatically, and the receiver never types an
-    assignment they would only have guessed at.
+    NOTHING TOUCHES THE DATABASE UNTIL FINAL SUBMIT. A half-built shipment in
+    the database would show up in another receiver's queue, would count against
+    its order lines, and would leave orphaned allocations when abandoned. Every
+    POST below mutates `request.session` and redirects; only `_wizard_submit`
+    writes.
+
+    Copy-on-create still exists and is still the default — a line the receiver
+    never allocates by hand is matched against the header PO's lines by part at
+    commit, exactly as before. The wizard adds the ability to say otherwise
+    BEFORE the record exists, instead of correcting a guess afterwards on the
+    edit page.
     """
-    if request.method == "GET" and request.GET.get("format") == "htmx-search-results":
-        return _part_search_fragment(request)
+    if request.method == "GET":
+        fmt = request.GET.get("format")
+        if fmt == "htmx-search-results":
+            return _part_search_fragment(request)
+        # No `htmx-po-results` here: the primary order is card 2's own filtered
+        # results table, not a typeahead. A dropdown cannot show the booking
+        # date and line count the choice is actually made on.
 
     require_receive(request)
     domain_ids = accessible_domain_ids(request)
 
     if request.method == "POST":
-        return _create_shipment_from_form(request, reactive=False)
+        return _wizard_post(request, domain_ids=domain_ids)
 
-    preselected_po = None
-    po_id = _int(request.GET.get("purchase_order_id"))
-    if po_id is not None:
-        preselected_po = PurchaseOrder.objects.filter(
-            pk=po_id, domain_id__in=domain_ids, deleted_at__isnull=True
-        ).select_related("vendor").first()
+    return _wizard_render(request, domain_ids=domain_ids)
+
+
+def _wizard_render(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse:
+    draft = wizard_draft.load(request.session)
+    domain_context = _domain_choices(request)
+
+    # A receiver with exactly one domain never gets asked, so nothing they do in
+    # card 1 would otherwise establish the draft's home and card 2 would sit
+    # locked behind a question that is not on the page. Seed it on first render
+    # instead — the hidden input in card 1 says the same thing, but only once
+    # something in that card has been touched.
+    if (
+        domain_context["single_domain"] is not None
+        and not draft.get("domain_id")
+        and not draft.get("purchase_order_id")
+    ):
+        draft["domain_id"] = domain_context["single_domain"].pk
+        wizard_draft.save(request.session, draft)
+
+    # `?purchase_order_id=` deep-links in from a PO's detail page. It seeds an
+    # EMPTY draft's primary order and nothing more — a receiver mid-draft who
+    # follows a stale link does not get their staged work silently repointed at
+    # another order.
+    #
+    # "Empty" is measured on the primary order and the staged lines, NOT on
+    # `has_header`: the auto-seeded domain above satisfies that for every
+    # single-domain receiver, which would make this seeding dead code.
+    deep_link_po = _int(request.GET.get("purchase_order_id"))
+    if (
+        deep_link_po is not None
+        and not draft.get("purchase_order_id")
+        and not draft.get("lines")
+    ):
+        if PurchaseOrder.objects.filter(
+            pk=deep_link_po, domain_id__in=domain_ids, deleted_at__isnull=True
+        ).exists():
+            draft["purchase_order_id"] = deep_link_po
+            wizard_draft.save(request.session, draft)
+
+    purchase_order = None
+    if draft.get("purchase_order_id"):
+        purchase_order = (
+            PurchaseOrder.objects.filter(
+                pk=draft["purchase_order_id"], domain_id__in=domain_ids
+            )
+            .select_related("vendor", "domain")
+            .first()
+        )
+
+    # Card 2's pool — the single-select primary-order picker. The receiver is
+    # answering "which order is this box mostly against", so the filters are the
+    # three things they can read off the box or the paperwork: who sent it, when
+    # it was booked, and what part is inside.
+    po_pool_filters = {
+        "q": request.GET.get("po_q", "").strip(),
+        "vendor_id": _int(request.GET.get("po_vendor_id")),
+        "part_number": request.GET.get("po_part_number", "").strip(),
+        "date_from": request.GET.get("po_date_from", "").strip(),
+        "date_to": request.GET.get("po_date_to", "").strip(),
+    }
+
+    po_pool = []
+    if wizard_draft.has_header(draft):
+        po_pool = list(
+            PurchaseOrderSearch.attachable_pool(
+                domain_ids=domain_ids,
+                statuses=ATTACHABLE_PO_STATUSES,
+                q=po_pool_filters["q"],
+                vendor_id=po_pool_filters["vendor_id"],
+                part_number=po_pool_filters["part_number"],
+                date_from=(
+                    parse_date(po_pool_filters["date_from"])
+                    if po_pool_filters["date_from"]
+                    else None
+                ),
+                date_to=(
+                    parse_date(po_pool_filters["date_to"])
+                    if po_pool_filters["date_to"]
+                    else None
+                ),
+            )[:50]
+        )
+
+    # Card 3's pool — cross-part, server-filtered, because the systemwide open
+    # order-line pool runs into the hundreds. The per-line pools below it are
+    # part-scoped (tens of rows) and ship whole.
+    pool_filters = {
+        "q": request.GET.get("pool_q", "").strip(),
+        "vendor_id": _int(request.GET.get("pool_vendor_id")),
+        # Default ON, but only until the filter bar has been used: a receiver
+        # opening the wizard from a PO is almost always shipping against that
+        # order. An unticked checkbox submits NOTHING, so defaulting on a bare
+        # absence would make this one impossible to switch off — the filter
+        # form stamps `pool_submitted` precisely so absence can be told apart
+        # from never-asked.
+        "this_po_only": (
+            request.GET.get("pool_this_po_only") == "1"
+            if request.GET.get("pool_submitted") == "1"
+            else True
+        ),
+        "include_draft": request.GET.get("pool_include_draft") == "1",
+        "show_satisfied": request.GET.get("pool_show_satisfied") == "1",
+    }
+
+    po_line_pool = []
+    if wizard_draft.has_header(draft):
+        po_line_pool = list(
+            PurchaseOrderLineSearch.pool(
+                domain_ids=domain_ids,
+                q=pool_filters["q"],
+                vendor_id=pool_filters["vendor_id"],
+                purchase_order_id=(
+                    purchase_order.pk
+                    if purchase_order and pool_filters["this_po_only"]
+                    else None
+                ),
+                include_draft=pool_filters["include_draft"],
+                outstanding_only=not pool_filters["show_satisfied"],
+            )[:100]
+        )
+
+    lines = _draft_line_views(
+        draft, domain_ids=domain_ids, include_draft=pool_filters["include_draft"]
+    )
 
     return render(
         request,
         f"{TEMPLATE_DIR}/create.html",
         {
-            "preselected_po": preselected_po,
-            "purchase_orders": PurchaseOrder.objects.filter(
-                domain_id__in=domain_ids,
-                deleted_at__isnull=True,
-                status__in=ATTACHABLE_PO_STATUSES,
-            )
-            .select_related("vendor")
-            .order_by("-order_date")[:200],
-            **_domain_choices(request),
+            "draft": draft,
+            "purchase_order": purchase_order,
+            "lines": lines,
+            "po_pool": po_pool,
+            "po_pool_filters": po_pool_filters,
+            "po_line_pool": po_line_pool,
+            "pool_filters": pool_filters,
+            "vendors": Vendor.objects.filter(is_active=True).order_by("name"),
+            "has_header": wizard_draft.has_header(draft),
+            "has_lines": wizard_draft.has_lines(draft),
+            "can_submit": wizard_draft.can_submit(draft),
+            "unallocated_line_count": sum(
+                1 for line in lines if line["unallocated"] > 0
+            ),
+            **domain_context,
         },
     )
 
 
-@require_http_methods(["GET", "POST"])
-def shipment_receive(request: HttpRequest) -> HttpResponse:
-    """The reactive path: a box arrived and there is no purchase order.
+def _draft_line_views(
+    draft: dict, *, domain_ids: list[int], include_draft: bool
+) -> list[dict]:
+    """Hydrate each staged line into something a template can render.
 
-    D71/D73's nullable `purchase_order` is what makes this possible, and D74's
-    required `domain` is what keeps it from producing an ownerless record.
-
-    THERE IS NO PO FIELD ON THIS FORM. Attachment happens later on the edit
-    page, where auto-linking can run against real lines. Offering a PO picker
-    here would just recreate `shipment_create` and lose the one thing this route
-    exists to say: you do not need the paperwork to record the box.
-
-    Lines land with `purchase_order_line = null`. That is correct, not an
-    error state.
+    Parts and PO lines are fetched in two queries for the whole card stack, and
+    each line's candidate pool in one query per distinct part — never one per
+    line. The same batching rule the PO wizard's equivalent follows, for the
+    same reason.
     """
-    if request.method == "GET" and request.GET.get("format") == "htmx-search-results":
-        return _part_search_fragment(request)
+    lines = draft.get("lines") or []
+    if not lines:
+        return []
 
-    require_receive(request)
+    part_ids = [int(line["part_id"]) for line in lines]
+    parts_by_id = {p.pk: p for p in Part.objects.filter(pk__in=part_ids)}
 
-    if request.method == "POST":
-        return _create_shipment_from_form(request, reactive=True)
+    po_line_ids = [
+        int(allocation["purchase_order_line_id"])
+        for line in lines
+        for allocation in (line.get("allocations") or [])
+    ]
+    po_lines_by_id = {
+        po_line.pk: po_line
+        for po_line in PurchaseOrderLine.objects.filter(
+            pk__in=po_line_ids
+        ).select_related("purchase_order", "purchase_order__vendor")
+    }
 
-    return render(request, f"{TEMPLATE_DIR}/receive.html", _domain_choices(request))
+    pools_by_part: dict[int, list] = {}
+    for part_id in set(part_ids):
+        pools_by_part[part_id] = list(
+            PurchaseOrderLineSearch.candidates_for_arriving_part(
+                part_id=part_id, include_draft=include_draft
+            ).filter(purchase_order__domain_id__in=domain_ids)[:50]
+        )
+
+    views = []
+    for index, line in enumerate(lines):
+        part_id = int(line["part_id"])
+        quantity = wizard_draft.to_decimal(line["quantity"]) or Decimal("0")
+        allocated = wizard_draft.allocated_total(line)
+        allocations = []
+        for allocation in line.get("allocations") or []:
+            po_line_id = int(allocation["purchase_order_line_id"])
+            allocations.append(
+                {
+                    "purchase_order_line_id": po_line_id,
+                    "purchase_order_line": po_lines_by_id.get(po_line_id),
+                    "quantity_allocated": wizard_draft.to_decimal(
+                        allocation["quantity_allocated"]
+                    ),
+                }
+            )
+        allocated_ids = {a["purchase_order_line_id"] for a in allocations}
+        views.append(
+            {
+                "index": index,
+                "part": parts_by_id.get(part_id),
+                "quantity": quantity,
+                "notes": line.get("notes") or "",
+                "allocations": allocations,
+                "allocated_total": allocated,
+                "unallocated": quantity - allocated,
+                # Order lines already picked drop out of the pool; allocating a
+                # different amount means editing the existing pick, never
+                # adding a second — the unique constraint says so.
+                "pool": [
+                    candidate
+                    for candidate in pools_by_part.get(part_id, [])
+                    if candidate.pk not in allocated_ids
+                ],
+            }
+        )
+    return views
 
 
-def _create_shipment_from_form(request: HttpRequest, *, reactive: bool) -> HttpResponse:
-    """Shared commit path for both creation routes.
+# --------------------------------------------------------------------------- #
+# 3.2b  the wizard's POST actions — session only, except `submit`
+# --------------------------------------------------------------------------- #
 
-    Both redirect to `shipment_edit`, not detail: a fresh shipment is mid-setup —
-    lines to assign, maybe a PO to attach — and that is the edit page's job.
-    """
-    back = reverse("shipment_receive" if reactive else "shipment_create")
-    rows, row_errors = _line_rows_from_post(request)
-    for error in row_errors:
-        messages.error(request, error)
-    if row_errors:
+
+def _wizard_post(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse:
+    action = request.POST.get("action", "")
+    draft = wizard_draft.load(request.session)
+    back = reverse("shipment_create")
+
+    if action == "clear":
+        wizard_draft.clear(request.session)
+        messages.info(request, "Draft shipment discarded.")
         return redirect(back)
 
-    purchase_order = None
-    if not reactive:
-        po_id = _int(request.POST.get("purchase_order_id"))
-        if po_id is not None:
-            purchase_order = PurchaseOrder.objects.filter(
-                pk=po_id,
-                domain_id__in=accessible_domain_ids(request),
-                deleted_at__isnull=True,
-            ).first()
-            if purchase_order is None:
-                messages.error(
-                    request, "That purchase order is not one you have access to."
-                )
-                return redirect(back)
+    if action == "save_header":
+        _wizard_save_header(request, draft, domain_ids=domain_ids)
+        wizard_draft.save(request.session, draft)
+        return redirect(back)
 
-    domain = purchase_order.domain if purchase_order else _resolve_domain(request)
+    # Card 2's two actions run BEFORE the header gate, because picking a primary
+    # order is itself one of the two ways to give the draft a home — a receiver
+    # who arrives by deep link and never touches card 1 must still get through.
+    if action == "select_po":
+        _wizard_select_po(request, draft, domain_ids=domain_ids)
+        wizard_draft.save(request.session, draft)
+        return redirect(back)
+
+    if action == "clear_po":
+        draft["purchase_order_id"] = None
+        wizard_draft.save(request.session, draft)
+        messages.info(
+            request,
+            "Primary order cleared. Anything already in the box keeps the order "
+            "lines it was allocated to.",
+        )
+        return redirect(back)
+
+    if not wizard_draft.has_header(draft):
+        messages.error(
+            request,
+            "Pick a purchase order, or a domain if there is no order yet — a "
+            "shipment always belongs to one.",
+        )
+        return redirect(back)
+
+    if action == "add_unlinked_line":
+        _wizard_add_unlinked_line(request, draft)
+    elif action == "add_from_po_lines":
+        _wizard_add_from_po_lines(request, draft, domain_ids=domain_ids)
+    elif action == "remove_line":
+        if wizard_draft.remove_line(draft, _int(request.POST.get("line_index")) or -1):
+            messages.info(request, "Line removed from the draft.")
+    elif action == "edit_line":
+        _wizard_edit_line(request, draft)
+    elif action == "allocate":
+        _wizard_allocate(request, draft, domain_ids=domain_ids)
+    elif action == "remove_allocation":
+        line = wizard_draft.line_at(draft, _int(request.POST.get("line_index")) or -1)
+        po_line_id = _int(request.POST.get("purchase_order_line_id"))
+        if line and po_line_id and wizard_draft.remove_allocation(
+            line, purchase_order_line_id=po_line_id
+        ):
+            messages.info(request, "Allocation removed from the draft.")
+    elif action == "submit":
+        return _wizard_submit(request, draft, domain_ids=domain_ids)
+    else:
+        messages.error(request, "Unrecognised wizard action.")
+
+    wizard_draft.save(request.session, draft)
+    return redirect(back)
+
+
+def _wizard_save_header(
+    request: HttpRequest, draft: dict, *, domain_ids: list[int]
+) -> None:
+    """Card 1's autosave, fired by `hx-trigger="change"`. Partial state is
+    expected and not an error — a receiver who has only typed a tracking number
+    so far still gets that saved.
+
+    The domain fence is the one real validation: it guards a write, not a read.
+    An order supplies its own domain, so an explicit domain only matters while
+    there is no order.
+    """
+    # The primary order moved to card 2 and this card no longer submits it, so
+    # the key is ABSENT rather than blank on every card-1 autosave. Writing an
+    # unconditional `None` here would silently drop the chosen order the moment
+    # somebody corrected the carrier. It is still honoured when posted, which is
+    # what the reactive path and the wizard's own tests do.
+    if "purchase_order_id" in request.POST:
+        po_id = _int(request.POST.get("purchase_order_id"))
+        if po_id is not None and not PurchaseOrder.objects.filter(
+            pk=po_id, domain_id__in=domain_ids, deleted_at__isnull=True
+        ).exists():
+            messages.error(
+                request, "That purchase order is not one you have access to."
+            )
+            po_id = None
+        draft["purchase_order_id"] = po_id
+
+    domain_id = _int(request.POST.get("domain_id"))
+    if domain_id is not None and domain_id not in domain_ids:
+        messages.error(request, "Choose a domain you have access to.")
+        domain_id = None
+
+    draft["domain_id"] = domain_id
+    draft["shipment_id"] = request.POST.get("shipment_id", "").strip()
+    draft["carrier"] = request.POST.get("carrier", "").strip()
+    draft["shipped_date"] = request.POST.get("shipped_date") or None
+    draft["expected_arrival_date"] = request.POST.get("expected_arrival_date") or None
+    draft["notes"] = request.POST.get("notes", "").strip()
+
+
+def _wizard_select_po(
+    request: HttpRequest, draft: dict, *, domain_ids: list[int]
+) -> None:
+    """Card 2 — the primary order, single-select, with two ways to take it.
+
+    SINGLE-SELECT IS THE POINT. A shipment has exactly one primary order: the
+    one whose paperwork came with the box, whose domain the shipment inherits,
+    and whose lines copy-on-create matches against. That is a different question
+    from "which order lines does this box answer for", which card 3 answers and
+    which genuinely spans several orders. Collapsing the two would lose the only
+    field that can be copied from — hence a radio, not a checkbox.
+
+    The two buttons are the two real intents, both common enough to deserve
+    their own control rather than a checkbox nobody reads:
+
+    * **Copy all lines** — the box is this order, arriving as booked. The
+      receiver corrects quantities afterwards instead of re-typing the order.
+    * **Primary only** — this order is the box's home, but what is inside is not
+      its line list: a partial delivery of two of twelve lines, or material that
+      mostly answers to somebody else's order.
+    """
+    po_id = _int(request.POST.get("primary_purchase_order_id"))
+    if po_id is None:
+        messages.error(request, "Choose a purchase order first.")
+        return
+
+    purchase_order = (
+        PurchaseOrder.objects.filter(
+            pk=po_id, domain_id__in=domain_ids, deleted_at__isnull=True
+        )
+        .select_related("vendor")
+        .first()
+    )
+    if purchase_order is None:
+        messages.error(request, "That purchase order is not one you have access to.")
+        return
+
+    draft["purchase_order_id"] = purchase_order.pk
+
+    if request.POST.get("copy_lines") != "1":
+        messages.success(
+            request,
+            f"{purchase_order.po_number} is this shipment's primary order. Nothing "
+            f"was copied — add what is actually in the box below.",
+        )
+        return
+
+    added, skipped = _copy_po_lines_into_draft(
+        draft, purchase_order=purchase_order, domain_ids=domain_ids
+    )
+    if added:
+        messages.success(
+            request,
+            f"{purchase_order.po_number} is this shipment's primary order — "
+            f"{added} open line{'s' if added != 1 else ''} copied into the box and "
+            f"pre-allocated. Correct any quantity the box disagrees with.",
+        )
+    else:
+        messages.warning(
+            request,
+            f"{purchase_order.po_number} is this shipment's primary order, but it "
+            f"has no open lines left to copy. Add what is in the box below.",
+        )
+    if skipped:
+        messages.info(
+            request,
+            f"{skipped} of its line{'s were' if skipped != 1 else ' was'} already "
+            f"staged and left alone — copying twice would have doubled the box.",
+        )
+
+
+def _copy_po_lines_into_draft(
+    draft: dict, *, purchase_order: PurchaseOrder, domain_ids: list[int]
+) -> tuple[int, int]:
+    """Stage every still-outstanding line of the order at its outstanding
+    quantity. Returns `(added, skipped)`.
+
+    Lines this draft already carries an allocation for are SKIPPED, not grown.
+    Pressing "copy all lines" a second time — after a mis-click, or after
+    switching orders and switching back — is a repeat of the same statement, not
+    a second delivery, and growing the box for it would be silently wrong. The
+    explicit per-line pick in card 3 keeps its additive behaviour, because there
+    the receiver is naming a quantity each time.
+    """
+    added = 0
+    skipped = 0
+    for po_line in PurchaseOrderLineSearch.pool(
+        domain_ids=domain_ids,
+        purchase_order_id=purchase_order.pk,
+        include_draft=True,
+        outstanding_only=True,
+    ):
+        if wizard_draft.staged_for_purchase_order_line(
+            draft, purchase_order_line_id=po_line.pk
+        ) > 0:
+            skipped += 1
+            continue
+        _stage_po_line(draft, po_line=po_line, quantity=po_line.outstanding_qty)
+        added += 1
+    return added, skipped
+
+
+def _stage_po_line(draft: dict, *, po_line: PurchaseOrderLine, quantity) -> None:
+    """Put `quantity` of an order line's part in the box and allocate exactly
+    that much back to the order line.
+
+    One physical line per part: a part arriving against two different orders is
+    ONE line with TWO allocations, never two lines. The link table exists to say
+    that (D90). Growing the line by exactly what is being allocated keeps the
+    arriving quantity and its allocations consistent by construction, so this
+    path can never breach the line's own cap.
+    """
+    index = wizard_draft.find_line_for_part(draft, po_line.part_id)
+    if index is None:
+        draft["lines"].append(
+            wizard_draft.new_line(part_id=po_line.part_id, quantity=quantity)
+        )
+        index = len(draft["lines"]) - 1
+    else:
+        line = draft["lines"][index]
+        previous = wizard_draft.to_decimal(line["quantity"]) or Decimal("0")
+        line["quantity"] = str(previous + quantity)
+
+    wizard_draft.set_allocation(
+        draft["lines"][index],
+        purchase_order_line_id=po_line.pk,
+        quantity=quantity,
+    )
+
+
+def _wizard_add_unlinked_line(request: HttpRequest, draft: dict) -> None:
+    """The Unlinked tab. A line answering no order line is valid and this is the
+    intended path for it — a vendor substitution, a bonus item, or a box whose
+    paperwork has not caught up. Dropping it would be the only genuinely wrong
+    answer."""
+    part_id = _int(request.POST.get("part_id"))
+    quantity = _decimal(request.POST.get("quantity"))
+
+    problems = []
+    if not part_id or not Part.objects.filter(pk=part_id).exists():
+        problems.append("Choose a part.")
+    if quantity is None or quantity <= 0:
+        problems.append("Shipped quantity must be greater than zero.")
+    if problems:
+        for problem in problems:
+            messages.error(request, problem)
+        return
+
+    existing_index = wizard_draft.find_line_for_part(draft, part_id)
+    if existing_index is not None:
+        # One physical line per part in the box. A part arriving against two
+        # different orders is ONE line with TWO allocations, not two lines —
+        # that distinction is the whole point of the link table (D90).
+        line = draft["lines"][existing_index]
+        previous = wizard_draft.to_decimal(line["quantity"]) or Decimal("0")
+        line["quantity"] = str(previous + quantity)
+        messages.info(
+            request,
+            f"That part is already on line {existing_index + 1} — its quantity grew "
+            f"to {line['quantity']} instead of opening a second line.",
+        )
+        return
+
+    draft["lines"].append(
+        wizard_draft.new_line(
+            part_id=part_id,
+            quantity=quantity,
+            notes=request.POST.get("line_notes", "").strip(),
+        )
+    )
+    messages.success(request, "Line added to the draft.")
+
+
+def _wizard_add_from_po_lines(
+    request: HttpRequest, draft: dict, *, domain_ids: list[int]
+) -> None:
+    """The From-order-lines tab — the exact counterpart of the PO wizard's
+    From-demands tab.
+
+    Picking an order line both creates/grows that part's arriving line AND
+    pre-allocates exactly that quantity against the order line. The receiver
+    does not re-pick it downstream; they only correct the quantity if the box
+    disagrees with the paperwork.
+    """
+    po_line_ids = [
+        value
+        for value in (_int(raw) for raw in request.POST.getlist("po_line_ids"))
+        if value
+    ]
+    if not po_line_ids:
+        messages.error(request, "Select at least one order line.")
+        return
+
+    po_lines = list(
+        PurchaseOrderLineSearch.pool(
+            domain_ids=domain_ids, include_draft=True, outstanding_only=False
+        ).filter(pk__in=po_line_ids)
+    )
+    if not po_lines:
+        messages.error(request, "None of those order lines are in your domains.")
+        return
+
+    added = 0
+    for po_line in po_lines:
+        quantity = _decimal(request.POST.get(f"quantity_{po_line.pk}"))
+        if quantity is None:
+            quantity = po_line.outstanding_qty
+        if quantity <= 0:
+            messages.warning(
+                request,
+                f"{po_line.purchase_order.po_number} line {po_line.line_number} was "
+                f"given no quantity — skipped.",
+            )
+            continue
+
+        _stage_po_line(draft, po_line=po_line, quantity=quantity)
+        added += 1
+
+    if added:
+        messages.success(
+            request,
+            f"{added} order line{'s' if added != 1 else ''} added to the draft and "
+            f"pre-allocated.",
+        )
+
+
+def _wizard_edit_line(request: HttpRequest, draft: dict) -> None:
+    """Card 3's per-line autosave — arriving quantity and notes, via
+    `hx-trigger="change"`.
+
+    A rejected edit leaves the line exactly as it was rather than half-applying
+    the POST; the autosave has no undo. Reducing the quantity below what is
+    already allocated is the one refusal here — it would put the line over its
+    own cap, which `ShipmentLineValidator.check_allocation` would reject at
+    commit anyway.
+    """
+    line_index = _int(request.POST.get("line_index"))
+    line = wizard_draft.line_at(draft, line_index if line_index is not None else -1)
+    if line is None:
+        messages.error(request, "That draft line no longer exists.")
+        return
+
+    quantity = _decimal(request.POST.get("quantity"))
+    if quantity is None or quantity <= 0:
+        messages.error(request, "Shipped quantity must be greater than zero.")
+        return
+
+    allocated = wizard_draft.allocated_total(line)
+    if quantity < allocated:
+        messages.error(
+            request,
+            f"{allocated} of this line is already allocated to order lines — it "
+            f"cannot arrive as only {quantity}. Release an allocation first.",
+        )
+        return
+
+    line["quantity"] = str(quantity)
+    line["notes"] = request.POST.get("line_notes", "").strip()
+
+
+def _wizard_allocate(
+    request: HttpRequest, draft: dict, *, domain_ids: list[int]
+) -> None:
+    """Card 3's per-pick allocation — the mirror of the PO wizard's demand
+    allocation, with the cap running the other way.
+
+    On the demand side the cap is on the TARGET (a demand cannot be
+    over-claimed) and exceeding it opens a decision dialog. Here the cap is on
+    the SOURCE: the arriving line's allocations may not total more than what
+    physically arrived, and that one blocks flat — a claim that more of a box
+    was assigned than was in the box is not a business event anybody needs to
+    approve.
+
+    Over-RECEIPT against the order line is the opposite case and stays legal:
+    vendors over-ship, and the honest record says so. It only warns.
+    """
+    line_index = _int(request.POST.get("line_index"))
+    line = wizard_draft.line_at(draft, line_index if line_index is not None else -1)
+    po_line_id = _int(request.POST.get("purchase_order_line_id"))
+    quantity = _decimal(request.POST.get("quantity"))
+
+    if line is None or not po_line_id:
+        messages.error(request, "That draft line no longer exists.")
+        return
+
+    po_line = (
+        PurchaseOrderLine.objects.filter(
+            pk=po_line_id,
+            deleted_at__isnull=True,
+            purchase_order__domain_id__in=domain_ids,
+        )
+        .select_related("purchase_order")
+        .first()
+    )
+    if po_line is None:
+        messages.error(request, "Choose an order line you have access to.")
+        return
+    if po_line.part_id != int(line["part_id"]):
+        messages.error(
+            request,
+            f"{po_line.purchase_order.po_number} line {po_line.line_number} buys a "
+            f"different part than this line. Allocations must match on part.",
+        )
+        return
+
+    headroom = (
+        wizard_draft.to_decimal(line["quantity"]) or Decimal("0")
+    ) - wizard_draft.allocated_total(line, skip_purchase_order_line_id=po_line_id)
+    if quantity is None:
+        # Blank means "everything still unallocated" — the one-box-one-order
+        # case, and the overwhelming majority of picks.
+        quantity = headroom
+    if quantity <= 0:
+        messages.error(request, "Allocated quantity must be greater than zero.")
+        return
+    if quantity > headroom:
+        messages.error(
+            request,
+            f"Cannot allocate {quantity} — only {headroom} of this arriving line's "
+            f"{line['quantity']} is still unallocated.",
+        )
+        return
+
+    wizard_draft.set_allocation(
+        line, purchase_order_line_id=po_line.pk, quantity=quantity
+    )
+
+    outstanding = _po_line_outstanding(po_line) - wizard_draft.staged_for_purchase_order_line(
+        draft, purchase_order_line_id=po_line.pk, skip_line_index=line_index
+    )
+    target = f"{po_line.purchase_order.po_number} line {po_line.line_number}"
+    if quantity > outstanding:
+        messages.warning(
+            request,
+            f"Allocated {quantity} to {target}, which is more than the {outstanding} "
+            f"still outstanding on it. Recorded as-is — vendors over-ship, and the "
+            f"honest record says so.",
+        )
+    else:
+        messages.success(request, f"Allocated {quantity} to {target}.")
+
+
+def _po_line_outstanding(po_line: PurchaseOrderLine) -> Decimal:
+    """This line's outstanding balance against already-committed allocations.
+
+    `PurchaseOrderLineSearch` annotates this for rows it fetched; a line loaded
+    directly has to compute it, and both must mean the same thing — allocated,
+    never accepted (D90).
+    """
+    allocated = allocated_by_purchase_order_line(
+        purchase_order_line_ids=[po_line.pk]
+    ).get(po_line.pk, Decimal("0"))
+    return po_line.quantity_ordered - allocated
+
+
+def _wizard_submit(
+    request: HttpRequest, draft: dict, *, domain_ids: list[int]
+) -> HttpResponse:
+    """The only write in the wizard. One transaction; if any step fails, no
+    shipment exists.
+
+    Lines carrying staged allocations suppress copy-on-create and get exactly
+    what was staged. Lines carrying none still get copy-on-create against the
+    header order, so a receiver who never opened card 3 lands in precisely the
+    behaviour the old flat form gave them.
+    """
+    back = reverse("shipment_create")
+
+    purchase_order = None
+    if draft.get("purchase_order_id"):
+        purchase_order = PurchaseOrder.objects.filter(
+            pk=draft["purchase_order_id"],
+            domain_id__in=domain_ids,
+            deleted_at__isnull=True,
+        ).select_related("domain").first()
+        if purchase_order is None:
+            messages.error(
+                request, "That purchase order is not one you have access to."
+            )
+            return redirect(back)
+
+    domain = purchase_order.domain if purchase_order else None
+    if domain is None:
+        domain_id = draft.get("domain_id")
+        if domain_id in domain_ids:
+            domain = Domain.objects.filter(pk=domain_id).first()
     if domain is None:
         messages.error(
             request,
@@ -396,30 +1067,81 @@ def _create_shipment_from_form(request: HttpRequest, *, reactive: bool) -> HttpR
         )
         return redirect(back)
 
+    draft_lines = draft.get("lines") or []
+    if not draft_lines:
+        messages.error(request, "Add at least one line before saving.")
+        return redirect(back)
+
+    po_line_ids = [
+        int(allocation["purchase_order_line_id"])
+        for line in draft_lines
+        for allocation in (line.get("allocations") or [])
+    ]
+    po_lines_by_id = {
+        po_line.pk: po_line
+        for po_line in PurchaseOrderLine.objects.filter(
+            pk__in=po_line_ids,
+            deleted_at__isnull=True,
+            purchase_order__domain_id__in=domain_ids,
+        ).select_related("purchase_order")
+    }
+
+    rows = []
+    for line in draft_lines:
+        quantity = wizard_draft.to_decimal(line.get("quantity"))
+        if quantity is None or quantity <= 0:
+            messages.error(request, "Every line needs a quantity greater than zero.")
+            return redirect(back)
+
+        allocations = []
+        for allocation in line.get("allocations") or []:
+            po_line = po_lines_by_id.get(int(allocation["purchase_order_line_id"]))
+            if po_line is None:
+                messages.error(
+                    request,
+                    "One of the order lines in this draft no longer exists or is no "
+                    "longer in your domains. Remove that allocation and try again.",
+                )
+                return redirect(back)
+            allocations.append(
+                {
+                    "purchase_order_line": po_line,
+                    "quantity": wizard_draft.to_decimal(
+                        allocation["quantity_allocated"]
+                    ),
+                }
+            )
+
+        rows.append(
+            {
+                "part_id": int(line["part_id"]),
+                "quantity": quantity,
+                "allocations": allocations,
+            }
+        )
+
     try:
         shipment = ShipmentFactory.create(
             domain=domain,
             purchase_order=purchase_order,
             lines=rows,
             actor=request.user,
-            shipment_id=request.POST.get("shipment_id", "").strip(),
-            carrier=request.POST.get("carrier", "").strip(),
-            shipped_date=parse_date(request.POST.get("shipped_date", "") or ""),
-            expected_arrival_date=parse_date(
-                request.POST.get("expected_arrival_date", "") or ""
-            ),
-            notes=request.POST.get("notes", "").strip(),
+            shipment_id=(draft.get("shipment_id") or "").strip(),
+            carrier=(draft.get("carrier") or "").strip(),
+            shipped_date=parse_date(draft.get("shipped_date") or ""),
+            expected_arrival_date=parse_date(draft.get("expected_arrival_date") or ""),
+            notes=(draft.get("notes") or "").strip(),
         )
     except ProcurementValidationError as exc:
         _report(request, exc)
         return redirect(back)
 
+    wizard_draft.clear(request.session)
     messages.success(
         request,
-        f"Shipment {shipment.shipment_number} recorded with {len(rows)} line(s). "
-        f"Check the assignments below before moving on.",
+        f"Shipment {shipment.shipment_number} recorded with {len(rows)} line(s).",
     )
-    return redirect(reverse("shipment_edit", kwargs={"pk": shipment.pk}))
+    return redirect(reverse("shipment_detail", kwargs={"pk": shipment.pk}))
 
 
 # --------------------------------------------------------------------------- #
@@ -657,24 +1379,42 @@ def _edit_render(request: HttpRequest, shipment: Shipment) -> HttpResponse:
         (line for line in detail.lines if line.line_id == selected_line_id), None
     )
 
-    # The right column's candidates: open PO lines that could account for the
-    # selected arriving part. Three quantities per candidate — ordered, already
-    # accepted, outstanding — because that is the minimum needed to judge a
-    # target before assigning to it, and it is why these are wide cards rather
-    # than a typeahead.
+    # The right column's search tool, top-bottom: a filter bar over a results
+    # list, each row carrying its own Allocate action. The PO sector's Edit &
+    # Linkage draws its demand search exactly this way, and this is the same
+    # job pointing the other direction.
+    search_filters = {
+        "q": request.GET.get("q", "").strip(),
+        "include_draft": request.GET.get("include_draft") == "1",
+        "vendor_scope": request.GET.get("vendor_scope", "any"),
+    }
+
     candidates = []
     if selected is not None:
-        include_draft = request.GET.get("include_draft") == "1"
         vendor_id = None
-        if request.GET.get("vendor_scope", "any") == "header" and shipment.purchase_order_id:
+        if search_filters["vendor_scope"] == "header" and shipment.purchase_order_id:
             vendor_id = shipment.purchase_order.vendor_id
         candidates = list(
             PurchaseOrderLineSearch.candidates_for_arriving_part(
                 part_id=selected.part_id,
                 vendor_id=vendor_id,
-                include_draft=include_draft,
+                include_draft=search_filters["include_draft"],
+                q=search_filters["q"],
             ).filter(purchase_order__domain_id__in=accessible_domain_ids(request))[:50]
         )
+
+    # The current-allocations table wants each target's ordered quantity and
+    # vendor, which the struct's allocation slice does not carry — it holds
+    # attribution, not commercial terms. One query for the selected line's
+    # targets, never one per allocation.
+    allocation_targets = {}
+    if selected is not None:
+        allocation_targets = {
+            po_line.pk: po_line
+            for po_line in PurchaseOrderLine.objects.filter(
+                pk__in=[a.purchase_order_line_id for a in selected.allocations]
+            ).select_related("purchase_order", "purchase_order__vendor")
+        }
 
     return render(
         request,
@@ -685,11 +1425,9 @@ def _edit_render(request: HttpRequest, shipment: Shipment) -> HttpResponse:
             "selected": selected,
             "selected_line_id": selected_line_id,
             "candidates": candidates,
-            "search_filters": {
-                "include_draft": request.GET.get("include_draft") == "1",
-                "vendor_scope": request.GET.get("vendor_scope", "any"),
-            },
-            # Every mutation on a delivered or split shipment costs a mandatory
+            "allocation_targets": allocation_targets,
+            "search_filters": search_filters,
+            # Every mutation on a delivered shipment costs a mandatory
             # comment. The template turns this into a required textarea in each
             # confirmation popup rather than discovering it on submit.
             "requires_audit_comment": context.requires_audit_comment,
@@ -703,8 +1441,17 @@ def _edit_post(request: HttpRequest, shipment: Shipment) -> HttpResponse:
     action = request.POST.get("action", "")
     context = ShipmentContext(shipment.pk)
 
-    line_id = _int(request.POST.get("line_id"))
+    # Preserve the selected line across the redirect so a save does not dump the
+    # receiver back to "nothing selected" halfway through an allocation session.
+    # `line_id` is the ACTION'S TARGET and only appears on forms that have one;
+    # `selected_line_id` is the page state the header and add-line forms carry.
+    # Merging them is safe for the redirect and nothing else reads this value.
+    line_id = _int(request.POST.get("line_id")) or _int(
+        request.POST.get("selected_line_id")
+    )
     back = reverse("shipment_edit", kwargs={"pk": shipment.pk})
+    # A deleted line cannot be re-selected — the redirect drops it rather than
+    # landing on a selection that 404s out of the detail struct.
     if line_id and action != "delete_line":
         back = f"{back}?line_id={line_id}"
 
@@ -735,21 +1482,7 @@ def _edit_post(request: HttpRequest, shipment: Shipment) -> HttpResponse:
             _assign_line(request, shipment, context, audit_comment)
 
         elif action == "unassign":
-            line = _line_on_shipment(shipment, line_id)
-            if line is None:
-                messages.error(request, "That line is not on this shipment.")
-            else:
-                context.reassign_line(
-                    line=line,
-                    purchase_order_line=None,
-                    actor=request.user,
-                    audit_comment=audit_comment,
-                )
-                messages.success(
-                    request,
-                    f"{line.part.part_number} is now unassigned. It still counts as "
-                    f"arrived — it just does not answer for any order line.",
-                )
+            _release_allocation(request, shipment, context, audit_comment)
 
         elif action == "delete_line":
             _delete_line(request, shipment, context, audit_comment)
@@ -773,7 +1506,7 @@ def _line_on_shipment(shipment: Shipment, line_id: int | None) -> ShipmentLine |
         ShipmentLine.objects.filter(
             pk=line_id, shipment=shipment, deleted_at__isnull=True
         )
-        .select_related("part", "purchase_order_line")
+        .select_related("part")
         .first()
     )
 
@@ -867,11 +1600,12 @@ def _assign_line(
     context: ShipmentContext,
     audit_comment: str,
 ) -> None:
-    """The right column's Assign action.
+    """The right column's Allocate action.
 
-    Partial quantity splits the line; the full remaining quantity reassigns it.
-    That choice is made in the control layer (`ShipmentContext.assign_line`), not
-    here — it is one user decision and should not be two code paths in a view.
+    A blank quantity means "everything still unallocated"; a partial quantity
+    allocates that much and leaves the rest as remainder. Either way it is one
+    control-layer call (`ShipmentContext.assign_line`) — since D90 there is no
+    split-vs-reassign branch for a view to get wrong.
     """
     line = _line_on_shipment(shipment, _int(request.POST.get("line_id")))
     if line is None:
@@ -889,30 +1623,71 @@ def _assign_line(
 
     quantity = _decimal(request.POST.get("quantity"))
     if quantity is not None and quantity <= 0:
-        messages.error(request, "Assigned quantity must be greater than zero.")
+        messages.error(request, "Allocated quantity must be greater than zero.")
         return
 
-    was_partial = quantity is not None and quantity < line.quantity
-    context.assign_line(
+    link = context.assign_line(
         line=line,
         purchase_order_line=po_line,
         quantity=quantity,
         actor=request.user,
         audit_comment=audit_comment,
     )
-    if was_partial:
+    remainder = unallocated_remainder(shipment_line=line)
+    target = f"{po_line.purchase_order.po_number} line {po_line.line_number}"
+    if remainder > 0:
         messages.success(
             request,
-            f"{quantity} of {line.part.part_number} split onto "
-            f"{po_line.purchase_order.po_number} line {po_line.line_number}. The "
-            f"remainder stays on the original line, still needing a home.",
+            f"{link.quantity_allocated} of {line.part.part_number} allocated to "
+            f"{target}. {remainder} of this line is still unallocated.",
         )
     else:
         messages.success(
             request,
-            f"{line.part.part_number} assigned to "
-            f"{po_line.purchase_order.po_number} line {po_line.line_number}.",
+            f"{line.part.part_number} fully allocated to {target}.",
         )
+
+
+def _release_allocation(
+    request: HttpRequest,
+    shipment: Shipment,
+    context: ShipmentContext,
+    audit_comment: str,
+) -> None:
+    """Take one allocation back off an order line.
+
+    Keyed by LINK id, not line id (D90). A line can hold several allocations,
+    so "unassign this line" is no longer a well-formed instruction — the user
+    picks which allocation to release.
+    """
+    link = (
+        PurchaseOrderShipmentLink.objects.filter(
+            pk=_int(request.POST.get("link_id")),
+            shipment_line__shipment=shipment,
+            shipment_line__deleted_at__isnull=True,
+            deleted_at__isnull=True,
+        )
+        .select_related(
+            "shipment_line__part", "purchase_order_line__purchase_order"
+        )
+        .first()
+    )
+    if link is None:
+        messages.error(request, "That allocation is not on this shipment.")
+        return
+
+    part_number = link.shipment_line.part.part_number
+    quantity = link.quantity_allocated
+    po_line = link.purchase_order_line
+    context.release_allocation(
+        link=link, actor=request.user, audit_comment=audit_comment
+    )
+    messages.success(
+        request,
+        f"{quantity} x {part_number} released from "
+        f"{po_line.purchase_order.po_number} line {po_line.line_number}. It still "
+        f"counts as arrived — it just does not answer for any order line now.",
+    )
 
 
 def _delete_line(
@@ -961,8 +1736,8 @@ def _delete_shipment(
 @require_http_methods(["GET", "POST"])
 def basic_shipment_manager(request: HttpRequest, pk: int) -> HttpResponse:
     """FORWARD-LOOKING. A Buyer planning a PO's *expected* boxes from a
-    vendor's shipping confirmation — not a receiver with a carton in hand.
-    That job is `shipment_receive`.
+    vendor's shipping confirmation — not a receiver with a carton in hand
+    logging what already arrived.
 
     Nothing on this page writes until Submit. The create-shipment form appends a
     session-only card; chips move between cards in the session; the whole

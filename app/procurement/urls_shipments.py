@@ -18,15 +18,11 @@ from app.procurement.presentation_layer.entrypoints.shipments import (
     shipment_detail,
     shipment_edit,
     shipment_index,
-    shipment_receive,
 )
 
 urlpatterns = [
     path("", shipment_index, name="shipment_index"),
     path("create/", shipment_create, name="shipment_create"),
-    # The PO-less reactive entry point (D71/D73): a box arrived, the paperwork
-    # has not.
-    path("receive/", shipment_receive, name="shipment_receive"),
     path("<int:pk>/", shipment_detail, name="shipment_detail"),
     path("<int:pk>/edit/", shipment_edit, name="shipment_edit"),
 ]

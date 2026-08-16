@@ -16,7 +16,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 from django.db.models import (
+    Count,
     DecimalField,
+    IntegerField,
     OuterRef,
     Q,
     QuerySet,
@@ -76,6 +78,21 @@ def _allocated_subquery():
     )
 
 
+def _line_count_subquery():
+    """A correlated subquery for the same reason the two rollups above are: a
+    `Count("lines")` joined beside them would fan the row out and multiply
+    whichever aggregate Django decided to share the join with."""
+    return Subquery(
+        PurchaseOrderLine.objects.filter(
+            purchase_order=OuterRef("pk"), deleted_at__isnull=True
+        )
+        .values("purchase_order")
+        .annotate(total=Count("pk"))
+        .values("total")[:1],
+        output_field=IntegerField(),
+    )
+
+
 class PurchaseOrderSearch:
     @classmethod
     def filter(
@@ -131,6 +148,67 @@ class PurchaseOrderSearch:
         if part_id:
             qs = qs.filter(
                 lines__part_id=part_id, lines__deleted_at__isnull=True
+            ).distinct()
+        if date_from:
+            qs = qs.filter(order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order_date__lte=date_to)
+
+        return qs.order_by("-order_date", "-created_at")
+
+    @classmethod
+    def attachable_pool(
+        cls,
+        *,
+        domain_ids,
+        statuses,
+        q: str = "",
+        vendor_id: int | None = None,
+        part_number: str = "",
+        date_from=None,
+        date_to=None,
+    ) -> QuerySet[PurchaseOrder]:
+        """The create-shipment wizard's primary-order picker.
+
+        Deliberately NOT `filter()` with extra arguments. That one answers the
+        buyer's question — "show me my orders and how linked they are" — and
+        carries the linkage rollups to prove it. This answers the receiver's:
+        "which single order does the box in my hands mostly belong to", where
+        the useful facts are the booking date, the vendor, and how many lines
+        would come across if they copied the whole order.
+
+        `part_number` is the filter that makes this findable from the box
+        itself. A receiver often has no order number — they have a label and a
+        part in their hand, and the order is whatever bought that part.
+        """
+        qs = (
+            PurchaseOrder.objects.filter(
+                domain_id__in=domain_ids,
+                deleted_at__isnull=True,
+                status__in=statuses,
+            )
+            .select_related("vendor", "domain")
+            .annotate(
+                ordered_total=Coalesce(
+                    _ordered_subquery(), Decimal("0"), output_field=_DECIMAL
+                ),
+                line_count=Coalesce(_line_count_subquery(), 0),
+            )
+        )
+
+        if q:
+            text_match = Q(po_number__icontains=q) | Q(vendor__name__icontains=q)
+            if _has_vendor_po_id():
+                text_match |= Q(vendor_po_id__icontains=q)
+            qs = qs.filter(text_match)
+        if vendor_id:
+            qs = qs.filter(vendor_id=vendor_id)
+        if part_number:
+            # `distinct()` because an order buying the same part on two lines
+            # would otherwise appear twice in a single-select list.
+            qs = qs.filter(
+                lines__part__part_number__icontains=part_number,
+                lines__deleted_at__isnull=True,
             ).distinct()
         if date_from:
             qs = qs.filter(order_date__gte=date_from)

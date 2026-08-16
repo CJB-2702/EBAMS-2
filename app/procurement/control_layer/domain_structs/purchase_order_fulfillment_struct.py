@@ -43,6 +43,13 @@ caller to handle the case.
 The remedy for a business that genuinely needs per-demand tracking is a Buyer
 action, not a formula: GIVE EACH DEMAND ITS OWN PO LINE. That trade belongs to
 the Buyer on the specific order, not to a system-wide policy.
+
+WHERE qty_from_accepted_shipments COMES FROM NOW (D90). It used to be a plain
+sum of ShipmentLine.quantity_accepted over the lines whose FK pointed here.
+Shipment lines no longer carry that FK — they carry allocations — so the number
+is derived by allocation share in arrival_allocation.py. That module is the ONLY
+place in this app where a quantity is divided, and its docstring explains why
+the division is admissible there and remains forbidden on the demand side above.
 """
 
 from __future__ import annotations
@@ -50,9 +57,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 
+from app.procurement.control_layer.domain_structs.arrival_allocation import (
+    accepted_by_purchase_order_line,
+    allocated_by_shipment_line,
+)
 from app.procurement.models import (
     Shipment,
     ShipmentLine,
@@ -63,26 +74,6 @@ from app.procurement.models import (
 )
 
 _DECIMAL = DecimalField(max_digits=14, decimal_places=3)
-
-
-def _accepted_subquery():
-    """Accepted shipment quantity per PO line, as a CORRELATED SUBQUERY.
-
-    It must not be a joined Sum(). Annotating a Sum over shipment_lines
-    alongside any other multi-row join (allocations) makes the database emit
-    one row per combination, so each accepted quantity is counted once per
-    allocation — a line with 55 accepted and 2 demands reported 110, which then
-    tripped the over-receipt flag on a number that never happened.
-    """
-    return Subquery(
-        ShipmentLine.objects.filter(
-            purchase_order_line=OuterRef("pk"), deleted_at__isnull=True
-        )
-        .values("purchase_order_line")
-        .annotate(total=Sum("quantity_accepted"))
-        .values("total")[:1],
-        output_field=_DECIMAL,
-    )
 
 ATTRIBUTION_UNLINKED = "unlinked"
 ATTRIBUTION_ATTRIBUTABLE = "attributable"
@@ -164,7 +155,8 @@ class PurchaseOrderFulfillmentStruct:
     status: str
     lines: tuple[_LineQuantities, ...] = ()
     shipments: tuple[ShipmentRollup, ...] = ()
-    #: Arrived, not yet pointed at any PO line. Surfaced, never dropped.
+    #: Arrived with some quantity not yet pointed at any PO line — fully OR
+    #: partially unallocated (D90). Surfaced, never dropped.
     unassigned_shipment_line_ids: tuple[int, ...] = ()
 
     @classmethod
@@ -196,11 +188,20 @@ class PurchaseOrderFulfillmentStruct:
                     ),
                     distinct=True,
                 ),
-                accepted_total=Coalesce(
-                    _accepted_subquery(), Decimal("0"), output_field=_DECIMAL
-                ),
             )
             .order_by("line_number")
+        )
+
+        # Arrival is NOT annotated onto the queryset above (D90). It used to be
+        # a correlated subquery over shipment_lines, which itself replaced a
+        # joined Sum() that fanned out against `allocations` and double-counted
+        # every accepted quantity once per demand link (D67). Now that arrival
+        # derives from allocation shares rather than a single FK, it is a plain
+        # dict built by one dedicated helper — the fan-out class of bug cannot
+        # occur because no second multi-row relation is ever joined here.
+        line_ids = [line.pk for line in lines]
+        accepted_by_line = accepted_by_purchase_order_line(
+            purchase_order_line_ids=line_ids
         )
 
         # One query for every active link on this PO, grouped in Python — not
@@ -227,6 +228,7 @@ class PurchaseOrderFulfillmentStruct:
         line_structs: list[_LineQuantities] = []
         for line in lines:
             links = links_by_line.get(line.pk, [])
+            accepted_total = accepted_by_line.get(line.pk, Decimal("0"))
             qty_issued = sum(
                 (issued_by_demand.get(link.part_demand_id, Decimal("0")) for link in links),
                 Decimal("0"),
@@ -238,7 +240,7 @@ class PurchaseOrderFulfillmentStruct:
                 "part_number": line.part.part_number,
                 "qty_ordered": line.quantity_ordered,
                 "qty_allocated": line.allocated_total,
-                "qty_from_accepted_shipments": line.accepted_total,
+                "qty_from_accepted_shipments": accepted_total,
                 # Deliberately a rollup of the DEMAND side, not an inventory
                 # number: it answers "has this order's material reached
                 # anyone", which is the manager's real question, and it comes
@@ -253,7 +255,7 @@ class PurchaseOrderFulfillmentStruct:
                     AttributableLineFulfillment(
                         **common,
                         demand_id=links[0].part_demand_id,
-                        qty_arrived_for_demand=line.accepted_total,
+                        qty_arrived_for_demand=accepted_total,
                     )
                 )
             else:
@@ -261,7 +263,7 @@ class PurchaseOrderFulfillmentStruct:
                     SharedSessionLineFulfillment(
                         **common,
                         session_allocated=line.allocated_total,
-                        session_arrived=line.accepted_total,
+                        session_arrived=accepted_total,
                         session_members=tuple(
                             sorted(link.part_demand_id for link in links)
                         ),
@@ -300,12 +302,22 @@ class PurchaseOrderFulfillmentStruct:
             )
         )
 
-        unassigned = tuple(
+        # PARTIALLY allocated counts as unassigned here (D90). Under the old
+        # single-FK design a line was assigned or it was not; now a line can be
+        # 80 of 100 pointed at an order and 20 still floating, and the 20 is
+        # exactly the thing this list exists to stop anyone from losing.
+        arriving = list(
             ShipmentLine.objects.filter(
-                shipment__purchase_order=po,
-                purchase_order_line__isnull=True,
-                deleted_at__isnull=True,
-            ).values_list("pk", flat=True)
+                shipment__purchase_order=po, deleted_at__isnull=True
+            ).only("pk", "quantity")
+        )
+        allocated_per_line = allocated_by_shipment_line(
+            shipment_line_ids=[line.pk for line in arriving]
+        )
+        unassigned = tuple(
+            line.pk
+            for line in arriving
+            if allocated_per_line.get(line.pk, Decimal("0")) < line.quantity
         )
 
         return cls(

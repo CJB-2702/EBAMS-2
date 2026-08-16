@@ -11,7 +11,7 @@
 D84: the Inventory work portal, narrowed to two verbs — ADVANCE STATUS and
 ACCEPT A LINE — the same two verbs procurement's own shipment_detail page
 exposes, since those are the physical/received-side actions. Order-linkage
-(reassign, split, PO attach, delete) is NOT here; it stays a link out to
+(allocation, PO attach, delete) is NOT here; it stays a link out to
 procurement's own edit page.
 {% endcomment %}
 
@@ -115,9 +115,13 @@ procurement's own edit page.
                 {% endif %}
               </td>
               <td>
-                {% if line.purchase_order_line_id %}
-                  <span class="is-family-monospace">{{ line.purchase_order_line.purchase_order.po_number }}</span>
-                  <span class="is-block has-text-grey">line {{ line.purchase_order_line.line_number }}</span>
+                {% if line.purchase_order_links.all %}
+                  {% for link in line.purchase_order_links.all %}
+                  <div class="mb-1">
+                    <span class="is-family-monospace">{{ link.purchase_order_line.purchase_order.po_number }}</span>
+                    <span class="is-block has-text-grey">line {{ link.purchase_order_line.line_number }} · {{ link.quantity_allocated }}</span>
+                  </div>
+                  {% endfor %}
                 {% else %}
                   <span class="tag is-small is-light">Unassigned</span>
                 {% endif %}

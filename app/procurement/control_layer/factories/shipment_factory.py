@@ -48,10 +48,19 @@ class ShipmentFactory:
         its domain is copied and an explicit ``domain`` must either be omitted
         or agree with it.
 
-        Each line dict is {"part_id": int, "quantity": Decimal}. Lines copy
-        their PO link from the header automatically; a line whose part matches
-        no active line on the header PO is recorded with a null PO line rather
-        than refused.
+        Each line dict is {"part_id": int, "quantity": Decimal}, optionally
+        carrying {"allocations": [{"purchase_order_line": PurchaseOrderLine,
+        "quantity": Decimal}]}.
+
+        WITHOUT allocations, lines copy their PO link from the header
+        automatically; a line whose part matches no active line on the header
+        PO is recorded with a null PO line rather than refused. WITH them,
+        copy-on-create is suppressed for that line and exactly the supplied
+        allocations are written — the caller has already decided, and a guess
+        laid down first would consume the headroom their decision needs. The
+        allocations may point at any order line, including one on a different
+        PO than the header; that is drift, it is legal, and the mixed-assignment
+        flag records it.
         """
         if purchase_order is not None:
             domain = domain or purchase_order.domain
@@ -90,13 +99,23 @@ class ShipmentFactory:
             )
 
             for raw_line in lines or []:
-                ShipmentLineManager.add_line(
+                allocations = raw_line.get("allocations") or []
+                line = ShipmentLineManager.add_line(
                     shipment=shipment,
                     part_id=raw_line["part_id"],
                     quantity=raw_line["quantity"],
                     actor=actor,
+                    auto_link=not allocations,
                     commit=False,
                 )
+                for allocation in allocations:
+                    ShipmentLineManager.allocate(
+                        line=line,
+                        purchase_order_line=allocation["purchase_order_line"],
+                        quantity=allocation["quantity"],
+                        actor=actor,
+                        commit=False,
+                    )
 
             ShipmentStatusManager.refresh_mixed_po_assignments(
                 shipment=shipment, actor=actor, commit=True

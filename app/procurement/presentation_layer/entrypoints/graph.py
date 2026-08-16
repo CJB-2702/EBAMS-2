@@ -15,18 +15,63 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.core.paginator import Paginator
 from django.db.models import DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
-from app.procurement.models import GraphSummary, PartDemand, PurchaseOrderLine, ShipmentLine
+from app.procurement.models import (
+    GraphResolutionState,
+    GraphSummary,
+    PartDemand,
+    PurchaseOrderLine,
+    ShipmentLine,
+)
 from app.procurement.presentation_layer.tools.procurement_access import (
+    accessible_domain_ids,
     is_in_domain,
 )
 
 TEMPLATE_DIR = "procurement/graph"
+PAGE_SIZE = 50
+
+
+@require_http_methods(["GET"])
+def procurement_graph_index(request: HttpRequest) -> HttpResponse:
+    """List of `GraphSummary` rows (D5-scoped by `primary_domain`), each
+    linking through to its own detail visualizer. There is no create action —
+    a graph forms/merges/splits only as a side effect of demand/PO/shipment
+    writes (GraphSummary's own docstring).
+    """
+    domain_ids = accessible_domain_ids(request)
+    qs = GraphSummary.objects.filter(primary_domain_id__in=domain_ids).select_related(
+        "part", "primary_domain"
+    )
+
+    resolution_state = request.GET.get("resolution_state", "").strip()
+    if resolution_state:
+        qs = qs.filter(resolution_state=resolution_state)
+    if request.GET.get("manually_flagged") == "1":
+        qs = qs.filter(manually_flagged=True)
+
+    paginator = Paginator(qs, PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("page", "1"))
+
+    return render(
+        request,
+        f"{TEMPLATE_DIR}/index.html",
+        {
+            "page": page,
+            "graphs": page.object_list,
+            "filters": {
+                "resolution_state": resolution_state,
+                "manually_flagged": request.GET.get("manually_flagged", ""),
+            },
+            "resolution_states": GraphResolutionState.choices,
+        },
+    )
 
 
 @require_http_methods(["GET"])
@@ -77,7 +122,10 @@ def procurement_graph_visualizer(request: HttpRequest, graph_id: int) -> HttpRes
     )
     shipment_lines = list(
         ShipmentLine.objects.filter(graph_id=graph_id, deleted_at__isnull=True)
-        .select_related("shipment", "shipment__domain", "purchase_order_line", "part")
+        .select_related("shipment", "shipment__domain", "part")
+        .prefetch_related(
+            "purchase_order_links__purchase_order_line__purchase_order"
+        )
         .order_by("pk")
     )
 
@@ -90,23 +138,11 @@ def procurement_graph_visualizer(request: HttpRequest, graph_id: int) -> HttpRes
             request, shipment_line.shipment.domain_id
         )
 
-    metrics = [
-        {"label": "Demand qty", "value": summary.demand_qty},
-        {"label": "PO qty waiting to purchase", "value": summary.po_qty_waiting_for_purchase},
-        {"label": "PO qty purchased", "value": summary.po_qty_purchased},
-        {"label": "Shipments in route", "value": summary.qty_shipments_in_route},
-        {"label": "Shipments delivered", "value": summary.qty_shipments_delivered},
-        {"label": "Qty accepted", "value": summary.qty_accepted},
-        {"label": "Qty rejected", "value": summary.qty_rejected},
-        {"label": "Intake recorded", "value": summary.intake_qty_recorded},
-    ]
-
     return render(
         request,
         f"{TEMPLATE_DIR}/detail.html",
         {
             "summary": summary,
-            "metrics": metrics,
             "demands": demands,
             "po_lines": po_lines,
             "shipment_lines": shipment_lines,

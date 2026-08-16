@@ -160,7 +160,10 @@ def inventory_shipment_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
     lines = list(
         ShipmentLine.objects.filter(shipment=shipment, deleted_at__isnull=True)
-        .select_related("part", "purchase_order_line", "purchase_order_line__purchase_order")
+        .select_related("part")
+        .prefetch_related(
+            "purchase_order_links__purchase_order_line__purchase_order"
+        )
         .order_by("pk")
     )
 

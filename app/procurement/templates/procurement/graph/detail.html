@@ -24,7 +24,7 @@ that work when it wrote graph_id onto every member row and recalculated.
 <div class="page-hero">
   <div class="page-header">
     <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">hub</span></div>
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">share</span></div>
       <div>
         <h1 class="page-title">Graph #{{ summary.pk }}</h1>
         <p class="page-subtitle">
@@ -40,16 +40,6 @@ that work when it wrote graph_id onto every member row and recalculated.
       </div>
     </div>
   </div>
-</div>
-
-{# D81's eight metric columns + status, up top and glanceable. #}
-<div class="stat-grid mb-5">
-  {% for metric in metrics %}
-  <div class="stat-tile">
-    <p class="stat-value">{{ metric.value }}</p>
-    <p class="stat-label">{{ metric.label }}</p>
-  </div>
-  {% endfor %}
 </div>
 
 {% comment %}
@@ -72,6 +62,13 @@ header info alongside its line-level facts, per the PDF-derived spec.
     <div class="card">
       <div class="card-header"><div class="card-header-title">Demands</div></div>
       <div class="card-content">
+        {% comment %} Demand domain metrics {% endcomment %}
+        <div class="stat-grid mb-4">
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.demand_qty }}</p>
+            <p class="stat-label">Demand qty</p>
+          </div>
+        </div>
         {% if demands %}
         <ul>
           {% for demand in demands %}
@@ -98,6 +95,17 @@ header info alongside its line-level facts, per the PDF-derived spec.
     <div class="card">
       <div class="card-header"><div class="card-header-title">PO Lines</div></div>
       <div class="card-content">
+        {% comment %} PO Lines domain metrics {% endcomment %}
+        <div class="stat-grid mb-4">
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.po_qty_allocated }}</p>
+            <p class="stat-label">PO qty allocated</p>
+          </div>
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.po_qty_purchased }}</p>
+            <p class="stat-label">PO qty purchased</p>
+          </div>
+        </div>
         {% if po_lines %}
         <ul>
           {% for line in po_lines %}
@@ -125,6 +133,29 @@ header info alongside its line-level facts, per the PDF-derived spec.
     <div class="card">
       <div class="card-header"><div class="card-header-title">Shipment Lines</div></div>
       <div class="card-content">
+        {% comment %} Shipment Lines domain metrics {% endcomment %}
+        <div class="stat-grid mb-4">
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.qty_shipments_in_route }}</p>
+            <p class="stat-label">Shipments in route</p>
+          </div>
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.qty_shipments_delivered }}</p>
+            <p class="stat-label">Shipments delivered</p>
+          </div>
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.qty_accepted }}</p>
+            <p class="stat-label">Qty accepted</p>
+          </div>
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.qty_rejected }}</p>
+            <p class="stat-label">Qty rejected</p>
+          </div>
+          <div class="stat-tile">
+            <p class="stat-value">{{ summary.intake_qty_recorded }}</p>
+            <p class="stat-label">Intake recorded</p>
+          </div>
+        </div>
         {% if shipment_lines %}
         <ul>
           {% for shipment_line in shipment_lines %}

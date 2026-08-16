@@ -26,6 +26,9 @@ from app.procurement.control_layer.factories.part_demand_factory import (
 from app.procurement.control_layer.factories.purchase_order_factory import (
     PurchaseOrderFactory,
 )
+from app.procurement.control_layer.managers.graph_resolution_manager import (
+    GraphResolutionManager,
+)
 from app.procurement.control_layer.managers.graph_summary_manager import (
     GraphSummaryManager,
 )
@@ -33,8 +36,12 @@ from app.procurement.control_layer.managers.purchase_order_demand_link_manager i
     PurchaseOrderDemandLinkManager,
 )
 from app.procurement.models import (
+    DemandPriority,
+    GraphResolutionState,
     GraphSummary,
+    LinearStatus,
     PartDemand,
+    POImbalanceState,
     PurchaseOrderDemandLink,
     PurchaseOrderLine,
     PurchaseOrderStatus,
@@ -297,12 +304,12 @@ class GraphSummaryManagerTests(TestCase):
         summary = GraphSummaryManager.recalculate(graph_id=graph_id)
 
         self.assertEqual(summary.demand_qty, Decimal("10.000"))
-        # PO is still Draft — nothing purchased yet, all of it waiting.
-        self.assertEqual(summary.po_qty_waiting_for_purchase, Decimal("10.000"))
+        # PO is still Draft — allocated, but nothing purchased yet.
+        self.assertEqual(summary.po_qty_allocated, Decimal("10.000"))
         self.assertEqual(summary.po_qty_purchased, Decimal("0.000"))
         self.assertEqual(summary.intake_qty_recorded, Decimal("0.000"))
 
-    def test_recalculate_moves_po_qty_from_waiting_to_purchased_on_placement(self):
+    def test_recalculate_moves_po_qty_allocated_to_purchased_on_placement(self):
         demand = self._demand(quantity="10")
         po, line = self._purchase_order_with_allocation(
             demand=demand, quantity="10", ordered="10"
@@ -323,5 +330,204 @@ class GraphSummaryManagerTests(TestCase):
             PurchaseOrderLine.objects.get(pk=line.pk).purchase_order.status,
             PurchaseOrderStatus.PLACED,
         )
-        self.assertEqual(summary.po_qty_waiting_for_purchase, Decimal("0.000"))
+        self.assertEqual(summary.po_qty_allocated, Decimal("10.000"))
         self.assertEqual(summary.po_qty_purchased, Decimal("10.000"))
+
+
+class GraphIdentityAndStatusTests(GraphSummaryManagerTests):
+    """The columns added by the demand-graph surfaces build: identity, the
+    three status axes, and the human-judgment columns recalculate() must not
+    touch."""
+
+    # ------------------------------------------------------------------ #
+    # Identity
+    # ------------------------------------------------------------------ #
+
+    def test_recalculate_sets_part_and_primary_domain_from_members(self):
+        demand = self._demand(quantity="10")
+        summary = GraphSummary.objects.get(
+            pk=PartDemand.objects.get(pk=demand.pk).graph_id
+        )
+
+        self.assertEqual(summary.part_id, self.part.pk)
+        # No PO lines on a fresh demand's graph, so the fallback chain has to
+        # reach rule 2 (member demands) to find a domain at all. This is the
+        # majority case in the table, not an edge case.
+        self.assertEqual(summary.primary_domain_id, self.domain.pk)
+
+    # ------------------------------------------------------------------ #
+    # The fan-out regression — the whole reason these are separate queries
+    # ------------------------------------------------------------------ #
+
+    def test_po_qty_allocated_does_not_fan_out_across_shipment_links(self):
+        """Two allocations on one PO line must sum to their true total, not be
+        multiplied by the number of rows in a second multi-row relation.
+
+        A joined Sum() alongside another multi-row relation silently
+        multiplies. That bug class was already caught once in
+        PurchaseOrderFulfillmentStruct, which is why po_qty_allocated is its
+        own query rather than an annotation on the member-line queryset. This
+        test fails loudly if somebody 'tidies' it back into one query.
+        """
+        demand_a = self._demand(quantity="10")
+        demand_b = self._demand(quantity="6")
+        po, line = self._purchase_order_with_allocation(
+            demand=demand_a, quantity="10", ordered="100"
+        )
+        PurchaseOrderDemandLinkManager.allocate(
+            line=line,
+            demand=demand_b,
+            quantity_allocated=Decimal("6"),
+            actor=self.user,
+        )
+
+        graph_id = PurchaseOrderLine.objects.get(pk=line.pk).graph_id
+        summary = GraphSummaryManager.recalculate(graph_id=graph_id)
+
+        # 10 + 6, exactly. Not 32 (fanned out across two links).
+        self.assertEqual(summary.po_qty_allocated, Decimal("16.000"))
+        self.assertEqual(summary.demand_qty, Decimal("16.000"))
+
+    def test_allocated_measures_commitment_not_the_lines_ordered_quantity(self):
+        """A line ordering 100 against a 10-unit demand is healthy.
+
+        po_qty_allocated must read the allocation (10), never the line's
+        quantity_ordered (100) — bulk restocking is modelled as a PO carrying
+        more ordered quantity than the sum of its allocations, and reading
+        ordered here would report every restock as wildly over-committed.
+        """
+        demand = self._demand(quantity="10")
+        _, line = self._purchase_order_with_allocation(
+            demand=demand, quantity="10", ordered="100"
+        )
+
+        graph_id = PurchaseOrderLine.objects.get(pk=line.pk).graph_id
+        summary = GraphSummaryManager.recalculate(graph_id=graph_id)
+
+        self.assertEqual(summary.po_qty_allocated, Decimal("10.000"))
+
+    # ------------------------------------------------------------------ #
+    # The three axes
+    # ------------------------------------------------------------------ #
+
+    def test_fresh_demand_reports_demand_exceeds_allocation_and_unlinked(self):
+        """The single most common row in the table, and it must be meaningful.
+
+        Every newly created demand gets its own single-member graph. By count
+        these dominate the table, so if they landed on BALANCED the whole
+        surface would under-report real work on day one.
+        """
+        demand = self._demand(quantity="10")
+        summary = GraphSummary.objects.get(
+            pk=PartDemand.objects.get(pk=demand.pk).graph_id
+        )
+
+        self.assertEqual(
+            summary.po_imbalance_state, POImbalanceState.DEMAND_EXCEEDS_ALLOCATION
+        )
+        self.assertEqual(summary.linear_status, LinearStatus.UNLINKED)
+
+    def test_allocated_but_unplaced_order_is_caught_structurally(self):
+        """A demand fully allocated to a PO nobody placed is doing nothing in
+        the world, and it looks covered on the demand-vs-allocation
+        comparison. This is the state that catches it."""
+        demand = self._demand(quantity="10")
+        _, line = self._purchase_order_with_allocation(
+            demand=demand, quantity="10", ordered="10"
+        )
+
+        graph_id = PurchaseOrderLine.objects.get(pk=line.pk).graph_id
+        summary = GraphSummaryManager.recalculate(graph_id=graph_id)
+
+        self.assertEqual(
+            summary.po_imbalance_state, POImbalanceState.ALLOCATION_EXCEEDS_PURCHASED
+        )
+        self.assertEqual(
+            summary.linear_status, LinearStatus.PO_ALLOCATED_NOT_PURCHASED
+        )
+
+    def test_member_demands_inherit_the_graphs_linear_status(self):
+        demand = self._demand(quantity="10")
+        _, line = self._purchase_order_with_allocation(
+            demand=demand, quantity="10", ordered="10"
+        )
+
+        graph_id = PurchaseOrderLine.objects.get(pk=line.pk).graph_id
+        summary = GraphSummaryManager.recalculate(graph_id=graph_id)
+
+        self.assertEqual(
+            PartDemand.objects.get(pk=demand.pk).linear_status,
+            summary.linear_status,
+        )
+
+    # ------------------------------------------------------------------ #
+    # The inverted-discipline columns
+    # ------------------------------------------------------------------ #
+
+    def test_recalculate_never_overwrites_the_human_judgment_columns(self):
+        """THE ASSERTION THIS BUILD MOST NEEDS.
+
+        Every other column on GraphSummary is written by recalculate(). These
+        three are written only by GraphResolutionManager. The surrounding
+        convention is uniform enough that the natural assumption — 'everything
+        on this model is derived' — would add them to recalculate()'s
+        update_fields and silently wipe user input on the next unrelated
+        allocation. A docstring alone will not stop that; this will.
+        """
+        demand = self._demand(quantity="10")
+        graph_id = PartDemand.objects.get(pk=demand.pk).graph_id
+
+        GraphResolutionManager.set_resolution(
+            graph_id=graph_id,
+            resolution_state=GraphResolutionState.ACCEPTED_AS_IS,
+            actor=self.user,
+        )
+        GraphResolutionManager.set_flag(
+            graph_id=graph_id, flagged=True, actor=self.user
+        )
+        GraphResolutionManager.set_priority(
+            graph_id=graph_id, priority=DemandPriority.CRITICAL, actor=self.user
+        )
+
+        summary = GraphSummaryManager.recalculate(graph_id=graph_id)
+
+        self.assertEqual(
+            summary.resolution_state, GraphResolutionState.ACCEPTED_AS_IS
+        )
+        self.assertTrue(summary.manually_flagged)
+        self.assertEqual(summary.priority, DemandPriority.CRITICAL)
+
+    def test_merge_clears_resolution_but_carries_flag_and_priority(self):
+        """The survival principle: configuration-derived state clears, human
+        judgment about importance propagates.
+
+        A resolution is a statement about a specific set of nodes; once nodes
+        join, the thing that was looked at no longer exists. Priority and
+        flagging are about the underlying work, which restructuring does not
+        invalidate.
+        """
+        demand = self._demand(quantity="10")
+        demand_graph_id = PartDemand.objects.get(pk=demand.pk).graph_id
+
+        GraphResolutionManager.set_resolution(
+            graph_id=demand_graph_id,
+            resolution_state=GraphResolutionState.RESOLVED,
+            actor=self.user,
+        )
+        GraphResolutionManager.set_flag(
+            graph_id=demand_graph_id, flagged=True, actor=self.user
+        )
+        GraphResolutionManager.set_priority(
+            graph_id=demand_graph_id, priority=DemandPriority.HIGH, actor=self.user
+        )
+
+        # Allocating to a PO line merges the demand's graph with the line's.
+        self._purchase_order_with_allocation(
+            demand=demand, quantity="10", ordered="10"
+        )
+        survivor_id = PartDemand.objects.get(pk=demand.pk).graph_id
+        survivor = GraphSummary.objects.get(pk=survivor_id)
+
+        self.assertEqual(survivor.resolution_state, GraphResolutionState.OPEN)
+        self.assertTrue(survivor.manually_flagged)
+        self.assertEqual(survivor.priority, DemandPriority.HIGH)

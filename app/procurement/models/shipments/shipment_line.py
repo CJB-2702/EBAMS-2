@@ -5,41 +5,28 @@ from app.administration.models.soft_delete_mixin import SoftDeleteMixin
 
 
 class ShipmentLine(AuditFieldsMixin, SoftDeleteMixin):
-    """A child of two parents: the shipment it physically arrived in, and the
-    PO line it fulfills.
+    """ONE PHYSICAL LINE ITEM, exactly as the packing slip described it.
 
-    What replaced the link table: an earlier draft used a
-    PurchaseOrderShipmentLink many-to-many mirroring the legacy
-    ArrivalPurchaseOrderLink. It is gone. A shipment line points at exactly ONE
-    PO line by FK; a physical line item spanning several PO lines is handled by
-    SPLITTING IT INTO SIBLING ROWS, not by a link table with quantities.
+    A child of one parent — the shipment it arrived in. Which PO line(s) it
+    answers is NOT a column here (D90): that is a commercial mapping, it is
+    many-to-many, and it lives on PurchaseOrderShipmentLink.
 
-    That is better for a specific reason: with a link table, an arriving line's
-    quantity and the sum of its links can disagree, so there are two numbers
-    for one physical fact and a reconciliation problem between them — which the
-    legacy design carried as ArrivalLine.quantity_available_for_linking, a
-    column existing only to describe a discrepancy the schema made possible.
-    With splitting, each row's quantity IS the fact and the rows sum to the
-    shipment by construction. The cost is that splitting is an explicit user
-    action, which is why it gets a wizard.
+    This row used to carry a nullable `purchase_order_line` FK, with a line
+    spanning several PO lines resolved by splitting it into sibling rows. That
+    made the physical record and the commercial mapping the same column, so
+    recording a mapping meant destructively rewriting an arrived quantity. Now
+    the two are separate: this row is what showed up and never changes to
+    accommodate paperwork, and allocations are appendable rows beside it. See
+    PurchaseOrderShipmentLink's docstring for the full reversal argument.
+
+    Consequently there is no `split_from` column either — nothing splits, so
+    there is no lineage to preserve.
     """
 
     shipment = models.ForeignKey(
         "procurement.Shipment",
         on_delete=models.CASCADE,
         related_name="lines",
-    )
-    # Copied from the header's PO at create, reassignable afterward. NULLABLE:
-    # a line can arrive matching nothing on any PO — a vendor substitution, a
-    # wrong shipment, a bonus item. It is recorded with a null PO line and
-    # surfaced by the fulfillment struct as unassigned, rather than being
-    # dropped or forced onto an ill-fitting line.
-    purchase_order_line = models.ForeignKey(
-        "procurement.PurchaseOrderLine",
-        on_delete=models.PROTECT,
-        related_name="shipment_lines",
-        null=True,
-        blank=True,
     )
     part = models.ForeignKey(
         "parts.Part",
@@ -58,21 +45,16 @@ class ShipmentLine(AuditFieldsMixin, SoftDeleteMixin):
     # NULL until someone inspects, which is meaningfully different from 0
     # (inspected, all rejected). Only quantity_accepted counts toward
     # qty_from_accepted_shipments — an uninspected line contributes nothing.
+    #
+    # THIS IS THE ONLY PLACE ACCEPTANCE IS RECORDED (D90). Inspection is
+    # physical and happens once, to the box; it is not repeated per PO line.
+    # Per-PO-line arrival is derived from this by allocation share, in exactly
+    # one function — see domain_structs/arrival_allocation.py.
     quantity_accepted = models.DecimalField(
         max_digits=12, decimal_places=3, null=True, blank=True
     )
     # Why the difference, when there is one.
     rejection_notes = models.TextField(blank=True)
-
-    # Set on lines produced by the splitting wizard, preserving lineage so the
-    # original physical line item stays reconstructible.
-    split_from = models.ForeignKey(
-        "self",
-        on_delete=models.SET_NULL,
-        related_name="splits",
-        null=True,
-        blank=True,
-    )
 
     # ── Graph materialization (D79-D82) ─────────────────────────────────────
     # Nullable is a TECHNICAL NECESSITY of the create sequence, not a real
@@ -104,10 +86,6 @@ class ShipmentLine(AuditFieldsMixin, SoftDeleteMixin):
             ),
         ]
         indexes = [
-            # The fulfillment struct's key read.
-            models.Index(
-                fields=["purchase_order_line", "shipment"], name="shpline_pol_shp_idx"
-            ),
             models.Index(fields=["shipment", "part"], name="shpline_shp_part_idx"),
             models.Index(fields=["graph"], name="shpline_graph_idx"),
         ]

@@ -9,8 +9,15 @@ refuses to divide a shared session among its members. This struct answers the
 same question one step downstream — "who is this ARRIVING LINE for" — and it
 refuses in exactly the same way, for the same reason.
 
-A shipment line points at one PO line. That PO line's active demand links decide
-what can honestly be said:
+Since D90 an arriving line may carry SEVERAL allocations, so attribution is
+computed per ALLOCATION rather than per line: each allocation names one PO line,
+and that PO line's active demand links decide what can honestly be said about
+that slice of the box. A line with two allocations therefore shows two
+attribution rows, which is the honest rendering — the alternative, one merged
+attribution for the whole line, would have to blend two unrelated demand
+populations into a single cell.
+
+Per allocation, by the target PO line's count of active demand links:
 
   0    unlinked        Blank. Nobody claims it. Proactive stock, a substitution,
                        or a shipment that has no PO attached yet (D71/D73).
@@ -30,13 +37,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from django.db.models import Count, DecimalField, OuterRef, Q, Subquery, Sum
+from django.db.models import DecimalField, OuterRef, Subquery, Sum
 from django.db.models.functions import Coalesce
 
+from app.procurement.control_layer.domain_structs.arrival_allocation import (
+    accepted_by_purchase_order_line,
+)
 from app.procurement.models import (
     Shipment,
     ShipmentLine,
     PurchaseOrderDemandLink,
+    PurchaseOrderShipmentLink,
 )
 
 _DECIMAL = DecimalField(max_digits=14, decimal_places=3)
@@ -73,8 +84,30 @@ class LineAttribution:
 
 
 @dataclass(frozen=True)
+class ShipmentLineAllocationSlice:
+    """One allocation of an arriving line to a PO line (D90).
+
+    Carries its own attribution because attribution is a property of the TARGET
+    PO line's demand links, and one arriving line's allocations can land on PO
+    lines with entirely different demand populations.
+    """
+
+    link_id: int
+    quantity_allocated: Decimal
+    purchase_order_line_id: int
+    purchase_order_id: int | None
+    purchase_order_domain_id: int | None
+    po_number: str
+    po_line_number: int | None
+    #: True when this allocation points at a line on a PO other than the
+    #: header's — the per-allocation half of the mixed_po_assignments flag.
+    is_drifted: bool
+    attribution: LineAttribution
+
+
+@dataclass(frozen=True)
 class ShipmentLineSlice:
-    """One arriving line, flattened for display and for the assignment tool."""
+    """One arriving line, flattened for display and for the allocation tool."""
 
     line_id: int
     part_id: int
@@ -86,27 +119,34 @@ class ShipmentLineSlice:
     quantity_accepted: Decimal | None
     rejection_notes: str
 
-    purchase_order_line_id: int | None
-    purchase_order_id: int | None
-    purchase_order_domain_id: int | None
-    po_number: str
-    po_line_number: int | None
-    #: True when this line points at a line on a PO other than the header's —
-    #: the per-line half of the mixed_po_assignments flag.
-    is_drifted: bool
-
-    split_from_id: int | None
-    split_child_count: int
-
-    attribution: LineAttribution
+    allocations: tuple[ShipmentLineAllocationSlice, ...] = ()
+    quantity_allocated: Decimal = Decimal("0")
 
     @property
     def is_inspected(self) -> bool:
         return self.quantity_accepted is not None
 
     @property
+    def unallocated_quantity(self) -> Decimal:
+        """What arrived that no order line claims yet. A REAL STATE, not a
+        discrepancy — the allocation guard caps the sum at `quantity`, so this
+        is never negative."""
+        remainder = self.quantity - self.quantity_allocated
+        return remainder if remainder > 0 else Decimal("0")
+
+    @property
+    def is_fully_allocated(self) -> bool:
+        return self.unallocated_quantity == 0
+
+    @property
     def is_assigned(self) -> bool:
-        return self.purchase_order_line_id is not None
+        """Any allocation at all. Distinct from is_fully_allocated: a partly
+        allocated line is assigned AND still owes a remainder."""
+        return bool(self.allocations)
+
+    @property
+    def is_drifted(self) -> bool:
+        return any(allocation.is_drifted for allocation in self.allocations)
 
 
 @dataclass(frozen=True)
@@ -119,7 +159,6 @@ class ShipmentDetailStruct:
     purchase_order_domain_id: int | None
     po_number: str
     vendor_name: str
-    has_splits: bool
     mixed_po_assignments: bool
     event_id: int | None
 
@@ -135,7 +174,10 @@ class ShipmentDetailStruct:
 
     @property
     def unassigned_lines(self) -> tuple[ShipmentLineSlice, ...]:
-        return tuple(line for line in self.lines if not line.is_assigned)
+        """Lines still owing an unallocated remainder — fully OR partially
+        (D90). A line 80%-allocated is on this list, because the other 20% is
+        exactly what would otherwise go unnoticed."""
+        return tuple(line for line in self.lines if not line.is_fully_allocated)
 
     @classmethod
     def load(cls, *, shipment_id: int) -> "ShipmentDetailStruct":
@@ -145,41 +187,61 @@ class ShipmentDetailStruct:
 
         lines = list(
             ShipmentLine.objects.filter(shipment=shipment, deleted_at__isnull=True)
-            .select_related(
-                "part",
-                "purchase_order_line",
-                "purchase_order_line__purchase_order",
-            )
-            .annotate(
-                # A correlated subquery, not a joined Count: `splits` is a
-                # second multi-row relation and counting it beside anything
-                # else over `allocations` would fan out.
-                split_children=Coalesce(
-                    Subquery(
-                        ShipmentLine.objects.filter(
-                            split_from=OuterRef("pk"), deleted_at__isnull=True
-                        )
-                        .values("split_from")
-                        .annotate(total=Count("pk"))
-                        .values("total")[:1]
-                    ),
-                    0,
-                )
-            )
+            .select_related("part")
             .order_by("pk")
         )
 
-        attribution_by_po_line = cls._attribution_by_po_line(lines)
+        # One query for every allocation on this shipment, grouped in Python —
+        # never a query per line, and never annotated alongside anything else
+        # multi-row (the D67 fan-out).
+        links_by_shipment_line: dict[int, list[PurchaseOrderShipmentLink]] = {}
+        for link in PurchaseOrderShipmentLink.objects.filter(
+            shipment_line__shipment=shipment,
+            shipment_line__deleted_at__isnull=True,
+            deleted_at__isnull=True,
+        ).select_related("purchase_order_line", "purchase_order_line__purchase_order"):
+            links_by_shipment_line.setdefault(link.shipment_line_id, []).append(link)
+
+        attribution_by_po_line = cls._attribution_by_po_line(
+            po_line_ids={
+                link.purchase_order_line_id
+                for links in links_by_shipment_line.values()
+                for link in links
+            }
+        )
 
         slices: list[ShipmentLineSlice] = []
         total_shipped = Decimal("0")
         total_accepted = Decimal("0")
         for line in lines:
-            po_line = line.purchase_order_line
-            po = po_line.purchase_order if po_line is not None else None
             total_shipped += line.quantity
             if line.quantity_accepted is not None:
                 total_accepted += line.quantity_accepted
+
+            allocations: list[ShipmentLineAllocationSlice] = []
+            allocated = Decimal("0")
+            for link in links_by_shipment_line.get(line.pk, []):
+                po_line = link.purchase_order_line
+                po = po_line.purchase_order
+                allocated += link.quantity_allocated
+                allocations.append(
+                    ShipmentLineAllocationSlice(
+                        link_id=link.pk,
+                        quantity_allocated=link.quantity_allocated,
+                        purchase_order_line_id=po_line.pk,
+                        purchase_order_id=po.pk,
+                        purchase_order_domain_id=po.domain_id,
+                        po_number=po.po_number,
+                        po_line_number=po_line.line_number,
+                        is_drifted=(
+                            shipment.purchase_order_id is not None
+                            and po.pk != shipment.purchase_order_id
+                        ),
+                        attribution=attribution_by_po_line.get(
+                            po_line.pk, LineAttribution()
+                        ),
+                    )
+                )
 
             slices.append(
                 ShipmentLineSlice(
@@ -190,21 +252,8 @@ class ShipmentDetailStruct:
                     quantity=line.quantity,
                     quantity_accepted=line.quantity_accepted,
                     rejection_notes=line.rejection_notes,
-                    purchase_order_line_id=line.purchase_order_line_id,
-                    purchase_order_id=po.pk if po else None,
-                    purchase_order_domain_id=po.domain_id if po else None,
-                    po_number=po.po_number if po else "",
-                    po_line_number=po_line.line_number if po_line else None,
-                    is_drifted=(
-                        po is not None
-                        and shipment.purchase_order_id is not None
-                        and po.pk != shipment.purchase_order_id
-                    ),
-                    split_from_id=line.split_from_id,
-                    split_child_count=line.split_children or 0,
-                    attribution=attribution_by_po_line.get(
-                        line.purchase_order_line_id, LineAttribution()
-                    ),
+                    allocations=tuple(allocations),
+                    quantity_allocated=allocated,
                 )
             )
 
@@ -218,7 +267,6 @@ class ShipmentDetailStruct:
             purchase_order_domain_id=po.domain_id if po else None,
             po_number=po.po_number if po else "",
             vendor_name=po.vendor.name if po and po.vendor_id else "",
-            has_splits=shipment.has_splits,
             mixed_po_assignments=shipment.mixed_po_assignments,
             event_id=shipment.event_id,
             lines=tuple(slices),
@@ -227,14 +275,11 @@ class ShipmentDetailStruct:
         )
 
     @staticmethod
-    def _attribution_by_po_line(lines) -> dict[int, LineAttribution]:
-        """One query for every active link behind this shipment's PO lines, and
-        one for the session arrival totals — never a query per line."""
-        po_line_ids = {
-            line.purchase_order_line_id
-            for line in lines
-            if line.purchase_order_line_id is not None
-        }
+    def _attribution_by_po_line(*, po_line_ids) -> dict[int, LineAttribution]:
+        """One query for every active demand link behind the PO lines this
+        shipment allocates to, and one for the session arrival totals — never a
+        query per line."""
+        po_line_ids = set(po_line_ids)
         if not po_line_ids:
             return {}
 
@@ -246,17 +291,14 @@ class ShipmentDetailStruct:
         ).select_related("part_demand", "part_demand__part"):
             links_by_line.setdefault(link.purchase_order_line_id, []).append(link)
 
-        # session_arrived is the accepted quantity across EVERY shipment touching
-        # the line, not just this one — the session is a property of the PO
-        # line, and reporting only this shipment's share would understate it.
-        arrived_by_line = {
-            row["purchase_order_line"]: row["total"] or Decimal("0")
-            for row in ShipmentLine.objects.filter(
-                purchase_order_line_id__in=po_line_ids, deleted_at__isnull=True
-            )
-            .values("purchase_order_line")
-            .annotate(total=Sum("quantity_accepted", output_field=_DECIMAL))
-        }
+        # session_arrived is the accepted quantity across EVERY shipment
+        # touching the line, not just this one — the session is a property of
+        # the PO line, and reporting only this shipment's share would
+        # understate it. Derived by allocation share since D90; see
+        # arrival_allocation.py for why that division is admissible here.
+        arrived_by_line = accepted_by_purchase_order_line(
+            purchase_order_line_ids=po_line_ids
+        )
 
         result: dict[int, LineAttribution] = {}
         for po_line_id in po_line_ids:
@@ -331,13 +373,19 @@ def planning_lines_for_order(*, purchase_order) -> tuple[ShipmentPlanningLine, .
         )
         .select_related("part")
         .annotate(
+            # Allocated, not shipped-line quantity (D90). The two used to be
+            # the same number because a whole arriving line pointed at one PO
+            # line; now only the allocated share counts against this order.
+            # EXACT — no proration is involved on the shipped side.
             shipped_total=Coalesce(
                 Subquery(
-                    ShipmentLine.objects.filter(
-                        purchase_order_line=OuterRef("pk"), deleted_at__isnull=True
+                    PurchaseOrderShipmentLink.objects.filter(
+                        purchase_order_line=OuterRef("pk"),
+                        deleted_at__isnull=True,
+                        shipment_line__deleted_at__isnull=True,
                     )
                     .values("purchase_order_line")
-                    .annotate(total=Sum("quantity"))
+                    .annotate(total=Sum("quantity_allocated"))
                     .values("total")[:1],
                     output_field=_DECIMAL,
                 ),
