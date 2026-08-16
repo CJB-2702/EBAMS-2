@@ -723,12 +723,20 @@ def _wizard_select_po(
     added, skipped = _copy_po_lines_into_draft(
         draft, purchase_order=purchase_order, domain_ids=domain_ids
     )
+    plural = "" if added == 1 else "s"
     if added:
         messages.success(
             request,
             f"{purchase_order.po_number} is this shipment's primary order — "
-            f"{added} open line{'s' if added != 1 else ''} copied into the box and "
-            f"pre-allocated. Correct any quantity the box disagrees with.",
+            f"{added} open line{plural} copied into the box and pre-allocated. "
+            f"Correct any quantity the box disagrees with.",
+        )
+    elif skipped:
+        messages.info(
+            request,
+            f"{purchase_order.po_number} is this shipment's primary order. All "
+            f"{skipped} of its open lines are already in the box, so nothing was "
+            f"copied — copying twice would have doubled the quantities.",
         )
     else:
         messages.warning(
@@ -736,11 +744,11 @@ def _wizard_select_po(
             f"{purchase_order.po_number} is this shipment's primary order, but it "
             f"has no open lines left to copy. Add what is in the box below.",
         )
-    if skipped:
+    if added and skipped:
         messages.info(
             request,
-            f"{skipped} of its line{'s were' if skipped != 1 else ' was'} already "
-            f"staged and left alone — copying twice would have doubled the box.",
+            f"{skipped} further line{'s were' if skipped != 1 else ' was'} already "
+            f"in the box and left alone.",
         )
 
 
