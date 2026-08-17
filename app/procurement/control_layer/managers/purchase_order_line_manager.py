@@ -19,6 +19,10 @@ from decimal import Decimal
 from django.db.models import Max
 from django.utils import timezone
 
+from app.procurement.control_layer.errors import (
+    ProcurementValidationError,
+    ReallocationRequired,
+)
 from app.procurement.control_layer.guards.purchase_order_line_guard import (
     PurchaseOrderLineValidator,
 )
@@ -34,7 +38,7 @@ from app.procurement.control_layer.managers.purchase_order_demand_link_manager i
 from app.procurement.control_layer.narrators.purchase_order_narrator import (
     PurchaseOrderNarrator,
 )
-from app.procurement.models import PurchaseOrderLine
+from app.procurement.models import PurchaseOrderDemandLink, PurchaseOrderLine
 
 #: Fields a caller may edit on an existing line.
 EDITABLE_LINE_FIELDS = frozenset(
@@ -141,6 +145,12 @@ class PurchaseOrderLineManager:
             PurchaseOrderLineValidator.check_quantity_floor(
                 line=line, new_quantity_ordered=changes["quantity_ordered"]
             )
+            cls._resolve_quantity_shortfall(
+                line=line,
+                new_quantity_ordered=changes["quantity_ordered"],
+                actor=actor,
+                commit=commit,
+            )
 
         purchase_order = line.purchase_order
         PurchaseOrderNarrator.post_with_snapshot(
@@ -159,6 +169,65 @@ class PurchaseOrderLineManager:
             purchase_order=purchase_order, actor=actor, commit=commit
         )
         return line
+
+    @classmethod
+    def _resolve_quantity_shortfall(
+        cls, *, line: PurchaseOrderLine, new_quantity_ordered: Decimal, actor=None, commit: bool = True
+    ) -> None:
+        """reallocation_resolution_portal.md §5: classify the shortfall shape
+        against this line's active demand claims before the new quantity is
+        saved. `check_quantity_floor` has already refused anything that would
+        cut below the LOCKED total, so every path here is a valid outcome.
+
+          - still covers every active claim -> nothing to do.
+          - exactly one active, unlocked claim, short -> silently resolved to
+            the new quantity (§7.9's one-to-one shortcut — there is exactly
+            one place the number can go).
+          - 2+ claims short, or the sole claim locked -> raises
+            ReallocationRequired so the caller can open the Reallocation
+            Portal instead of a flat refusal (§5's flowchart).
+        """
+        claims = list(
+            PurchaseOrderDemandLink.objects.filter(
+                purchase_order_line=line, is_active=True, deleted_at__isnull=True
+            ).select_related("part_demand")
+        )
+        total_claimed = sum((c.quantity_allocated for c in claims), Decimal("0"))
+        if new_quantity_ordered >= total_claimed:
+            return
+
+        locked = [c for c in claims if c.is_locked]
+
+        if len(claims) == 1 and not locked:
+            claim = claims[0]
+            old_quantity = claim.quantity_allocated
+            claim.quantity_allocated = new_quantity_ordered
+            claim.updated_by = actor
+            claim.save(update_fields=["quantity_allocated", "updated_by", "updated_at"])
+
+            PurchaseOrderDemandLinkManager.requeue_if_short(
+                demand=claim.part_demand, actor=actor, commit=commit
+            )
+            PurchaseOrderNarrator.post(
+                purchase_order=line.purchase_order,
+                message=PurchaseOrderNarrator.claim_auto_updated_by_shortfall(
+                    demand_id=claim.part_demand_id,
+                    line_number=line.line_number,
+                    old_quantity=old_quantity,
+                    new_quantity=new_quantity_ordered,
+                ),
+                actor=actor,
+            )
+            return
+
+        locked_total = sum((c.quantity_allocated for c in locked), Decimal("0"))
+        raise ReallocationRequired(
+            line_id=line.pk,
+            new_quantity_ordered=new_quantity_ordered,
+            total_claimed=total_claimed,
+            locked_total=locked_total,
+            claim_count=len(claims),
+        )
 
     @classmethod
     def cancel_line(

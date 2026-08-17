@@ -32,6 +32,20 @@ from app.administration.auth_session import session_domain_ids
 #: differently (D84).
 PERM_RECEIVE = "procurement.receive"
 
+#: Phase 4 — Intake is genuinely Inventory-owned (it writes ActiveInventory,
+#: not procurement rows directly), so it gets its own codename:
+#: `Warehouse.Meta.permissions`'s `can_intake_stock`.
+PERM_INTAKE = "inventory.can_intake_stock"
+
+#: Phase 6 — movement and issuance are each their own codename on
+#: `Warehouse.Meta.permissions`, mirroring `PERM_INTAKE`'s shape.
+PERM_MOVE = "inventory.can_move_stock"
+PERM_ISSUE = "inventory.can_issue_parts"
+
+#: Phase 7 — auditing (room/spot count sessions, inline edits) is its own
+#: codename on `Warehouse.Meta.permissions`, mirroring `PERM_INTAKE`'s shape.
+PERM_AUDIT = "inventory.can_audit_stock"
+
 
 def can_receive(request: HttpRequest) -> bool:
     return request.user.has_perm(PERM_RECEIVE)
@@ -42,6 +56,55 @@ def require_receive(request: HttpRequest) -> None:
     if not can_receive(request):
         raise PermissionDenied(
             "Changing a shipment requires the 'receive' permission."
+        )
+
+
+def can_intake(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_INTAKE)
+
+
+def require_intake(request: HttpRequest) -> None:
+    """Gates every mutation on the Intake dashboard/Auto Intake portal."""
+    if not can_intake(request):
+        raise PermissionDenied(
+            "Receiving stock requires the 'can_intake_stock' permission."
+        )
+
+
+def can_move(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_MOVE)
+
+
+def require_move(request: HttpRequest) -> None:
+    """Gates every mutation on the movement portal / putaway worklist."""
+    if not can_move(request):
+        raise PermissionDenied(
+            "Moving stock requires the 'can_move_stock' permission."
+        )
+
+
+def can_issue(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_ISSUE)
+
+
+def require_issue(request: HttpRequest) -> None:
+    """Gates every mutation on the issuance portal."""
+    if not can_issue(request):
+        raise PermissionDenied(
+            "Issuing parts requires the 'can_issue_parts' permission."
+        )
+
+
+def can_audit(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_AUDIT)
+
+
+def require_audit(request: HttpRequest) -> None:
+    """Gates every mutation on the audit dashboard / count portal / inline
+    edit control."""
+    if not can_audit(request):
+        raise PermissionDenied(
+            "Auditing stock requires the 'can_audit_stock' permission."
         )
 
 

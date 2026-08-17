@@ -118,6 +118,22 @@
             <label class="label is-small">Needed To</label>
             <input class="input is-small" type="date" name="needed_by_to" value="{{ filters.needed_by_to }}">
           </div>
+          <div class="column is-2">
+            <label class="label is-small">Created From</label>
+            <input class="input is-small" type="datetime-local" name="created_from" value="{{ filters.created_from }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Created To</label>
+            <input class="input is-small" type="datetime-local" name="created_to" value="{{ filters.created_to }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Created By</label>
+            <input class="input is-small" type="search" name="requested_by" value="{{ filters.requested_by }}" placeholder="username, name…">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">PO Number</label>
+            <input class="input is-small" type="search" name="po_number" value="{{ filters.po_number }}" placeholder="PO-1002…">
+          </div>
           <div class="column is-2 is-flex is-align-items-flex-end">
             <button class="button is-small is-info is-fullwidth" type="submit">
               <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply</span>

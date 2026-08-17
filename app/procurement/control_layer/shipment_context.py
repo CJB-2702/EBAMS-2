@@ -282,6 +282,19 @@ class ShipmentContext:
             self._mark_order_partially_received(actor=actor)
             return accepted
 
+    def split_line(
+        self, *, line, received_qty: Decimal, actor=None
+    ):
+        """FD-27: shrink `line` to the closed, received portion and spin off
+        the remaining open balance as a sibling line. Thin wrapper — narration
+        and validation both already live in `ShipmentLineManager.split_line`.
+        Called by Inventory's `IntakeCommitOrchestrator` on partial receipt;
+        `None` means the receipt covered the whole line, nothing to split."""
+        with transaction.atomic():
+            return ShipmentLineManager.split_line(
+                line=line, received_qty=received_qty, actor=actor
+            )
+
     def assign_line(
         self,
         *,
@@ -341,6 +354,31 @@ class ShipmentContext:
                     actor=actor,
                 )
             return link
+
+    def edit_quantity(
+        self, *, line, new_quantity: Decimal, actor=None, audit_comment: str = ""
+    ):
+        """Correct a mis-entered shipped quantity (Phase 5's mirror of
+        PurchaseOrderContext.edit_line's quantity path — may raise
+        PackageReallocationRequired, per reallocation_resolution_portal.md §5)."""
+        with transaction.atomic():
+            self._audit(action="Shipped quantity corrected", comment=audit_comment, actor=actor)
+            return ShipmentLineManager.edit_quantity(
+                line=line, new_quantity=new_quantity, actor=actor
+            )
+
+    def unlock_claim(self, *, link, actor=None, confirmed: bool):
+        with transaction.atomic():
+            return ShipmentLineManager.unlock_claim(
+                link=link, actor=actor, confirmed=confirmed
+            )
+
+    def apply_reallocation(
+        self, *, line, new_quantity: Decimal, resolutions: dict, actor=None
+    ) -> None:
+        ShipmentLineManager.apply_reallocation(
+            line=line, new_quantity=new_quantity, resolutions=resolutions, actor=actor
+        )
 
     def release_allocation(self, *, link, actor=None, audit_comment: str = ""):
         """Take an allocation back off a PO line.

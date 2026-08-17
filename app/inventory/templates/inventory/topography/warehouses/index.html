@@ -1,0 +1,46 @@
+{% extends "inventory/topography/base_topography.html" %}
+{% block title %}Warehouses{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Warehouses</a></li>{% endblock %}
+
+{% block topography_content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">store</span></div>
+        <div>
+          <h1 class="page-title">Warehouses</h1>
+          <p class="page-subtitle">Stock-holding sites and their rooms.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span>All warehouses</div></div>
+    <div class="card-content">
+      {% if warehouses %}
+      <table class="table is-fullwidth is-hoverable is-size-7">
+        <thead>
+          <tr><th>Name</th><th>Code</th><th>Division</th><th>Active</th></tr>
+        </thead>
+        <tbody>
+          {% for warehouse in warehouses %}
+          <tr>
+            <td><a href="{% url 'inventory_warehouse_detail' pk=warehouse.pk %}">{{ warehouse.name }}</a></td>
+            <td class="is-family-monospace">{{ warehouse.code }}</td>
+            <td>{{ warehouse.division.name }}</td>
+            <td>{% if warehouse.is_active %}<span class="tag is-success is-light is-small">Active</span>{% else %}<span class="tag is-light is-small">Inactive</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7">No warehouses yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

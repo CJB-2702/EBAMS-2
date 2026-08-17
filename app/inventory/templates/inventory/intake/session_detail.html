@@ -1,0 +1,387 @@
+{% extends "inventory/base.html" %}
+{% block title %}Intake Session #{{ session.pk }}{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_intake_dashboard' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Session #{{ session.pk }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></div>
+        <div>
+          <h1 class="page-title">Intake Session #{{ session.pk }}</h1>
+          <p class="page-subtitle">{{ session.warehouse.code }} — {{ session.get_intake_method_display }}</p>
+        </div>
+      </div>
+      <div>
+        <span class="tag {% if session.status == 'closed' %}is-success{% elif session.status == 'cancelled' %}is-danger{% else %}is-info{% endif %} is-light">{{ session.get_status_display }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if session.has_unlinked_allocations %}
+<div class="notification is-warning is-light">
+  <span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>
+  This session has <strong>unmanifested allocations</strong> — stock with no matching shipment line, quarantined in the intake room pending reconciliation.
+</div>
+{% endif %}
+
+{% if session.status == "active" and session.intake_method == "scan" %}
+<div class="body-grid full-width">
+
+  {# ---------------- Sticky scan input ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span>
+      Scan
+    </div>
+    <div class="card-header-icon">
+      <label class="checkbox is-size-7">
+        <input type="checkbox" id="chime-toggle">
+        Chime on scan
+      </label>
+    </div>
+    </div>
+    <div class="card-content">
+      {% if can_intake %}
+      <form id="scan-input-form" method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}"
+            hx-post="{% url 'inventory_intake_session_detail' pk=session.pk %}?format=htmx-scan-feed"
+            hx-target="#scan-live-region" hx-swap="outerHTML"
+            hx-on::after-request="this.reset(); this.querySelector('[name=raw_payload]').focus();">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="scan">
+        <div class="columns is-variable is-3 is-align-items-flex-end">
+          <div class="column is-6">
+            <label class="label is-small" for="scan-payload">Scan or type barcode payload</label>
+            <input id="scan-payload" class="input is-family-monospace" type="text" name="raw_payload"
+                   autofocus autocomplete="off" placeholder="SKU or SKU;SERIAL">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Condition</label>
+            <div class="control">
+              <label class="radio is-size-7"><input type="radio" name="condition" value="good" checked> Good</label>
+              <label class="radio is-size-7 ml-3"><input type="radio" name="condition" value="rejected"> Rejected</label>
+            </div>
+          </div>
+          <div class="column is-3">
+            <button class="button is-primary is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+              <span>Log Scan</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <details class="mt-4">
+        <summary class="is-size-7 has-text-grey">Manual entry (no barcode)</summary>
+        <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}"
+              hx-post="{% url 'inventory_intake_session_detail' pk=session.pk %}?format=htmx-scan-feed"
+              hx-target="#scan-live-region" hx-swap="outerHTML" class="mt-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="manual_allocation">
+          <div class="columns is-variable is-3 is-multiline">
+            <div class="column is-3">
+              <label class="label is-small">Part</label>
+              <div class="select is-small is-fullwidth">
+                <select name="part_id" required>
+                  <option value="">— select —</option>
+                  {% for part in session_parts %}
+                  <option value="{{ part.pk }}">{{ part.part_number }} — {{ part.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-3">
+              <label class="label is-small">Shipment line</label>
+              <div class="select is-small is-fullwidth">
+                <select name="shipment_line_id">
+                  <option value="">— Unmanifested (staged) —</option>
+                  {% for row in line_progress %}
+                  <option value="{{ row.line.pk }}">{{ row.line.part.part_number }} ({{ row.line.shipment.shipment_number }})</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-2">
+              <label class="label is-small">Quantity</label>
+              <input class="input is-small is-family-monospace" type="number" step="0.001" min="0" name="quantity" required>
+            </div>
+            <div class="column is-2">
+              <label class="label is-small">Serial (optional)</label>
+              <input class="input is-small is-family-monospace" type="text" name="serial_number">
+            </div>
+            <div class="column is-2">
+              <label class="label is-small">Condition</label>
+              <div class="select is-small is-fullwidth">
+                <select name="condition">
+                  <option value="good">Good</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <button class="button is-small is-info is-light mt-2" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            <span>Record Manual Allocation</span>
+          </button>
+        </form>
+      </details>
+      {% else %}
+      <p class="has-text-grey is-size-7">You do not have the <span class="is-family-monospace">can_intake_stock</span> permission — scanning is read-only for you.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% include "inventory/intake/_scan_live_region.html" %}
+</div>
+<script>
+(function () {
+  var KEY = "inventory_scan_chime_enabled";
+  var toggle = document.getElementById("chime-toggle");
+  if (!toggle) { return; }
+  toggle.checked = window.localStorage.getItem(KEY) === "1";
+  toggle.addEventListener("change", function () {
+    window.localStorage.setItem(KEY, toggle.checked ? "1" : "0");
+  });
+  document.body.addEventListener("htmx:afterRequest", function (evt) {
+    if (!toggle.checked || !evt.detail.successful) { return; }
+    var elt = evt.detail.elt;
+    if (!elt || !elt.closest || !elt.closest("#scan-input-form")) { return; }
+    try {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new AudioCtx();
+      var osc = ctx.createOscillator();
+      osc.frequency.value = 880;
+      osc.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } catch (e) { /* silent — chime is a pure enhancement */ }
+  });
+})();
+</script>
+{% endif %}
+
+{% if session.status == "reconciling" %}
+<div class="notification is-info is-light">
+  <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+  This session is in reconciliation. Resolve every part below (or via the
+  <a href="{% url 'inventory_reconciliation_hub' %}">Reconciliation Hub</a>) before it can close.
+</div>
+{% endif %}
+
+<div class="body-grid full-width">
+
+  {# ---------------- Metadata ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+      Metadata
+    </div></div>
+    <div class="card-content">
+      <dl class="kv">
+        <dt>Operator</dt><dd>{{ session.operator }}</dd>
+        <dt>Warehouse</dt><dd class="is-family-monospace">{{ session.warehouse.code }} — {{ session.warehouse.name }}</dd>
+        <dt>Room</dt><dd>{{ session.room.room_name|default:"Intake Room (default)" }}</dd>
+        <dt>Method</dt><dd>{{ session.get_intake_method_display }}</dd>
+        <dt>Hardware device</dt><dd>{{ session.hardware_device_id|default:"—" }}</dd>
+        <dt>Started</dt><dd>{{ session.started_at }}</dd>
+        <dt>Closed</dt><dd>{{ session.closed_at|default:"—" }}</dd>
+        <dt>Unlinked allocations?</dt>
+        <dd>{% if session.has_unlinked_allocations %}<span class="tag is-small is-warning is-light">Yes</span>{% else %}No{% endif %}</dd>
+        <dt>Notes</dt><dd>{{ session.notes|default:"—"|linebreaksbr }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  {# ---------------- Commit summary ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">summarize</span></span>
+      Commit summary
+    </div></div>
+    <div class="card-content">
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="stat-value">{{ struct.total_good_qty }}</div>
+          <div class="stat-label">Accepted (good)</div>
+        </div>
+        <div class="stat-tile" style="border-left-color: var(--bulma-danger);">
+          <div class="stat-value">{{ struct.total_rejected_qty }}</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat-tile" style="border-left-color: var(--bulma-grey);">
+          <div class="stat-value">{{ struct.allocation_count }}</div>
+          <div class="stat-label">Allocation rows</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---------------- Linked shipments ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+      Linked shipments
+    </div></div>
+    <div class="card-content is-flush">
+      {% if struct.shipments %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>Shipment</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for link in struct.shipments %}
+          <tr>
+            <td><a href="{% url 'inventory_shipment_detail' pk=link.shipment_id %}" class="is-family-monospace">{{ link.shipment_number }}</a></td>
+            <td><span class="tag is-small is-light">{{ link.shipment_status|title }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7 p-4">No shipments linked.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------- Allocations ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+      Allocations
+    </div></div>
+    <div class="card-content is-flush">
+      {% if allocations %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Part</th>
+            <th>Shipment line</th>
+            <th class="has-text-right">Qty</th>
+            <th>Serial</th>
+            <th>Condition</th>
+            <th>Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for allocation in allocations %}
+          <tr>
+            <td class="is-family-monospace">{{ allocation.part.part_number }}</td>
+            <td>{% if allocation.shipment_line_id %}Line #{{ allocation.shipment_line_id }}{% else %}<span class="tag is-small is-warning is-light">Unmanifested</span>{% endif %}</td>
+            <td class="has-text-right is-family-monospace">{{ allocation.quantity }}</td>
+            <td class="is-family-monospace">{{ allocation.serial_number|default:"—" }}</td>
+            <td>{% if allocation.condition == "good" %}<span class="tag is-small is-success is-light">Good</span>{% else %}<span class="tag is-small is-danger is-light">Rejected</span>{% endif %}</td>
+            <td>{{ allocation.get_intake_method_display }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7 p-4">No allocations recorded.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------- Reconciliation (rule 5: card always renders) ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+      Reconciliation
+    </div>
+    {% if reconciliations %}
+    <div class="card-header-icon">
+      <a href="{% url 'inventory_reconciliation_hub' %}" class="is-size-7">Open Reconciliation Hub</a>
+    </div>
+    {% endif %}
+    </div>
+    <div class="card-content is-flush">
+      {% if reconciliations %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead><tr><th>Part</th><th>Status</th><th class="has-text-right">Expected</th><th class="has-text-right">Allocated</th><th class="has-text-right">Rejected</th><th></th></tr></thead>
+        <tbody>
+          {% for r in reconciliations %}
+          <tr>
+            <td class="is-family-monospace">{{ r.part.part_number }}</td>
+            <td><span class="tag is-small {% if r.status == 'resolved' %}is-success{% else %}is-warning{% endif %} is-light">{{ r.get_status_display }}</span></td>
+            <td class="has-text-right is-family-monospace">{{ r.total_expected_quantity }}</td>
+            <td class="has-text-right is-family-monospace">{{ r.total_allocated_quantity }}</td>
+            <td class="has-text-right is-family-monospace">{{ r.total_rejected_quantity }}</td>
+            <td class="has-text-right">
+              <a href="{% url 'inventory_reconciliation_detail' pk=r.pk %}" class="button is-small is-light">
+                <span>{% if r.status == 'resolved' %}View{% else %}Resolve{% endif %}</span>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-4">
+        <p class="has-text-grey is-size-7">
+          {% if session.intake_method == "manual_package" %}
+          No reconciliation tasks — Auto Intake sessions never generate any (FD-13): floors/caps are enforced at commit time instead.
+          {% else %}
+          No reconciliation tasks for this session{% if session.status == "active" %} yet — they are generated when the session transitions to reconciliation{% endif %}.
+          {% endif %}
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------- Lifecycle actions ---------------- #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span>
+      Session lifecycle
+    </div></div>
+    <div class="card-content">
+      {% if session.status == "active" %}
+      <p class="has-text-grey is-size-7 mb-3">
+        <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">info</span></span>
+        Pause/resume is a no-op — this portal is stateless server-side. Reloading the page later <em>is</em> resuming.
+      </p>
+      {% endif %}
+      {% if pending_reconciliation_count > 0 %}
+      <span class="tag is-warning is-light mb-3">{{ pending_reconciliation_count }} part{{ pending_reconciliation_count|pluralize }} pending reconciliation</span>
+      {% endif %}
+    </div>
+    {% if can_intake %}
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <a href="{% url 'inventory_intake_dashboard' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+          <span>Back to Intake</span>
+        </a>
+        {% if session.status == "active" %}
+        <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}" style="margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="transition_to_reconciliation">
+          <button type="submit" class="button is-small is-warning is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+            <span>Transition to Reconciliation</span>
+          </button>
+        </form>
+        {% endif %}
+      </div>
+      {% if session.status == "active" or session.status == "reconciling" %}
+      <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}" style="margin:0;" class="card-footer-primary">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="close">
+        <button type="submit" class="button is-primary is-fullwidth" {% if pending_reconciliation_count > 0 %}disabled{% endif %}
+                onclick="return confirm('Close and commit this session? This writes stock and cannot be undone.');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+          <span>Close &amp; Commit{% if pending_reconciliation_count > 0 %} ({{ pending_reconciliation_count }} pending){% endif %}</span>
+        </button>
+      </form>
+      {% else %}
+      <span></span>
+      {% endif %}
+    </footer>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

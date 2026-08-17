@@ -1,0 +1,51 @@
+{% comment %}
+format=htmx-search-results fragment for the Scan Session start page. Swapped
+into #scan-shipment-results-region by both the search input and each row's
+checkbox. Every response also OOB-swaps `#scan-selected-summary` so the
+"assigned" half of the pair (FD-18: in-page, not a modal) always reflects
+whichever shipments are currently checked, even when the request that
+changed the checked set was a checkbox toggle rather than a search.
+{% endcomment %}
+<div id="scan-shipment-results">
+  {% if shipments %}
+  <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Shipment</th>
+        <th>PO</th>
+        <th>Vendor</th>
+        <th>Status</th>
+        <th>Open lines</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for shipment in shipments %}
+      <tr {% if shipment.pk in selected_ids %}class="is-selected"{% endif %}>
+        <td>
+          <label class="checkbox">
+            <input type="checkbox" name="shipment_ids" value="{{ shipment.pk }}"
+                   {% if shipment.pk in selected_ids %}checked{% endif %}
+                   hx-get="{% url 'inventory_scan_intake_start' %}?format=htmx-search-results"
+                   hx-trigger="change"
+                   hx-target="#scan-shipment-results-region"
+                   hx-swap="innerHTML"
+                   hx-include="[name='q'],[name='shipment_ids']">
+          </label>
+        </td>
+        <td class="is-family-monospace">{{ shipment.shipment_number }}</td>
+        <td class="is-family-monospace">{{ shipment.purchase_order.po_number|default:"—" }}</td>
+        <td>{{ shipment.purchase_order.vendor|default:"—" }}</td>
+        <td><span class="tag is-small is-light">{{ shipment.get_status_display }}</span></td>
+        <td>{{ shipment.open_line_count }} open line{{ shipment.open_line_count|pluralize }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="has-text-grey is-size-7 p-4">No unfulfilled shipments match.</p>
+  {% endif %}
+</div>
+<div id="scan-selected-summary" hx-swap-oob="true">
+  {% include "inventory/intake/_scan_selected_summary.html" %}
+</div>

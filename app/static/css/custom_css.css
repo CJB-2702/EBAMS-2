@@ -135,6 +135,24 @@
   margin-bottom: 1rem;
 }
 
+/* Expandable card (<details class="card">) */
+details.card summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+details.card summary::-webkit-details-marker,
+details.card summary::marker {
+  display: none;
+  content: "";
+}
+details.card:not([open]) .card-header {
+  border-bottom: none;
+}
+details.card[open] summary .card-header-icon .material-icons {
+  transform: rotate(180deg);
+}
+
 .card-header {
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--bulma-border-weak);

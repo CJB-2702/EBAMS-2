@@ -20,6 +20,19 @@ refresh at any point restores exactly what the receiver had staged. Later cards
 are SHOWN but disabled until earlier ones validate — server-side, from the draft,
 not from JavaScript, because a JS-only gate fails the moment the page reloads.
 
+FOUR STEPS, in the order a receiver actually works:
+
+  1. Base information   — what is printed on the label: tracking, carrier, dates.
+  2. Primary order      — single-select, filterable by vendor, booking date, or
+                          the part number in the box. Optional.
+  3. What is in the box — arriving lines, from order lines or unlinked.
+  4. Review & create    — the only write.
+
+The primary order used to be the first field in card 1, as a typeahead. It was
+wrong twice: it asked for a lookup before the receiver had entered anything they
+could read off the box, and a dropdown cannot show the vendor, booking date and
+line count the choice is really made on. Its own card with a results table can.
+
 WHAT CHANGED FROM THE FLAT FORM. Copy-on-create still exists and is still the
 default: a line nobody allocates by hand is matched to the header order's line
 by part at commit, exactly as before. What the flat form could not do was let

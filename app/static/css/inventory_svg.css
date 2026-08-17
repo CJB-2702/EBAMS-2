@@ -1,0 +1,60 @@
+/* Phase 3 — SVG spatial engine. Sharp corners throughout, project tokens. */
+
+.room-svg-canvas {
+  border: 1px solid var(--bulma-border);
+  background-color: var(--bulma-scheme-main-ter);
+  border-radius: 0 !important;
+  display: block;
+  max-width: 100%;
+}
+
+.svg-map-wrapper {
+  border: 1px solid var(--bulma-border);
+  padding: 0.5rem;
+  overflow: auto;
+}
+
+.spatial-node {
+  transition: fill 0.15s ease, stroke 0.15s ease;
+  stroke: var(--bulma-border-dark, #444);
+  stroke-width: 1px;
+}
+
+.spatial-node:hover {
+  stroke: var(--bulma-link, #3273dc);
+  stroke-width: 2px;
+  filter: brightness(1.15);
+}
+
+.node-empty {
+  fill: #e2e8f0;
+}
+
+.node-has-stock {
+  fill: #3b82f6;
+  cursor: pointer;
+}
+
+.spatial-node.is-selected,
+svg .spatial-node.is-selected {
+  fill: var(--bulma-primary, #00d1b2) !important;
+  stroke: var(--bulma-primary, #00d1b2) !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 8px rgba(0, 209, 178, 0.85)) !important;
+}
+
+.node-audit-stale {
+  fill: #f59e0b;
+}
+
+.room-thumbnail {
+  max-height: 120px;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--bulma-border);
+}
+
+.room-thumbnail svg {
+  max-height: 118px;
+  width: 100%;
+}

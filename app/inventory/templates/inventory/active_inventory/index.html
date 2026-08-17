@@ -1,0 +1,141 @@
+{% extends "inventory/base.html" %}
+{% block title %}Active Inventory{% endblock %}
+{% block nav_active_inventory %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Active Inventory</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory</span></div>
+        <div>
+          <h1 class="page-title">Active Inventory</h1>
+          <p class="page-subtitle">Current stock balances across every warehouse, room, and storage location you can see.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            action="{% url 'active_inventory_index' %}"
+            hx-get="{% url 'active_inventory_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search], keyup changed delay:350ms from:input[type=text], keyup changed delay:350ms from:input[type=number]"
+            hx-target="#active-inv-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#active-inv-results-region">
+        <div class="columns is-multiline is-variable is-2">
+          <!-- Row 1: Topography & Part -->
+          <div class="column is-3">
+            <label class="label is-small" for="ai-warehouse">Warehouse</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="ai-warehouse" name="warehouse_id">
+                  <option value="">All Warehouses</option>
+                  {% for w in warehouses %}
+                  <option value="{{ w.id }}" {% if filters.warehouse_id == w.id|stringformat:"s" %}selected{% endif %}>{{ w.code }} — {{ w.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-3">
+            <label class="label is-small" for="ai-room">Room</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="ai-room" name="room_id">
+                  <option value="">All Rooms</option>
+                  {% for r in rooms %}
+                  <option value="{{ r.id }}" {% if filters.room_id == r.id|stringformat:"s" %}selected{% endif %}>{{ r.warehouse.code }} / {{ r.room_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-3">
+            <label class="label is-small" for="ai-storage-loc">Storage Location</label>
+            <div class="control">
+              <search-dropdown
+                id="ai-storage-loc"
+                name="storage_location_id"
+                placeholder="Search location code…"
+                value="{{ filters.storage_location_id }}"
+                value-label="{% if selected_storage_location %}{{ selected_storage_location.display_code }}{% endif %}"
+                hx-get="{% url 'storage_location_search' %}"
+                hx-trigger="keyup changed delay:300ms, search, focus"
+                hx-include="#ai-warehouse, #ai-room">
+              </search-dropdown>
+            </div>
+          </div>
+
+          <div class="column is-3">
+            <label class="label is-small" for="ai-part-q">Part</label>
+            <div class="control">
+              <input id="ai-part-q" class="input is-small" type="search" name="part_q" value="{{ filters.part_q }}" placeholder="number or name…" autocomplete="off">
+            </div>
+          </div>
+
+          <!-- Row 2: Serial, Stock Status, Stale, Unassigned, Actions -->
+          <div class="column is-3">
+            <label class="label is-small" for="ai-serial">Serial Number</label>
+            <div class="control">
+              <input id="ai-serial" class="input is-small is-family-monospace" type="search" name="serial" value="{{ filters.serial }}" placeholder="serial number…" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="column is-2">
+            <label class="label is-small" for="ai-stock-status">Stock Status</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="ai-stock-status" name="stock_status">
+                  <option value="">All Stock</option>
+                  <option value="has_stock" {% if filters.stock_status == "has_stock" or filters.has_stock_only %}selected{% endif %}>Has Stock (>0)</option>
+                  <option value="low_stock" {% if filters.stock_status == "low_stock" or filters.low_stock_only %}selected{% endif %}>Low Stock (1–10)</option>
+                  <option value="out_of_stock" {% if filters.stock_status == "out_of_stock" or filters.out_of_stock_only %}selected{% endif %}>Out of Stock (≤0)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-2">
+            <label class="label is-small" for="ai-stale">Stale (days)</label>
+            <div class="control">
+              <input id="ai-stale" class="input is-small" type="number" min="0" name="stale_days" value="{{ stale_days }}" placeholder="e.g. 30" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="column is-2">
+            <label class="checkbox is-size-7" style="margin-top:1.75rem; display:block;">
+              <input type="checkbox" name="unassigned_only" {% if filters.unassigned_only %}checked{% endif %}> Unassigned only
+            </label>
+          </div>
+
+          <div class="column is-3 is-flex is-align-items-flex-end" style="gap:0.5rem;">
+            <button class="button is-small is-info is-flex-grow-1" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply</span>
+            </button>
+            <a class="button is-small is-light" href="{% url 'active_inventory_index' %}" title="Clear all filters">
+              <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span><span>Clear</span>
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="active-inv-results-region" class="is-relative">
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+      <div class="skeleton-block"></div>
+    </div>
+    {% include "inventory/active_inventory/_results_card.html" %}
+  </div>
+</div>
+{% endblock %}

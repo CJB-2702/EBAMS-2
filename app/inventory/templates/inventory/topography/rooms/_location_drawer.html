@@ -1,0 +1,46 @@
+{% if not drawer %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Location</div></div>
+<div class="card-content">
+  <p class="has-text-grey is-size-7">Click any location shape on the map to inspect stock and coordinates.</p>
+</div>
+{% elif drawer.not_found %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Location</div></div>
+<div class="card-content">
+  <p class="has-text-danger is-size-7">No location matches code "{{ loc_code }}".</p>
+</div>
+{% else %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>{{ drawer.room_location.display_code }}</div></div>
+<div class="card-content">
+  {% if drawer.room_location.has_layout %}
+    <p class="is-size-7">This location has its own Z-picker map.</p>
+    <a class="button is-small is-link is-fullwidth mt-2" href="{% url 'inventory_room_location_detail' pk=drawer.room_location.room_location_id %}">
+      <span class="icon"><span class="material-icons" aria-hidden="true">grid_view</span></span><span>Open Z-picker</span>
+    </a>
+  {% elif drawer.single_storage_location %}
+    <p class="is-size-7 has-text-weight-semibold is-family-monospace">{{ drawer.single_storage_location.display_code }}</p>
+    {% if drawer.stock %}
+    <table class="table is-fullwidth is-size-7 mt-2">
+      <thead><tr><th>Part</th><th>Serial</th><th>On hand</th></tr></thead>
+      <tbody>
+        {% for row in drawer.stock %}
+        <tr>
+          <td>{{ row.part.part_number }}</td>
+          <td class="is-family-monospace">{{ row.serial_number|default:"—" }}</td>
+          <td>{{ row.quantity_on_hand }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 mt-2">No stock here.</p>
+    {% endif %}
+  {% else %}
+    <p class="is-size-7 has-text-grey">{{ drawer.room_location.storage_locations|length }} storage location(s), no Z-picker image.</p>
+    <ul class="is-size-7 mt-2">
+      {% for sl in drawer.room_location.storage_locations %}
+      <li class="is-family-monospace">{{ sl.display_code }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,80 @@
+<div class="card">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+    Counted Lines ({{ lines|length }})
+  </div></div>
+  <div class="card-content is-flush">
+    {% if lines %}
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Part</th>
+          <th>Location</th>
+          <th>Serial</th>
+          <th class="has-text-right">Expected</th>
+          <th class="has-text-right">Counted</th>
+          <th class="has-text-right">Variance</th>
+          <th>Resolution</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td>
+            <span class="is-family-monospace">{{ line.part.part_number }}</span>
+            <span class="has-text-grey">{{ line.part.name }}</span>
+          </td>
+          <td>{{ line.storage_location.display_code|default:"—" }}</td>
+          <td class="is-family-monospace">{{ line.serial_number|default:"—" }}</td>
+          <td class="has-text-right is-family-monospace">{{ line.expected_qty|floatformat:3 }}</td>
+          <td class="has-text-right is-family-monospace">{{ line.counted_qty|floatformat:3 }}</td>
+          
+          <td class="has-text-right is-family-monospace">
+            {% if line.discrepancy_type == 'matched' %}
+              <span class="tag is-small is-success is-light" title="Matched">0.000</span>
+            {% elif line.discrepancy_type == 'surplus_found' %}
+              <span class="tag is-small is-warning is-light" title="Surplus">{% if line.variance_qty > 0 %}+{% endif %}{{ line.variance_qty|floatformat:3 }}</span>
+            {% else %}
+              <span class="tag is-small is-danger is-light" title="Deficit">{{ line.variance_qty|floatformat:3 }}</span>
+            {% endif %}
+          </td>
+          
+          <td>
+            {% if line.discrepancy_type == 'matched' %}
+              <span class="has-text-grey">—</span>
+            {% else %}
+              {% if session.status == 'open' and can_audit %}
+                <form method="POST" hx-post="?format=htmx-lines-table" hx-target="#lines-live-region">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="set_resolution">
+                  <input type="hidden" name="line_id" value="{{ line.pk }}">
+                  <div class="field has-addons" style="margin-bottom:0;">
+                    <div class="control">
+                      <div class="select is-small">
+                        <select name="resolution_type" onchange="this.form.requestSubmit()">
+                          <option value="">-- Needs Resolution --</option>
+                          <option value="direct_adjustment" {% if line.resolution_type == 'direct_adjustment' %}selected{% endif %}>Direct Adjustment</option>
+                          <option value="unrecorded_transfer" {% if line.resolution_type == 'unrecorded_transfer' %}selected{% endif %}>Unrecorded Transfer</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              {% else %}
+                {% if line.resolution_type %}
+                  <span class="tag is-small">{{ line.get_resolution_type_display }}</span>
+                {% else %}
+                  <span class="tag is-small is-danger">Unresolved</span>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 p-4">No lines recorded yet.</p>
+    {% endif %}
+  </div>
+</div>

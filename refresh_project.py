@@ -108,7 +108,7 @@ def rebuild_database():
     """Regenerate migrations, apply them, and seed data"""
     print("\n6. Regenerating migrations...")
     result = subprocess.run(
-        ['python', 'manage.py', 'makemigrations'],
+        [sys.executable, 'manage.py', 'makemigrations'],
         capture_output=True,
         text=True
     )
@@ -119,7 +119,7 @@ def rebuild_database():
 
     print("\n7. Applying migrations...")
     result = subprocess.run(
-        ['python', 'manage.py', 'migrate'],
+        [sys.executable, 'manage.py', 'migrate'],
         capture_output=True,
         text=True
     )
@@ -132,7 +132,12 @@ def rebuild_database():
 
 
 def seed_database():
-    """Load dev fixtures and run seed commands (default post-step after every rebuild)"""
+    """Load dev fixtures and run seed commands (default post-step after every rebuild).
+
+    Returns False on any fixture/seed-command failure (other than a missing
+    fixture, which is OK) so the caller can abort instead of leaving the
+    project silently half-seeded.
+    """
     print("\n8. Loading fixtures...")
     fixtures = [
         'dev_auth_groups',
@@ -146,7 +151,7 @@ def seed_database():
     ]
     for fixture in fixtures:
         result = subprocess.run(
-            ['python', 'manage.py', 'loaddata', fixture],
+            [sys.executable, 'manage.py', 'loaddata', fixture],
             capture_output=True,
             text=True
         )
@@ -156,22 +161,25 @@ def seed_database():
             if "No fixture named" in result.stderr:
                 print(f"   ℹ {fixture} not found (OK)")
             else:
-                print(f"   ⚠ {fixture} failed: {result.stderr[:100]}")
+                print(f"   ✗ {fixture} failed: {result.stderr[:500]}")
+                return False
 
     print("\n9. Running seed commands...")
-    seed_commands = ['seed_parts_dev', 'seed_procurement_dev']
+    seed_commands = ['seed_parts_dev', 'seed_procurement_dev', 'seed_inventory_dev']
     for seed_cmd in seed_commands:
         result = subprocess.run(
-            ['python', 'manage.py', seed_cmd],
+            [sys.executable, 'manage.py', seed_cmd],
             capture_output=True,
             text=True
         )
         if result.returncode == 0:
             print(f"   ✓ {seed_cmd} seeded")
         else:
-            print(f"   ℹ {seed_cmd} not available or failed")
+            print(f"   ✗ {seed_cmd} failed: {result.stderr}")
+            return False
 
     print("   ✓ Seeding complete")
+    return True
 
 
 def stop_server():
@@ -234,7 +242,9 @@ def main():
         if not success:
             print("\n✗ Rebuild failed!")
             return 1
-        seed_database()
+        if not seed_database():
+            print("\n✗ Seeding failed!")
+            return 1
 
     # Restart the server we stopped at the start, so the refresh is a
     # single stop → clear → reseed → restart pass with no manual follow-up.

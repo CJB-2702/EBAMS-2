@@ -1,0 +1,92 @@
+{% extends "inventory/base.html" %}
+{% block title %}Audit Logs{% endblock %}
+{% block nav_audits %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_audit_session_index' %}">Audits</a></li>
+<li class="is-active"><a href="#" aria-current="page">Audit Log</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">history</span></div>
+        <div>
+          <h1 class="page-title">Audit Log</h1>
+          <p class="page-subtitle">Immutable ledger of all stock quantity adjustments.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="columns is-multiline">
+    <div class="column is-3">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>
+          Filters
+        </div></div>
+        <div class="card-content">
+          <form method="GET" action="{% url 'inventory_audit_log_index' %}">
+            <div class="field">
+              <label class="label is-small">Part (No/Name)</label>
+              <div class="control">
+                <input class="input is-small is-family-monospace" type="text" name="part_q" value="{{ filters.part_q }}">
+              </div>
+            </div>
+            
+            <div class="field">
+              <label class="label is-small">Warehouse</label>
+              <div class="control">
+                <div class="select is-fullwidth is-small">
+                  <select name="warehouse_id">
+                    <option value="">Any</option>
+                    {% for wh in warehouses %}
+                    <option value="{{ wh.pk }}" {% if filters.warehouse_id == wh.pk|stringformat:"s" %}selected{% endif %}>{{ wh.code }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small">Reason Code</label>
+              <div class="control">
+                <div class="select is-fullwidth is-small">
+                  <select name="reason_code">
+                    <option value="">Any</option>
+                    <option value="spot_count_adjustment" {% if filters.reason_code == 'spot_count_adjustment' %}selected{% endif %}>Spot Count Adjustment</option>
+                    <option value="inline_quantity_edit" {% if filters.reason_code == 'inline_quantity_edit' %}selected{% endif %}>Inline Edit</option>
+                    <option value="unrecorded_transfer" {% if filters.reason_code == 'unrecorded_transfer' %}selected{% endif %}>Unrecorded Transfer</option>
+                    <option value="damage_scrap" {% if filters.reason_code == 'damage_scrap' %}selected{% endif %}>Damage / Scrap</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="field mt-4">
+              <div class="control">
+                <button type="submit" class="button is-primary is-fullwidth is-small">Search</button>
+              </div>
+            </div>
+            {% if filters.part_q or filters.warehouse_id or filters.reason_code %}
+            <div class="field mt-2">
+              <div class="control">
+                <a href="{% url 'inventory_audit_log_index' %}" class="button is-light is-fullwidth is-small">Clear Filters</a>
+              </div>
+            </div>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="column is-9">
+      {% include "inventory/audits/_log_results_card.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

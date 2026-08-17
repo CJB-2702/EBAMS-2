@@ -1,0 +1,56 @@
+<tr id="stock-row-{{ row.pk }}">
+  <td>
+    <span class="is-family-monospace">{{ row.part.part_number }}</span>
+    <span class="has-text-grey">{{ row.part.name }}</span>
+  </td>
+  <td class="is-family-monospace">{{ row.warehouse.code }}</td>
+  <td>{{ row.room.room_name }}{% if row.is_unassigned %} <span class="tag is-small is-warning is-light">Unassigned</span>{% endif %}</td>
+  <td class="is-family-monospace">{{ row.storage_location.display_code|default:"—" }}</td>
+  <td class="is-family-monospace">{{ row.serial_number|default:"—" }}</td>
+  
+  <td class="has-text-right is-family-monospace" style="position:relative; min-width: 120px;">
+    {% if can_audit %}
+      <div x-data="{ editing: false }" @click.outside="editing = false">
+        <span x-show="!editing" @click="editing = true" class="is-clickable" style="border-bottom: 1px dashed #ccc;" title="Inline Edit Quantity">
+          {{ row.quantity_on_hand|floatformat:3 }}
+        </span>
+        <form x-show="editing" style="display:none;" hx-post="{% url 'active_inventory_inline_edit' row.pk %}" hx-target="#stock-row-{{ row.pk }}" hx-swap="outerHTML">
+          {% csrf_token %}
+          <div class="field has-addons is-pulled-right" style="margin-bottom:0; justify-content: flex-end;">
+            <div class="control">
+              <input class="input is-small is-family-monospace has-text-right" type="number" step="0.001" name="quantity" value="{{ row.quantity_on_hand|stringformat:'f' }}" style="width: 80px;" required>
+            </div>
+            <div class="control">
+              <button class="button is-small is-primary" type="submit"><span class="material-icons is-size-6" aria-hidden="true">check</span></button>
+            </div>
+          </div>
+        </form>
+      </div>
+    {% else %}
+      {{ row.quantity_on_hand|floatformat:3 }}
+    {% endif %}
+  </td>
+  
+  <td class="has-text-right is-family-monospace">{{ row.quantity_allocated|floatformat:3 }}</td>
+  <td class="has-text-right is-family-monospace">{{ row.quantity_available|floatformat:3 }}</td>
+  <td class="has-text-right is-family-monospace">{{ row.unit_cost_avg|default:"—" }}</td>
+  
+  <td>
+    {% if not row.last_audited_at %}
+      <span class="tag is-small is-warning" title="Never audited">Never</span>
+    {% elif row.is_stale %}
+      <span class="tag is-small is-warning is-light" title="Audited {{ row.last_audited_at|timesince }} ago">{{ row.last_audited_at|timesince }} ago</span>
+    {% else %}
+      <span class="tag is-small is-light" title="Audited {{ row.last_audited_at|timesince }} ago by {{ row.last_audited_by }}">{{ row.last_audited_at|timesince }} ago</span>
+    {% endif %}
+  </td>
+  
+  <td class="has-text-right">
+    <a href="{% url 'inventory_movement_portal' %}?stock={{ row.pk }}" class="button is-small is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span><span>Move</span>
+    </a>
+    <a href="{% url 'inventory_issuance_portal' %}?stock={{ row.pk }}" class="button is-small is-light">
+      <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span><span>Issue</span>
+    </a>
+  </td>
+</tr>

@@ -1,0 +1,144 @@
+{% extends "inventory/base.html" %}
+{% block title %}Auto Intake{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_intake_dashboard' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Auto Intake</a></li>
+{% endblock %}
+
+{% comment %}
+Single scrolling page, three stacked zones (auto_intake_workflow_guide.md
+§2.1) — session metadata, unfulfilled shipment search/select, lines matrix —
+one POST at the bottom. Not a step-chained wizard (FD-19): every zone is
+always visible, later zones are simply empty/prompting until a shipment is
+selected. Selection state (q, shipment_id, warehouse_id, room_id) round-trips
+through the URL so F5 always restores exactly where the operator was.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">fact_check</span></div>
+        <div>
+          <h1 class="page-title">Auto Intake</h1>
+          <p class="page-subtitle">Receive an expected shipment by target accepted/rejected quantity — no scanning required.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if not can_intake %}
+<div class="notification is-warning is-light">
+  <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+  You do not have the <span class="is-family-monospace">can_intake_stock</span> permission — this portal is read-only for you.
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'inventory_auto_intake_portal' %}">
+  {% csrf_token %}
+  <input type="hidden" id="ai-hidden-shipment-id" name="shipment_id" value="{{ shipment_id|default:'' }}">
+
+  <div class="body-grid full-width">
+
+    {# ================= ZONE 1: Session metadata ================= #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+        Session metadata
+      </div></div>
+      <div class="card-content">
+        <div class="columns is-variable is-3 is-multiline">
+          <div class="column is-4">
+            <label class="label is-small">Operator</label>
+            <input class="input is-small" type="text" value="{{ request.user }}" disabled>
+            <p class="help is-size-7">Locked to your account.</p>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small" for="ai-warehouse">Warehouse</label>
+            <div class="select is-small is-fullwidth">
+              <select id="ai-warehouse" name="warehouse_id" required
+                      hx-get="{% url 'inventory_auto_intake_portal' %}?format=htmx-room-select"
+                      hx-trigger="change"
+                      hx-target="#ai-room-select-wrap"
+                      hx-swap="outerHTML">
+                {% comment %}
+                No hx-push-url here: the room-select response is a fragment-only
+                URL (format=htmx-room-select) and must never land in the address
+                bar, or an F5 on it would render the fragment alone instead of
+                the full page (F5 rule). Warehouse/room selection is plain form
+                state carried by the POST body, same as hardware_device_id.
+                {% endcomment %}
+                <option value="">— select —</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.pk }}" {% if warehouse.pk == warehouse_id %}selected{% endif %}>{{ warehouse.code }} — {{ warehouse.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small" for="ai-device">Hardware device (optional)</label>
+            <input id="ai-device" class="input is-small is-family-monospace" type="text" name="hardware_device_id" placeholder="Handheld-02">
+          </div>
+        </div>
+        <div class="columns is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small" for="ai-room">Room (optional)</label>
+            {% include "inventory/intake/_room_select.html" %}
+          </div>
+        </div>
+        {% if not room_id %}
+        <div class="notification is-info is-light is-size-7 mt-2">
+          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+          Leaving Room blank targets the warehouse's Intake Room by default.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ================= ZONE 2: Unfulfilled shipment selector ================= #}
+    <details id="auto-intake-shipment-card" class="card" {% if not selected_shipment %}open{% endif %}>
+      <summary class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+          <span>Unfulfilled shipments</span>
+          <span id="selected-shipment-badge" class="tag is-info is-light ml-2" {% if not selected_shipment %}style="display: none;"{% endif %}>
+            {% if selected_shipment %}{{ selected_shipment.shipment_number }} selected{% endif %}
+          </span>
+        </div>
+        <div class="card-header-icon">
+          <span class="icon"><span class="material-icons" aria-hidden="true" style="transition: transform 0.2s ease;">expand_more</span></span>
+        </div>
+      </summary>
+      <div class="card-content">
+        <div class="field">
+          <p class="control has-icons-left">
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search shipment / PO number…"
+                   autocomplete="off"
+                   hx-get="{% url 'inventory_auto_intake_portal' %}?format=htmx-search-results"
+                   hx-trigger="keyup changed delay:350ms, search"
+                   hx-target="#auto-intake-shipment-results-region"
+                   hx-swap="innerHTML"
+                   hx-push-url="true"
+                   hx-indicator="#auto-intake-shipment-results-region">
+            <span class="icon is-small is-left"><i class="material-icons" aria-hidden="true" style="font-size:1rem;">search</i></span>
+          </p>
+        </div>
+        <div id="auto-intake-shipment-results-region" class="is-relative">
+          <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+            <div class="skeleton-block"></div>
+          </div>
+          {% include "inventory/intake/_shipment_search_results.html" %}
+        </div>
+      </div>
+    </details>
+
+    {# ================= ZONE 3: Lines matrix & Submit ================= #}
+    <div id="auto-intake-lines-region">
+      {% include "inventory/intake/_shipment_lines.html" %}
+    </div>
+  </div>
+</form>
+{% endblock %}

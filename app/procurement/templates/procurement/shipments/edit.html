@@ -334,6 +334,39 @@ control that composes with the rest of the page behind a dismissable overlay.
                   <span class="tag is-small is-info is-light mt-1">Inspected · {{ line.quantity_accepted }} accepted</span>
                   {% endif %}
                 </a>
+                {% if can_receive %}
+                {% comment %}
+                Inline shipped-quantity edit — outside the `<a>` above, since an
+                input cannot nest inside an anchor. Plain POST, no HTMX: the F5
+                rule baseline. On a shortfall against 2+ claims (or a locked
+                sole claim) the server raises PackageReallocationRequired,
+                seeds the session draft, and this same GET reload notices it
+                and renders the Portal below instead of a flat error
+                (reallocation_resolution_portal.md §5, §7.9).
+                {% endcomment %}
+                <form method="post" class="mt-1" style="margin-top:0.25rem;" onclick="event.stopPropagation();"
+                      onsubmit="return confirm('Change {{ line.part_number }}\'s shipped quantity? If this no longer covers what is already allocated to order lines, the Reallocation Portal opens instead of saving.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="edit_quantity">
+                  <input type="hidden" name="line_id" value="{{ line.line_id }}">
+                  {% if requires_audit_comment %}
+                  <input class="input is-small mb-1" type="text" name="audit_comment" required
+                         placeholder="reason — required *">
+                  {% endif %}
+                  <div class="field has-addons mb-0">
+                    <div class="control is-expanded">
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0.001"
+                             name="quantity" value="{{ line.quantity }}"
+                             aria-label="Shipped quantity for {{ line.part_number }}">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-light" title="Update shipped quantity">
+                        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">save</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+                {% endif %}
               </td>
               {% if can_receive %}
               <td style="width:2.5rem; vertical-align:middle;">
@@ -677,4 +710,244 @@ a modal — it is the in-page master-detail above.
       </footer>
   </form>
 </dialog>
+
+{# ==================== Package Reallocation Portal (Package↔PO Domain) ==================== #}
+{% comment %}
+reallocation_resolution_portal.md §7.8: `# DELIBERATE ANTI-PATTERN`. Every
+other assignment flow in this app runs in-page, side-by-side
+(harness/UX_UI/design_patterns/modals.md) — this one is a deliberate,
+documented exception, because its entire job is to INTERRUPT and force
+resolution before a save can proceed, which is exactly what a modal is for
+and an in-page flow is poor at.
+
+This is Phase 5's Package↔PO Domain mirror of the Demand↔PO Domain's own
+Reallocation Portal. Independent implementation, no shared code or state with
+that domain (§7.7) — most visibly, there is NO external-claims section here:
+a package line has no "outside" relationship to surface (§3). Do not port
+that section over by analogy.
+
+The dialog auto-opens (server-decided, like _cap_decision_modal.html) because
+there is no user click that triggers it — `_edit_render` decided a
+reallocation is in progress and the page must not let it hide.
+{% endcomment %}
+{% if package_portal %}
+<dialog id="package-reallocation-portal" class="card modal-styled" style="padding:0; max-width:760px;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon has-text-warning"><span class="material-icons" aria-hidden="true">report_problem</span></span>
+      Reallocation Portal &mdash; {{ package_portal.part_number }}
+    </p>
+  </header>
+
+  <div class="card-content" style="overflow-y:auto;">
+    {% comment %}
+    Messages re-rendered here because this dialog's own ::backdrop visually
+    covers base.html's normal flash-message area at the top of the page — the
+    Portal is where the receiver is actually looking when it is open. Safe to
+    iterate `messages` a second time in one render: Django's message storage
+    is not exhausted by iteration, only marked used for cleanup after the
+    response.
+    {% endcomment %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="notification is-size-7 {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <p class="is-size-7 mb-3">
+      Shipped quantity is changing to <strong class="is-family-monospace">{{ package_new_quantity }}</strong>,
+      which no longer covers every claim already staked against this line by itself (§5). Resolve it
+      below &mdash; auto-allocate the cut across open claims, or set each one by hand &mdash; then commit.
+      Cancelling leaves the shipped quantity exactly as it was.
+    </p>
+
+    <dl class="kv is-size-7 mb-4">
+      <dt>Target shipped quantity</dt><dd class="is-family-monospace">{{ package_new_quantity }}</dd>
+      <dt>Locked claims total</dt><dd class="is-family-monospace">{{ package_portal.locked_total }}</dd>
+      <dt>Open claims total (current)</dt><dd class="is-family-monospace">{{ package_portal.open_total }}</dd>
+    </dl>
+
+    {# ---- Locked claims: arrived/received, never auto-touched ---- #}
+    <p class="label is-small has-text-danger mb-1">Locked claims &mdash; arrived, not adjustable here</p>
+    <table class="table is-fullwidth is-size-7" style="margin-bottom:1.5rem;">
+      <thead><tr><th>Order line</th><th class="has-text-right">Allocated</th><th style="width:8rem;"></th></tr></thead>
+      <tbody>
+        {% for claim in package_portal.locked_claims %}
+        <tr>
+          <td class="is-family-monospace">{{ claim.po_number }} &middot; line {{ claim.line_number }}</td>
+          <td class="has-text-right is-family-monospace">{{ claim.quantity_allocated }}</td>
+          <td>
+            {% comment %}
+            First call of the two-popup contract (§6): posts WITHOUT
+            `confirmed`. The server writes nothing and flashes its own
+            warning message; on reload the second, explicit confirm dialog
+            below opens pointed at this same claim.
+            {% endcomment %}
+            <form method="post" style="margin:0;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="reallocation_unlock_claim">
+              <input type="hidden" name="link_id" value="{{ claim.link_id }}">
+              <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+              <button type="submit" class="button is-small is-warning is-light">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">lock_open</span></span>
+                <span>Unlock</span>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="has-text-grey has-text-centered py-3">None.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# ---- Open claims: adjustable via auto-allocate or manual entry ---- #}
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+      <p class="label is-small mb-0">Open claims &mdash; adjustable</p>
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_auto_allocate">
+        <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+        <button type="submit" class="button is-small is-link" {% if not package_portal.open_claims %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">auto_fix_high</span></span>
+          <span>Auto-allocate</span>
+        </button>
+      </form>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reallocation_manual_entry">
+      <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+      <table class="table is-fullwidth is-size-7 mb-2">
+        <thead><tr><th>Order line</th><th class="has-text-right" style="width:8rem;">Proposed</th></tr></thead>
+        <tbody>
+          {% for claim in package_portal.open_claims %}
+          <tr>
+            <td class="is-family-monospace">{{ claim.po_number }} &middot; line {{ claim.line_number }}</td>
+            <td>
+              <input class="input is-small is-family-monospace has-text-right"
+                     type="number" step="0.001" min="0"
+                     name="claim_{{ claim.link_id }}"
+                     value="{{ package_proposed|dict_get:claim.link_id|default_if_none:claim.quantity_allocated }}"
+                     aria-label="Proposed allocation for {{ claim.po_number }} line {{ claim.line_number }}">
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="has-text-grey has-text-centered py-3">None.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if package_portal.open_claims %}
+      <div class="has-text-right">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">save</span></span>
+          <span>Save manual entry</span>
+        </button>
+      </div>
+      <p class="help is-size-7">
+        Under-claiming is allowed &mdash; leaving part of the line unclaimed returns it to the open pool.
+        Over-claiming past the target quantity is refused on save (§7.4, §7.5).
+      </p>
+      {% endif %}
+    </form>
+
+    <article class="message {% if package_running_total > package_new_quantity %}is-danger{% else %}is-success{% endif %} is-small mt-4">
+      <div class="message-body is-size-7">
+        Running total: <strong class="is-family-monospace">{{ package_running_total }}</strong> of target
+        <strong class="is-family-monospace">{{ package_new_quantity }}</strong>
+        {% if package_running_total > package_new_quantity %}
+          &mdash; still over. Reduce an open claim, auto-allocate, or unlock a locked claim to free capacity.
+        {% else %}
+          &mdash; commit is valid (reflects staged changes, not yet saved).
+        {% endif %}
+      </div>
+    </article>
+  </div>
+
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_cancel">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </form>
+    </div>
+    <form method="post" class="card-footer-primary" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reallocation_commit">
+      <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+      <button type="submit" class="button is-primary" style="width:100%;height:100%;">
+        <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+        <span>Commit</span>
+      </button>
+    </form>
+  </footer>
+</dialog>
+<script>
+  // Server-decided dialog — no click triggers it, so it is opened here, the
+  // same pattern _cap_decision_modal.html uses.
+  (function () {
+    var dialog = document.getElementById('package-reallocation-portal');
+    if (dialog && !dialog.open) { dialog.showModal(); }
+  })();
+</script>
+
+{% if package_pending_unlock_link_id %}
+{% comment %}
+Second popup of the two-popup unlock contract (§6). Stacks on top of the
+Portal dialog above — nested native <dialog> modals are supported; Escape
+closes only the topmost one. Its warning text comes from the `messages` block
+already rendered above in the Portal — this dialog exists to force the
+SEPARATE, explicit confirmation click, not to re-word the warning.
+{% endcomment %}
+<dialog id="package-unlock-confirm" class="card modal-styled" style="padding:0; max-width:520px;">
+  <header class="card-header">
+    <p class="card-header-title has-text-warning">Confirm unlock</p>
+  </header>
+  <div class="card-content">
+    {% for message in messages %}
+      {% if message.tags == 'warning' %}
+      <p class="is-size-7">{{ message }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <form method="post" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_cancel_unlock">
+        <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+          <span>Cancel</span>
+        </button>
+      </form>
+    </div>
+    <form method="post" class="card-footer-primary" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reallocation_unlock_claim">
+      <input type="hidden" name="link_id" value="{{ package_pending_unlock_link_id }}">
+      <input type="hidden" name="line_id" value="{{ package_portal.shipment_line_id }}">
+      <input type="hidden" name="confirmed" value="1">
+      <button type="submit" class="button is-danger" style="width:100%;height:100%;">
+        <span class="icon"><span class="material-icons" aria-hidden="true">lock_open</span></span>
+        <span>Confirm unlock</span>
+      </button>
+    </form>
+  </footer>
+</dialog>
+<script>
+  (function () {
+    var dialog = document.getElementById('package-unlock-confirm');
+    if (dialog && !dialog.open) { dialog.showModal(); }
+  })();
+</script>
+{% endif %}
+{% endif %}
 {% endblock %}

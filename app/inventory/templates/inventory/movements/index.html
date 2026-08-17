@@ -1,0 +1,61 @@
+{% extends "inventory/base.html" %}
+{% block title %}Movements{% endblock %}
+{% block nav_movements %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Movements</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">sync_alt</span></div>
+      <div>
+        <h1 class="page-title">Movements</h1>
+        <p class="page-subtitle">Every relocation of stock across warehouses, rooms, and storage locations.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'inventory_movements_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#mv-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#mv-results-region">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small" for="mv-part-q">Part</label>
+            <input id="mv-part-q" class="input is-small" type="search" name="part_q" value="{{ filters.part_q }}" placeholder="number or name…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small" for="mv-type">Type</label>
+            <div class="select is-small is-fullwidth">
+              <select id="mv-type" name="movement_type">
+                <option value="">All</option>
+                {% for value, label in movement_types %}
+                <option value="{{ value }}" {% if value == filters.movement_type %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="mv-results-region" class="is-relative">
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true"><div class="skeleton-block"></div></div>
+    {% include "inventory/movements/_results_card.html" %}
+  </div>
+</div>
+{% endblock %}

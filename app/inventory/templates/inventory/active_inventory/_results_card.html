@@ -1,0 +1,43 @@
+{% comment %}
+The results card. Included directly by index.html on a full page load, and
+returned directly for the `format=htmx-search-results` path.
+{% endcomment %}
+<div class="card" id="active-inv-results-container">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+    Stock ({{ page.paginator.count }})
+  </div></div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Part</th><th>Warehouse</th><th>Room</th><th>Location</th><th>Serial</th>
+          <th class="has-text-right">On hand</th><th class="has-text-right">Allocated</th>
+          <th class="has-text-right">Available</th><th class="has-text-right">Avg cost</th>
+          <th>Last audited</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        {% include "inventory/active_inventory/_row.html" %}
+        {% empty %}
+        <tr><td colspan="11" class="has-text-grey has-text-centered py-5">
+          No stock matches your filters.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+    <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+        <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>

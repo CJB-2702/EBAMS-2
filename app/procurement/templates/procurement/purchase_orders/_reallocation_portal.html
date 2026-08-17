@@ -1,0 +1,240 @@
+{% comment %}
+THE REALLOCATION PORTAL (Demand↔PO Domain) — reallocation_resolution_portal.md
+§5, §6, §7.8. `# DELIBERATE ANTI-PATTERN`: this is the platform's one
+sanctioned exception to "assignment never lives in a modal" (see
+harness/UX_UI/design_patterns/modals.md). Its entire job is to interrupt and
+force a resolution before the order line's quantity change can save — that is
+exactly what a modal is for and an in-page flow is poor at. Do not "fix" this
+into the usual left-heavy in-page pattern.
+
+Context: `portal` (dict from `_build_portal_view`) — None unless a
+reallocation draft is in progress for the currently-selected line.
+
+Two dialogs, deliberately two: the Portal itself, and — only when the Buyer
+has attempted to unlock a LOCKED claim and not yet answered the warning — a
+second, smaller confirmation dialog stacked on top of it (§6's two-popup
+unlock sequence). Both are opened here by the server, the same
+server-decided-open pattern as `_cap_decision_modal.html`, because the
+server — not a client click — is what decided a decision is owed.
+{% endcomment %}
+{% if portal %}
+<dialog id="reallocation-portal-dialog" class="card modal-styled" style="padding:0; width:92vw; max-width:1100px; max-height:88vh;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">warning</span></span>
+      Reallocation required — Line {{ portal.line_number }} · {{ portal.po_number }}
+    </p>
+    {% comment %}No close button — Commit or Cancel are the only ways out.{% endcomment %}
+  </header>
+
+  <div class="card-content" style="overflow-y:auto;">
+    <div class="content">
+      <p class="is-size-7 has-text-grey mb-4">
+        This order line's ordered quantity no longer covers every claim already
+        staked against it. Resolve every open claim below (auto-allocate or manual
+        entry), unlock a locked claim if you deliberately need to, then commit.
+      </p>
+
+      <div class="notification is-light {% if portal.commit_ready %}is-success{% else %}is-warning{% endif %} is-size-7">
+        Target ordered quantity: <strong class="is-family-monospace">{{ portal.target_quantity }}</strong>
+        &nbsp;·&nbsp; Open (proposed): <strong class="is-family-monospace">{{ portal.open_total_proposed }}</strong>
+        &nbsp;·&nbsp; Locked: <strong class="is-family-monospace">{{ portal.locked_total }}</strong>
+        &nbsp;·&nbsp; Running total: <strong class="is-family-monospace">{{ portal.running_total }}</strong>
+        {% if portal.commit_ready %}
+          — matches the target. Ready to commit.
+        {% else %}
+          — does not match the target yet.
+        {% endif %}
+      </div>
+
+      {# ---------------- OPEN claims: adjustable ---------------- #}
+      <h2 class="title is-6 mt-4">Open claims — adjustable</h2>
+      <form method="post" action="{% url 'purchase_order_edit' po.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_manual_entry">
+        <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+        <table class="table is-fullwidth is-size-7">
+          <thead><tr>
+            <th>Demand</th><th>Priority</th><th>Needed by</th>
+            <th class="has-text-right">Current</th>
+            <th style="width:9rem;">Proposed</th>
+            <th>Claimed elsewhere</th>
+          </tr></thead>
+          <tbody>
+            {% for claim in portal.open_claims %}
+            <tr>
+              <td class="is-family-monospace">
+                <a href="{% url 'demand_detail' claim.demand_id %}">#{{ claim.demand_id }}</a>
+              </td>
+              <td>{{ claim.priority_display }}</td>
+              <td>{{ claim.needed_by|date:"Y-m-d"|default:"—" }}</td>
+              <td class="has-text-right is-family-monospace">{{ claim.current_quantity }}</td>
+              <td>
+                <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+                       name="claim_{{ claim.link_id }}" value="{{ claim.proposed_quantity }}"
+                       aria-label="Proposed quantity for demand #{{ claim.demand_id }}">
+              </td>
+              <td>
+                {% if claim.external_claims %}
+                  {% for ext in claim.external_claims %}
+                    <a href="{% url 'purchase_order_detail' ext.purchase_order_id %}"
+                       class="tag is-info is-light is-size-7 mb-1"
+                       title="Locked on this claim: this demand also has {{ ext.quantity_allocated }} claimed on {{ ext.po_number }}, line {{ ext.line_number }}{% if ext.is_locked %} (locked there){% endif %} — external claims are never editable from this screen.">
+                      {{ ext.po_number }}: {{ ext.quantity_allocated }}{% if ext.is_locked %} 🔒{% endif %}
+                    </a>
+                  {% endfor %}
+                {% else %}
+                  <span class="has-text-grey">None.</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="has-text-grey has-text-centered py-4">No open claims on this line.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="submit" class="button is-small is-link">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">save</span></span>
+          <span>Save manual entry</span>
+        </button>
+      </form>
+
+      <form method="post" action="{% url 'purchase_order_edit' po.pk %}" class="mt-2">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_auto_allocate">
+        <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">auto_fix_high</span></span>
+          <span>Auto-allocate (priority, then needed-by)</span>
+        </button>
+      </form>
+
+      {# ---------------- LOCKED claims: arrived/received, distinct from external ---------------- #}
+      <h2 class="title is-6 mt-5">Locked claims — arrived or received, not adjustable here</h2>
+      <table class="table is-fullwidth is-size-7">
+        <thead><tr>
+          <th>Demand</th><th>Priority</th><th>Needed by</th>
+          <th class="has-text-right">Locked quantity</th>
+          <th>Claimed elsewhere</th>
+          <th style="width:8rem;"></th>
+        </tr></thead>
+        <tbody>
+          {% for claim in portal.locked_claims %}
+          <tr>
+            <td class="is-family-monospace">
+              <a href="{% url 'demand_detail' claim.demand_id %}">#{{ claim.demand_id }}</a>
+            </td>
+            <td>{{ claim.priority_display }}</td>
+            <td>{{ claim.needed_by|date:"Y-m-d"|default:"—" }}</td>
+            <td class="has-text-right is-family-monospace">{{ claim.quantity_allocated }}</td>
+            <td>
+              {% if claim.external_claims %}
+                {% for ext in claim.external_claims %}
+                  <a href="{% url 'purchase_order_detail' ext.purchase_order_id %}"
+                     class="tag is-info is-light is-size-7 mb-1"
+                     title="This demand also has {{ ext.quantity_allocated }} claimed on {{ ext.po_number }}, line {{ ext.line_number }}{% if ext.is_locked %} (locked there){% endif %}.">
+                    {{ ext.po_number }}: {{ ext.quantity_allocated }}{% if ext.is_locked %} 🔒{% endif %}
+                  </a>
+                {% endfor %}
+              {% else %}
+                <span class="has-text-grey">None.</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'purchase_order_edit' po.pk %}" style="margin:0;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reallocation_unlock_claim">
+                <input type="hidden" name="link_id" value="{{ claim.link_id }}">
+                <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+                <button type="submit" class="button is-small is-danger is-light">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">lock_open</span></span>
+                  <span>Unlock</span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="has-text-grey has-text-centered py-4">No locked claims on this line.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <form method="post" action="{% url 'purchase_order_edit' po.pk %}" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reallocation_cancel">
+        <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+        <button type="submit" class="button is-small is-light">Cancel reallocation</button>
+      </form>
+    </div>
+    <form method="post" action="{% url 'purchase_order_edit' po.pk %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reallocation_commit">
+      <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+      <button type="submit" class="button is-primary card-footer-primary"
+              {% if not portal.commit_ready %}disabled title="Open + locked totals must equal the target quantity before you can commit."{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+        <span>Commit reallocation</span>
+      </button>
+    </form>
+  </footer>
+</dialog>
+
+{% if portal.pending_unlock_link_id %}
+{# §6's second popup: stacked on top of the Portal dialog above. #}
+<dialog id="unlock-confirm-dialog" class="card modal-styled" style="padding:0; max-width:560px;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">report_problem</span></span>
+      Confirm unlock
+    </p>
+    <button type="button" class="delete is-large" aria-label="close" commandfor="unlock-confirm-dialog" command="close"></button>
+  </header>
+  <div class="card-content">
+    <div class="content is-size-7">
+      <p>
+        <strong>See the warning notification above</strong> for the exact
+        downstream-risk wording the system just raised for this claim — this
+        dialog does not repeat it with different words.
+      </p>
+      <p>
+        Unlocking overrides a physical fact already recorded (something arrived,
+        or was received). The system never does this on its own — only a human,
+        deliberately, right here.
+      </p>
+    </div>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <button type="button" class="button is-small is-light" commandfor="unlock-confirm-dialog" command="close">Cancel</button>
+    </div>
+    <form method="post" action="{% url 'purchase_order_edit' po.pk %}" style="margin:0;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reallocation_unlock_claim">
+      <input type="hidden" name="link_id" value="{{ portal.pending_unlock_link_id }}">
+      <input type="hidden" name="confirmed" value="1">
+      <input type="hidden" name="selected_line_id" value="{{ portal.line_id }}">
+      <button type="submit" class="button is-danger card-footer-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">lock_open</span></span>
+        <span>Confirm unlock</span>
+      </button>
+    </form>
+  </footer>
+</dialog>
+{% endif %}
+
+<script>
+  // Server-decided dialogs open on render, same pattern as
+  // _cap_decision_modal.html — the server, not a client click, decided a
+  // decision is owed.
+  (function () {
+    var portalDialog = document.getElementById('reallocation-portal-dialog');
+    if (portalDialog && !portalDialog.open) { portalDialog.showModal(); }
+    var unlockDialog = document.getElementById('unlock-confirm-dialog');
+    if (unlockDialog && !unlockDialog.open) { unlockDialog.showModal(); }
+  })();
+</script>
+{% endif %}

@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.db.models import Sum
+
 from app.procurement.control_layer.errors import ProcurementValidationError
 
 
@@ -24,6 +26,67 @@ class ShipmentLineValidator:
         if quantity_accepted is None or quantity_accepted < 0:
             raise ProcurementValidationError(
                 ["Accepted quantity cannot be negative."]
+            )
+
+    @classmethod
+    def check_quantity_floor(cls, *, line, new_quantity: Decimal) -> None:
+        """Two hard stops on `quantity` (the shipped amount), mirroring
+        PurchaseOrderLineValidator.check_quantity_floor on the Demand↔PO side
+        (reallocation_resolution_portal.md §5/§7.11, Phase 5's mirror):
+
+        1. Cannot drop below this line's own quantity_accepted — a physical
+           fact; you cannot have accepted more than what arrived.
+        2. Cannot drop below the sum of this line's LOCKED PO-line claims.
+           Once the line is inspected, every active claim on it locks
+           together (see PurchaseOrderShipmentLink's docstring — there is no
+           per-claim inspection event to attribute, D90) — a source can never
+           be cut below a locked total.
+        """
+        if line.quantity_accepted is not None and new_quantity < line.quantity_accepted:
+            raise ProcurementValidationError(
+                [
+                    f"{line.quantity_accepted} has already been accepted against "
+                    f"this line; the shipped quantity cannot be reduced to "
+                    f"{new_quantity}."
+                ]
+            )
+
+        locked_total = cls._locked_claims_total(line=line)
+        if new_quantity < locked_total:
+            raise ProcurementValidationError(
+                [
+                    f"{locked_total} is already locked against this line by "
+                    f"inspected PO-line allocations; the shipped quantity "
+                    f"cannot be reduced to {new_quantity}."
+                ]
+            )
+
+    @staticmethod
+    def _locked_claims_total(*, line) -> Decimal:
+        return (
+            line.purchase_order_links.filter(
+                deleted_at__isnull=True, is_locked=True
+            ).aggregate(total=Sum("quantity_allocated"))["total"]
+            or Decimal("0")
+        )
+
+    @classmethod
+    def check_split(cls, *, line, received_qty: Decimal) -> None:
+        """FD-27 partial-receipt split: `received_qty` is the cumulative
+        accepted+rejected total landed against this line so far. It must be a
+        real, non-negative amount that does not exceed what was shipped —
+        splitting off more "remaining" balance than the line ever carried
+        would invent shipped quantity that never existed."""
+        if received_qty is None or received_qty < 0:
+            raise ProcurementValidationError(
+                ["Received quantity for a split cannot be negative."]
+            )
+        if received_qty > line.quantity:
+            raise ProcurementValidationError(
+                [
+                    f"Received quantity {received_qty} exceeds this line's shipped "
+                    f"quantity of {line.quantity}."
+                ]
             )
 
     @classmethod

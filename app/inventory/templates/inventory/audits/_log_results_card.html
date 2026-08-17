@@ -1,0 +1,68 @@
+<div class="card" id="audit-logs-results-container">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+    Log Entries ({{ page.paginator.count }})
+  </div></div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Log Number</th>
+          <th>Date</th>
+          <th>Part</th>
+          <th>Warehouse</th>
+          <th>Room</th>
+          <th class="has-text-right">Previous</th>
+          <th class="has-text-right">New</th>
+          <th class="has-text-right">Variance</th>
+          <th>Reason</th>
+          <th>Recorded By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in rows %}
+        <tr>
+          <td><span class="is-family-monospace" title="Session: {{ log.line.session.session_number }}">{{ log.audit_number }}</span></td>
+          <td>{{ log.recorded_at|date:"Y-m-d H:i" }}</td>
+          <td>
+            <span class="is-family-monospace">{{ log.part.part_number }}</span>
+          </td>
+          <td class="is-family-monospace">{{ log.warehouse.code }}</td>
+          <td>{{ log.room.room_name|default:"—" }}</td>
+          
+          <td class="has-text-right is-family-monospace">{{ log.previous_qty|floatformat:3 }}</td>
+          <td class="has-text-right is-family-monospace">{{ log.new_qty|floatformat:3 }}</td>
+          <td class="has-text-right is-family-monospace">
+            {% if log.variance_qty > 0 %}
+              <span class="has-text-success">+{{ log.variance_qty|floatformat:3 }}</span>
+            {% elif log.variance_qty < 0 %}
+              <span class="has-text-danger">{{ log.variance_qty|floatformat:3 }}</span>
+            {% else %}
+              <span class="has-text-grey">0.000</span>
+            {% endif %}
+          </td>
+          
+          <td><span class="tag is-small">{{ log.get_reason_code_display }}</span></td>
+          <td>{{ log.recorded_by.username|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="has-text-grey has-text-centered py-5">
+          No audit logs found.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+    <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+        <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>

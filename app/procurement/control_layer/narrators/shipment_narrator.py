@@ -75,6 +75,49 @@ class ShipmentNarrator:
         )
 
     @staticmethod
+    def quantity_edited(*, part_number: str, old_quantity, new_quantity) -> str:
+        return f"{part_number}: shipped quantity corrected from {old_quantity} to {new_quantity}."
+
+    @staticmethod
+    def claim_auto_updated_by_shortfall(
+        *, target_line_number: int, old_quantity, new_quantity
+    ) -> str:
+        return (
+            f"Shipped quantity reduced; the allocation to line {target_line_number} "
+            f"was the only active, unlocked claim, so it was automatically "
+            f"updated from {old_quantity} to {new_quantity}."
+        )
+
+    @staticmethod
+    def claim_unlocked(*, target_line_number: int) -> str:
+        return (
+            f"The LOCKED allocation to line {target_line_number} was deliberately "
+            f"unlocked through the Reallocation Portal's two-popup confirmation."
+        )
+
+    @staticmethod
+    def reallocation_committed(*, new_quantity) -> str:
+        return (
+            f"Reallocation resolved through the Reallocation Portal; shipped "
+            f"quantity now {new_quantity}."
+        )
+
+    @staticmethod
+    def line_split(
+        *,
+        part_number: str,
+        old_quantity,
+        received_qty,
+        remaining_qty,
+        new_line_id: int,
+    ) -> str:
+        return (
+            f"{part_number}: partial receipt of {received_qty} (of {old_quantity} "
+            f"shipped) closed this line. Remaining {remaining_qty} split onto new "
+            f"line #{new_line_id}, still awaiting delivery."
+        )
+
+    @staticmethod
     def line_added(*, part_number: str, quantity, po_line_number: int | None) -> str:
         target = (
             f"allocated to line {po_line_number}"

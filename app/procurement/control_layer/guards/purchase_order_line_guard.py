@@ -19,6 +19,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from django.db.models import Sum
+
 from app.procurement.control_layer.errors import ProcurementValidationError
 from app.procurement.control_layer.domain_structs.arrival_allocation import (
     accepted_by_purchase_order_line,
@@ -62,14 +64,21 @@ class PurchaseOrderLineValidator:
 
     @classmethod
     def check_quantity_floor(cls, *, line, new_quantity_ordered: Decimal) -> None:
-        """Hard stop: a line's quantity_ordered cannot drop below what has
-        already been accepted against it in shipments.
+        """Two hard stops on quantity_ordered, checked together:
 
-        The accepted figure is derived from allocation shares since D90, so on
-        a multi-allocation arriving line this floor can sit at a fractional
-        value. That is the honest number and the right one to guard with — the
-        alternative, rounding it down, would let a Buyer shrink a line below
-        material that genuinely landed against it.
+        1. It cannot drop below what has already been accepted against it in
+           shipments. The accepted figure is derived from allocation shares
+           since D90, so on a multi-allocation arriving line this floor can
+           sit at a fractional value. That is the honest number and the right
+           one to guard with — the alternative, rounding it down, would let a
+           Buyer shrink a line below material that genuinely landed against it.
+
+        2. It cannot drop below the sum of the line's LOCKED demand claims
+           (reallocation_resolution_portal.md §5/§7.11) — a claim with
+           quantity_received > 0 represents a physical fact the system cannot
+           ask a user to undo. This refusal happens before the Reallocation
+           Portal is ever reached; there is no valid outcome the Portal could
+           reach for it.
         """
         accepted = accepted_by_purchase_order_line(
             purchase_order_line_ids=[line.pk]
@@ -83,6 +92,25 @@ class PurchaseOrderLineValidator:
                     f"{new_quantity_ordered}."
                 ]
             )
+
+        locked_total = cls._locked_claims_total(line=line)
+        if new_quantity_ordered < locked_total:
+            raise ProcurementValidationError(
+                [
+                    f"{locked_total} is already locked against this line by "
+                    f"received demand claims; the ordered quantity cannot be "
+                    f"reduced to {new_quantity_ordered}."
+                ]
+            )
+
+    @staticmethod
+    def _locked_claims_total(*, line) -> Decimal:
+        return (
+            line.allocations.filter(
+                is_active=True, deleted_at__isnull=True, is_locked=True
+            ).aggregate(total=Sum("quantity_received"))["total"]
+            or Decimal("0")
+        )
 
     @classmethod
     def check_new_line(cls, *, quantity_ordered: Decimal, unit_cost: Decimal) -> None:

@@ -175,6 +175,14 @@ class Command(BaseCommand):
             actor=actor, vendor_a=vendors[1], vendor_b=vendors[2], part=parts[14], domain=mechanical
         )
 
+        # Reallocation Resolution build (reallocation_resolution_kit) — one
+        # PO-D demonstrating a LOCKED claim (record_receipt) plus a demand
+        # holding an EXTERNAL claim on a second order, so the linkage screen
+        # and the Reallocation Portal have real fixtures to render against.
+        self._seed_reallocation_demo(
+            actor=actor, vendor_a=vendors[0], vendor_b=vendors[1], part=parts[15], domain=electronics
+        )
+
         self.stdout.write(self.style.SUCCESS("Procurement dev seed complete."))
 
     # ------------------------------------------------------------------ #
@@ -1024,6 +1032,148 @@ class Command(BaseCommand):
         assert demand.graph_id != po_line.graph_id, (
             "Graph demo scenario 9 was supposed to split into two graphs on "
             f"delink; both landed on graph {demand.graph_id}."
+        )
+
+    def _seed_reallocation_demo(self, *, actor, vendor_a, vendor_b, part, domain) -> None:
+        """reallocation_resolution_kit demo (Phases 1-4, Demand↔PO Domain):
+
+        PO-D, one line ordered 100, three active claims (90 of the 100
+        claimed, headroom left — this seed deliberately never triggers the
+        Reallocation Portal path, only the states that precede it):
+
+          demand_locked   40 allocated, 40 marked received via record_receipt
+                          -> LOCKED. Demonstrates §5/§7.11's floor and the
+                          arrived/received lock category.
+          demand_open_a   30 allocated, never received -> OPEN, single-order.
+          demand_open_b   20 allocated here, 10 allocated on PO-E's own line
+                          -> OPEN here, and carries an EXTERNAL claim on a
+                          different order (§4) for the linkage screen and
+                          Portal's external-claims display to render.
+
+        Same binary-allocation split pattern as
+        _seed_graph_demand_split_across_pos: demand_open_b's first share is a
+        genuine partial claim against its full outstanding and needs
+        allow_raise_request=True; its second share exactly matches what
+        remains and satisfies the ordinary binary rule.
+        """
+        demand_locked = self._demand(
+            part=part, domain=domain, actor=actor, quantity="40",
+            priority=DemandPriority.HIGH,
+            notes="Reallocation demo: claim marked received and LOCKED.",
+        )
+        demand_open_a = self._demand(
+            part=part, domain=domain, actor=actor, quantity="30",
+            notes="Reallocation demo: ordinary OPEN claim, single order.",
+        )
+        demand_open_b = self._demand(
+            part=part, domain=domain, actor=actor, quantity="30",
+            priority=DemandPriority.LOW,
+            notes="Reallocation demo: OPEN here, also claimed on a second order (external).",
+        )
+
+        draft_d = PurchaseOrderDraft(
+            vendor_id=vendor_a.pk,
+            domain_id=domain.pk,
+            order_date=timezone.now().date(),
+            notes=f"Reallocation demo: PO-D, locked + open + external claims. {SEED_MARKER}",
+            lines=[
+                DraftLine(
+                    part_id=part.pk,
+                    quantity_ordered=Decimal("100"),
+                    unit_cost=Decimal("5.00"),
+                    allocations=[
+                        DraftAllocation(
+                            demand_id=demand_locked.pk, quantity_allocated=Decimal("40")
+                        ),
+                        DraftAllocation(
+                            demand_id=demand_open_a.pk, quantity_allocated=Decimal("30")
+                        ),
+                    ],
+                )
+            ],
+        )
+        po_d = PurchaseOrderFactory.create_from_draft(draft=draft_d, actor=actor)
+        context_d = PurchaseOrderContext(po_d.pk)
+        context_d.submit_for_approval(actor=actor)
+        context_d.approve_order(actor=actor)
+        context_d.place(actor=actor)
+        line_d = po_d.lines.order_by("id").first()
+
+        # demand_open_b's first share — a genuine partial claim (20 of 30
+        # outstanding) — needs the override, same reasoning as the graph
+        # demo's cross-PO split scenarios above.
+        context_d.allocate(
+            line=line_d,
+            demand=demand_open_b,
+            quantity_allocated=Decimal("20"),
+            actor=actor,
+            allow_raise_request=True,
+            notes="Reallocation demo: demand_open_b's local share on PO-D.",
+        )
+
+        # A shipment arrives and 40 units are accepted — enough to legitimize
+        # marking demand_locked's claim received.
+        shipment_d = ShipmentFactory.create(
+            purchase_order=po_d,
+            actor=actor,
+            carrier="Overnight Freight",
+            shipment_id="1Z-SEED-0018",
+            lines=[{"part_id": part.pk, "quantity": Decimal("40")}],
+        )
+        shipment_context_d = ShipmentContext(shipment_d.pk)
+        shipment_context_d.advance(to_status=ShipmentStatus.SHIPPED, actor=actor)
+        shipment_context_d.advance(to_status=ShipmentStatus.DELIVERED_TO_LOCAL, actor=actor)
+        shipment_context_d.accept_line(
+            line=shipment_d.lines.order_by("id").first(),
+            quantity_accepted=Decimal("40"),
+            actor=actor,
+        )
+
+        from app.procurement.models import PurchaseOrderDemandLink
+
+        link_locked = PurchaseOrderDemandLink.objects.get(
+            part_demand=demand_locked, purchase_order_line=line_d, deleted_at__isnull=True
+        )
+        context_d.record_receipt(
+            link=link_locked, quantity_received=Decimal("40"), actor=actor
+        )
+        link_locked.refresh_from_db()
+        assert link_locked.is_locked, (
+            "Reallocation demo was supposed to lock demand_locked's claim."
+        )
+
+        # demand_open_b's second order — PO-E — completing its split and
+        # giving the linkage screen a real external claim to show against
+        # PO-D's row for this demand.
+        draft_e = PurchaseOrderDraft(
+            vendor_id=vendor_b.pk,
+            domain_id=domain.pk,
+            order_date=timezone.now().date(),
+            notes=f"Reallocation demo: PO-E, demand_open_b's external claim. {SEED_MARKER}",
+            lines=[
+                DraftLine(
+                    part_id=part.pk,
+                    quantity_ordered=Decimal("10"),
+                    unit_cost=Decimal("5.50"),
+                    allocations=[],
+                )
+            ],
+        )
+        po_e = PurchaseOrderFactory.create_from_draft(draft=draft_e, actor=actor)
+        context_e = PurchaseOrderContext(po_e.pk)
+        context_e.submit_for_approval(actor=actor)
+        context_e.approve_order(actor=actor)
+        context_e.place(actor=actor)
+        line_e = po_e.lines.order_by("id").first()
+
+        # Remaining outstanding (30 - 20 = 10) — exactly matches, ordinary
+        # binary rule satisfied, no override needed.
+        context_e.allocate(
+            line=line_e,
+            demand=demand_open_b,
+            quantity_allocated=Decimal("10"),
+            actor=actor,
+            notes="Reallocation demo: demand_open_b's external share on PO-E.",
         )
 
     def _seed_graph_multi_hop_chain(self, *, actor, vendor_a, vendor_b, part, domain) -> None:

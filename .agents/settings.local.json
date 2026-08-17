@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -)",
+      "Bash(python manage.py shell -c ' *)",
+      "Bash(xargs -I{} sh -c 'echo \"== {} ==\"; cat {}')"
+    ]
+  }
+}

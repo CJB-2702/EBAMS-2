@@ -1,0 +1,21 @@
+{% comment %}
+Plain partial — the "assigned" half of the in-page assignment card pair
+(FD-18: no modal). Included directly by scan_start.html on full page load,
+and re-rendered as an out-of-band swap (`#scan-selected-summary`) whenever a
+checkbox toggles in `_scan_shipment_search_results.html`. Never include the
+OOB-wrapped version here — see that file's own comment.
+{% endcomment %}
+{% if selected_shipments %}
+<ul class="is-size-7" style="list-style:none; margin:0; padding:0;">
+  {% for shipment in selected_shipments %}
+  <li class="mb-2 pb-2" style="border-bottom: 1px solid var(--bulma-border-weak);">
+    <span class="icon has-text-info"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">inventory_2</span></span>
+    <span class="is-family-monospace has-text-weight-semibold">{{ shipment.shipment_number }}</span>
+    <span class="has-text-grey">— {{ shipment.purchase_order.vendor|default:"—" }}</span>
+  </li>
+  {% endfor %}
+</ul>
+<p class="has-text-grey is-size-7 mt-2">{{ selected_shipments|length }} shipment{{ selected_shipments|length|pluralize }} selected.</p>
+{% else %}
+<p class="has-text-grey is-size-7">None selected yet — check one or more shipments on the left.</p>
+{% endif %}

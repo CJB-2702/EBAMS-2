@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="500"
+   height="500"
+   viewBox="0 0 500 500"
+   version="1.1"
+   id="svg_5x5_bins"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg-rack { fill: #262626; stroke: #525252; stroke-width: 4; }
+      .bin-rect { fill: #214478; stroke: #4589ff; stroke-width: 2; cursor: pointer; }
+      .bin-rect:hover { fill: #0f62fe; stroke: #ffffff; }
+      .bin-text { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; fill: #ffffff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+      .title-text { font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; font-weight: bold; fill: #f4f4f4; }
+    </style>
+  </defs>
+
+  <!-- Layout Layer -->
+  <g id="layout" inkscape:label="layout">
+    <rect class="bg-rack" x="10" y="10" width="480" height="480" />
+    <text class="title-text" x="25" y="35">STORAGE RACK Z-PICKER — 5x5 BINS MATRIX</text>
+  </g>
+
+  <!-- Bins Layer (RoomLocation Tier Shape Extraction Target) -->
+  <g id="bins" inkscape:label="bins">
+    <!-- Row 1 (0001 - 0005) -->
+    <rect class="bin-rect" x="30" y="60" width="75" height="75" inkscape:label="0001" id="bin_0001" />
+    <rect class="bin-rect" x="120" y="60" width="75" height="75" inkscape:label="0002" id="bin_0002" />
+    <rect class="bin-rect" x="210" y="60" width="75" height="75" inkscape:label="0003" id="bin_0003" />
+    <rect class="bin-rect" x="300" y="60" width="75" height="75" inkscape:label="0004" id="bin_0004" />
+    <rect class="bin-rect" x="390" y="60" width="75" height="75" inkscape:label="0005" id="bin_0005" />
+
+    <!-- Row 2 (0006 - 0010) -->
+    <rect class="bin-rect" x="30" y="150" width="75" height="75" inkscape:label="0006" id="bin_0006" />
+    <rect class="bin-rect" x="120" y="150" width="75" height="75" inkscape:label="0007" id="bin_0007" />
+    <rect class="bin-rect" x="210" y="150" width="75" height="75" inkscape:label="0008" id="bin_0008" />
+    <rect class="bin-rect" x="300" y="150" width="75" height="75" inkscape:label="0009" id="bin_0009" />
+    <rect class="bin-rect" x="390" y="150" width="75" height="75" inkscape:label="0010" id="bin_0010" />
+
+    <!-- Row 3 (0011 - 0015) -->
+    <rect class="bin-rect" x="30" y="240" width="75" height="75" inkscape:label="0011" id="bin_0011" />
+    <rect class="bin-rect" x="120" y="240" width="75" height="75" inkscape:label="0012" id="bin_0012" />
+    <rect class="bin-rect" x="210" y="240" width="75" height="75" inkscape:label="0013" id="bin_0013" />
+    <rect class="bin-rect" x="300" y="240" width="75" height="75" inkscape:label="0014" id="bin_0014" />
+    <rect class="bin-rect" x="390" y="240" width="75" height="75" inkscape:label="0015" id="bin_0015" />
+
+    <!-- Row 4 (0016 - 0020) -->
+    <rect class="bin-rect" x="30" y="330" width="75" height="75" inkscape:label="0016" id="bin_0016" />
+    <rect class="bin-rect" x="120" y="330" width="75" height="75" inkscape:label="0017" id="bin_0017" />
+    <rect class="bin-rect" x="210" y="330" width="75" height="75" inkscape:label="0018" id="bin_0018" />
+    <rect class="bin-rect" x="300" y="330" width="75" height="75" inkscape:label="0019" id="bin_0019" />
+    <rect class="bin-rect" x="390" y="330" width="75" height="75" inkscape:label="0020" id="bin_0020" />
+
+    <!-- Row 5 (0021 - 0025) -->
+    <rect class="bin-rect" x="30" y="410" width="75" height="75" inkscape:label="0021" id="bin_0021" />
+    <rect class="bin-rect" x="120" y="410" width="75" height="75" inkscape:label="0022" id="bin_0022" />
+    <rect class="bin-rect" x="210" y="410" width="75" height="75" inkscape:label="0023" id="bin_0023" />
+    <rect class="bin-rect" x="300" y="410" width="75" height="75" inkscape:label="0024" id="bin_0024" />
+    <rect class="bin-rect" x="390" y="410" width="75" height="75" inkscape:label="0025" id="bin_0025" />
+  </g>
+
+  <!-- Visual Overlay Layer -->
+  <g id="decorations" inkscape:label="decorations">
+    <text class="bin-text" x="67" y="97">BIN-01</text>
+    <text class="bin-text" x="157" y="97">BIN-02</text>
+    <text class="bin-text" x="247" y="97">BIN-03</text>
+    <text class="bin-text" x="337" y="97">BIN-04</text>
+    <text class="bin-text" x="427" y="97">BIN-05</text>
+
+    <text class="bin-text" x="67" y="277">BIN-11</text>
+    <text class="bin-text" x="247" y="277">BIN-13</text>
+    <text class="bin-text" x="427" y="277">BIN-15</text>
+
+    <text class="bin-text" x="67" y="447">BIN-21</text>
+    <text class="bin-text" x="247" y="447">BIN-23</text>
+    <text class="bin-text" x="427" y="447">BIN-25</text>
+  </g>
+</svg>

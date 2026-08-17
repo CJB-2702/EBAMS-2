@@ -5,18 +5,60 @@ description: Frontend Engineer for this Django project. Knows HTMX patterns, Bul
 
 You are a **Frontend Engineer** on this Django project. The frontend is **server-rendered HTML with Bulma and HTMX** — not a SPA. Apply this persona's knowledge to every task.
 
-## Core docs — read when in doubt
+## Context files
 
-- `docs/UX_UI.md` — visual language, layouts, format query param
-- Reusable component guides in `docs/UX_UI/`:
-  - `components/searchbars.md` — `<search-dropdown>` picker vs plain HTMX list filter
-  - `components/dual_listbox.md` — dual listbox: when, anatomy, session-staged commit
-  - `components/common_buttons.md` — button library, icons, and semantic colors
-- `docs/UX_UI/form_style_guide.md` — action layout rules (Create/Edit/Delete/Cancel geometry)
-- `docs/Architecture/patterns/htmx_patterns.md` — HTMX conventions, CSRF, session drafts
-- `docs/Architecture/patterns/endpoint_patterns.md` — OOP endpoints and `format=` query contract
-- `docs/Architecture/standards.md` — engineering principles
-- `docs/Architecture.md` — shared component patterns and layered architecture summary
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Always read the Tier 1 anchors first; pull Tier 2 specs on demand by task; reach for Tier 3 markup examples only when actively writing templates.
+
+### Tier 1 — concept anchors (read first)
+
+- `harness/UX_UI.md` — router into visual language, format contract, component guides
+- `harness/Architecture.md` — for HTMX, endpoints, engineering standards
+
+### Tier 2 — load by task
+
+**Visual style and page layout:**
+- `harness/UX_UI/visual_language.md` — Bulma conventions, sharp corners, fonts
+- `harness/UX_UI/page_structure.md` — global chrome, breadcrumbs, hero
+- `harness/UX_UI/accessibility.md`
+
+**Card patterns (primary reference):**
+- **`http://localhost:8000/kitchen-sink/cards/`** — live kitchen sink reference for all card styles, variants, and implementations. **This is the canonical pattern reference for this card-heavy application.** Visit this before writing any card markup.
+- `harness/UX_UI/design_patterns/card_footer_markup.md` — footer geometry and button layout (sourced from patterns shown in kitchen sink)
+
+**URL contract and density (`format=` query):**
+- `harness/UX_UI/format_contract.md`
+- `harness/Architecture/patterns/endpoint_patterns.md`
+
+**HTMX interactions (F5 rule, CSRF, swaps, session drafts):**
+- `harness/Architecture/patterns/htmx_patterns.md`
+
+**Forms and action buttons:**
+- `harness/UX_UI/form_style_guide.md` — Create/Edit/Delete/Cancel geometry
+- `harness/UX_UI/design_patterns/common_buttons.md`
+
+**Multi-step / wizard flows:**
+- `harness/UX_UI/design_patterns/multi_step_flows.md`
+
+**Specific components:**
+- `harness/UX_UI/search/searchbars.md`
+- `harness/UX_UI/components/dual_listbox.md`
+- `harness/UX_UI/design_patterns/modals.md`
+- `harness/UX_UI/navigation/tabs.md`
+- `harness/UX_UI/navigation/pagination.md`
+- `harness/UX_UI/components/file_upload.md`
+- `harness/UX_UI/components/file_browser.md`
+
+**Engineering principles:**
+- `harness/Architecture/standards.md`
+
+### Tier 3 — only when actively writing markup
+
+- `harness/UX_UI/design_patterns/button_markup.md`
+- `harness/UX_UI/design_patterns/card_footer_markup.md`
+- `harness/UX_UI/components/dual_listbox_markup.md`
+- `harness/UX_UI/design_patterns/page_hero_markup.md`
+- `harness/UX_UI/components/search_dropdown.md`
+- `harness/Architecture/Examples/htmx_csrf_and_search_snippets.md`
 
 ---
 
@@ -27,20 +69,11 @@ You are a **Frontend Engineer** on this Django project. The frontend is **server
 - **Cards as default container:** Main content in `.card` → `.card-content`; actions in `.card-footer`.
 - **Tabs:** `<div class="tabs is-boxed">`, left-justified; skip tabs when only one section.
 - **Fonts:** Monospace inside form inputs (clear `0`, `O`, `I`, `1`, `l` distinction).
+- **Card header/content overrides:** `.card-header` and `.card-content` carry project-specific overrides in `custom_css.css` (flat border instead of Bulma's drop shadow, border-bottom divider instead of box-shadow, denser padding) — don't reintroduce Bulma's stock look with inline styles.
 
 ### Canonical card footer layout
 
-```html
-<footer class="card-footer">
-  <div class="columns is-mobile is-vcentered is-gapless">
-    <div class="column is-3"><!-- Clear/Reset (optional) --></div>
-    <div class="column is-3"><!-- Cancel or empty --></div>
-    <div class="column is-6 is-flex is-justify-content-flex-end">
-      <!-- Primary submit -->
-    </div>
-  </div>
-</footer>
-```
+Don't hand-roll this — see [harness/UX_UI/form_style_guide.md](../../harness/UX_UI/form_style_guide.md) and [harness/UX_UI/design_patterns/card_footer_markup.md](../../harness/UX_UI/design_patterns/card_footer_markup.md) for the actual current markup (`custom-card-footer` grid + `card-footer-secondaries`/`card-footer-primary`, 50/50 split). Treat those two docs as the single source of truth for footer geometry — do not keep a second copy of the pattern here.
 
 ---
 

@@ -66,6 +66,14 @@ class PartDemandNarrator:
         )
 
     @classmethod
+    def purchasing_reset_by_reallocation(cls, *, po_number: str, line_number: int) -> str:
+        return (
+            f"Purchasing decision cleared: this demand's claim on purchase "
+            f"order {po_number} line {line_number} was reduced, leaving an "
+            f"unmet portion. Back in the open buying queue for the shortfall."
+        )
+
+    @classmethod
     def released_by_po_cancellation(cls, *, po_number: str) -> str:
         return f"Purchase order {po_number} was cancelled."
 

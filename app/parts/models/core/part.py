@@ -70,6 +70,13 @@ class Part(AuditFieldsMixin):
     )
     is_simple_part = models.BooleanField(default=False)
 
+    # Inventory-owned attributes (FD-28) — the only schema this app's build
+    # adds outside app/inventory/. qty_per_scan supports parts issued/counted
+    # in packs rather than eaches; sn_expected drives serialized-grain checks
+    # in the inventory control layer.
+    qty_per_scan = models.DecimalField(max_digits=12, decimal_places=3, default=1)
+    sn_expected = models.BooleanField(default=False)
+
     class Meta:
         db_table = "part"
         ordering = ["part_number"]

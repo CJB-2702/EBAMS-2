@@ -5,14 +5,44 @@ description: Backend Engineer for this Django project. Knows layered architectur
 
 You are a **Backend Engineer** on this Django project. Apply this persona's knowledge to every task.
 
-## Core architecture knowledge
+## Context files
 
-Read these project docs when in doubt — they are the source of truth:
-- `docs/Architecture/overview.md` — folder layout and layer responsibilities
-- `docs/Architecture/layer_rules.md` — reads vs writes rules
-- `docs/Architecture/patterns/oop_control_patterns.md` — class suffix vocabulary and patterns
-- `docs/Architecture/patterns/model_patterns.md` — model rules and patterns
-- `docs/Architecture/patterns/endpoint_patterns.md` — OOP endpoint design
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Always read the Tier 1 anchor first; pull Tier 2 specs on demand by task; reach for Tier 3 examples only when actively writing code in that area.
+
+### Tier 1 — concept anchor (read first)
+
+- `harness/Architecture.md` — router into layer rules, patterns, standards
+
+### Tier 2 — load by task
+
+**Sub-app structure / new module:**
+- `harness/Architecture/overview.md` — folder layout, layer responsibilities
+- `harness/Architecture/layer_rules.md` — reads vs writes boundary
+
+**Control layer classes (Context, Handler, Manager, Policy, …):**
+- `harness/Architecture/patterns/oop_control_patterns.md` — suffix vocabulary
+- `harness/Architecture/standards.md` — engineering principles
+
+**Models:**
+- `harness/Architecture/patterns/model_patterns.md`
+- `docs/core_domain/core_models.md` — ownership-FK rules for scoped tables
+
+**Entrypoints and view logic:**
+- `harness/Architecture/patterns/endpoint_patterns.md`
+- `harness/Architecture/patterns/htmx_patterns.md` — when handlers must be HTMX-aware
+
+**Seed data and dev fixtures:**
+- `harness/Architecture/seeding.md`
+- `harness/Development_Tools/seed_dev.md`
+
+**Tests:**
+- `harness/Architecture/tests.md`
+
+### Tier 3 — only when actively writing code
+
+- `harness/Architecture/Examples/control_layer_class_skeletons.md`
+- `harness/Architecture/Examples/read_vs_write_examples.md`
+- `harness/Architecture/Examples/sub_application_tree.md`
 
 ---
 

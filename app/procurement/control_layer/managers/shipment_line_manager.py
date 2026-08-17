@@ -29,6 +29,7 @@ from django.db import transaction
 from app.procurement.control_layer.domain_structs.arrival_allocation import (
     allocated_by_shipment_line,
 )
+from app.procurement.control_layer.errors import PackageReallocationRequired
 from app.procurement.control_layer.guards.shipment_line_guard import (
     ShipmentLineValidator,
 )
@@ -315,6 +316,8 @@ class ShipmentLineManager:
             ]
         )
 
+        cls._recompute_locks(line=line, actor=actor)
+
         if quantity_accepted != line.quantity:
             ShipmentNarrator.post(
                 shipment=line.shipment,
@@ -326,3 +329,240 @@ class ShipmentLineManager:
                 actor=actor,
             )
         return line
+
+    @staticmethod
+    def _recompute_locks(*, line: ShipmentLine, actor=None) -> None:
+        """Reallocation Resolution decision (Phase 5, mirrors D55's reversal on
+        the demand side): inspecting the box locks every active claim on it
+        UNIFORMLY. There is no per-claim inspection event to attribute (D90)
+        — the box is inspected once, as a whole — so "physically arrived" is a
+        fact about the LINE, never about one claim on it. Only sets the lock;
+        never clears one (§7.3 — only the Portal's unlock sequence can)."""
+        if line.quantity_accepted is None:
+            return
+        PurchaseOrderShipmentLink.objects.filter(
+            shipment_line=line, deleted_at__isnull=True, is_locked=False
+        ).update(is_locked=True, updated_by=actor)
+
+    # ------------------------------------------------------------------ #
+    # Partial-receipt split (FD-27) — Inventory's IntakeCommitOrchestrator
+    # calls this on session close when a shipment line's cumulative
+    # accepted+rejected total across all closed intake sessions falls short
+    # of the shipped quantity.
+    # ------------------------------------------------------------------ #
+
+    @classmethod
+    def split_line(
+        cls,
+        *,
+        line: ShipmentLine,
+        received_qty: Decimal,
+        actor=None,
+        commit: bool = True,
+    ) -> ShipmentLine | None:
+        """Shrink `line.quantity` to `received_qty` (the closed, received
+        portion) and create a sibling `ShipmentLine` carrying the remaining
+        open balance, still expected against the same shipment.
+
+        A no-op (returns `None`) when `received_qty` covers the whole line —
+        there is nothing left over to split off. The new sibling line starts
+        with no PO-line allocation (`auto_link=False`): the remaining balance
+        has not arrived yet, so there is nothing to allocate against a demand
+        or purchase order line until a future shipment brings it in.
+        """
+        ShipmentLineValidator.check_split(line=line, received_qty=received_qty)
+        remaining = line.quantity - received_qty
+        if remaining <= 0:
+            return None
+
+        with transaction.atomic():
+            old_quantity = line.quantity
+            line.quantity = received_qty
+            line.updated_by = actor
+            line.save(update_fields=["quantity", "updated_by", "updated_at"])
+
+            new_line = cls.add_line(
+                shipment=line.shipment,
+                part_id=line.part_id,
+                quantity=remaining,
+                actor=actor,
+                auto_link=False,
+                commit=commit,
+            )
+
+            ShipmentNarrator.post(
+                shipment=line.shipment,
+                message=ShipmentNarrator.line_split(
+                    part_number=line.part.part_number,
+                    old_quantity=old_quantity,
+                    received_qty=received_qty,
+                    remaining_qty=remaining,
+                    new_line_id=new_line.pk,
+                ),
+                actor=actor,
+            )
+        return new_line
+
+    # ------------------------------------------------------------------ #
+    # Shipped-quantity correction (Phase 5's mirror of
+    # PurchaseOrderLineManager.edit_line's quantity_ordered path)
+    # ------------------------------------------------------------------ #
+
+    @classmethod
+    def edit_quantity(
+        cls, *, line: ShipmentLine, new_quantity: Decimal, actor=None, commit: bool = True
+    ) -> ShipmentLine:
+        """Correct a mis-entered shipped quantity after creation.
+
+        reallocation_resolution_portal.md §5, mirrored: the floor check
+        refuses anything that would undo a physical fact; the shortfall
+        classifier then resolves what it safely can and raises
+        PackageReallocationRequired for what it cannot (Phase 5 does not
+        build a package-side demand-requeue equivalent — the source document
+        never specified one for this domain; see the Phase 5 kit README).
+        """
+        ShipmentLineValidator.check_quantity_floor(line=line, new_quantity=new_quantity)
+        cls._resolve_quantity_shortfall(
+            line=line, new_quantity=new_quantity, actor=actor, commit=commit
+        )
+
+        old_quantity = line.quantity
+        line.quantity = new_quantity
+        line.updated_by = actor
+        line.save(update_fields=["quantity", "updated_by", "updated_at"])
+
+        ShipmentNarrator.post(
+            shipment=line.shipment,
+            message=ShipmentNarrator.quantity_edited(
+                part_number=line.part.part_number,
+                old_quantity=old_quantity,
+                new_quantity=new_quantity,
+            ),
+            actor=actor,
+        )
+        return line
+
+    @classmethod
+    def _resolve_quantity_shortfall(
+        cls, *, line: ShipmentLine, new_quantity: Decimal, actor=None, commit: bool = True
+    ) -> None:
+        claims = list(
+            PurchaseOrderShipmentLink.objects.filter(
+                shipment_line=line, deleted_at__isnull=True
+            ).select_related("purchase_order_line")
+        )
+        total_claimed = sum((c.quantity_allocated for c in claims), Decimal("0"))
+        if new_quantity >= total_claimed:
+            return
+
+        locked = [c for c in claims if c.is_locked]
+
+        if len(claims) == 1 and not locked:
+            claim = claims[0]
+            old_quantity = claim.quantity_allocated
+            claim.quantity_allocated = new_quantity
+            claim.updated_by = actor
+            claim.save(update_fields=["quantity_allocated", "updated_by", "updated_at"])
+            ShipmentNarrator.post(
+                shipment=line.shipment,
+                message=ShipmentNarrator.claim_auto_updated_by_shortfall(
+                    target_line_number=claim.purchase_order_line.line_number,
+                    old_quantity=old_quantity,
+                    new_quantity=new_quantity,
+                ),
+                actor=actor,
+            )
+            return
+
+        locked_total = sum((c.quantity_allocated for c in locked), Decimal("0"))
+        raise PackageReallocationRequired(
+            shipment_line_id=line.pk,
+            new_quantity=new_quantity,
+            total_claimed=total_claimed,
+            locked_total=locked_total,
+            claim_count=len(claims),
+        )
+
+    # ------------------------------------------------------------------ #
+    # Package Reallocation Portal (Phase 5) — independent of the Demand↔PO
+    # Domain's PurchaseOrderDemandLinkManager equivalents; no shared state.
+    # ------------------------------------------------------------------ #
+
+    @classmethod
+    def unlock_claim(
+        cls, *, link: PurchaseOrderShipmentLink, actor=None, confirmed: bool
+    ) -> PurchaseOrderShipmentLink:
+        """The ONE path that can move a claim LOCKED -> OPEN on this domain
+        (mirrors PurchaseOrderDemandLinkManager.unlock_claim). `confirmed`
+        must already reflect the caller's explicit acceptance of the second
+        popup's downstream-risk warning."""
+        from app.procurement.control_layer.errors import ProcurementValidationError
+
+        if not confirmed:
+            raise ProcurementValidationError(
+                [
+                    "Unlocking a claim requires explicit confirmation of the "
+                    "downstream-risk warning."
+                ]
+            )
+
+        link.is_locked = False
+        link.updated_by = actor
+        link.save(update_fields=["is_locked", "updated_by", "updated_at"])
+
+        ShipmentNarrator.post(
+            shipment=link.shipment_line.shipment,
+            message=ShipmentNarrator.claim_unlocked(
+                target_line_number=link.purchase_order_line.line_number
+            ),
+            actor=actor,
+        )
+        return link
+
+    @classmethod
+    def apply_reallocation(
+        cls,
+        *,
+        line: ShipmentLine,
+        new_quantity: Decimal,
+        resolutions: dict[int, Decimal],
+        actor=None,
+    ) -> None:
+        """Commit a Package Reallocation Portal resolution in one transaction.
+        `resolutions` maps OPEN claim ids to their new quantity_allocated —
+        LOCKED claims are never in this dict. Re-runs the quantity floor so
+        this path cannot bypass the hard stops even if the caller's own gate
+        check was somehow stale."""
+        from django.db import transaction
+
+        with transaction.atomic():
+            ShipmentLineValidator.check_quantity_floor(line=line, new_quantity=new_quantity)
+
+            claims = {
+                claim.pk: claim
+                for claim in PurchaseOrderShipmentLink.objects.filter(
+                    pk__in=resolutions.keys(),
+                    shipment_line=line,
+                    deleted_at__isnull=True,
+                    is_locked=False,
+                ).select_related("purchase_order_line")
+            }
+            for link_id, new_qty in resolutions.items():
+                claim = claims.get(link_id)
+                if claim is None or new_qty == claim.quantity_allocated:
+                    continue
+                claim.quantity_allocated = new_qty
+                claim.updated_by = actor
+                claim.save(
+                    update_fields=["quantity_allocated", "updated_by", "updated_at"]
+                )
+
+            line.quantity = new_quantity
+            line.updated_by = actor
+            line.save(update_fields=["quantity", "updated_by", "updated_at"])
+
+            ShipmentNarrator.post(
+                shipment=line.shipment,
+                message=ShipmentNarrator.reallocation_committed(new_quantity=new_quantity),
+                actor=actor,
+            )

@@ -1,0 +1,31 @@
+{% if not drawer %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Storage location</div></div>
+<div class="card-content">
+  <p class="has-text-grey is-size-7">Click any shape on the Z-picker map to inspect stock.</p>
+</div>
+{% elif drawer.not_found %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Storage location</div></div>
+<div class="card-content">
+  <p class="has-text-danger is-size-7">No storage location matches code "{{ loc_code }}".</p>
+</div>
+{% else %}
+<div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>{{ drawer.storage_location.display_code }}</div></div>
+<div class="card-content">
+  {% if drawer.stock %}
+  <table class="table is-fullwidth is-size-7">
+    <thead><tr><th>Part</th><th>Serial</th><th>On hand</th></tr></thead>
+    <tbody>
+      {% for row in drawer.stock %}
+      <tr>
+        <td>{{ row.part.part_number }}</td>
+        <td class="is-family-monospace">{{ row.serial_number|default:"—" }}</td>
+        <td>{{ row.quantity_on_hand }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="has-text-grey is-size-7">No stock here.</p>
+  {% endif %}
+</div>
+{% endif %}

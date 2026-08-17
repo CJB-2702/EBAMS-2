@@ -105,6 +105,36 @@
         </div>
       </li>
 
+      <li role="tab" data-group="Inventory">
+        <button class="portal-tab-btn" commandfor="portal-inventory" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Inventory <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-inventory" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Stock &amp; Intake</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'inventory_home' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Overview</a>
+                <a href="{% url 'active_inventory_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
+                <a href="{% url 'inventory_intake_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake Dashboard</a>
+                <a href="{% url 'inventory_scan_intake_start' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span> Scan Session</a>
+                <a href="{% url 'inventory_reconciliation_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span> Reconciliation Hub</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Operations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'inventory_putaway_worklist' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway Worklist</a>
+                <a href="{% url 'inventory_movements_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>
+                <a href="{% url 'inventory_issues_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</a>
+                <a href="{% url 'inventory_audit_session_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist_rtl</span></span> Audits</a>
+                <a href="{% url 'inventory_warehouse_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span> Warehouses</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
       <li role="tab" data-group="Administration">
         <button class="portal-tab-btn" commandfor="portal-administration" command="toggle-popover">
           <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration <span class="portal-tab-chevron">▾</span>

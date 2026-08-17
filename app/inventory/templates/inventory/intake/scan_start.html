@@ -1,0 +1,164 @@
+{% extends "inventory/base.html" %}
+{% block title %}Start Scan Session{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_intake_dashboard' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Start Scan Session</a></li>
+{% endblock %}
+
+{% comment %}
+One scrolling page (FD-19), not a step-chained wizard. The shipment picker is
+an in-page assignment card pair — pool (left/top) + selected summary
+(right/bottom) — per FD-18: assignment never lives in a modal. Nothing is
+committed until the single POST at the bottom, so there is no session draft
+to persist here (unlike a multi-record creation wizard) — warehouse_id/
+room_id/q round-trip through the URL for F5 the same way auto.html does.
+{% endcomment %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></div>
+        <div>
+          <h1 class="page-title">Start Scan Session</h1>
+          <p class="page-subtitle">Pick a warehouse and associate one or more unfulfilled shipments to receive against.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if not can_intake %}
+<div class="notification is-warning is-light">
+  <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+  You do not have the <span class="is-family-monospace">can_intake_stock</span> permission — this portal is read-only for you.
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'inventory_scan_intake_start' %}">
+  {% csrf_token %}
+
+  <div class="body-grid full-width">
+
+    {# ================= ZONE 1: Session metadata ================= #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>
+        Session metadata
+      </div></div>
+      <div class="card-content">
+        <div class="columns is-variable is-3 is-multiline">
+          <div class="column is-4">
+            <label class="label is-small">Operator</label>
+            <input class="input is-small" type="text" value="{{ request.user }}" disabled>
+            <p class="help is-size-7">Locked to your account.</p>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small" for="scan-warehouse">Warehouse</label>
+            <div class="select is-small is-fullwidth">
+              <select id="scan-warehouse" name="warehouse_id" required
+                      hx-get="{% url 'inventory_scan_intake_start' %}?format=htmx-room-select"
+                      hx-trigger="change"
+                      hx-target="#ai-room-select-wrap"
+                      hx-swap="outerHTML">
+                <option value="">— select —</option>
+                {% for warehouse in warehouses %}
+                <option value="{{ warehouse.pk }}" {% if warehouse.pk == warehouse_id %}selected{% endif %}>{{ warehouse.code }} — {{ warehouse.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small" for="scan-device">Hardware device (optional)</label>
+            <input id="scan-device" class="input is-small is-family-monospace" type="text" name="hardware_device_id" placeholder="Handheld-02">
+          </div>
+        </div>
+        <div class="columns is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small" for="scan-room">Room (optional)</label>
+            {% include "inventory/intake/_room_select.html" %}
+          </div>
+        </div>
+        {% if not room_id %}
+        <div class="notification is-info is-light is-size-7 mt-2">
+          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+          Leaving Room blank targets the warehouse's Intake Room by default.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ================= ZONE 2/3: In-page assignment card pair (FD-18) ================= #}
+    <div class="columns is-multiline">
+      <div class="column is-8">
+        <div class="card" style="height:100%;">
+          <div class="card-header"><div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+            Unfulfilled shipments
+          </div></div>
+          <div class="card-content">
+            <div class="field">
+              <p class="control has-icons-left">
+                <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Search shipment / PO number…"
+                       autocomplete="off"
+                       hx-get="{% url 'inventory_scan_intake_start' %}?format=htmx-search-results"
+                       hx-trigger="keyup changed delay:350ms, search"
+                       hx-target="#scan-shipment-results-region"
+                       hx-swap="innerHTML"
+                       hx-include="[name='shipment_ids']"
+                       hx-push-url="true"
+                       hx-indicator="#scan-shipment-results-region">
+                <span class="icon is-small is-left"><i class="material-icons" aria-hidden="true" style="font-size:1rem;">search</i></span>
+              </p>
+            </div>
+            <div id="scan-shipment-results-region" class="is-relative">
+              <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+                <div class="skeleton-block"></div>
+              </div>
+              {% include "inventory/intake/_scan_shipment_search_results.html" %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="card" style="height:100%;">
+          <div class="card-header"><div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span>
+            Selected
+          </div></div>
+          <div class="card-content" id="scan-selected-summary">
+            {% include "inventory/intake/_scan_selected_summary.html" %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ================= Submit ================= #}
+    <div class="card">
+      <div class="card-content">
+        {% if selected_shipments %}
+        <p class="is-size-7 has-text-grey">Ready to start a scan session against {{ selected_shipments|length }} shipment{{ selected_shipments|length|pluralize }}.</p>
+        {% else %}
+        <p class="is-size-7 has-text-grey">Select a warehouse and at least one unfulfilled shipment above before submitting.</p>
+        {% endif %}
+      </div>
+      {% if can_intake %}
+      <footer class="card-footer custom-card-footer">
+        <div class="card-footer-secondaries">
+          <a href="{% url 'inventory_intake_dashboard' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Cancel</span>
+          </a>
+        </div>
+        <button class="button is-primary card-footer-primary" type="submit" {% if not selected_shipments %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span>
+          <span>Start Scan Session</span>
+        </button>
+      </footer>
+      {% endif %}
+    </div>
+  </div>
+</form>
+{% endblock %}

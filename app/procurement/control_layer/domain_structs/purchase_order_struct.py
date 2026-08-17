@@ -15,6 +15,10 @@ from decimal import Decimal
 from django.db.models import Count, DecimalField, F, Prefetch, Q, Sum
 from django.db.models.functions import Coalesce
 
+from app.procurement.control_layer.domain_structs.demand_external_claims_struct import (
+    DemandExternalClaimsStruct,
+    ExternalClaim,
+)
 from app.procurement.control_layer.domain_structs.purchase_order_line_struct import (
     PurchaseOrderLineStruct,
 )
@@ -35,6 +39,13 @@ class AllocationSlice:
     is_active: bool
     demand_state: str
     purchasing_state: str
+    # Reallocation Resolution decision (supersedes D55) — see
+    # PurchaseOrderDemandLink's docstring.
+    quantity_received: Decimal = Decimal("0")
+    is_locked: bool = False
+    # §4, point 1: this demand's active claims on OTHER orders, read-only
+    # here — never editable from this screen (§7.10).
+    external_claims: tuple[ExternalClaim, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -123,6 +134,12 @@ class PurchaseOrderStruct:
             .select_related("part_demand")
             .annotate(line_id=F("purchase_order_line_id"))
         )
+        # One query for every demand's external claims on this page, rather
+        # than one per row (§4, point 1).
+        external_by_demand = DemandExternalClaimsStruct.load_many(
+            demand_ids={link.part_demand_id for link in link_rows},
+            exclude_purchase_order_id=po.pk,
+        )
         for link in link_rows:
             allocations.setdefault(link.purchase_order_line_id, []).append(
                 AllocationSlice(
@@ -132,6 +149,12 @@ class PurchaseOrderStruct:
                     is_active=link.is_active,
                     demand_state=link.part_demand.demand_state,
                     purchasing_state=link.part_demand.purchasing_state,
+                    quantity_received=link.quantity_received,
+                    is_locked=link.is_locked,
+                    external_claims=external_by_demand.get(
+                        link.part_demand_id,
+                        DemandExternalClaimsStruct(demand_id=link.part_demand_id),
+                    ).claims,
                 )
             )
 
@@ -184,6 +207,20 @@ class PurchaseOrderStruct:
                         "is_active": a.is_active,
                         "demand_state": a.demand_state,
                         "purchasing_state": a.purchasing_state,
+                        "quantity_received": a.quantity_received,
+                        "is_locked": a.is_locked,
+                        "external_claims": [
+                            {
+                                "link_id": c.link_id,
+                                "purchase_order_id": c.purchase_order_id,
+                                "po_number": c.po_number,
+                                "line_id": c.line_id,
+                                "line_number": c.line_number,
+                                "quantity_allocated": c.quantity_allocated,
+                                "is_locked": c.is_locked,
+                            }
+                            for c in a.external_claims
+                        ],
                     }
                     for a in slices
                 ]

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="800"
+   height="550"
+   viewBox="0 0 800 550"
+   version="1.1"
+   id="svg_6x4_grid"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg-floor { fill: #161616; stroke: #393939; stroke-width: 4; }
+      .grid-wall { fill: none; stroke: #525252; stroke-width: 2; stroke-dasharray: 4 4; }
+      .location-rect { fill: #162d50; stroke: #4589ff; stroke-width: 2; cursor: pointer; transition: all 0.2s ease; }
+      .location-rect:hover { fill: #0f62fe; stroke: #ffffff; }
+      .label-text { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; fill: #c6c6c6; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+      .title-text { font-family: 'IBM Plex Sans', sans-serif; font-size: 18px; font-weight: bold; fill: #f4f4f4; }
+    </style>
+  </defs>
+
+  <!-- Floor & Layout Layer -->
+  <g id="layout" inkscape:label="layout">
+    <rect class="bg-floor" x="20" y="20" width="760" height="510" rx="0" />
+    <text class="title-text" x="40" y="50">MAIN WAREHOUSE — 6x4 GRID STORAGE ROOM</text>
+  </g>
+
+  <!-- Locations Layer (Room Tier Shape Extraction Target: 4 Rows x 6 Columns) -->
+  <g id="locations" inkscape:label="locations">
+    <!-- Row 0001 -->
+    <rect class="location-rect" x="50" y="80" width="105" height="90" inkscape:label="0001-0001" id="loc_0001_0001" />
+    <rect class="location-rect" x="168" y="80" width="105" height="90" inkscape:label="0001-0002" id="loc_0001_0002" />
+    <rect class="location-rect" x="286" y="80" width="105" height="90" inkscape:label="0001-0003" id="loc_0001_0003" />
+    <rect class="location-rect" x="404" y="80" width="105" height="90" inkscape:label="0001-0004" id="loc_0001_0004" />
+    <rect class="location-rect" x="522" y="80" width="105" height="90" inkscape:label="0001-0005" id="loc_0001_0005" />
+    <rect class="location-rect" x="640" y="80" width="105" height="90" inkscape:label="0001-0006" id="loc_0001_0006" />
+
+    <!-- Row 0002 -->
+    <rect class="location-rect" x="50" y="185" width="105" height="90" inkscape:label="0002-0001" id="loc_0002_0001" />
+    <rect class="location-rect" x="168" y="185" width="105" height="90" inkscape:label="0002-0002" id="loc_0002_0002" />
+    <rect class="location-rect" x="286" y="185" width="105" height="90" inkscape:label="0002-0003" id="loc_0002_0003" />
+    <rect class="location-rect" x="404" y="185" width="105" height="90" inkscape:label="0002-0004" id="loc_0002_0004" />
+    <rect class="location-rect" x="522" y="185" width="105" height="90" inkscape:label="0002-0005" id="loc_0002_0005" />
+    <rect class="location-rect" x="640" y="185" width="105" height="90" inkscape:label="0002-0006" id="loc_0002_0006" />
+
+    <!-- Row 0003 -->
+    <rect class="location-rect" x="50" y="290" width="105" height="90" inkscape:label="0003-0001" id="loc_0003_0001" />
+    <rect class="location-rect" x="168" y="290" width="105" height="90" inkscape:label="0003-0002" id="loc_0003_0002" />
+    <rect class="location-rect" x="286" y="290" width="105" height="90" inkscape:label="0003-0003" id="loc_0003_0003" />
+    <rect class="location-rect" x="404" y="290" width="105" height="90" inkscape:label="0003-0004" id="loc_0003_0004" />
+    <rect class="location-rect" x="522" y="290" width="105" height="90" inkscape:label="0003-0005" id="loc_0003_0005" />
+    <rect class="location-rect" x="640" y="290" width="105" height="90" inkscape:label="0003-0006" id="loc_0003_0006" />
+
+    <!-- Row 0004 -->
+    <rect class="location-rect" x="50" y="395" width="105" height="90" inkscape:label="0004-0001" id="loc_0004_0001" />
+    <rect class="location-rect" x="168" y="395" width="105" height="90" inkscape:label="0004-0002" id="loc_0004_0002" />
+    <rect class="location-rect" x="286" y="395" width="105" height="90" inkscape:label="0004-0003" id="loc_0004_0003" />
+    <rect class="location-rect" x="404" y="395" width="105" height="90" inkscape:label="0004-0004" id="loc_0004_0004" />
+    <rect class="location-rect" x="522" y="395" width="105" height="90" inkscape:label="0004-0005" id="loc_0004_0005" />
+    <rect class="location-rect" x="640" y="395" width="105" height="90" inkscape:label="0004-0006" id="loc_0004_0006" />
+  </g>
+
+  <!-- Visual Overlay Labels -->
+  <g id="decorations" inkscape:label="decorations">
+    <text class="label-text" x="102" y="125">1-1</text>
+    <text class="label-text" x="220" y="125">1-2</text>
+    <text class="label-text" x="338" y="125">1-3</text>
+    <text class="label-text" x="456" y="125">1-4</text>
+    <text class="label-text" x="574" y="125">1-5</text>
+    <text class="label-text" x="692" y="125">1-6</text>
+
+    <text class="label-text" x="102" y="230">2-1</text>
+    <text class="label-text" x="220" y="230">2-2</text>
+    <text class="label-text" x="338" y="230">2-3</text>
+    <text class="label-text" x="456" y="230">2-4</text>
+    <text class="label-text" x="574" y="230">2-5</text>
+    <text class="label-text" x="692" y="230">2-6</text>
+
+    <text class="label-text" x="102" y="335">3-1</text>
+    <text class="label-text" x="220" y="335">3-2</text>
+    <text class="label-text" x="338" y="335">3-3</text>
+    <text class="label-text" x="456" y="335">3-4</text>
+    <text class="label-text" x="574" y="335">3-5</text>
+    <text class="label-text" x="692" y="335">3-6</text>
+
+    <text class="label-text" x="102" y="440">4-1</text>
+    <text class="label-text" x="220" y="440">4-2</text>
+    <text class="label-text" x="338" y="440">4-3</text>
+    <text class="label-text" x="456" y="440">4-4</text>
+    <text class="label-text" x="574" y="440">4-5</text>
+    <text class="label-text" x="692" y="440">4-6</text>
+  </g>
+</svg>

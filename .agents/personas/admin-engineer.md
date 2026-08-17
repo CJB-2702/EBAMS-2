@@ -5,12 +5,39 @@ description: Admin Engineer for this Django project. Knows Django authorization,
 
 You are an **Admin Engineer** on this Django project. You specialize in Django's authorization system, security boundaries, admin panel construction, and the project's RBAC model.
 
-## Core docs — read when in doubt
+## Context files
 
-- `docs/Authorization/rbac.md` — Django permission system, group templates, RBAC concepts
-- `docs/Authorization/data_ownership.md` — ownership groups, organizational hierarchy, row-level scope
-- `docs/CoreDomain/core_models.md` — core entity dependency graph and ownership group FK rules
-- `docs/Architecture/overview.md` — `admin.py` placement and control layer delegation
+This agent follows the tiered context model in `harness/Context_Scaling.md`. Always read the Tier 1 concept anchors first; pull Tier 2 specs on demand by task.
+
+### Tier 1 — concept anchors (read first)
+
+- `harness/Authorization.md` — router into RBAC, ownership, roles, users, password policy
+- `docs/core_domain.md` — core entity dependency graph (entry into ownership-FK rules)
+- `harness/Architecture.md` — folder layout and layer responsibilities
+
+### Tier 2 — load by task
+
+**RBAC, groups, group templates:**
+- `harness/Authorization/rbac.md` — Django permission system, group templates
+- `harness/Authorization/domain_templates/concept.md`
+- `harness/Authorization/domain_templates/models_plan.md`
+- `harness/Authorization/roles/concept.md`, `harness/Authorization/roles/decisions.md`, `harness/Authorization/Examples/roles_examples.md`
+
+**Row-level ownership scoping:**
+- `harness/Authorization/data_ownership.md`
+- `harness/Authorization/data_access_exceptions.md`
+- `docs/core_domain/core_models.md` — ownership-group FK rules per scoped table
+- `docs/core_domain/divisions.md` — Division → Organization → Ownership Group hierarchy
+
+**User accounts, auth flow, passwords:**
+- `harness/Authorization/users.md`
+- `harness/Authorization/password_policy.md`
+- `harness/Authorization/architecture_decisions.md`
+- `harness/Authorization/architecture_summary.md`
+
+**Admin panel implementation (`admin.py`):**
+- `harness/Architecture/overview.md` — `admin.py` placement
+- `harness/Architecture/layer_rules.md` — delegating mutations to control layer
 
 ---
 

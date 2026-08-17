@@ -35,15 +35,27 @@ from app.parts.models import Part
 from app.procurement.control_layer.adapters.purchase_order_draft_adaptor import (
     PurchaseOrderDraftAdaptor,
 )
+from app.procurement.control_layer.domain_structs.demand_external_claims_struct import (
+    DemandExternalClaimsStruct,
+)
 from app.procurement.control_layer.domain_structs.purchase_order_fulfillment_struct import (
     PurchaseOrderFulfillmentStruct,
 )
+from app.procurement.control_layer.domain_structs.reallocation_portal_struct import (
+    ReallocationPortalStruct,
+)
 from app.procurement.control_layer.errors import (
     AllocationCapExceeded,
+    CrossOrderAllocationExceeded,
     ProcurementValidationError,
+    ReallocationRequired,
 )
 from app.procurement.control_layer.factories.purchase_order_factory import (
     PurchaseOrderFactory,
+)
+from app.procurement.control_layer.guards.reallocation_guard import ReallocationValidator
+from app.procurement.control_layer.handlers.reallocation_waterfall_handler import (
+    ReallocationWaterfallHandler,
 )
 from app.procurement.control_layer.policies.part_price_policy import PartPricePolicy
 from app.procurement.control_layer.purchase_order_context import PurchaseOrderContext
@@ -68,6 +80,7 @@ from app.procurement.presentation_layer.search.purchase_order_search import (
     PurchaseOrderSearch,
 )
 from app.procurement.presentation_layer.tools import po_approval, po_wizard_draft as draft_tools
+from app.procurement.presentation_layer.tools import reallocation_draft
 from app.procurement.presentation_layer.tools.procurement_access import (
     accessible_domain_ids,
     can_approve_purchase,
@@ -949,6 +962,17 @@ def _detail_line_views(
     ):
         links_by_line.setdefault(link.purchase_order_line_id, []).append(link)
 
+    # One query for every demand's external claims on this page (§4 point 1),
+    # not one per row. Shared by PO Detail and Edit & Linkage alike — both
+    # read this same dict off the same view rows; only the templates differ
+    # in whether they render it.
+    demand_ids = {
+        link.part_demand_id for links in links_by_line.values() for link in links
+    }
+    external_by_demand = DemandExternalClaimsStruct.load_many(
+        demand_ids=demand_ids, exclude_purchase_order_id=purchase_order.pk
+    )
+
     views = []
     for struct_line in fulfillment.lines:
         row = line_rows.get(struct_line.line_id)
@@ -971,6 +995,19 @@ def _detail_line_views(
                         # Cross-domain demands render as plain text with no link
                         # through (Phase 0 §5).
                         "linkable": is_in_domain(request, link.part_demand.domain_id),
+                        # Reallocation Resolution decision (reallocation_resolution_portal.md
+                        # §4, §7.10, §7.2): is_locked is real, stored data, set
+                        # only by a deliberate record_receipt action — sufficient
+                        # on its own to flag a claim as "manually recorded, not a
+                        # safe computed value." external_claims is this demand's
+                        # active claims on OTHER orders — read-only here, never
+                        # editable from this screen.
+                        "is_locked": link.is_locked,
+                        "quantity_received": link.quantity_received,
+                        "external_claims": external_by_demand.get(
+                            link.part_demand_id,
+                            DemandExternalClaimsStruct(demand_id=link.part_demand_id),
+                        ).claims,
                     }
                     for link in links
                 ],
@@ -1050,6 +1087,34 @@ def _detail_post(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRes
             require_buy(request)
             _delink_from_form(request, purchase_order, context)
 
+        elif action == "record_receipt":
+            # Reallocation Resolution decision — marking a claim received is
+            # the sole trigger for locking it (§7.2), so it is gated the same
+            # as any other Buyer-side allocation write.
+            require_buy(request)
+            _detail_record_receipt(request, purchase_order, context)
+
+        elif action == "reallocation_auto_allocate":
+            require_buy(request)
+            _reallocation_auto_allocate(request, purchase_order)
+
+        elif action == "reallocation_manual_entry":
+            require_buy(request)
+            _reallocation_manual_entry(request, purchase_order)
+
+        elif action == "reallocation_unlock_claim":
+            require_buy(request)
+            _reallocation_unlock_claim(request, purchase_order, context)
+
+        elif action == "reallocation_commit":
+            require_buy(request)
+            _reallocation_commit(request, purchase_order, context)
+
+        elif action == "reallocation_cancel":
+            require_buy(request)
+            reallocation_draft.clear(request.session)
+            messages.info(request, "Reallocation cancelled; the line was not changed.")
+
         else:
             messages.error(request, "Unrecognised action.")
 
@@ -1057,6 +1122,259 @@ def _detail_post(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRes
         _report(request, exc)
 
     return redirect(back)
+
+
+def _detail_record_receipt(
+    request: HttpRequest, purchase_order: PurchaseOrder, context: PurchaseOrderContext
+) -> None:
+    link = PurchaseOrderDemandLink.objects.filter(
+        pk=_int(request.POST.get("link_id")),
+        purchase_order_line__purchase_order=purchase_order,
+        is_active=True,
+        deleted_at__isnull=True,
+    ).select_related("purchase_order_line", "part_demand").first()
+    if link is None:
+        messages.error(request, "That claim is not on this purchase order.")
+        return
+
+    quantity_received = _decimal(request.POST.get("quantity_received"))
+    if quantity_received is None:
+        messages.error(request, "Enter how much of this claim has been received.")
+        return
+
+    context.record_receipt(link=link, quantity_received=quantity_received, actor=request.user)
+    messages.success(
+        request,
+        f"Demand #{link.part_demand_id}'s claim marked {quantity_received} received "
+        f"and locked.",
+    )
+
+
+# ---------------------------------------------------------------------- #
+# Reallocation Portal (Demand↔PO Domain) — backend actions against the
+# session-backed draft in reallocation_draft.py. No template this session;
+# a later frontend build renders the Portal itself.
+# ---------------------------------------------------------------------- #
+
+
+def _load_reallocation_line(
+    request: HttpRequest, purchase_order: PurchaseOrder
+) -> tuple[dict | None, PurchaseOrderLine | None]:
+    draft = reallocation_draft.load(request.session)
+    if draft is None:
+        messages.error(request, "No reallocation is in progress for this order.")
+        return None, None
+    line = _line_on_po(purchase_order, draft.get("line_id"))
+    if line is None:
+        reallocation_draft.clear(request.session)
+        messages.error(request, "That line is not on this purchase order.")
+        return None, None
+    return draft, line
+
+
+def _open_claims(line: PurchaseOrderLine) -> list[PurchaseOrderDemandLink]:
+    return list(
+        PurchaseOrderDemandLink.objects.filter(
+            purchase_order_line=line,
+            is_active=True,
+            deleted_at__isnull=True,
+            is_locked=False,
+        ).select_related("part_demand")
+    )
+
+
+def _locked_claims(line: PurchaseOrderLine) -> list[PurchaseOrderDemandLink]:
+    return list(
+        PurchaseOrderDemandLink.objects.filter(
+            purchase_order_line=line,
+            is_active=True,
+            deleted_at__isnull=True,
+            is_locked=True,
+        )
+    )
+
+
+def _reallocation_auto_allocate(request: HttpRequest, purchase_order: PurchaseOrder) -> None:
+    draft, line = _load_reallocation_line(request, purchase_order)
+    if line is None:
+        return
+    # Taking any forward action retires an unanswered unlock warning from a
+    # previous attempt — otherwise the second popup would reappear on the
+    # next render for a decision the user has already moved past (§6).
+    reallocation_draft.clear_pending_unlock(draft)
+    new_qty = reallocation_draft.to_decimal(draft["new_quantity_ordered"]) or Decimal("0")
+    open_claims = _open_claims(line)
+    locked_total = sum((c.quantity_allocated for c in _locked_claims(line)), Decimal("0"))
+    open_total = sum((c.quantity_allocated for c in open_claims), Decimal("0"))
+    shortfall = max(Decimal("0"), (open_total + locked_total) - new_qty)
+
+    resolutions = ReallocationWaterfallHandler.allocate(
+        open_claims=open_claims, shortfall=shortfall
+    )
+    for link_id, qty in resolutions.items():
+        reallocation_draft.set_proposed(draft, link_id=link_id, quantity=qty)
+    reallocation_draft.save(request.session, draft)
+    messages.success(request, "Auto-allocate applied. Review and commit to save.")
+
+
+def _reallocation_manual_entry(request: HttpRequest, purchase_order: PurchaseOrder) -> None:
+    draft, line = _load_reallocation_line(request, purchase_order)
+    if line is None:
+        return
+    reallocation_draft.clear_pending_unlock(draft)
+    new_qty = reallocation_draft.to_decimal(draft["new_quantity_ordered"]) or Decimal("0")
+    open_claim_ids = {c.pk for c in _open_claims(line)}
+    locked_total = sum((c.quantity_allocated for c in _locked_claims(line)), Decimal("0"))
+
+    values: dict[int, Decimal] = {}
+    for link_id in open_claim_ids:
+        raw = request.POST.get(f"claim_{link_id}")
+        if raw is None:
+            continue
+        parsed = _decimal(raw)
+        if parsed is not None:
+            values[link_id] = parsed
+
+    ReallocationValidator.check_manual_entry(
+        values=values, locked_total=locked_total, new_source_qty=new_qty
+    )
+    for link_id, qty in values.items():
+        reallocation_draft.set_proposed(draft, link_id=link_id, quantity=qty)
+    reallocation_draft.save(request.session, draft)
+    messages.success(request, "Manual entry saved. Review and commit to save.")
+
+
+def _reallocation_unlock_claim(
+    request: HttpRequest, purchase_order: PurchaseOrder, context: PurchaseOrderContext
+) -> None:
+    draft, line = _load_reallocation_line(request, purchase_order)
+    if line is None:
+        return
+    link = PurchaseOrderDemandLink.objects.filter(
+        pk=_int(request.POST.get("link_id")),
+        purchase_order_line=line,
+        is_active=True,
+        deleted_at__isnull=True,
+        is_locked=True,
+    ).select_related("purchase_order_line__purchase_order", "part_demand").first()
+    if link is None:
+        messages.error(request, "That claim is not a locked claim on this line.")
+        return
+
+    # THE SECOND POPUP'S CONTRACT (§6): this action is called twice — once to
+    # surface the warning, once with confirmed=1 after the user explicitly
+    # accepts it. Nothing is written on the first call. `pending_unlock`
+    # records which claim is awaiting that second popup so the next render
+    # (after the redirect this call ends in) knows to reopen it — the F5
+    # rule means that state has to live in the session draft, not in memory
+    # held only for this request.
+    if request.POST.get("confirmed") != "1":
+        reallocation_draft.set_pending_unlock(draft, link_id=link.pk)
+        reallocation_draft.save(request.session, draft)
+        messages.warning(
+            request,
+            f"Unlocking demand #{link.part_demand_id}'s claim forces an "
+            f"automated purchasing-status update on that demand and may cause "
+            f"downstream errors or inconsistencies. Confirm to proceed.",
+        )
+        return
+
+    context.unlock_claim(link=link, actor=request.user, confirmed=True)
+    reallocation_draft.mark_unlocked(draft, link_id=link.pk)
+    reallocation_draft.set_proposed(draft, link_id=link.pk, quantity=link.quantity_allocated)
+    reallocation_draft.clear_pending_unlock(draft)
+    reallocation_draft.save(request.session, draft)
+    messages.success(request, f"Demand #{link.part_demand_id}'s claim unlocked.")
+
+
+def _build_portal_view(draft: dict) -> dict:
+    """Assemble the Reallocation Portal's render context (Edit & Linkage's
+    binding placement, build_plan.md "Confirmed UI placement").
+
+    `ReallocationPortalStruct.load` re-derives LOCKED/OPEN/external live from
+    the DB on every call (§10 point 3 — no cached total); this function's only
+    job is to join that live picture against the session draft's in-progress
+    proposed values, never to compute or cache a total of its own.
+    """
+    struct = ReallocationPortalStruct.load(line_id=draft["line_id"])
+    proposed = reallocation_draft.proposed_values(draft)
+    target = reallocation_draft.to_decimal(draft["new_quantity_ordered"]) or Decimal("0")
+    pending_unlock = reallocation_draft.pending_unlock_link_id(draft)
+    priority_labels = dict(DemandPriority.choices)
+
+    open_claims = []
+    open_total_proposed = Decimal("0")
+    for claim in struct.open_claims:
+        proposed_qty = proposed.get(claim.link_id, claim.quantity_allocated)
+        open_total_proposed += proposed_qty
+        open_claims.append(
+            {
+                "link_id": claim.link_id,
+                "demand_id": claim.demand_id,
+                "priority_display": priority_labels.get(claim.priority, claim.priority),
+                "needed_by": claim.needed_by,
+                "current_quantity": claim.quantity_allocated,
+                "proposed_quantity": proposed_qty,
+                "external_claims": claim.external_claims,
+            }
+        )
+
+    locked_claims = [
+        {
+            "link_id": claim.link_id,
+            "demand_id": claim.demand_id,
+            "priority_display": priority_labels.get(claim.priority, claim.priority),
+            "needed_by": claim.needed_by,
+            "quantity_allocated": claim.quantity_allocated,
+            "external_claims": claim.external_claims,
+        }
+        for claim in struct.locked_claims
+    ]
+
+    running_total = open_total_proposed + struct.locked_total
+    return {
+        "line_id": struct.line_id,
+        "line_number": struct.line_number,
+        "po_number": struct.po_number,
+        "target_quantity": target,
+        "open_claims": open_claims,
+        "locked_claims": locked_claims,
+        "locked_total": struct.locked_total,
+        "open_total_proposed": open_total_proposed,
+        "running_total": running_total,
+        # A courtesy for the button's disabled state (form_style_guide.md
+        # still requires a plain POST work correctly regardless — the real
+        # gate is ReallocationValidator.check_commit_ready on submit).
+        "commit_ready": running_total == target,
+        "pending_unlock_link_id": pending_unlock,
+    }
+
+
+def _reallocation_commit(
+    request: HttpRequest, purchase_order: PurchaseOrder, context: PurchaseOrderContext
+) -> None:
+    draft, line = _load_reallocation_line(request, purchase_order)
+    if line is None:
+        return
+    new_qty = reallocation_draft.to_decimal(draft["new_quantity_ordered"]) or Decimal("0")
+    proposed = reallocation_draft.proposed_values(draft)
+    open_claims = {c.pk: c for c in _open_claims(line)}
+    locked_total = sum((c.quantity_allocated for c in _locked_claims(line)), Decimal("0"))
+
+    resolutions = {
+        link_id: proposed.get(link_id, claim.quantity_allocated)
+        for link_id, claim in open_claims.items()
+    }
+    open_total = sum(resolutions.values(), Decimal("0"))
+
+    ReallocationValidator.check_commit_ready(
+        open_total=open_total, locked_total=locked_total, new_source_qty=new_qty
+    )
+    context.apply_reallocation(
+        line=line, new_quantity_ordered=new_qty, resolutions=resolutions, actor=request.user
+    )
+    reallocation_draft.clear(request.session)
+    messages.success(request, f"Line {line.line_number}'s reallocation committed.")
 
 
 def _detail_add_line(request: HttpRequest, context: PurchaseOrderContext) -> None:
@@ -1121,8 +1439,23 @@ def _detail_edit_line(
         messages.info(request, "Nothing to change on that line.")
         return
 
-    context.edit_line(line=line, changes=changes, actor=request.user)
-    messages.success(request, f"Line {line.line_number} updated.")
+    try:
+        context.edit_line(line=line, changes=changes, actor=request.user)
+        messages.success(request, f"Line {line.line_number} updated.")
+    except ReallocationRequired as exc:
+        # §5's flowchart: 2+ claims short, or the sole claim locked — nothing
+        # was saved. Seed the Portal's session draft instead of a flat error;
+        # the entrypoint's reallocation_* actions pick it up from here.
+        draft = reallocation_draft.empty_draft(
+            line_id=line.pk,
+            new_quantity_ordered=changes.get("quantity_ordered", line.quantity_ordered),
+        )
+        reallocation_draft.save(request.session, draft)
+        messages.warning(
+            request,
+            f"{exc.errors[0]} Resolve it through the Reallocation Portal for "
+            f"line {line.line_number}.",
+        )
 
 
 def _detail_cancel_line(
@@ -1199,6 +1532,18 @@ def _allocate_from_form(
                 "auto_approve": "1" if auto_approve else "0",
             },
             part_label=str(line.part),
+        )
+        return redirect(back)
+    except CrossOrderAllocationExceeded as exc:
+        # §10 rule 1: always a hard stop, no raise-the-request offer — the
+        # opposite of AllocationCapExceeded's choice above. Rule 2: name the
+        # conflicting order and link straight to its own linkage screen.
+        conflicting_url = reverse(
+            "purchase_order_detail", args=[exc.conflicting_purchase_order_id]
+        )
+        messages.error(
+            request,
+            f"{exc.errors[0]} Go to {exc.conflicting_po_number}: {conflicting_url}",
         )
         return redirect(back)
     except ProcurementValidationError as exc:
@@ -1288,14 +1633,28 @@ def _edit_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRes
     selected_line_id = _int(request.GET.get("line_id"))
     selected = next((l for l in lines if l["struct"].line_id == selected_line_id), None)
 
-    # The right column's top-bottom search tool. Its part filter is implied by
-    # the selected line, but `?part_id=` still pre-fills it for arrivals that
-    # land before a line is chosen.
+    # The Reallocation Portal (Demand↔PO Domain) — build_plan.md's "Confirmed
+    # UI placement": renders as a full-screen overlay on Edit & Linkage,
+    # ONLY when a draft is in progress for the line currently selected on
+    # this exact render (backend_handoff.md §4). Navigating to a different
+    # line does not chase the user with a portal for a line they left.
+    reallocation_portal = None
+    draft = reallocation_draft.load(request.session)
+    if draft is not None and selected is not None and draft.get("line_id") == selected["struct"].line_id:
+        reallocation_portal = _build_portal_view(draft)
+
+    # The right column's top-bottom search tool. Part is LOCKED to the selected
+    # line's part, never an override — a demand for a different part cannot be
+    # linked here anyway (PurchaseOrderDemandLinkValidator), so an editable part
+    # field would only invite a search whose results are all unusable.
     search_filters = {
         "q": request.GET.get("q", "").strip(),
         "priority": request.GET.get("priority", "").strip(),
-        "part_id": _int(request.GET.get("part_id"))
-        or (selected["struct"].part_id if selected else None),
+        "created_from": request.GET.get("created_from", "").strip(),
+        "created_to": request.GET.get("created_to", "").strip(),
+        "requested_by": request.GET.get("requested_by", "").strip(),
+        "po_number": request.GET.get("po_number", "").strip(),
+        "part_id": selected["struct"].part_id if selected else None,
     }
     candidates = []
     if selected is not None:
@@ -1303,7 +1662,21 @@ def _edit_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRes
             OpenDemandSearch.pool(
                 domain_ids=domain_ids,
                 exclude_purchase_order=purchase_order,
-                **search_filters,
+                part_id=search_filters["part_id"],
+                q=search_filters["q"],
+                priority=search_filters["priority"],
+                created_from=(
+                    parse_date(search_filters["created_from"])
+                    if search_filters["created_from"]
+                    else None
+                ),
+                created_to=(
+                    parse_date(search_filters["created_to"])
+                    if search_filters["created_to"]
+                    else None
+                ),
+                requested_by=search_filters["requested_by"],
+                linked_po_number=search_filters["po_number"],
             )[:100]
         )
 
@@ -1322,6 +1695,7 @@ def _edit_render(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRes
             "cap_decision": _pop_cap_decision(request),
             "can_buy": can_buy(request),
             "show_placed_warning": purchase_order.status != PurchaseOrderStatus.DRAFT,
+            "portal": reallocation_portal,
             **_status_context(purchase_order),
         },
     )
@@ -1350,6 +1724,25 @@ def _edit_post(request: HttpRequest, purchase_order: PurchaseOrder) -> HttpRespo
             _detail_add_line(request, context)
         elif action == "cancel_line":
             _detail_cancel_line(request, purchase_order, context)
+        elif action == "edit_line":
+            _detail_edit_line(request, purchase_order, context)
+        elif action == "record_receipt":
+            # Reallocation Resolution decision — marking a claim received is
+            # the sole trigger for locking it (§7.2); mirrors _detail_post's
+            # branch so record_receipt resolves back onto Edit & Linkage
+            # (routing_decision_pending.md, Option A) instead of PO Detail.
+            _detail_record_receipt(request, purchase_order, context)
+        elif action == "reallocation_auto_allocate":
+            _reallocation_auto_allocate(request, purchase_order)
+        elif action == "reallocation_manual_entry":
+            _reallocation_manual_entry(request, purchase_order)
+        elif action == "reallocation_unlock_claim":
+            _reallocation_unlock_claim(request, purchase_order, context)
+        elif action == "reallocation_commit":
+            _reallocation_commit(request, purchase_order, context)
+        elif action == "reallocation_cancel":
+            reallocation_draft.clear(request.session)
+            messages.info(request, "Reallocation cancelled; the line was not changed.")
         else:
             messages.error(request, "Unrecognised action.")
     except ProcurementValidationError as exc:

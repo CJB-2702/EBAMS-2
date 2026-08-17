@@ -20,6 +20,7 @@ Documentation for sub-applications, filed under `docs/<app-name>/`. See [../harn
 - [assets/](assets/index.md) — Tier 2 guides, UI plan, and skeleton bundle for the assets application.
 - [administration/](administration/) — RBAC, ownership groups, user assignments; per-app technical-decision history.
 - [parts/](parts/) — part demand tracking; per-app technical-decision history.
+- [Inventory](inventory.md) — inventory sub-application: active inventory tracking, auditing, and topography.
 
 Cross-cutting technical decisions that don't belong to one app live in [technical_decisions/](technical_decisions/index.md) instead.
 
@@ -32,4 +33,5 @@ Cross-cutting technical decisions that don't belong to one app live in [technica
 | `assets/` | Asset Management | Active |
 | `administration/` | Administration | Active |
 | `parts/` | Parts | Active |
+| `inventory/` | Inventory | Active |
 | `technical_decisions/` | (cross-cutting, not an application) | — |

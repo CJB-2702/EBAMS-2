@@ -18,5 +18,6 @@ After completion, use `/kit-complete <app-name> <kit-name> "<summary>"` to archi
 
 | Date | App | Kit | Summary |
 | :--- | :--- | :--- | :--- |
+| 2026-08-16 | inventory | inventory_build_kit | Completed Phases 1-8 of the inventory application build, establishing the core domain topography, active inventory tracking, procurement seam, and auditing mechanisms. |
 <!-- Kit-complete entries are added here, newest at the top -->
 

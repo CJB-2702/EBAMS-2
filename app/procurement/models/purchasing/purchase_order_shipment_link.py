@@ -69,6 +69,19 @@ class PurchaseOrderShipmentLink(AuditFieldsMixin, SoftDeleteMixin):
     # class docstring on why that cap is what makes the link table honest.
     quantity_allocated = models.DecimalField(max_digits=12, decimal_places=3)
 
+    # Reallocation Resolution decision (mirrors PurchaseOrderDemandLink's
+    # is_locked, Package↔PO side — reallocation_resolution_portal.md §7.2,
+    # Phase 5). True the instant the arriving line has been inspected
+    # (ShipmentLine.quantity_accepted is not null), applied to every active
+    # claim on that line UNIFORMLY: unlike the demand side there is no
+    # per-claim inspection event to attribute — the box is inspected once, as
+    # a whole (D90) — so "physically arrived/received" is a fact about the
+    # LINE, not about any one claim on it. Recomputed by
+    # ShipmentLineManager.accept() right after quantity_accepted is saved.
+    # Never set back to False except by the Reallocation Portal's two-popup
+    # unlock sequence.
+    is_locked = models.BooleanField(default=False)
+
     notes = models.TextField(blank=True)
 
     class Meta:

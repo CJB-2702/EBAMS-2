@@ -1,0 +1,76 @@
+{% extends "inventory/base.html" %}
+{% block title %}{{ room.room_name }}{% endblock %}
+{% block nav_warehouses %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_warehouse_index' %}">Warehouses</a></li>
+<li><a href="{% url 'inventory_warehouse_detail' pk=room.warehouse_id %}">{{ room.warehouse_code }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ room.room_name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">map</span></div>
+      <div>
+        <h1 class="page-title">{{ room.room_name }} — Spatial Map</h1>
+        <p class="page-subtitle is-family-monospace">{{ room.warehouse_code }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_room_layout' pk=room.room_id %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Layout builder</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-8">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">map</span></span>Room map</div></div>
+      <div class="card-content">
+        {% if map_svg %}
+        <div class="svg-map-wrapper">{{ map_svg|safe }}</div>
+        {% else %}
+        <p class="has-text-grey is-size-7">No layout uploaded yet. Use the layout builder to add one.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-4">
+    <div id="location-detail-drawer" class="card">
+      {% include "inventory/topography/rooms/_location_drawer.html" %}
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Storage locations</div></div>
+  <div class="card-content">
+    {% if room.room_locations %}
+    <table class="table is-fullwidth is-hoverable is-size-7">
+      <thead><tr><th>Location</th><th>Storage locations</th><th>Layout</th></tr></thead>
+      <tbody>
+        {% for rl in room.room_locations %}
+        <tr>
+          <td class="is-family-monospace">{{ rl.display_code }}</td>
+          <td>{{ rl.storage_locations|length }}</td>
+          <td>
+            {% if rl.has_layout %}
+              <a href="{% url 'inventory_room_location_detail' pk=rl.room_location_id %}">View Z-picker</a>
+            {% else %}
+              <span class="has-text-grey">None</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7">No storage locations yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

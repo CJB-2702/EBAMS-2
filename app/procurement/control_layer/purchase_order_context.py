@@ -350,6 +350,34 @@ class PurchaseOrderContext:
         with transaction.atomic():
             PurchaseOrderDemandLinkManager.delink(link=link, actor=actor)
 
+    def unlock_claim(self, *, link, actor=None, confirmed: bool):
+        """The Reallocation Portal's two-popup unlock sequence's mechanical
+        half — `confirmed` must already reflect the user's explicit approval
+        of the downstream-risk warning (reallocation_resolution_portal.md §6)."""
+        with transaction.atomic():
+            return PurchaseOrderDemandLinkManager.unlock_claim(
+                link=link, actor=actor, confirmed=confirmed
+            )
+
+    def apply_reallocation(
+        self, *, line, new_quantity_ordered: Decimal, resolutions: dict, actor=None
+    ) -> None:
+        PurchaseOrderDemandLinkManager.apply_reallocation(
+            line=line,
+            new_quantity_ordered=new_quantity_ordered,
+            resolutions=resolutions,
+            actor=actor,
+        )
+
+    def record_receipt(self, *, link, quantity_received: Decimal, actor=None):
+        """Reallocation Resolution decision: a deliberate human act marking
+        part of a claim as received. This is the only trigger for a claim's
+        LOCKED state (reallocation_resolution_portal.md §7.2)."""
+        with transaction.atomic():
+            return PurchaseOrderDemandLinkManager.record_receipt(
+                link=link, quantity_received=quantity_received, actor=actor
+            )
+
     def recompute_cost(self, *, actor=None) -> Decimal:
         return PurchaseOrderCostManager.recompute(
             purchase_order=self.purchase_order, actor=actor

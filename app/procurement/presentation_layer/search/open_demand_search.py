@@ -126,6 +126,10 @@ class OpenDemandSearch:
         q: str = "",
         priority: str = "",
         needed_before=None,
+        created_from=None,
+        created_to=None,
+        requested_by: str = "",
+        linked_po_number: str = "",
         exclude_purchase_order=None,
         include_fully_allocated: bool = False,
     ) -> QuerySet[PartDemand]:
@@ -136,6 +140,14 @@ class OpenDemandSearch:
         any caller and left the fence optional; a cross-part pool that forgot it
         would show a Buyer every open demand in the organization, so this entry
         point does not offer that mistake.
+
+        `linked_po_number` is the "find it by the OTHER order" escape hatch — a
+        demand already allocated (in full or in part) to some other PO is still
+        a legitimate candidate here (D28 allows splitting one demand across
+        POs), so this filter widens the pool to fully-allocated rows rather than
+        requiring `include_fully_allocated` to be passed alongside it. The cap
+        decision dialog is what actually stops an over-allocation; the search
+        should not pre-empt it by hiding the demand.
         """
         qs = (
             PartDemand.objects.filter(
@@ -159,13 +171,31 @@ class OpenDemandSearch:
             qs = qs.filter(priority=priority)
         if needed_before:
             qs = qs.filter(needed_by__lte=needed_before)
-        if not include_fully_allocated:
-            qs = qs.filter(outstanding_qty__gt=Decimal("0"))
+        if created_from:
+            qs = qs.filter(created_at__gte=created_from)
+        if created_to:
+            qs = qs.filter(created_at__lte=created_to)
+        if requested_by:
+            qs = qs.filter(
+                Q(requested_by__username__icontains=requested_by)
+                | Q(requested_by__first_name__icontains=requested_by)
+                | Q(requested_by__last_name__icontains=requested_by)
+            )
         if exclude_purchase_order is not None:
             qs = qs.exclude(
                 allocations__purchase_order_line__purchase_order=exclude_purchase_order,
                 allocations__deleted_at__isnull=True,
             )
+        if linked_po_number:
+            qs = qs.filter(
+                allocations__is_active=True,
+                allocations__deleted_at__isnull=True,
+                allocations__purchase_order_line__purchase_order__po_number__icontains=(
+                    linked_po_number
+                ),
+            ).distinct()
+        elif not include_fully_allocated:
+            qs = qs.filter(outstanding_qty__gt=Decimal("0"))
 
         return qs.order_by(
             cls._priority_ordering(), F("needed_by").asc(nulls_last=True)
@@ -185,6 +215,10 @@ class OpenDemandSearch:
         domain_id: int | None = None,
         needed_by_from=None,
         needed_by_to=None,
+        created_from=None,
+        created_to=None,
+        requested_by: str = "",
+        po_number: str = "",
         q: str = "",
     ) -> QuerySet[PartDemand]:
         """The demand_index page (part_demand_workflows.md §2.1) — one canonical
@@ -226,6 +260,25 @@ class OpenDemandSearch:
             qs = qs.filter(needed_by__gte=needed_by_from)
         if needed_by_to:
             qs = qs.filter(needed_by__lte=needed_by_to)
+        if created_from:
+            qs = qs.filter(created_at__gte=created_from)
+        if created_to:
+            qs = qs.filter(created_at__lte=created_to)
+        if requested_by:
+            if str(requested_by).isdigit():
+                qs = qs.filter(requested_by_id=int(requested_by))
+            else:
+                qs = qs.filter(
+                    Q(requested_by__username__icontains=requested_by)
+                    | Q(requested_by__first_name__icontains=requested_by)
+                    | Q(requested_by__last_name__icontains=requested_by)
+                )
+        if po_number:
+            qs = qs.filter(
+                allocations__is_active=True,
+                allocations__deleted_at__isnull=True,
+                allocations__purchase_order_line__purchase_order__po_number__icontains=po_number,
+            ).distinct()
         if q:
             qs = qs.filter(
                 Q(part__part_number__icontains=q)

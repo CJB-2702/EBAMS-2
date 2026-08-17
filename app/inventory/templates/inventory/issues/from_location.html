@@ -1,0 +1,436 @@
+{% extends "inventory/base.html" %}
+{% block title %}Issue Stock from Location{% endblock %}
+{% block nav_issues %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_issues_index' %}">Issues</a></li>
+<li class="is-active"><a href="#" aria-current="page">Issue from location</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">outbox</span></div>
+      <div>
+        <h1 class="page-title">Issue Stock from Location</h1>
+        <p class="page-subtitle">
+          {% if selected_room %}
+          Browsing {{ selected_warehouse.code }} / {{ selected_room.room_name }}{% if loc %} / {{ loc }}{% endif %}{% if selected_storage_location %} / {{ selected_storage_location.display_code }}{% endif %}
+          {% else %}
+          Select a warehouse and room to view available inventory
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_issuance_portal' %}" class="button is-light is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+        <span>Demand / Stock Search Portal</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if not can_issue %}
+<div class="notification is-warning is-light">
+  <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+  You do not have the <span class="is-family-monospace">can_issue_parts</span> permission — this portal is read-only for you.
+</div>
+{% endif %}
+
+<div class="columns is-variable is-4">
+  <!-- Left Column: Available Inventory Card -->
+  <div class="column is-5">
+    <div id="available-inventory-card" class="card" style="position:sticky; top:1rem;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+          Available Inventory
+          {% if available_stock %}
+          <span class="tag is-info is-light ml-2">{{ available_stock|length }} item{{ available_stock|length|pluralize }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-content">
+
+        {% if selected_stock %}
+        <!-- Active Stock Selection Form -->
+        <div class="box p-3 mb-4" style="border: 1px solid var(--bulma-border, #dbdbdb); background: var(--bulma-background-light, #f9f9f9);">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+            <h4 class="title is-6 mb-0">Issue Selected Stock</h4>
+            <a href="?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}#available-inventory-card"
+               class="button is-ghost is-small p-0">
+              <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">close</span></span>
+              <span>Deselect</span>
+            </a>
+          </div>
+
+          <dl class="kv mb-3">
+            <dt>Part</dt>
+            <dd class="is-family-monospace has-text-weight-bold">{{ selected_stock.part.part_number }} — {{ selected_stock.part.name }}</dd>
+            <dt>Serial</dt>
+            <dd class="is-family-monospace">{{ selected_stock.serial_number|default:"—" }}</dd>
+            <dt>Available Qty</dt>
+            <dd class="is-family-monospace"><span class="tag is-success is-light">{{ selected_stock.quantity_on_hand }}</span></dd>
+            <dt>Location</dt>
+            <dd class="is-size-7">{{ selected_stock.warehouse.code }} / {{ selected_stock.room.room_name }}{% if selected_stock.storage_location %} / {{ selected_stock.storage_location.display_code }}{% endif %}</dd>
+          </dl>
+
+          <form method="post" action="{% url 'inventory_issuance_location_portal' %}?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}&stock={{ selected_stock.pk }}">
+            {% csrf_token %}
+            <input type="hidden" name="active_inventory_id" value="{{ selected_stock.pk }}">
+            <input type="hidden" name="action" value="issue_stock">
+
+            <div class="field">
+              <label class="label is-small">Issue Type</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="issue_type" id="issue-type-select" onchange="toggleIssueFields(this.value)">
+                    {% for code, label in issue_types %}
+                    <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Field for Part Demand -->
+            <div id="field-demand" class="field">
+              <label class="label is-small">Part Demand</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="demand_id">
+                    <option value="">-- Direct Issue (No Demand) --</option>
+                    {% for d in demands %}
+                    <option value="{{ d.pk }}">#{{ d.pk }} — {{ d.part.part_number }} (Requested by {{ d.requested_by.get_full_name|default:d.requested_by.username }})</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Field for Asset -->
+            <div id="field-asset" class="field" style="display:none;">
+              <label class="label is-small">Target Asset</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="issued_to_asset_id">
+                    <option value="">-- Select Asset --</option>
+                    {% for asset in assets %}
+                    <option value="{{ asset.pk }}">{{ asset.name }} ({% if asset.asset_number %}{{ asset.asset_number }}{% else %}#{{ asset.pk }}{% endif %})</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Field for User -->
+            <div id="field-user" class="field" style="display:none;">
+              <label class="label is-small">Recipient Person</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="issued_to_id">
+                    <option value="">-- Select Person --</option>
+                    {% for u in users %}
+                    <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small" for="issue-qty">Quantity to Issue</label>
+              <div class="control">
+                {% if selected_stock.serial_number %}
+                <input id="issue-qty" class="input is-small is-family-monospace" type="text" value="1.000" disabled>
+                <input type="hidden" name="quantity" value="1.000">
+                {% else %}
+                <input id="issue-qty" class="input is-small is-family-monospace" type="text" name="quantity" value="{{ selected_stock.quantity_on_hand }}" required>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small" for="issue-notes">Notes</label>
+              <div class="control">
+                <textarea id="issue-notes" class="textarea is-small" name="notes" rows="2" placeholder="Optional notes..."></textarea>
+              </div>
+            </div>
+
+            {% if can_issue %}
+            <div class="buttons mt-3">
+              <button class="button is-primary is-fullwidth" type="submit">
+                <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+                <span>Stage Stock into Active Session</span>
+              </button>
+              <a href="{% url 'inventory_issue_parts' %}" class="button is-link is-outlined is-fullwidth">
+                <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></span>
+                <span>Go to Issuance Workspace</span>
+              </a>
+            </div>
+            {% endif %}
+          </form>
+        </div>
+        <hr class="my-3">
+        {% endif %}
+
+        {% if not selected_room %}
+        <div class="has-text-centered py-6">
+          <span class="icon is-large has-text-grey-light mb-2"><span class="material-icons" aria-hidden="true" style="font-size:3rem;">place</span></span>
+          <p class="has-text-grey">Select a <strong>Warehouse</strong> and <strong>Room</strong> on the right to view available inventory items.</p>
+        </div>
+        {% elif available_stock %}
+        <div class="table-container" style="max-height: 480px; overflow-y: auto;">
+          <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7 mb-0">
+            <thead>
+              <tr style="position: sticky; top: 0; background: var(--bulma-card-background-color, #ffffff); z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <th>Part / Serial</th>
+                <th>Bin</th>
+                <th class="has-text-right">Qty</th>
+                <th class="has-text-centered">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for stock in available_stock %}
+              <tr class="{% if selected_stock.pk == stock.pk %}is-selected{% endif %}">
+                <td>
+                  <div class="is-family-monospace has-text-weight-semibold">{{ stock.part.part_number }}</div>
+                  <div class="is-size-7 has-text-grey">{{ stock.part.name|truncatechars:24 }}</div>
+                  {% if stock.serial_number %}
+                  <div class="is-family-monospace is-size-7 has-text-info">SN: {{ stock.serial_number }}</div>
+                  {% endif %}
+                </td>
+                <td class="is-family-monospace align-middle">
+                  {% if stock.storage_location %}
+                  {{ stock.storage_location.display_code }}
+                  {% else %}
+                  <span class="has-text-grey-light">—</span>
+                  {% endif %}
+                </td>
+                <td class="has-text-right is-family-monospace align-middle">
+                  <span class="tag is-info is-light">{{ stock.quantity_on_hand }}</span>
+                </td>
+                <td class="has-text-centered align-middle">
+                  <a href="?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}&stock={{ stock.pk }}#available-inventory-card"
+                     class="button is-small {% if selected_stock.pk == stock.pk %}is-primary{% else %}is-primary is-outlined{% endif %}">
+                    {% if selected_stock.pk == stock.pk %}Selected{% else %}Select{% endif %}
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="has-text-centered py-5">
+          <span class="icon is-medium has-text-grey-light mb-1"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">inventory</span></span>
+          <p class="has-text-grey is-size-7">No active stock items match the current location filter.</p>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Location Selector Card -->
+  <div class="column is-7">
+    <div id="location-card" class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Location Scope Filter
+        </div>
+      </div>
+      <div class="card-content">
+
+        <nav class="breadcrumb is-small mb-4" aria-label="location steps">
+          <ul>
+            <li class="{% if not selected_warehouse %}is-active{% endif %}">
+              <a href="?#location-card">Warehouse</a>
+            </li>
+            {% if selected_warehouse %}
+            <li class="{% if not selected_room %}is-active{% endif %}">
+              <a href="?warehouse_id={{ warehouse_id }}#location-card">Room ({{ selected_warehouse.code }})</a>
+            </li>
+            {% if selected_room %}
+            <li class="{% if not loc and not sloc %}is-active{% endif %}">
+              <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}#available-inventory-card">Room All</a>
+            </li>
+            {% if loc %}
+            <li class="{% if not sloc %}is-active{% endif %}">
+              <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}&loc={{ loc }}#available-inventory-card">Area {{ loc }}</a>
+            </li>
+            {% endif %}
+            {% if selected_storage_location %}
+            <li class="is-active">
+              <a href="#">Bin {{ selected_storage_location.display_code }}</a>
+            </li>
+            {% endif %}
+            {% endif %}
+            {% endif %}
+          </ul>
+        </nav>
+
+        {% if not selected_warehouse %}
+        <!-- Step 1: Warehouse Grid -->
+        <h4 class="title is-6 mb-3">Choose a Warehouse</h4>
+        <div class="columns is-multiline">
+          {% for wh in warehouses %}
+          <div class="column is-4">
+            <a href="?warehouse_id={{ wh.pk }}#location-card" class="box has-text-centered p-4">
+              <span class="icon is-large has-text-primary mb-1"><span class="material-icons" aria-hidden="true" style="font-size:2.2rem;">store</span></span>
+              <p class="is-family-monospace has-text-weight-bold">{{ wh.code }}</p>
+              <p class="is-size-7 has-text-grey">{{ wh.name }}</p>
+            </a>
+          </div>
+          {% empty %}
+          <div class="column is-12">
+            <p class="has-text-grey is-size-7">No active warehouses found.</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% elif not selected_room %}
+        <!-- Step 2: Room Grid -->
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <h4 class="title is-6 mb-0">Select a Room in {{ selected_warehouse.code }}</h4>
+          <a href="?#location-card" class="button is-small is-light">Change Warehouse</a>
+        </div>
+        <div class="columns is-multiline">
+          {% for room in rooms %}
+          <div class="column is-4">
+            <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room.pk }}#available-inventory-card" class="box has-text-centered p-3">
+              {% if room.thumbnail_svg %}
+              <div class="room-thumbnail mb-2" style="max-height:80px; overflow:hidden;">
+                {{ room.thumbnail_svg|safe }}
+              </div>
+              {% else %}
+              <span class="icon is-large has-text-info mb-1"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">meeting_room</span></span>
+              {% endif %}
+              <p class="has-text-weight-medium is-size-7">{{ room.room_name }}</p>
+            </a>
+          </div>
+          {% empty %}
+          <div class="column is-12">
+            <p class="has-text-grey is-size-7">No active storage rooms in this warehouse.</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Step 3: Interactive SVG Room Layout Map & Location Directory -->
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <div>
+            <h4 class="title is-6 mb-0">{{ selected_room.room_name }}</h4>
+            <p class="is-size-7 has-text-grey">{{ selected_warehouse.code }} — {{ room_locations|length }} map area{{ room_locations|length|pluralize }}</p>
+          </div>
+          <a href="?warehouse_id={{ warehouse_id }}#location-card" class="button is-small is-light">Change Room</a>
+        </div>
+
+        {% if map_svg %}
+        <div class="mb-4">
+          {{ map_svg|safe }}
+        </div>
+        {% endif %}
+
+        <div class="field mt-4 mb-2">
+          <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+            <label class="label is-small mb-0">Location Directory & Bins</label>
+            {% if loc or sloc %}
+            <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}#available-inventory-card" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">clear</span></span>
+              <span>Reset Location Scope</span>
+            </a>
+            {% endif %}
+          </div>
+          <p class="control has-icons-left">
+            <input id="loc-search-input" class="input is-small" type="search"
+                   placeholder="Filter storage locations by code or shelf..."
+                   autocomplete="off"
+                   onkeyup="filterLocationTable(this.value)">
+            <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">search</span></span>
+          </p>
+        </div>
+
+        <div class="table-container" style="max-height: 420px; overflow-y: auto;">
+          <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7 mb-0">
+            <thead>
+              <tr style="position: sticky; top: 0; background: var(--bulma-card-background-color, #ffffff); z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <th>Location Code</th>
+                <th>Map Area</th>
+                <th>Coordinates (X/Y/Z)</th>
+                <th class="has-text-centered">Filter Scope Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rl in room_locations %}
+              {% for sl in rl.storage_locations.all %}
+              {% if sl.is_active %}
+              <tr class="loc-table-row {% if selected_storage_location.pk == sl.pk %}is-selected{% elif loc == rl.display_code %}is-active{% endif %}"
+                  data-loc="{{ rl.display_code }}"
+                  data-search="{{ sl.display_code }} {{ rl.display_code }} {{ rl.major_coord }} {{ rl.minor_coord }} {{ sl.atomic_coord }}">
+                <td class="is-family-monospace has-text-weight-semibold">{{ sl.display_code }}</td>
+                <td class="is-family-monospace">
+                  <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}&loc={{ rl.display_code }}#available-inventory-card" class="has-text-link">
+                    {{ rl.display_code }}
+                  </a>
+                </td>
+                <td class="is-family-monospace">{{ rl.major_coord }} / {{ rl.minor_coord }} / {{ sl.atomic_coord }}</td>
+                <td class="has-text-centered">
+                  <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}&loc={{ rl.display_code }}&sloc={{ sl.pk }}#available-inventory-card"
+                     class="button is-small {% if selected_storage_location.pk == sl.pk %}is-primary{% else %}is-light{% endif %}">
+                    {% if selected_storage_location.pk == sl.pk %}Active Bin Filter{% else %}Filter to Bin{% endif %}
+                  </a>
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+              {% empty %}
+              <tr><td colspan="4" class="has-text-grey has-text-centered py-4">This room has no storage locations defined yet.</td></tr>
+              {% endfor %}
+              <tr id="loc-table-no-match" style="display:none;">
+                <td colspan="4" class="has-text-grey has-text-centered py-3">No matching storage locations found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+function toggleIssueFields(issueType) {
+  const demandField = document.getElementById('field-demand');
+  const assetField = document.getElementById('field-asset');
+  const userField = document.getElementById('field-user');
+
+  if (demandField) demandField.style.display = (issueType === 'FOR_PART_DEMAND') ? '' : 'none';
+  if (assetField) assetField.style.display = (issueType === 'DIRECT_TO_ASSET') ? '' : 'none';
+  if (userField) userField.style.display = (issueType === 'DIRECT_TO_PERSON') ? '' : 'none';
+}
+
+function filterLocationTable(query) {
+  const q = (query || '').toLowerCase().trim();
+  const rows = document.querySelectorAll('.loc-table-row');
+  let visibleCount = 0;
+  rows.forEach(row => {
+    const searchData = row.getAttribute('data-search') || '';
+    if (!q || searchData.toLowerCase().includes(q)) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+  const noMatchRow = document.getElementById('loc-table-no-match');
+  if (noMatchRow) {
+    noMatchRow.style.display = (visibleCount === 0 && q) ? '' : 'none';
+  }
+}
+</script>
+{% endblock %}

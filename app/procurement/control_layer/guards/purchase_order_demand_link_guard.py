@@ -19,8 +19,14 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.db.models import Sum
+
+from app.procurement.control_layer.domain_structs.arrival_allocation import (
+    accepted_by_purchase_order_line,
+)
 from app.procurement.control_layer.errors import (
     AllocationCapExceeded,
+    CrossOrderAllocationExceeded,
     ProcurementValidationError,
 )
 from app.procurement.models import PurchaseOrderDemandLink
@@ -72,12 +78,51 @@ class PurchaseOrderDemandLinkValidator:
         if errors:
             raise ProcurementValidationError(errors)
 
+        # §10's hard stop, checked BEFORE the same-line cap: a demand's total
+        # across every order it touches must never exceed what it needs,
+        # regardless of whether any single line's own cap would allow it.
+        cls._check_cross_order_cap(demand=demand, line=line, quantity_allocated=quantity_allocated)
+
         cls._check_cap(
             demand=demand,
             quantity_allocated=quantity_allocated,
             existing_link=existing_link,
             allow_raise_request=allow_raise_request,
         )
+
+    @classmethod
+    def _check_cross_order_cap(cls, *, demand, line, quantity_allocated: Decimal) -> None:
+        """reallocation_resolution_portal.md §10, rule 1: hard stop, always —
+        deliberately no `allow_raise_request` escape hatch here, unlike the
+        same-line cap this sits beside. Always computed fresh from the DB
+        (rule 3) — nothing here reads a cached total.
+        """
+        other_claims = list(
+            PurchaseOrderDemandLink.objects.filter(
+                part_demand=demand, is_active=True, deleted_at__isnull=True
+            )
+            .exclude(purchase_order_line=line)
+            .select_related("purchase_order_line__purchase_order")
+            .order_by("-quantity_allocated")
+        )
+        if not other_claims:
+            # Everything this demand claims lives on this one line — the
+            # same-line cap in _check_cap already governs that case.
+            return
+
+        other_total = sum((c.quantity_allocated for c in other_claims), Decimal("0"))
+        new_total = other_total + quantity_allocated
+        if new_total > demand.quantity_requested:
+            conflicting = other_claims[0]
+            raise CrossOrderAllocationExceeded(
+                demand_id=demand.pk,
+                quantity_requested=demand.quantity_requested,
+                total_across_orders=new_total,
+                attempted=quantity_allocated,
+                conflicting_purchase_order_id=conflicting.purchase_order_line.purchase_order_id,
+                conflicting_po_number=conflicting.purchase_order_line.purchase_order.po_number,
+                conflicting_line_number=conflicting.purchase_order_line.line_number,
+            )
 
     @staticmethod
     def _check_cap(
@@ -118,4 +163,56 @@ class PurchaseOrderDemandLinkValidator:
                 outstanding=outstanding,
                 attempted=quantity_allocated,
                 binary_allocation=True,
+            )
+
+    @classmethod
+    def check_receipt(
+        cls, *, link: PurchaseOrderDemandLink, quantity_received: Decimal
+    ) -> None:
+        """Reallocation Resolution decision (supersedes D55 — see
+        PurchaseOrderDemandLink's docstring): a claim's quantity_received is a
+        deliberate, human-typed distribution of a PO line's arrived total,
+        never inferred. Enforced here:
+
+          - a receipt total only grows (mirrors ShipmentLineValidator's
+            acceptance simplicity) — a Buyer correcting an over-count reverses
+            it through the unlock sequence, not by typing a smaller number
+            over a locked claim;
+          - the sum of every active claim's quantity_received on this line can
+            never exceed what the line has actually had accepted against it —
+            you cannot mark more received than physically arrived.
+        """
+        errors: list[str] = []
+
+        if quantity_received is None or quantity_received < 0:
+            errors.append("Received quantity cannot be negative.")
+        elif quantity_received < link.quantity_received:
+            errors.append(
+                "Received quantity cannot be reduced once recorded. Use the "
+                "Reallocation Portal's unlock sequence to correct a claim "
+                "that was locked in error."
+            )
+
+        if errors:
+            raise ProcurementValidationError(errors)
+
+        line = link.purchase_order_line
+        accepted_total = accepted_by_purchase_order_line(
+            purchase_order_line_ids=[line.pk]
+        ).get(line.pk, Decimal("0"))
+        other_total = (
+            PurchaseOrderDemandLink.objects.filter(
+                purchase_order_line=line, is_active=True, deleted_at__isnull=True
+            )
+            .exclude(pk=link.pk)
+            .aggregate(total=Sum("quantity_received"))["total"]
+            or Decimal("0")
+        )
+        if other_total + quantity_received > accepted_total:
+            raise ProcurementValidationError(
+                [
+                    f"Only {accepted_total} has been accepted against this line "
+                    f"({other_total} already marked received on its other claims); "
+                    f"{quantity_received} would exceed that."
+                ]
             )

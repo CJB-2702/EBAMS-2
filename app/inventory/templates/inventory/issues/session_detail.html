@@ -1,0 +1,150 @@
+{% extends "inventory/base.html" %}
+{% block title %}Issue Session {{ session.session_number }}{% endblock %}
+{% block nav_issues %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_issues_index' %}">Issued Parts Ledger</a></li>
+<li class="is-active"><a href="#" aria-current="page">Session {{ session.session_number }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">receipt_long</span></div>
+      <div>
+        <h1 class="page-title">Issue Session #{{ session.session_number }}</h1>
+        <p class="page-subtitle">Committed transaction receipt for stock issuance.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_issues_index' %}" class="button is-light is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Issued Parts Ledger</span>
+      </a>
+      <a href="{% url 'inventory_issue_parts' %}" class="button is-primary is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
+        <span>Issue Parts Workspace</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-variable is-4">
+  <!-- Session Header Details -->
+  <div class="column is-4">
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+          Session Summary
+        </div>
+      </div>
+      <div class="card-content">
+        <table class="table is-fullwidth is-size-7">
+          <tbody>
+            <tr>
+              <th style="width: 40%;">Session Code</th>
+              <td class="is-family-monospace has-text-weight-bold">{{ session.session_number }}</td>
+            </tr>
+            <tr>
+              <th>Status</th>
+              <td><span class="tag is-success is-light">{{ session.get_status_display }}</span></td>
+            </tr>
+            <tr>
+              <th>Issue Type</th>
+              <td><span class="tag is-info is-light">{{ session.get_issue_type_display }}</span></td>
+            </tr>
+            <tr>
+              <th>Authorized By</th>
+              <td>{{ session.issued_by.username|default:"System" }}</td>
+            </tr>
+            <tr>
+              <th>Issued To</th>
+              <td>{{ session.issued_to.username|default:"—" }}</td>
+            </tr>
+            <tr>
+              <th>Target Asset</th>
+              <td>{{ session.issued_to_asset.name|default:"—" }}</td>
+            </tr>
+            <tr>
+              <th>Date Issued</th>
+              <td>{{ session.issued_at|date:"Y-m-d H:i:s" }}</td>
+            </tr>
+            <tr>
+              <th>Issue Reason</th>
+              <td>{{ session.issue_reason|default:"—" }}</td>
+            </tr>
+            <tr>
+              <th>Notes</th>
+              <td>{{ session.notes|default:"None." }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Line Items -->
+  <div class="column is-8">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">format_list_bulleted</span></span>
+          Disbursed Line Items ({{ issues.count }})
+        </div>
+      </div>
+      <div class="card-content is-flush">
+        <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+          <thead>
+            <tr>
+              <th>Part Number</th>
+              <th>Provenance / Location</th>
+              <th>Serial #</th>
+              <th class="has-text-right">Quantity</th>
+              <th>Linked Demand</th>
+              <th>Line Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in issues %}
+            <tr>
+              <td class="is-family-monospace">
+                <a href="{% url 'inventory_issue_detail' pk=line.pk %}" class="has-text-weight-bold">
+                  {{ line.part_demand.part.part_number|default:"Stock Issue" }}
+                </a>
+              </td>
+              <td>
+                {% if line.from_room %}
+                  {{ line.from_room.room_name }}
+                  {% if line.from_storage_location %}
+                    <br><span class="has-text-grey">Bin: {{ line.from_storage_location.bin_tag }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="has-text-grey-light">N/A</span>
+                {% endif %}
+              </td>
+              <td class="is-family-monospace">{{ line.serial_number|default:"—" }}</td>
+              <td class="has-text-right is-family-monospace has-text-weight-bold">{{ line.quantity }}</td>
+              <td>
+                {% if line.part_demand_id %}
+                  <a href="{% url 'demand_detail' pk=line.part_demand_id %}">#{{ line.part_demand_id }}</a>
+                {% else %}
+                  <span class="has-text-grey-light">—</span>
+                {% endif %}
+              </td>
+              <td>{{ line.notes|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="has-text-grey has-text-centered py-5">
+                No items recorded in this session.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

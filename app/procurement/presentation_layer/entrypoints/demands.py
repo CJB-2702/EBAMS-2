@@ -216,14 +216,30 @@ def demand_index(request: HttpRequest) -> HttpResponse:
     domain_id = int(domain_id_raw) if domain_id_raw.isdigit() else None
     needed_by_from = (
         parse_datetime(request.GET.get("needed_by_from", ""))
+        or parse_date(request.GET.get("needed_by_from", ""))
         if request.GET.get("needed_by_from")
         else None
     )
     needed_by_to = (
         parse_datetime(request.GET.get("needed_by_to", ""))
+        or parse_date(request.GET.get("needed_by_to", ""))
         if request.GET.get("needed_by_to")
         else None
     )
+    created_from = (
+        parse_datetime(request.GET.get("created_from", ""))
+        or parse_date(request.GET.get("created_from", ""))
+        if request.GET.get("created_from")
+        else None
+    )
+    created_to = (
+        parse_datetime(request.GET.get("created_to", ""))
+        or parse_date(request.GET.get("created_to", ""))
+        if request.GET.get("created_to")
+        else None
+    )
+    requested_by = request.GET.get("requested_by", "").strip()
+    po_number = request.GET.get("po_number", "").strip()
 
     qs = OpenDemandSearch.index_list(
         domain_ids=domain_ids,
@@ -236,6 +252,10 @@ def demand_index(request: HttpRequest) -> HttpResponse:
         domain_id=domain_id,
         needed_by_from=needed_by_from,
         needed_by_to=needed_by_to,
+        created_from=created_from,
+        created_to=created_to,
+        requested_by=requested_by,
+        po_number=po_number,
         q=q,
     )
 
@@ -259,6 +279,10 @@ def demand_index(request: HttpRequest) -> HttpResponse:
             "domain_id": domain_id_raw,
             "needed_by_from": request.GET.get("needed_by_from", ""),
             "needed_by_to": request.GET.get("needed_by_to", ""),
+            "created_from": request.GET.get("created_from", ""),
+            "created_to": request.GET.get("created_to", ""),
+            "requested_by": requested_by,
+            "po_number": po_number,
         },
         "demand_states": DemandState.choices,
         "purchasing_states": PurchasingState.choices,
@@ -374,10 +398,22 @@ def demand_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
     detail = PartDemandDetailStruct.load(demand_id=pk)
     can_cancel = can_cancel_demand(request, demand)
+    # Deliberate UI anti-pattern (serialized_inventory_tracking.md §3): the
+    # full issue-row history renders directly here, un-nested, rather than
+    # behind an aggregated progress bar. `issues` is inventory's reverse FK
+    # (PartIssue.part_demand) — read only, no import of inventory across the
+    # app boundary (D7).
+    issue_rows = list(
+        demand.issues.select_related(
+            "created_by", "active_inventory__warehouse", "active_inventory__room",
+            "active_inventory__storage_location", "issued_to_asset",
+        ).order_by("-issued_at")
+    )
     context = {
         "demand": demand,
         "detail": detail,
         "can_cancel": can_cancel,
+        "issue_rows": issue_rows,
         # Same actor set as cancel (Requester-own or demand_manage), D4/D6.
         "can_delete": can_cancel,
         "delete_confirm_copy": (

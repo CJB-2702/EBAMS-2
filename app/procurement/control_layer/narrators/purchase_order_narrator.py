@@ -158,6 +158,40 @@ class PurchaseOrderNarrator:
         )
 
     @staticmethod
+    def receipt_recorded(*, demand_id: int, line_number: int, quantity_received) -> str:
+        return (
+            f"Demand #{demand_id}'s claim on line {line_number} marked "
+            f"{quantity_received} received. This claim is now LOCKED and can "
+            f"only be reduced through the Reallocation Portal's unlock sequence."
+        )
+
+    @staticmethod
+    def claim_auto_updated_by_shortfall(
+        *, demand_id: int, line_number: int, old_quantity, new_quantity
+    ) -> str:
+        return (
+            f"Line {line_number} reduced; demand #{demand_id}'s claim was the "
+            f"only active, unlocked claim, so it was automatically updated from "
+            f"{old_quantity} to {new_quantity}."
+        )
+
+    @staticmethod
+    def claim_unlocked(*, demand_id: int, line_number: int) -> str:
+        return (
+            f"Demand #{demand_id}'s LOCKED claim on line {line_number} was "
+            f"deliberately unlocked through the Reallocation Portal's "
+            f"two-popup confirmation, forcing an automated purchasing-status "
+            f"update on that demand."
+        )
+
+    @staticmethod
+    def reallocation_committed(*, line_number: int, new_quantity) -> str:
+        return (
+            f"Line {line_number}'s reallocation resolved through the "
+            f"Reallocation Portal; ordered quantity now {new_quantity}."
+        )
+
+    @staticmethod
     def shipment_line_allocated(
         *, shipment_number: str, part_number: str, quantity, target_line_number: int
     ) -> str:

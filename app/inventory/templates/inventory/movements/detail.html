@@ -1,0 +1,37 @@
+{% extends "inventory/base.html" %}
+{% block title %}Movement {{ movement.movement_number }}{% endblock %}
+{% block nav_movements %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_movements_index' %}">Movements</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ movement.movement_number }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">sync_alt</span></div>
+      <div>
+        <h1 class="page-title">{{ movement.movement_number }}</h1>
+        <p class="page-subtitle">{{ movement.get_movement_type_display }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Details</div></div>
+  <div class="card-content">
+    <dl class="kv">
+      <dt>Part</dt><dd class="is-family-monospace">{{ movement.part.part_number }} — {{ movement.part.name }}</dd>
+      <dt>Quantity</dt><dd class="is-family-monospace">{{ movement.quantity }}</dd>
+      <dt>Serial</dt><dd class="is-family-monospace">{{ movement.serial_number|default:"—" }}</dd>
+      <dt>From</dt><dd>{{ movement.from_warehouse.code }} / {{ movement.from_room.room_name }}{% if movement.from_storage_location %} / {{ movement.from_storage_location.display_code }}{% endif %}</dd>
+      <dt>To</dt><dd>{{ movement.to_warehouse.code }} / {{ movement.to_room.room_name }}{% if movement.to_storage_location %} / {{ movement.to_storage_location.display_code }}{% endif %}</dd>
+      <dt>Moved by</dt><dd>{{ movement.moved_by|default:"—" }}</dd>
+      <dt>Date</dt><dd>{{ movement.movement_date|date:"Y-m-d H:i" }}</dd>
+      <dt>Notes</dt><dd>{{ movement.notes|default:"—" }}</dd>
+    </dl>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,465 @@
+{% extends "inventory/base.html" %}
+{% block title %}Issue Parts Workspace{% endblock %}
+{% block nav_issues %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_issues_index' %}">Issued Parts Ledger</a></li>
+<li class="is-active"><a href="#" aria-current="page">Unified Issue Workspace</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></div>
+      <div>
+        <h1 class="page-title">Unified Part Issuance Workspace</h1>
+        <p class="page-subtitle">Consolidate part demands and physical inventory into a single active session, pair items, and commit batch disbursements.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_issues_index' %}" class="button is-light is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+        <span>Issued Parts Ledger</span>
+      </a>
+      <a href="{% url 'inventory_issuance_location_portal' %}" class="button is-info is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>
+        <span>Issue from Location</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if not can_issue %}
+<div class="notification is-warning is-light mb-4">
+  <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+  You do not have the <span class="is-family-monospace">can_issue_parts</span> permission — this portal is read-only for you.
+</div>
+{% endif %}
+
+<!-- Top Row: Staging Queues (Demands vs Stock) -->
+<div class="columns is-variable is-4 mb-4">
+
+  <!-- Column 1: Staged Requirements & Demands Queue -->
+  <div class="column is-6">
+    <div class="card" style="height: 100%;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>
+          1. Stage Part Demands & Requirements
+        </div>
+      </div>
+      <div class="card-content">
+        {% if can_issue %}
+        <!-- Stage Demand Form -->
+        <form method="post" action="{% url 'inventory_issue_parts' %}" class="mb-4">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_demand">
+          <label class="label is-small">Stage Open Part Demand</label>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <div class="select is-small is-fullwidth">
+                <select name="add_demand_id" required>
+                  <option value="">Select open demand to stage…</option>
+                  {% for dem in open_demands %}
+                  <option value="{{ dem.pk }}">
+                    #{{ dem.pk }} — {{ dem.part.part_number }} (Req: {{ dem.quantity_requested|stringformat:".3f" }}, By: {{ dem.requested_by.username|default:"—" }})
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="control">
+              <button class="button is-small is-link" type="submit">
+                <span class="icon"><span class="material-icons">add</span></span>
+                <span>Stage Demand</span>
+              </button>
+            </div>
+          </div>
+        </form>
+        {% endif %}
+
+        <!-- Staged Demands Table (Rule 5: Renders even when empty) -->
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
+            <thead>
+              <tr>
+                <th>Demand #</th>
+                <th>Part Number & Name</th>
+                <th>Requested Qty</th>
+                <th class="has-text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% setvar 0 as demand_count %}
+              {% for line in draft %}
+                {% if line.demand or not line.balance %}
+                <tr>
+                  <td class="is-family-monospace has-text-weight-bold">
+                    {% if line.demand %}#{{ line.demand.pk }}{% else %}<span class="has-text-grey">Direct Issue</span>{% endif %}
+                  </td>
+                  <td>
+                    {% if line.demand %}
+                      <div class="is-family-monospace has-text-weight-semibold">{{ line.demand.part.part_number }}</div>
+                      <div class="has-text-grey">{{ line.demand.part.part_name }}</div>
+                    {% else %}
+                      <div class="has-text-grey">—</div>
+                    {% endif %}
+                  </td>
+                  <td class="is-family-monospace">{{ line.quantity }}</td>
+                  <td class="has-text-right">
+                    {% if can_issue %}
+                    <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="remove_line">
+                      <input type="hidden" name="index" value="{{ line.index }}">
+                      <button class="button is-xs is-danger is-light" type="submit">
+                        <span class="icon"><span class="material-icons">delete</span></span>
+                      </button>
+                    </form>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endif %}
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="has-text-grey has-text-centered py-4">
+                    No demands staged. Pick an open demand above to add requirements.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column 2: Staged Physical Stock Queue -->
+  <div class="column is-6">
+    <div class="card" style="height: 100%;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+          2. Stage Physical Inventory Stock
+        </div>
+      </div>
+      <div class="card-content">
+        <!-- Quick Directory Filter -->
+        <form method="get" action="{% url 'inventory_issue_parts' %}" class="mb-4">
+          <label class="label is-small">Search Physical Stock Directory</label>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input is-small" type="text" name="search" value="{{ current_filters.search }}" placeholder="Search part #, name, serial…">
+            </div>
+            <div class="control">
+              <button class="button is-small is-primary" type="submit">
+                <span class="icon"><span class="material-icons">search</span></span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Staged Stock Table (Rule 5: Renders even when empty) -->
+        <div class="table-container mb-4">
+          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
+            <thead>
+              <tr>
+                <th>Stock Location</th>
+                <th>Part Number & Serial</th>
+                <th class="has-text-right">Pick Qty</th>
+                <th class="has-text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in draft %}
+                {% if line.balance %}
+                <tr>
+                  <td>
+                    {{ line.balance.room.room_name }}
+                    {% if line.balance.storage_location %}<br><span class="has-text-grey">Bin: {{ line.balance.storage_location.bin_tag }}</span>{% endif %}
+                  </td>
+                  <td class="is-family-monospace">
+                    <div class="has-text-weight-bold">{{ line.balance.part.part_number }}</div>
+                    {% if line.balance.serial_number %}<span class="tag is-small is-light">SN: {{ line.balance.serial_number }}</span>{% endif %}
+                  </td>
+                  <td class="has-text-right is-family-monospace has-text-weight-bold">{{ line.quantity }}</td>
+                  <td class="has-text-right">
+                    {% if can_issue %}
+                    <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="remove_line">
+                      <input type="hidden" name="index" value="{{ line.index }}">
+                      <button class="button is-xs is-danger is-light" type="submit">
+                        <span class="icon"><span class="material-icons">delete</span></span>
+                      </button>
+                    </form>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endif %}
+              {% empty %}
+                <tr>
+                  <td colspan="4" class="has-text-grey has-text-centered py-4">
+                    No physical stock items staged yet. Select stock items from the table below.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Available Inventory Selection Table -->
+<div class="card mb-5">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">manage_search</span></span>
+      Available Physical Stock Directory
+    </div>
+  </div>
+  <div class="card-content">
+    <div class="table-container">
+      <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Part Number & Name</th>
+            <th>Warehouse / Room</th>
+            <th>Bin Location</th>
+            <th>Serial #</th>
+            <th class="has-text-right">Available Qty</th>
+            <th class="has-text-right" style="width: 180px;">Stage Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inv in available_inv_page.object_list %}
+          <tr>
+            <td>
+              <div class="is-family-monospace has-text-weight-bold">{{ inv.part.part_number }}</div>
+              <div class="has-text-grey">{{ inv.part.part_name }}</div>
+            </td>
+            <td>{{ inv.room.warehouse.name|default:"—" }} / {{ inv.room.room_name }}</td>
+            <td class="is-family-monospace">{{ inv.storage_location.bin_tag|default:"—" }}</td>
+            <td class="is-family-monospace">{{ inv.serial_number|default:"—" }}</td>
+            <td class="has-text-right is-family-monospace has-text-weight-bold">{{ inv.quantity_on_hand }}</td>
+            <td class="has-text-right">
+              {% if can_issue %}
+              <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:flex; gap:0.25rem; justify-content: flex-end;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_line">
+                <input type="hidden" name="active_inventory_id" value="{{ inv.pk }}">
+                {% if inv.serial_number %}
+                  <input type="hidden" name="quantity" value="1.000">
+                {% else %}
+                  <input class="input is-small is-family-monospace" style="width: 4rem;" type="text" name="quantity" value="{{ inv.quantity_on_hand }}">
+                {% endif %}
+                <button class="button is-small is-link" type="submit">
+                  <span class="icon"><span class="material-icons">playlist_add</span></span>
+                  <span>Stage</span>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="has-text-grey has-text-centered py-4">No available stock balances matching filter.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Row: Auto-Matched Pairing Matrix & Terminal Commit -->
+<div class="card border-primary mb-5">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span>
+      3. Line Pairing Matrix & Terminal Session Commit
+      <span class="tag is-info ml-2">{{ draft|length }} total item(s) in session</span>
+    </div>
+    <div class="card-header-icon">
+      {% if can_issue and draft %}
+      <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="auto_match">
+        <button class="button is-small is-info is-light mr-2" type="submit">
+          <span class="icon"><span class="material-icons">sync</span></span>
+          <span>Auto-Match Demands & Stock</span>
+        </button>
+      </form>
+      <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel_draft">
+        <button class="button is-small is-light" type="submit">
+          <span class="icon"><span class="material-icons">clear_all</span></span>
+          <span>Clear Queue</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card-content">
+
+    <!-- Pairing Matrix Table (Rule 5) -->
+    <div class="table-container mb-4">
+      <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Part Number & Description</th>
+            <th>Staged Requirement (Demand)</th>
+            <th>Physical Stock Source</th>
+            <th class="has-text-right">Quantity</th>
+            <th class="has-text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in draft %}
+          <tr>
+            <td>
+              {% if line.match_status == 'paired' %}
+                <span class="tag is-success is-light"><span class="icon"><span class="material-icons" style="font-size:12px;">check_circle</span></span>Paired</span>
+              {% elif line.match_status == 'direct_stock' %}
+                <span class="tag is-info is-light">Direct Stock</span>
+              {% elif line.match_status == 'unmet_demand' %}
+                <span class="tag is-warning is-light">Unmet Demand (Needs Stock)</span>
+              {% else %}
+                <span class="tag is-light">Unmatched</span>
+              {% endif %}
+            </td>
+            <td class="is-family-monospace">
+              {% if line.balance %}
+                <div class="has-text-weight-bold">{{ line.balance.part.part_number }}</div>
+                <div class="has-text-grey">{{ line.balance.part.part_name }}</div>
+              {% elif line.demand %}
+                <div class="has-text-weight-bold">{{ line.demand.part.part_number }}</div>
+                <div class="has-text-grey">{{ line.demand.part.part_name }}</div>
+              {% else %}
+                <span class="has-text-grey">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if line.demand %}
+                <span class="has-text-weight-bold">Demand #{{ line.demand.pk }}</span>
+                <div class="has-text-grey">Requested by {{ line.demand.requested_by.username|default:"—" }}</div>
+              {% else %}
+                <span class="has-text-grey-light">Direct Issue (No Demand)</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if line.balance %}
+                {{ line.balance.room.room_name }}
+                {% if line.balance.storage_location %}<br><span class="has-text-grey">Bin: {{ line.balance.storage_location.bin_tag }}</span>{% endif %}
+              {% else %}
+                <span class="has-text-danger">No stock balance assigned</span>
+              {% endif %}
+            </td>
+            <td class="has-text-right is-family-monospace has-text-weight-bold">{{ line.quantity }}</td>
+            <td class="has-text-right">
+              {% if can_issue %}
+              <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_line">
+                <input type="hidden" name="index" value="{{ line.index }}">
+                <button class="button is-xs is-danger is-light" type="submit">
+                  <span class="icon"><span class="material-icons">delete</span></span>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="has-text-grey has-text-centered py-5">
+              <span class="icon is-large"><span class="material-icons" style="font-size: 36px;">inbox</span></span><br>
+              No items staged in this session. Add demands or physical stock from the panels above to start pairing.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Terminal Session Commit Form -->
+    <hr class="my-4">
+    {% if can_issue %}
+    <form method="post" action="{% url 'inventory_issue_parts' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="commit_session">
+
+      <div class="columns is-variable is-3">
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small">Primary Issue Type <span class="has-text-danger">*</span></label>
+            <div class="select is-small is-fullwidth">
+              <select name="issue_type" required>
+                <option value="for_part_demand">Fulfill Part Demands</option>
+                <option value="direct_to_user">Direct Issue to User</option>
+                <option value="direct_to_asset">Direct Issue to Asset</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small">Issued To User <span class="has-text-danger">*</span></label>
+            <div class="select is-small is-fullwidth">
+              <select name="issued_to_id" required>
+                <option value="">Select recipient user…</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if u.id == request.user.id %}selected{% endif %}>
+                  {{ u.username }} ({{ u.first_name }} {{ u.last_name }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-small">Target Asset (Optional)</label>
+            <div class="select is-small is-fullwidth">
+              <select name="issued_to_asset_id">
+                <option value="">Select target asset (if applicable)…</option>
+                {% for a in assets %}
+                <option value="{{ a.id }}">{{ a.serial_number }} — {{ a.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns is-variable is-3">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small">Issue Reason (Optional)</label>
+            <input class="input is-small" type="text" name="issue_reason" placeholder="e.g. Scheduled PM, Field Repair, Emergency Take">
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small">Session Notes (Optional)</label>
+            <input class="input is-small" type="text" name="notes" placeholder="Additional details or authorization references…">
+          </div>
+        </div>
+      </div>
+
+      <div class="field mt-4">
+        <button class="button is-success is-medium is-fullwidth" type="submit" {% if not draft %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons">check_circle</span></span>
+          <span>Commit Issuance Session</span>
+        </button>
+      </div>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

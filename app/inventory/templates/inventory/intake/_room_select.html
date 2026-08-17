@@ -1,0 +1,16 @@
+{% comment %}
+format=htmx-room-select fragment. Re-rendered whenever the Warehouse select
+on the Auto Intake portal changes (see auto.html ZONE 1). Included directly
+by auto.html on a full page load too, so F5 always restores the right room
+options for whatever warehouse_id is in the URL (F5 rule).
+{% endcomment %}
+<div class="select is-small is-fullwidth" id="ai-room-select-wrap">
+  <select id="ai-room" name="room_id" {% if not warehouse_id %}disabled{% endif %}>
+    <option value="">— Intake Room (default) —</option>
+    {% for room in rooms %}
+    <option value="{{ room.pk }}" {% if room.pk == room_id %}selected{% endif %}>
+      {{ room.room_name }}{% if room.is_intake_room %} (Intake Room){% endif %}
+    </option>
+    {% endfor %}
+  </select>
+</div>

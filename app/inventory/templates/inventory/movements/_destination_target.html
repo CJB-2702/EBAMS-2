@@ -1,0 +1,27 @@
+{% comment %}
+Fragment swapped into #destination-target by the room SVG map's
+format=htmx-putaway-target shape clicks (FD-17). Exact-coded shapes still
+route here so a rack-prefix shape can expand to its location list, per the
+UI review map §7.
+{% endcomment %}
+{% if room_location %}
+<div class="notification is-light is-size-7">
+  <p class="mb-2"><strong>{{ room_location.display_code }}</strong> — pick a storage location:</p>
+  <div class="columns is-multiline is-mobile">
+    {% for sl in storage_locations %}
+    <div class="column is-narrow">
+      <a href="?{% if base_qs %}{{ base_qs }}&{% else %}{% for k, v in request.GET.items %}{% if k != 'format' and k != 'sloc' %}{{ k }}={{ v }}&{% endif %}{% endfor %}{% endif %}sloc={{ sl.pk }}#move-details-card" class="button is-small is-light is-family-monospace">
+        <span>{{ sl.display_code }}</span>
+        {% if sl.part_stock_qty > 0 %}
+        <span class="tag is-info is-light ml-1" style="font-size:0.65rem;">{{ sl.part_stock_qty|floatformat:0 }} on hand</span>
+        {% endif %}
+      </a>
+    </div>
+    {% empty %}
+    <p class="has-text-grey">No storage locations under this shape yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<p class="has-text-grey is-size-7">Click a location on the map, or pick one from the list below.</p>
+{% endif %}

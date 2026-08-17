@@ -15,17 +15,23 @@ class PurchaseOrderDemandLink(AuditFieldsMixin, SoftDeleteMixin):
     this (D50). The final name is forward-looking — this will not be the only
     table linking demands to something, so the family reads <thing>DemandLink.
 
-    THERE IS NO quantity_received COLUMN (D55, reversing D26). An earlier draft
-    carried one, on the theory that recording receipt against the allocation
-    rather than the PO line was what made per-demand fulfillment answerable.
-    The problem is not where the number is stored — it is that for a shared PO
-    line the number does not exist. Three demands on one line, sixty units
-    arrive: the units are fungible, nobody decided whose they were, and any
-    attribution a receiver typed would be an invention recorded as an
-    observation. Arrival is recorded once, physically, on
-    ShipmentLine.quantity_accepted, and per-demand arrival is derived — exact
-    for a sole-demand line, a shared demand session otherwise. See
-    procurement_starter_kit/shared_demand_sessions.md.
+    QUANTITY_RECEIVED REVERSES D55 (superseded — see the Reallocation
+    Resolution decision in procurement_current_state_kit/domain_model.md).
+    D55 originally rejected a per-claim received quantity because a shared PO
+    line's arrival is fungible — nobody decided whose units they were, and any
+    attribution a receiver typed would be an invention recorded as fact. That
+    objection still holds for an AUTOMATIC split; it does not hold for an
+    explicit human decision. `quantity_received` is written only by a
+    deliberate Buyer/Receiver action (record_receipt) that manually assigns
+    part of a PO line's arrived total across its claiming demands — the same
+    kind of explicit, appendable, human-typed decision this app already trusts
+    for PurchaseOrderShipmentLink.quantity_allocated. It is never inferred or
+    auto-derived, so the fungibility objection to inventing a split does not
+    apply to it.
+
+    `is_locked` becomes True the moment `quantity_received > 0` and is never
+    cleared except by the Reallocation Portal's deliberate two-popup unlock
+    sequence — see reallocation_resolution_kit/reallocation_resolution_portal.md.
     """
 
     # PROTECT, not CASCADE — an allocation is exactly what D6 means by
@@ -47,6 +53,20 @@ class PurchaseOrderDemandLink(AuditFieldsMixin, SoftDeleteMixin):
     # line's remaining quantity — a line is always free to carry more ordered
     # quantity than the sum of its allocations.
     quantity_allocated = models.DecimalField(max_digits=12, decimal_places=3)
+
+    # How much of this claim has been manually marked received (Reallocation
+    # Resolution decision, superseding D55 — see class docstring). Written
+    # only by PurchaseOrderDemandLinkManager.record_receipt, capped so the
+    # sum across a line's claims never exceeds that line's own accepted total
+    # (app.procurement.control_layer.domain_structs.arrival_allocation).
+    quantity_received = models.DecimalField(
+        max_digits=12, decimal_places=3, default=0
+    )
+    # True the instant quantity_received > 0; cleared only by the
+    # Reallocation Portal's two-popup unlock sequence. Never set back to
+    # False by any other path — a source can never be reduced below a locked
+    # claim without a deliberate, confirmed override.
+    is_locked = models.BooleanField(default=False)
 
     # Released allocations. Distinct from soft delete:
     #   de-link  — the Buyer changed their mind about this pairing: soft delete.
@@ -70,6 +90,10 @@ class PurchaseOrderDemandLink(AuditFieldsMixin, SoftDeleteMixin):
             models.CheckConstraint(
                 condition=models.Q(quantity_allocated__gt=0),
                 name="podl_quantity_allocated_positive",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity_received__gte=0),
+                name="podl_quantity_received_non_negative",
             ),
         ]
         indexes = [

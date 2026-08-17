@@ -28,7 +28,7 @@ type: project
 - `PermissionGroupTemplate` — named bundles of auth.Group rows
 - `PermissionGroupTemplateItem` — through-table with audit fields
 - `UserPermissionGroupTemplate` — assignment (one active max per user); can rebase or be additive
-- Drift (actual vs. template groups) is drift-tracked and visible, not blocking; explained via notes
+- Drift (actual vs. template groups) is visible, not blocking; explained via notes
 
 ### Expiration (Soft-Delete, Startup Check Only)
 - Optional `expires_at` on: Permission, Group, DomainTemplate, UserDomain, UserOrganization, UserDivision

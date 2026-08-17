@@ -36,12 +36,24 @@ from app.procurement.control_layer.domain_structs.arrival_allocation import (
     allocated_by_purchase_order_line,
     unallocated_remainder,
 )
+from app.procurement.control_layer.domain_structs.package_reallocation_portal_struct import (
+    PackageReallocationPortalStruct,
+)
 from app.procurement.control_layer.domain_structs.shipment_struct import (
     ShipmentDetailStruct,
     planning_lines_for_order,
 )
-from app.procurement.control_layer.errors import ProcurementValidationError
+from app.procurement.control_layer.errors import (
+    PackageReallocationRequired,
+    ProcurementValidationError,
+)
 from app.procurement.control_layer.factories.shipment_factory import ShipmentFactory
+from app.procurement.control_layer.guards.package_reallocation_guard import (
+    PackageReallocationValidator,
+)
+from app.procurement.control_layer.handlers.package_reallocation_waterfall_handler import (
+    PackageReallocationWaterfallHandler,
+)
 from app.procurement.control_layer.handlers.basic_shipment_manager_submit_handler import (
     BasicShipmentManagerSubmitHandler,
 )
@@ -69,6 +81,7 @@ from app.procurement.presentation_layer.search.purchase_order_search import (
 )
 from app.procurement.presentation_layer.tools import basic_shipment_session as session_tool
 from app.procurement.presentation_layer.tools import shipment_wizard_draft as wizard_draft
+from app.procurement.presentation_layer.tools import package_reallocation_draft
 from app.procurement.presentation_layer.tools.procurement_access import (
     accessible_domain_ids,
     can_receive,
@@ -734,9 +747,10 @@ def _wizard_select_po(
     elif skipped:
         messages.info(
             request,
-            f"{purchase_order.po_number} is this shipment's primary order. All "
-            f"{skipped} of its open lines are already in the box, so nothing was "
-            f"copied — copying twice would have doubled the quantities.",
+            f"{purchase_order.po_number} is this shipment's primary order. Its "
+            f"{skipped} open line{'s are' if skipped != 1 else ' is'} already in the "
+            f"box, so nothing was copied — copying twice would have doubled the "
+            f"quantities.",
         )
     else:
         messages.warning(
@@ -1383,9 +1397,50 @@ def _edit_render(request: HttpRequest, shipment: Shipment) -> HttpResponse:
     context = ShipmentContext(shipment.pk)
 
     selected_line_id = _int(request.GET.get("line_id"))
+
+    # An active Package Reallocation draft pins the page to its own line — the
+    # Portal must never be silently lost behind a different selection
+    # (reallocation_resolution_portal.md §5: commit is BLOCKED until the
+    # shortfall is resolved). Package↔PO Domain only; no read of the
+    # Demand↔PO Domain's own draft here (§7.7).
+    package_draft = package_reallocation_draft.load(request.session)
+    if package_draft is not None and selected_line_id != package_draft.get(
+        "shipment_line_id"
+    ):
+        selected_line_id = package_draft.get("shipment_line_id")
+
     selected = next(
         (line for line in detail.lines if line.line_id == selected_line_id), None
     )
+
+    package_portal = None
+    package_new_quantity = Decimal("0")
+    package_proposed: dict[int, Decimal] = {}
+    package_pending_unlock_link_id = None
+    package_running_total = Decimal("0")
+    if package_draft is not None and selected is not None:
+        package_portal = PackageReallocationPortalStruct.load(
+            shipment_line_id=selected.line_id
+        )
+        package_new_quantity = (
+            package_reallocation_draft.to_decimal(package_draft.get("new_quantity"))
+            or Decimal("0")
+        )
+        package_proposed = package_reallocation_draft.proposed_values(package_draft)
+        package_pending_unlock_link_id = package_draft.get("pending_unlock_link_id")
+        # The running total shown to the user must reflect what COMMIT would
+        # actually write — staged/proposed values for open claims, falling
+        # back to their current DB value for anything not yet touched — not
+        # just the struct's own open_total, which is always the live DB state
+        # (§10 point 3) and would otherwise look stale the moment the user
+        # auto-allocates or manually edits a claim without yet committing.
+        package_running_total = package_portal.locked_total + sum(
+            (
+                package_proposed.get(claim.link_id, claim.quantity_allocated)
+                for claim in package_portal.open_claims
+            ),
+            Decimal("0"),
+        )
 
     # The right column's search tool, top-bottom: a filter bar over a results
     # list, each row carrying its own Allocate action. The PO sector's Edit &
@@ -1440,6 +1495,11 @@ def _edit_render(request: HttpRequest, shipment: Shipment) -> HttpResponse:
             # confirmation popup rather than discovering it on submit.
             "requires_audit_comment": context.requires_audit_comment,
             "can_receive": can_receive(request),
+            "package_portal": package_portal,
+            "package_new_quantity": package_new_quantity,
+            "package_proposed": package_proposed,
+            "package_pending_unlock_link_id": package_pending_unlock_link_id,
+            "package_running_total": package_running_total,
         },
     )
 
@@ -1492,6 +1552,28 @@ def _edit_post(request: HttpRequest, shipment: Shipment) -> HttpResponse:
         elif action == "unassign":
             _release_allocation(request, shipment, context, audit_comment)
 
+        elif action == "edit_quantity":
+            _edit_shipped_quantity(request, shipment, context, audit_comment)
+
+        elif action == "reallocation_auto_allocate":
+            _package_reallocation_auto_allocate(request, shipment)
+
+        elif action == "reallocation_manual_entry":
+            _package_reallocation_manual_entry(request, shipment)
+
+        elif action == "reallocation_unlock_claim":
+            _package_reallocation_unlock_claim(request, shipment, context)
+
+        elif action == "reallocation_cancel_unlock":
+            _package_reallocation_cancel_unlock(request, shipment)
+
+        elif action == "reallocation_commit":
+            _package_reallocation_commit(request, shipment, context)
+
+        elif action == "reallocation_cancel":
+            package_reallocation_draft.clear(request.session)
+            messages.info(request, "Reallocation cancelled; the line was not changed.")
+
         elif action == "delete_line":
             _delete_line(request, shipment, context, audit_comment)
 
@@ -1505,6 +1587,199 @@ def _edit_post(request: HttpRequest, shipment: Shipment) -> HttpResponse:
         _report(request, exc)
 
     return redirect(back)
+
+
+def _edit_shipped_quantity(
+    request: HttpRequest, shipment: Shipment, context: ShipmentContext, audit_comment: str
+) -> None:
+    line = _line_on_shipment(shipment, _int(request.POST.get("line_id")))
+    if line is None:
+        messages.error(request, "That line is not on this shipment.")
+        return
+    new_quantity = _decimal(request.POST.get("quantity"))
+    if new_quantity is None or new_quantity <= 0:
+        messages.error(request, "Shipped quantity must be greater than zero.")
+        return
+
+    try:
+        context.edit_quantity(
+            line=line, new_quantity=new_quantity, actor=request.user, audit_comment=audit_comment
+        )
+        messages.success(request, f"{line.part.part_number}: shipped quantity updated.")
+    except PackageReallocationRequired as exc:
+        # Phase 5's mirror of the Demand↔PO Domain's ReallocationRequired
+        # handling: nothing was saved. Seed the Package Portal's session
+        # draft instead of a flat error.
+        draft = package_reallocation_draft.empty_draft(
+            shipment_line_id=line.pk, new_quantity=new_quantity
+        )
+        package_reallocation_draft.save(request.session, draft)
+        messages.warning(
+            request,
+            f"{exc.errors[0]} Resolve it through the Reallocation Portal for "
+            f"this line.",
+        )
+
+
+# ---------------------------------------------------------------------- #
+# Package Reallocation Portal (Package↔PO Domain, Phase 5) — backend actions
+# against the session-backed draft in package_reallocation_draft.py. No
+# template this session; a later frontend build renders the Portal itself.
+# Independent of the Demand↔PO Domain's equivalents — no shared state.
+# ---------------------------------------------------------------------- #
+
+
+def _load_package_reallocation_line(
+    request: HttpRequest, shipment: Shipment
+) -> tuple[dict | None, ShipmentLine | None]:
+    draft = package_reallocation_draft.load(request.session)
+    if draft is None:
+        messages.error(request, "No reallocation is in progress for this shipment.")
+        return None, None
+    line = _line_on_shipment(shipment, draft.get("shipment_line_id"))
+    if line is None:
+        package_reallocation_draft.clear(request.session)
+        messages.error(request, "That line is not on this shipment.")
+        return None, None
+    return draft, line
+
+
+def _package_open_claims(line: ShipmentLine) -> list[PurchaseOrderShipmentLink]:
+    return list(
+        PurchaseOrderShipmentLink.objects.filter(
+            shipment_line=line, deleted_at__isnull=True, is_locked=False
+        ).select_related("purchase_order_line")
+    )
+
+
+def _package_locked_claims(line: ShipmentLine) -> list[PurchaseOrderShipmentLink]:
+    return list(
+        PurchaseOrderShipmentLink.objects.filter(
+            shipment_line=line, deleted_at__isnull=True, is_locked=True
+        )
+    )
+
+
+def _package_reallocation_auto_allocate(request: HttpRequest, shipment: Shipment) -> None:
+    draft, line = _load_package_reallocation_line(request, shipment)
+    if line is None:
+        return
+    new_qty = package_reallocation_draft.to_decimal(draft["new_quantity"]) or Decimal("0")
+    open_claims = _package_open_claims(line)
+    locked_total = sum((c.quantity_allocated for c in _package_locked_claims(line)), Decimal("0"))
+    open_total = sum((c.quantity_allocated for c in open_claims), Decimal("0"))
+    shortfall = max(Decimal("0"), (open_total + locked_total) - new_qty)
+
+    resolutions = PackageReallocationWaterfallHandler.allocate(
+        open_claims=open_claims, shortfall=shortfall
+    )
+    for link_id, qty in resolutions.items():
+        package_reallocation_draft.set_proposed(draft, link_id=link_id, quantity=qty)
+    package_reallocation_draft.save(request.session, draft)
+    messages.success(request, "Auto-allocate applied. Review and commit to save.")
+
+
+def _package_reallocation_manual_entry(request: HttpRequest, shipment: Shipment) -> None:
+    draft, line = _load_package_reallocation_line(request, shipment)
+    if line is None:
+        return
+    new_qty = package_reallocation_draft.to_decimal(draft["new_quantity"]) or Decimal("0")
+    open_claim_ids = {c.pk for c in _package_open_claims(line)}
+    locked_total = sum((c.quantity_allocated for c in _package_locked_claims(line)), Decimal("0"))
+
+    values: dict[int, Decimal] = {}
+    for link_id in open_claim_ids:
+        raw = request.POST.get(f"claim_{link_id}")
+        if raw is None:
+            continue
+        parsed = _decimal(raw)
+        if parsed is not None:
+            values[link_id] = parsed
+
+    PackageReallocationValidator.check_manual_entry(
+        values=values, locked_total=locked_total, new_source_qty=new_qty
+    )
+    for link_id, qty in values.items():
+        package_reallocation_draft.set_proposed(draft, link_id=link_id, quantity=qty)
+    package_reallocation_draft.save(request.session, draft)
+    messages.success(request, "Manual entry saved. Review and commit to save.")
+
+
+def _package_reallocation_unlock_claim(
+    request: HttpRequest, shipment: Shipment, context: ShipmentContext
+) -> None:
+    draft, line = _load_package_reallocation_line(request, shipment)
+    if line is None:
+        return
+    link = PurchaseOrderShipmentLink.objects.filter(
+        pk=_int(request.POST.get("link_id")),
+        shipment_line=line,
+        deleted_at__isnull=True,
+        is_locked=True,
+    ).select_related("shipment_line__shipment", "purchase_order_line").first()
+    if link is None:
+        messages.error(request, "That claim is not a locked claim on this line.")
+        return
+
+    if request.POST.get("confirmed") != "1":
+        # First call of the two-popup contract (§6): write nothing, remember
+        # which claim is pending so the second, explicit confirmation popup
+        # survives the POST-redirect-GET round trip and reopens pointed at
+        # the same claim (F5 rule) instead of losing the in-progress unlock.
+        draft["pending_unlock_link_id"] = link.pk
+        package_reallocation_draft.save(request.session, draft)
+        messages.warning(
+            request,
+            f"Unlocking the claim to line {link.purchase_order_line.line_number} "
+            f"forces this allocation out of its locked state and may cause "
+            f"downstream errors or inconsistencies. Confirm to proceed.",
+        )
+        return
+
+    context.unlock_claim(link=link, actor=request.user, confirmed=True)
+    package_reallocation_draft.mark_unlocked(draft, link_id=link.pk)
+    package_reallocation_draft.set_proposed(draft, link_id=link.pk, quantity=link.quantity_allocated)
+    draft.pop("pending_unlock_link_id", None)
+    package_reallocation_draft.save(request.session, draft)
+    messages.success(request, "Claim unlocked.")
+
+
+def _package_reallocation_cancel_unlock(request: HttpRequest, shipment: Shipment) -> None:
+    """The second popup's Cancel — clears the pending confirmation without
+    touching the claim's lock state or the rest of the draft. Distinct from
+    `reallocation_cancel`, which discards the whole in-progress reallocation."""
+    draft, line = _load_package_reallocation_line(request, shipment)
+    if line is None:
+        return
+    draft.pop("pending_unlock_link_id", None)
+    package_reallocation_draft.save(request.session, draft)
+
+
+def _package_reallocation_commit(
+    request: HttpRequest, shipment: Shipment, context: ShipmentContext
+) -> None:
+    draft, line = _load_package_reallocation_line(request, shipment)
+    if line is None:
+        return
+    new_qty = package_reallocation_draft.to_decimal(draft["new_quantity"]) or Decimal("0")
+    proposed = package_reallocation_draft.proposed_values(draft)
+    open_claims = {c.pk: c for c in _package_open_claims(line)}
+    locked_total = sum((c.quantity_allocated for c in _package_locked_claims(line)), Decimal("0"))
+
+    resolutions = {
+        link_id: proposed.get(link_id, claim.quantity_allocated)
+        for link_id, claim in open_claims.items()
+    }
+    open_total = sum(resolutions.values(), Decimal("0"))
+
+    PackageReallocationValidator.check_commit_ready(
+        open_total=open_total, locked_total=locked_total, new_source_qty=new_qty
+    )
+    context.apply_reallocation(
+        line=line, new_quantity=new_qty, resolutions=resolutions, actor=request.user
+    )
+    package_reallocation_draft.clear(request.session)
+    messages.success(request, "Reallocation committed.")
 
 
 def _line_on_shipment(shipment: Shipment, line_id: int | None) -> ShipmentLine | None:

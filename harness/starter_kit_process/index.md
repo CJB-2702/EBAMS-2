@@ -19,6 +19,7 @@ The starter kit is **backend-only** — problem, business rules, domain data, co
 - [How to Write the Business Concept Definition Document](how_to_business_concept_definition_document.md) — Business Architect phase.
 - [How to Plan Data and Relational Models](how_to_data_relational_planning_document.md) — Backend Data Architect phase.
 - [How to Plan the Control Layer Architecture](how_to_plan_control_layer.md) — Backend Software Engineer phase.
+- [How to Design Mermaid Diagrams](how_to_design_mermaid_diagrams.md) — Architectural visualization guidelines for starter kits.
 
 ## Front-end planning lives elsewhere
 

@@ -188,6 +188,30 @@
   </div>
 </div>
 
+{# Full issue-row history — deliberate anti-pattern, serialized_inventory_tracking.md §3 #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span>Issue History</div></div>
+  <div class="card-content is-flush pb-3">
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead><tr><th>Issue Date</th><th>Issued By</th><th class="has-text-right">Qty Issued</th><th>Serial Number</th><th>Source Location</th><th>Recipient Asset</th></tr></thead>
+      <tbody>
+        {% for row in issue_rows %}
+        <tr>
+          <td>{{ row.issued_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ row.created_by|default:"—" }}</td>
+          <td class="has-text-right is-family-monospace {% if row.quantity < 0 %}has-text-danger{% endif %}">{{ row.quantity }}</td>
+          <td class="is-family-monospace">{{ row.serial_number|default:"N/A (Bulk)" }}</td>
+          <td>{% if row.active_inventory %}{{ row.active_inventory.warehouse.code }} / {{ row.active_inventory.room.room_name }}{% if row.active_inventory.storage_location %} / {{ row.active_inventory.storage_location.display_code }}{% endif %}{% else %}—{% endif %}</td>
+          <td>{{ row.issued_to_asset|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="has-text-grey has-text-centered py-4">Nothing issued against this demand yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {# Misc status updates #}
 <div class="card mt-4">
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>All Status Updates</div></div>

@@ -1,0 +1,76 @@
+{% extends "inventory/base.html" %}
+{% block title %}Issue #{{ issue.pk }}{% endblock %}
+{% block nav_issues %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_issues_index' %}">Issue Parts</a></li>
+<li class="is-active"><a href="#" aria-current="page">#{{ issue.pk }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></div>
+      <div>
+        <h1 class="page-title">Issue #{{ issue.pk }}</h1>
+        <p class="page-subtitle">{{ issue.get_issue_type_display }}{% if issue.quantity < 0 %} — Return{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-variable is-4">
+  <div class="column is-6">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Issue facts</div></div>
+      <div class="card-content">
+        <dl class="kv">
+          <dt>Quantity</dt><dd class="is-family-monospace {% if issue.quantity < 0 %}has-text-danger{% endif %}">{{ issue.quantity }}</dd>
+          <dt>Serial</dt><dd class="is-family-monospace">{{ issue.serial_number|default:"—" }}</dd>
+          <dt>Unit cost at issue</dt><dd class="is-family-monospace">{{ issue.unit_cost_at_issue|default:"—" }}</dd>
+          <dt>Issued at</dt><dd>{{ issue.issued_at|date:"Y-m-d H:i" }}</dd>
+          <dt>Notes</dt><dd>{{ issue.notes|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-6">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Provenance &amp; recipient</div></div>
+      <div class="card-content">
+        <dl class="kv">
+          <dt>Warehouse / Room / Location</dt>
+          <dd>{% if issue.from_room %}{{ issue.from_room.warehouse.code }} / {{ issue.from_room.room_name }}{% if issue.from_storage_location %} / {{ issue.from_storage_location.display_code }}{% endif %}{% else %}—{% endif %}</dd>
+          <dt>Demand</dt><dd>{% if issue.part_demand_id %}<a href="{% url 'demand_detail' pk=issue.part_demand_id %}">#{{ issue.part_demand_id }}</a>{% else %}—{% endif %}</dd>
+          <dt>Recipient user</dt><dd>{{ issue.issued_to|default:"—" }}</dd>
+          <dt>Recipient asset</dt><dd>{{ issue.issued_to_asset|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if can_issue %}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">undo</span></span>Record a return</div></div>
+  <div class="card-content">
+    <form method="post" action="{% url 'inventory_issue_detail' pk=issue.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="return">
+      <div class="field is-grouped">
+        <div class="control">
+          <input class="input is-small is-family-monospace" type="text" name="quantity" placeholder="{{ issue.quantity }}">
+        </div>
+        <div class="control is-expanded">
+          <input class="input is-small" type="text" name="notes" placeholder="Notes">
+        </div>
+        <div class="control">
+          <button class="button is-small is-warning" type="submit">Return</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

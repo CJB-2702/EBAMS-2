@@ -219,6 +219,37 @@ build-up, so there is nothing to hold side by side.
               </td>
               {% endif %}
             </tr>
+            {% if can_buy %}
+            {% comment %}
+            The ordered-quantity edit control (build_plan.md "Confirmed UI
+            placement" — this line's quantity change lives here, not on PO
+            Detail). A shortfall this triggers is not caught here — the
+            server either saves silently, refuses outright below the locked
+            floor, or seeds the Reallocation Portal, per §5's flowchart.
+            {% endcomment %}
+            <tr class="{% if line.struct.line_id == selected_line_id %}is-selected{% endif %}">
+              <td colspan="2" style="padding-top:0;">
+                <form method="post" style="margin:0;">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="edit_line">
+                  <input type="hidden" name="line_id" value="{{ line.struct.line_id }}">
+                  <input type="hidden" name="selected_line_id" value="{{ selected_line_id|default:'' }}">
+                  <div class="field has-addons mb-0">
+                    <div class="control is-expanded">
+                      <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+                             name="quantity_ordered" value="{{ line.struct.qty_ordered }}"
+                             aria-label="Ordered quantity for line {{ line.struct.line_number }}">
+                    </div>
+                    <div class="control">
+                      <button type="submit" class="button is-small is-light" title="Save ordered quantity">
+                        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">save</span></span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </td>
+            </tr>
+            {% endif %}
             {% empty %}
             <tr><td class="has-text-grey has-text-centered py-5">
               No lines on this order yet. Add one below.
@@ -263,7 +294,7 @@ build-up, so there is nothing to hold side by side.
           <thead><tr>
             <th>Demand</th><th>State</th>
             <th class="has-text-right">Allocated</th><th class="has-text-right">Requested</th>
-            <th style="width:6rem;"></th>
+            <th style="width:9rem;"></th>
           </tr></thead>
           <tbody>
             {% for entry in selected.links %}
@@ -278,22 +309,96 @@ build-up, so there is nothing to hold side by side.
                   {% endcomment %}
                   <span class="is-family-monospace" title="Belongs to a domain you do not have access to.">#{{ entry.demand.pk }}</span>
                 {% endif %}
+                {% if entry.is_locked %}
+                  {% comment %}
+                  Reallocation Resolution decision: is_locked is real, stored
+                  data, set only by a deliberate record_receipt action — a
+                  different lock reason from an "external" claim below, and
+                  the remedy is different too (§4's comparison table).
+                  {% endcomment %}
+                  <span class="tag is-warning is-light is-size-7 ml-1"
+                        title="Marked received via a manual record_receipt action — not a value the system computed from shipment data.">
+                    Manually recorded
+                  </span>
+                {% endif %}
+                {% if entry.external_claims %}
+                  <br>
+                  {% for ext in entry.external_claims %}
+                    {% comment %}
+                    §4 point 1: this demand's active claims on OTHER orders,
+                    inline, read-only — answers "why is this demand's
+                    remaining headroom smaller than I expected" before the
+                    user ever types a number (§10's proactive-visibility case).
+                    {% endcomment %}
+                    <a href="{% url 'purchase_order_detail' ext.purchase_order_id %}"
+                       class="tag is-info is-light is-size-7 mt-1"
+                       title="Also claimed on {{ ext.po_number }}, line {{ ext.line_number }}{% if ext.is_locked %} (locked there){% endif %} — editable only on that order's own screen.">
+                      {{ ext.po_number }}: {{ ext.quantity_allocated }}{% if ext.is_locked %} 🔒{% endif %}
+                    </a>
+                  {% endfor %}
+                {% endif %}
               </td>
               <td>{{ entry.demand.get_demand_state_display }}</td>
               <td class="has-text-right is-family-monospace">{{ entry.link.quantity_allocated }}</td>
               <td class="has-text-right is-family-monospace">{{ entry.demand.quantity_requested }}</td>
               <td>
                 {% if can_buy %}
-                <form method="post" style="margin:0;"
-                      onsubmit="return confirm('De-link demand #{{ entry.demand.pk }}? This is the Buyer\'s alternative to cancelling a demand — the demand itself is untouched.');">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="delink">
-                  <input type="hidden" name="link_id" value="{{ entry.link.pk }}">
-                  <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
-                  <button type="submit" class="button is-small is-light" title="De-link">
-                    <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">link_off</span></span>
+                <div class="is-flex" style="gap:0.25rem;">
+                  <form method="post" style="margin:0;"
+                        onsubmit="return confirm('De-link demand #{{ entry.demand.pk }}? This is the Buyer\'s alternative to cancelling a demand — the demand itself is untouched.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delink">
+                    <input type="hidden" name="link_id" value="{{ entry.link.pk }}">
+                    <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
+                    <button type="submit" class="button is-small is-light" title="De-link">
+                      <span class="icon has-text-danger"><span class="material-icons" aria-hidden="true">link_off</span></span>
+                    </button>
+                  </form>
+                  {% if not entry.is_locked %}
+                  <button type="button" class="button is-small is-light" title="Mark part of this claim received"
+                          commandfor="record-receipt-{{ entry.link.pk }}" command="show-modal">
+                    <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">inventory</span></span>
                   </button>
-                </form>
+                  <dialog id="record-receipt-{{ entry.link.pk }}" class="card modal-styled" style="padding:0; max-width:480px;">
+                    <header class="card-header">
+                      <p class="card-header-title">Mark demand #{{ entry.demand.pk }}'s claim received</p>
+                      <button type="button" class="delete is-large" aria-label="close"
+                              commandfor="record-receipt-{{ entry.link.pk }}" command="close"></button>
+                    </header>
+                    <form method="post" action="{% url 'purchase_order_edit' po.pk %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="record_receipt">
+                      <input type="hidden" name="link_id" value="{{ entry.link.pk }}">
+                      <input type="hidden" name="selected_line_id" value="{{ selected.struct.line_id }}">
+                      <div class="card-content">
+                        <div class="content">
+                          <article class="message is-warning is-small mb-3">
+                            <div class="message-body is-size-7">
+                              This locks the claim. It is a manually recorded value,
+                              not computed from shipment data — if shipment lines are
+                              added later that would normally satisfy this claim, you
+                              will need to reconcile the two by hand.
+                            </div>
+                          </article>
+                          <label class="label is-small" for="qty-received-{{ entry.link.pk }}">Quantity received</label>
+                          <input id="qty-received-{{ entry.link.pk }}" class="input is-small is-family-monospace"
+                                 type="number" step="0.001" min="0.001" max="{{ entry.link.quantity_allocated }}"
+                                 name="quantity_received" required>
+                        </div>
+                      </div>
+                      <footer class="card-footer custom-card-footer">
+                        <div class="card-footer-secondaries">
+                          <button type="button" class="button is-small is-light"
+                                  commandfor="record-receipt-{{ entry.link.pk }}" command="close">Cancel</button>
+                        </div>
+                        <button type="submit" class="button is-warning card-footer-primary">
+                          I understand, mark received
+                        </button>
+                      </footer>
+                    </form>
+                  </dialog>
+                  {% endif %}
+                </div>
                 {% endif %}
               </td>
             </tr>
@@ -325,6 +430,10 @@ build-up, so there is nothing to hold side by side.
         never silently deselects the line being worked on.
         {% endcomment %}
         <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
+        <p class="is-size-7 has-text-grey mb-2">
+          Locked to <span class="is-family-monospace">{{ selected.struct.part_number }}</span> — a demand for a
+          different part cannot be linked to this line.
+        </p>
         <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
           <div style="flex:2;min-width:200px;">
             <label class="label is-small" for="link-q">Search</label>
@@ -339,9 +448,21 @@ build-up, so there is nothing to hold side by side.
               {% endfor %}
             </select></div>
           </div>
-          <div style="flex:1;min-width:120px;">
-            <label class="label is-small" for="link-part">Part id</label>
-            <input id="link-part" class="input is-small is-family-monospace" type="number" name="part_id" value="{{ search_filters.part_id|default:'' }}">
+          <div style="flex:1;min-width:140px;">
+            <label class="label is-small" for="link-created-from">Created from</label>
+            <input id="link-created-from" class="input is-small" type="date" name="created_from" value="{{ search_filters.created_from }}">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="label is-small" for="link-created-to">Created to</label>
+            <input id="link-created-to" class="input is-small" type="date" name="created_to" value="{{ search_filters.created_to }}">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="label is-small" for="link-requested-by">Requested by</label>
+            <input id="link-requested-by" class="input is-small" type="text" name="requested_by" value="{{ search_filters.requested_by }}" placeholder="username or name">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <label class="label is-small" for="link-po-number">Linked PO #</label>
+            <input id="link-po-number" class="input is-small is-family-monospace" type="text" name="po_number" value="{{ search_filters.po_number }}" placeholder="find by another order">
           </div>
           <button type="submit" class="button is-small is-link">
             <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
@@ -371,11 +492,25 @@ build-up, so there is nothing to hold side by side.
                   <input type="hidden" name="action" value="allocate">
                   <input type="hidden" name="line_id" value="{{ selected.struct.line_id }}">
                   <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+                  {% if demand.outstanding_qty > 0 %}
                   <input type="hidden" name="quantity_allocated" value="{{ demand.outstanding_qty }}">
                   <button type="submit" class="button is-small is-link" title="Allocate all {{ demand.outstanding_qty }} to this line">
                     <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
                     <span>Allocate all</span>
                   </button>
+                  {% else %}
+                  {% comment %}
+                  Found via the linked-PO search, fully claimed elsewhere already.
+                  Submitting its full requested quantity here is over the cap by
+                  construction, which is exactly what opens the cap decision
+                  dialog (D28) instead of a dead "0" allocation.
+                  {% endcomment %}
+                  <input type="hidden" name="quantity_allocated" value="{{ demand.quantity_requested }}">
+                  <button type="submit" class="button is-small is-warning" title="This demand is already fully allocated elsewhere — linking it here will prompt a cap decision.">
+                    <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+                    <span>Link (over cap)</span>
+                  </button>
+                  {% endif %}
                 </form>
                 {% else %}
                 <span class="has-text-grey">Buyer only</span>
@@ -397,4 +532,5 @@ build-up, so there is nothing to hold side by side.
 </div>
 
 {% include "procurement/purchase_orders/_cap_decision_modal.html" %}
+{% include "procurement/purchase_orders/_reallocation_portal.html" %}
 {% endblock %}

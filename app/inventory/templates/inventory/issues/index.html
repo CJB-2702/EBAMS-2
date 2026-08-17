@@ -1,0 +1,93 @@
+{% extends "inventory/base.html" %}
+{% block title %}Issued Parts Ledger{% endblock %}
+{% block nav_issues %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Issued Parts Ledger</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">receipt_long</span></div>
+      <div>
+        <h1 class="page-title">Issued Parts Ledger</h1>
+        <p class="page-subtitle">Historical log of committed issue sessions, stock disbursements, and return records.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'inventory_issue_parts' %}" class="button is-primary is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
+        <span>Issue Parts Workspace</span>
+      </a>
+      <a href="{% url 'inventory_issuance_location_portal' %}" class="button is-light is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>
+        <span>Issue from Location</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <!-- View Tabs -->
+  <div class="tabs is-boxed is-small mb-3">
+    <ul>
+      <li class="{% if view_tab == 'sessions' %}is-active{% endif %}">
+        <a href="{% url 'inventory_issues_index' %}?tab=sessions">
+          <span class="icon is-small"><span class="material-icons">style</span></span>
+          <span>Committed Sessions</span>
+        </a>
+      </li>
+      <li class="{% if view_tab == 'lines' %}is-active{% endif %}">
+        <a href="{% url 'inventory_issues_index' %}?tab=lines">
+          <span class="icon is-small"><span class="material-icons">list_alt</span></span>
+          <span>Granular Line Items</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card mb-4">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'inventory_issues_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#is-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#is-results-region">
+        <input type="hidden" name="tab" value="{{ view_tab }}">
+        <div class="columns is-multiline is-variable is-3">
+          {% if view_tab == 'lines' %}
+          <div class="column is-3">
+            <label class="label is-small" for="is-part-q">Part</label>
+            <input id="is-part-q" class="input is-small" type="search" name="part_q" value="{{ filters.part_q }}" placeholder="number or name…" autocomplete="off">
+          </div>
+          {% endif %}
+          <div class="column is-3">
+            <label class="label is-small" for="is-type">Issue Type</label>
+            <div class="select is-small is-fullwidth">
+              <select id="is-type" name="issue_type">
+                <option value="">All Types</option>
+                {% for value, label in issue_types %}
+                <option value="{{ value }}" {% if value == filters.issue_type %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply Filter</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="is-results-region" class="is-relative">
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true"><div class="skeleton-block"></div></div>
+    {% include "inventory/issues/_results_card.html" %}
+  </div>
+</div>
+{% endblock %}

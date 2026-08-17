@@ -1,0 +1,172 @@
+{% extends "inventory/base.html" %}
+{% block title %}Audits{% endblock %}
+{% block nav_audits %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Audits</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory</span></div>
+        <div>
+          <h1 class="page-title">Audits</h1>
+          <p class="page-subtitle">Perform count sessions and view the audit log.</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        <a href="{% url 'inventory_audit_log_index' %}" class="button is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>
+          <span>Audit Log</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="columns is-multiline">
+    <div class="column is-4">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add_task</span></span>
+          Start Audit Session
+        </div></div>
+        <div class="card-content">
+          <form method="POST" action="{% url 'inventory_audit_session_start' %}">
+            {% csrf_token %}
+            
+            <div class="field">
+              <label class="label is-small">Warehouse</label>
+              <div class="control">
+                <div class="select is-fullwidth is-small">
+                  <select name="start_warehouse_id" required 
+                          hx-get="?format=htmx-room-select" 
+                          hx-target="#start-room-wrapper">
+                    <option value="">-- Select Warehouse --</option>
+                    {% for wh in warehouses %}
+                    <option value="{{ wh.pk }}" {% if start_warehouse_id == wh.pk %}selected{% endif %}>{{ wh.code }} - {{ wh.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small">Room (Optional)</label>
+              <div class="control" id="start-room-wrapper">
+                {% include "inventory/audits/_room_select.html" %}
+              </div>
+            </div>
+            
+            <div class="field">
+              <label class="label is-small">Type</label>
+              <div class="control">
+                <div class="select is-fullwidth is-small">
+                  <select name="session_type" required>
+                    <option value="spot_check" selected>Spot Check</option>
+                    <option value="full_room_audit">Full Room Audit</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="field">
+              <label class="label is-small">Notes</label>
+              <div class="control">
+                <textarea class="textarea is-small" name="notes" rows="2"></textarea>
+              </div>
+            </div>
+
+            <div class="field mt-4">
+              <div class="control">
+                <button type="submit" class="button is-primary is-fullwidth is-small" {% if not can_audit %}disabled title="No audit permission"{% endif %}>
+                  <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span>
+                  <span>Start Session</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="column is-8">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">format_list_bulleted</span></span>
+          Audit Sessions
+        </div></div>
+        
+        <div class="card-content is-flush">
+          <form method="GET" action="{% url 'inventory_audit_session_index' %}" class="p-3 bg-light border-bottom">
+            <div class="field is-grouped is-grouped-multiline" style="margin-bottom:0;">
+              <div class="control">
+                <div class="select is-small">
+                  <select name="status">
+                    <option value="">Any Status</option>
+                    <option value="open" {% if filters.status == 'open' %}selected{% endif %}>Open</option>
+                    <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="cancelled" {% if filters.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control">
+                <button type="submit" class="button is-small is-light">Filter</button>
+              </div>
+            </div>
+          </form>
+
+          {% if rows %}
+          <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Type</th>
+                <th>Warehouse</th>
+                <th>Room</th>
+                <th>Status</th>
+                <th>Conducted By</th>
+                <th>Started</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+              <tr>
+                <td><a href="{% url 'inventory_audit_session_detail' row.pk %}" class="is-family-monospace">{{ row.session_number }}</a></td>
+                <td>{{ row.get_session_type_display }}</td>
+                <td class="is-family-monospace">{{ row.warehouse.code }}</td>
+                <td>{{ row.room.room_name|default:"—" }}</td>
+                <td>
+                  <span class="tag is-small {% if row.status == 'open' %}is-info{% elif row.status == 'completed' %}is-success{% else %}is-light{% endif %} is-light">
+                    {{ row.get_status_display }}
+                  </span>
+                </td>
+                <td>{{ row.conducted_by.username|default:"—" }}</td>
+                <td>{{ row.started_at|date:"Y-m-d H:i" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="has-text-grey is-size-7 p-4">No audit sessions found.</p>
+          {% endif %}
+        </div>
+        
+        {% if page.paginator.num_pages > 1 %}
+        <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+          <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+            <ul class="pagination-list">
+              {% for num in page.paginator.page_range %}
+              <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+                     class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+              {% endfor %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

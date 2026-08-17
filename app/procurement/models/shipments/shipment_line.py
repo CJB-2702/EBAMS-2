@@ -56,6 +56,13 @@ class ShipmentLine(AuditFieldsMixin, SoftDeleteMixin):
     # Why the difference, when there is one.
     rejection_notes = models.TextField(blank=True)
 
+    # Simple JSON comment system stored directly on the line without extra
+    # tables or relational overhead (FD-28/domain_model.md §3). Inventory's
+    # intake build is the first writer; shape and usage are left to whichever
+    # workflow needs a lightweight per-line note (e.g. a reconciliation
+    # disposition comment) without a full Event/Comment thread.
+    comments = models.JSONField(default=dict, blank=True)
+
     # ── Graph materialization (D79-D82) ─────────────────────────────────────
     # Nullable is a TECHNICAL NECESSITY of the create sequence, not a real
     # "can be ungraphed" state: GraphSummaryManager.initialize_node() assigns

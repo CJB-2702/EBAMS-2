@@ -1,0 +1,205 @@
+{% comment %}
+format=htmx-shipment-lines fragment (auto_intake_workflow_guide.md §2.1
+ZONE 3). Single consolidated card holding selected shipment metadata, nested
+intake lines matrix, and the primary submit footer. Rendered on: (a) shipment
+selection from ZONE 2, (b) target qty change events in the matrix.
+{% endcomment %}
+
+{% if selected_shipment %}
+<div class="card" id="auto-intake-shipment-detail-card">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon has-text-info"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+      <span>Selected Shipment: <strong class="is-family-monospace">{{ selected_shipment.shipment_number }}</strong></span>
+      <span class="tag is-small is-light ml-2">{{ selected_shipment.get_status_display }}</span>
+    </div>
+    <div class="card-header-icon">
+      <a href="{% url 'inventory_shipment_detail' pk=selected_shipment.pk %}" class="is-size-7" target="_blank" title="View shipment detail">
+        <span>View shipment</span>
+        <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">open_in_new</span></span>
+      </a>
+    </div>
+  </div>
+  <div class="card-content">
+    {# Shipment metadata summary #}
+    <div class="columns is-variable is-3 is-multiline mb-4 pb-4" style="border-bottom: 1px solid var(--bulma-border-weak);">
+      <div class="column is-3">
+        <label class="label is-small has-text-grey">PO Number</label>
+        <p class="is-size-7 is-family-monospace has-text-weight-semibold">
+          {{ selected_shipment.purchase_order.po_number|default:"—" }}
+        </p>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small has-text-grey">Vendor</label>
+        <p class="is-size-7 has-text-weight-semibold">
+          {{ selected_shipment.purchase_order.vendor|default:"—" }}
+        </p>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small has-text-grey">Carrier / Tracking</label>
+        <p class="is-size-7 is-family-monospace">
+          {% if selected_shipment.carrier or selected_shipment.shipment_id %}
+            {{ selected_shipment.carrier }}{% if selected_shipment.carrier and selected_shipment.shipment_id %} — {% endif %}{{ selected_shipment.shipment_id }}
+          {% else %}
+            —
+          {% endif %}
+        </p>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small has-text-grey">Shipped / Expected</label>
+        <p class="is-size-7">
+          {{ selected_shipment.shipped_date|default:"—" }}
+          {% if selected_shipment.expected_arrival_date %}&rarr; {{ selected_shipment.expected_arrival_date }}{% endif %}
+        </p>
+      </div>
+    </div>
+
+    {# Nested lines matrix #}
+    <div>
+      <div class="is-flex is-align-items-center mb-3">
+        <span class="icon mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">rule</span></span>
+        <h3 class="has-text-weight-semibold is-size-6">Lines — {{ selected_shipment.shipment_number }}</h3>
+      </div>
+
+      {% if line_rows %}
+      <div style="overflow-x:auto;">
+        {% for row in line_rows %}
+        <div class="ai-line-row {% if not row.is_valid %}ai-line-row-invalid{% endif %} mb-4 pb-4"
+             style="border-bottom: 1px solid var(--bulma-border-weak);">
+          <div class="columns is-variable is-3 is-vcentered is-multiline">
+            <div class="column is-4">
+              <p class="is-family-monospace has-text-weight-semibold">{{ row.line.part.part_number }}</p>
+              <p class="has-text-grey is-size-7">{{ row.line.part.name }}</p>
+              <p class="is-size-7 mt-1">Shipped qty: <span class="is-family-monospace">{{ row.line.quantity }}</span></p>
+            </div>
+
+            <div class="column is-4">
+              <p class="is-size-7 has-text-grey has-text-weight-semibold mb-1">Current allocations</p>
+              {% if row.existing_allocations %}
+              <ul class="is-size-7" style="list-style:none; margin:0; padding:0;">
+                {% for alloc in row.existing_allocations %}
+                <li class="mb-1">
+                  <span class="icon is-small has-text-grey-light"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">subdirectory_arrow_right</span></span>
+                  Alloc #{{ alloc.pk }}: <span class="is-family-monospace">{{ alloc.quantity }}</span>
+                  {% if alloc.condition == "good" %}<span class="tag is-small is-success is-light">Accepted</span>{% else %}<span class="tag is-small is-danger is-light">Rejected</span>{% endif %}
+                  <span class="has-text-grey">[Session #{{ alloc.intake_session_id }}]</span>
+                </li>
+                {% endfor %}
+              </ul>
+              {% else %}
+              <p class="is-size-7 has-text-grey">None.</p>
+              {% endif %}
+              <p class="is-size-7 has-text-grey mt-1">
+                Total existing: <span class="is-family-monospace">{{ row.existing_good }}</span> accepted
+                &nbsp;|&nbsp; <span class="is-family-monospace">{{ row.existing_rejected }}</span> rejected
+              </p>
+            </div>
+
+            <div class="column is-4">
+              <div class="columns is-variable is-2">
+                <div class="column is-6">
+                  <label class="label is-small" for="ai-accepted-{{ row.line.pk }}">Target accepted</label>
+                  <input id="ai-accepted-{{ row.line.pk }}"
+                         class="input is-small is-family-monospace {% if not row.is_valid %}is-danger{% endif %}"
+                         type="number" step="0.001" min="{{ row.existing_good }}"
+                         name="accepted_{{ row.line.pk }}" value="{{ row.accepted_target }}"
+                         hx-get="{% url 'inventory_auto_intake_portal' %}?shipment_id={{ selected_shipment.pk }}&format=htmx-shipment-lines"
+                         hx-trigger="change, input changed delay:500ms"
+                         hx-target="#auto-intake-lines-region"
+                         hx-swap="innerHTML"
+                         hx-include="[name^='accepted_'],[name^='rejected_']"
+                         hx-indicator="#auto-intake-lines-region">
+                  <p class="help is-size-7">Min: <span class="is-family-monospace">{{ row.existing_good }}</span></p>
+                </div>
+                <div class="column is-6">
+                  <label class="label is-small" for="ai-rejected-{{ row.line.pk }}">Target rejected</label>
+                  <input id="ai-rejected-{{ row.line.pk }}"
+                         class="input is-small is-family-monospace {% if not row.is_valid %}is-danger{% endif %}"
+                         type="number" step="0.001" min="{{ row.existing_rejected }}"
+                         name="rejected_{{ row.line.pk }}" value="{{ row.rejected_target }}"
+                         hx-get="{% url 'inventory_auto_intake_portal' %}?shipment_id={{ selected_shipment.pk }}&format=htmx-shipment-lines"
+                         hx-trigger="change, input changed delay:500ms"
+                         hx-target="#auto-intake-lines-region"
+                         hx-swap="innerHTML"
+                         hx-include="[name^='accepted_'],[name^='rejected_']"
+                         hx-indicator="#auto-intake-lines-region">
+                  <p class="help is-size-7">Min: <span class="is-family-monospace">{{ row.existing_rejected }}</span></p>
+                </div>
+              </div>
+              <p class="is-size-7">
+                Delta to generate:
+                <span class="is-family-monospace {% if row.delta_good > 0 %}has-text-success{% endif %}">+{{ row.delta_good }} good</span>
+                &nbsp;/&nbsp;
+                <span class="is-family-monospace {% if row.delta_rejected > 0 %}has-text-danger{% endif %}">+{{ row.delta_rejected }} rejected</span>
+              </p>
+              {% if row.is_valid %}
+              <p class="is-size-7 has-text-success">
+                <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">check_circle</span></span>
+                Valid ({{ row.accepted_target }} + {{ row.rejected_target }} ≤ {{ row.line.quantity }} shipped)
+              </p>
+              {% else %}
+              <p class="is-size-7 has-text-danger">
+                <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">error</span></span>
+                {% for error in row.errors %}{{ error }}{% if not forloop.last %} {% endif %}{% endfor %}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="has-text-grey is-size-7">Accepted + rejected cannot exceed shipped quantity; neither may drop below its existing allocation total. The server re-validates every field again on submit.</p>
+      {% else %}
+      <p class="has-text-grey is-size-7">This shipment has no active lines.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% if can_intake %}
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <a href="{% url 'inventory_intake_dashboard' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+        <span>Cancel</span>
+      </a>
+    </div>
+    <button class="button is-primary card-footer-primary" type="submit">
+      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+      <span>Submit &amp; Generate Intake Session</span>
+    </button>
+  </footer>
+  {% endif %}
+</div>
+{% else %}
+<div class="card" id="auto-intake-shipment-detail-card">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>
+      <span>Selected Shipment</span>
+    </div>
+  </div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7">Select a warehouse and an unfulfilled shipment above to see metadata, intake lines, and submit options.</p>
+  </div>
+  {% if can_intake %}
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <a href="{% url 'inventory_intake_dashboard' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+        <span>Cancel</span>
+      </a>
+    </div>
+    <button class="button is-primary card-footer-primary" type="submit" disabled>
+      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+      <span>Submit &amp; Generate Intake Session</span>
+    </button>
+  </footer>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ================= Out-of-band updates on HTMX swap ================= #}
+<input type="hidden" id="ai-hidden-shipment-id" name="shipment_id" value="{{ selected_shipment.pk|default:'' }}" hx-swap-oob="true">
+
+<span id="selected-shipment-badge" class="tag is-info is-light ml-2" hx-swap-oob="true" {% if not selected_shipment %}style="display: none;"{% endif %}>
+  {% if selected_shipment %}{{ selected_shipment.shipment_number }} selected{% endif %}
+</span>

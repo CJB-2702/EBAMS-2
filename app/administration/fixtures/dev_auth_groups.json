@@ -28,7 +28,11 @@
         ["add_user", "administration", "user"],
         ["change_user", "administration", "user"],
         ["delete_user", "administration", "user"],
-        ["view_user", "administration", "user"]
+        ["view_user", "administration", "user"],
+        ["can_intake_stock", "inventory", "warehouse"],
+        ["can_audit_stock", "inventory", "warehouse"],
+        ["can_move_stock", "inventory", "warehouse"],
+        ["can_issue_parts", "inventory", "warehouse"]
       ]
     }
   },

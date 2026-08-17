@@ -1,0 +1,104 @@
+{% extends "inventory/base.html" %}
+{% block title %}Intake{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Intake</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></div>
+        <div>
+          <h1 class="page-title">Intake</h1>
+          <p class="page-subtitle">Receive expected shipments into stock.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="columns is-multiline">
+    <div class="column is-6">
+      <div class="card" style="height:100%; display:flex; flex-direction:column;">
+        <div class="card-header"><div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+          Auto Intake
+        </div></div>
+        <div class="card-content" style="flex:1;">
+          <p class="has-text-grey is-size-7">Receive an expected shipment by target accepted/rejected quantity — no scanning required. The live manual entry point (FD-13).</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries"></div>
+          <a href="{% url 'inventory_auto_intake_portal' %}" class="button is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Open Auto Intake</span>
+          </a>
+        </footer>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="card" style="height:100%; display:flex; flex-direction:column;">
+        <div class="card-header"><div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span>
+          Scan Session
+        </div></div>
+        <div class="card-content" style="flex:1;">
+          <p class="has-text-grey is-size-7">Barcode receiving engine — live scanning, FIFO N-to-M matching, quality splits, and the manager Reconciliation Hub.</p>
+        </div>
+        <footer class="card-footer custom-card-footer">
+          <div class="card-footer-secondaries">
+            <a href="{% url 'inventory_reconciliation_hub' %}" class="button is-small is-light">
+              <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
+              <span>Reconciliation Hub</span>
+            </a>
+          </div>
+          <a href="{% url 'inventory_scan_intake_start' %}" class="button is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+            <span>Start Scan Session</span>
+          </a>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recent intake sessions</div></div>
+    <div class="card-content is-flush">
+      {% if sessions %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Session</th>
+            <th>Warehouse</th>
+            <th>Room</th>
+            <th>Operator</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Unlinked?</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for session in sessions %}
+          <tr>
+            <td><a href="{% url 'inventory_intake_session_detail' pk=session.pk %}" class="is-family-monospace">#{{ session.pk }}</a></td>
+            <td class="is-family-monospace">{{ session.warehouse.code }}</td>
+            <td>{{ session.room.room_name|default:"Intake Room (default)" }}</td>
+            <td>{{ session.operator }}</td>
+            <td>{{ session.get_intake_method_display }}</td>
+            <td><span class="tag is-small {% if session.status == 'closed' %}is-success{% elif session.status == 'cancelled' %}is-danger{% else %}is-info{% endif %} is-light">{{ session.get_status_display }}</span></td>
+            <td>{{ session.started_at }}</td>
+            <td>{% if session.has_unlinked_allocations %}<span class="tag is-small is-warning is-light">Yes</span>{% else %}<span class="has-text-grey">—</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7 p-4">No intake sessions yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

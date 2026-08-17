@@ -10,8 +10,11 @@
   <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
   <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <link rel="stylesheet" href="{% static 'css/inventory_svg.css' %}">
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script defer src="{% static 'js/inventory_svg.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
   <style>
     {% block extra_css %}{% endblock %}
   </style>
@@ -19,18 +22,24 @@
 </head>
 <body>
 
-{% comment %}
-D84: Inventory has no dedicated tab in shared/topnav.html yet — that is
-global-nav infrastructure this pass deliberately does not build (the task
-scope is "host these pages", not stand up a whole app portal). Sign-in
-context still comes through via current_app_group="" the same way
-public_app's home page does when it has no matching tab.
-{% endcomment %}
-{% include "shared/topnav.html" with current_app_group="" %}
+{% include "shared/topnav.html" with current_app_group="Inventory" %}
 
 <div class="app-shell">
   <collapsable-side-bar aria-label="Section navigation">
     <nav hx-boost="true" hx-target="#inventory-main-content" hx-select="#inventory-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Inventory</p>
+      <a href="{% url 'inventory_home' %}" class="sidebar-link {% block nav_inventory_home %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Overview</a>
+      <a href="{% url 'active_inventory_index' %}" class="sidebar-link {% block nav_active_inventory %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
+      <a href="{% url 'inventory_intake_dashboard' %}" class="sidebar-link {% block nav_intake %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake</a>
+      <a href="{% url 'inventory_putaway_worklist' %}" class="sidebar-link {% block nav_putaway %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway</a>
+      <a href="{% url 'inventory_movements_index' %}" class="sidebar-link {% block nav_movements %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>
+      <a href="{% url 'inventory_issues_index' %}" class="sidebar-link {% block nav_issues %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Topography</p>
+      <a href="{% url 'inventory_warehouse_index' %}" class="sidebar-link {% block nav_warehouses %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span> Warehouses</a>
+
+      <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Shipments</p>
       <a href="{% url 'inventory_shipment_index' %}" class="sidebar-link {% block nav_shipment_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Shipments</a>
 
@@ -47,7 +56,7 @@ public_app's home page does when it has no matching tab.
       <main id="inventory-main-content">
         <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
           <ul>
-            <li><a href="{% url 'inventory_shipment_index' %}">Inventory</a></li>
+            <li><a href="{% url 'inventory_home' %}">Inventory</a></li>
             {% block breadcrumb %}{% endblock %}
           </ul>
         </nav>

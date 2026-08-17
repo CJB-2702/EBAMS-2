@@ -247,6 +247,143 @@ class ShipmentCreateWizardTests(TestCase):
         self.assertIsNone(shipment.purchase_order_id)
         self.assertEqual(shipment.domain_id, self.domain.pk)
 
+    # -------- card 2: the primary purchase order ---------------------- #
+
+    def test_selecting_a_primary_order_can_copy_all_its_open_lines(self):
+        """The large button — the box IS the order, arriving as booked."""
+        po, line_1, line_2 = self._placed_po_with_two_lines(
+            ordered_1="10", ordered_2="4"
+        )
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+
+        self.client.post(
+            self.url,
+            {"action": "select_po", "primary_purchase_order_id": po.pk,
+             "copy_lines": "1"},
+        )
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertEqual(draft["purchase_order_id"], po.pk)
+        # Both order lines buy the SAME part, so they land on ONE arriving line
+        # carrying TWO allocations — the link table's whole reason to exist.
+        self.assertEqual(len(draft["lines"]), 1)
+        self.assertEqual(Decimal(draft["lines"][0]["quantity"]), Decimal("14"))
+        self.assertEqual(
+            {a["purchase_order_line_id"] for a in draft["lines"][0]["allocations"]},
+            {line_1.pk, line_2.pk},
+        )
+
+    def test_copying_the_same_order_twice_does_not_double_the_box(self):
+        """A second press is a repeat of the same statement, not a second
+        delivery. The explicit per-line pick in card 3 stays additive."""
+        po, _ = self._placed_po_with_one_line(ordered="10")
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+
+        for _ in range(2):
+            self.client.post(
+                self.url,
+                {"action": "select_po", "primary_purchase_order_id": po.pk,
+                 "copy_lines": "1"},
+            )
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertEqual(len(draft["lines"]), 1)
+        self.assertEqual(Decimal(draft["lines"][0]["quantity"]), Decimal("10"))
+
+    def test_primary_only_names_the_order_without_copying_anything(self):
+        """The small button — this order is the box's home, but what is inside
+        is not its line list."""
+        po, _ = self._placed_po_with_one_line(ordered="10")
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+
+        self.client.post(
+            self.url,
+            {"action": "select_po", "primary_purchase_order_id": po.pk,
+             "copy_lines": "0"},
+        )
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertEqual(draft["purchase_order_id"], po.pk)
+        self.assertEqual(draft["lines"], [])
+
+    def test_editing_card_1_does_not_drop_the_primary_order(self):
+        """The regression the card split invites: card 1 autosaves on every
+        keystroke-ish change and no longer submits the order, so an
+        unconditional write of the missing field would silently unlink it."""
+        po, _ = self._placed_po_with_one_line(ordered="10")
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+        self.client.post(
+            self.url,
+            {"action": "select_po", "primary_purchase_order_id": po.pk,
+             "copy_lines": "1"},
+        )
+
+        # Exactly what card 1 posts: no `purchase_order_id` key at all.
+        self.client.post(
+            self.url,
+            {"action": "save_header", "domain_id": self.domain.pk,
+             "carrier": "DHL", "shipment_id": "TRK-1"},
+        )
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertEqual(draft["purchase_order_id"], po.pk)
+        self.assertEqual(draft["carrier"], "DHL")
+
+    def test_clearing_the_primary_order_keeps_the_staged_lines(self):
+        po, line = self._placed_po_with_one_line(ordered="10")
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+        self.client.post(
+            self.url,
+            {"action": "select_po", "primary_purchase_order_id": po.pk,
+             "copy_lines": "1"},
+        )
+
+        self.client.post(self.url, {"action": "clear_po"})
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertIsNone(draft["purchase_order_id"])
+        # The material still answers for the order line it was allocated to —
+        # only the header link went away.
+        self.assertEqual(len(draft["lines"]), 1)
+        self.assertEqual(
+            draft["lines"][0]["allocations"][0]["purchase_order_line_id"], line.pk
+        )
+
+    def test_a_primary_order_outside_the_users_domains_is_refused(self):
+        other_domain = Domain.objects.create(
+            name="Other Domain",
+            slug="other-domain",
+            created_by=self.user,
+            updated_by=self.user,
+        )
+        po = PurchaseOrderFactory.create_from_draft(
+            draft=PurchaseOrderDraft(
+                vendor_id=self.vendor.pk,
+                domain_id=other_domain.pk,
+                lines=[
+                    DraftLine(
+                        part_id=self.part.pk,
+                        quantity_ordered=Decimal("5"),
+                        unit_cost=Decimal("10.00"),
+                        allocations=[],
+                    )
+                ],
+            ),
+            actor=self.user,
+        )
+        self._place(po)
+        self.client.post(self.url, {"action": "save_header", "domain_id": self.domain.pk})
+
+        self.client.post(
+            self.url,
+            {"action": "select_po", "primary_purchase_order_id": po.pk,
+             "copy_lines": "1"},
+        )
+
+        draft = self.client.session["procurement_shipment_draft"]
+        self.assertIsNone(draft["purchase_order_id"])
+        self.assertEqual(draft["lines"], [])
+
     # ------------------------------------------------------------------ #
 
     def _placed_po_with_one_line(self, *, ordered: str):

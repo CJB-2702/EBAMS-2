@@ -1,0 +1,42 @@
+{% comment %}
+Split-allocation control — a single-record, two-field capture (good_qty +
+rejected_qty must sum to the original quantity) that ends immediately on
+submit. Explicitly modal-permitted per the Phase 5 build brief and
+modals.md's "single-field capture that ends immediately" case — this is NOT
+an assignment flow (FD-18 doesn't apply here).
+{% endcomment %}
+<dialog id="split-modal-{{ alloc.pk }}" class="card modal-styled" style="padding: 0;">
+  <header class="card-header">
+    <p class="card-header-title">Split Allocation #{{ alloc.pk }}</p>
+    <button class="delete is-large" aria-label="close" commandfor="split-modal-{{ alloc.pk }}" command="close"></button>
+  </header>
+  <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}"
+        hx-post="{% url 'inventory_intake_session_detail' pk=session.pk %}?format=htmx-scan-feed"
+        hx-target="#scan-live-region" hx-swap="outerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="split">
+    <input type="hidden" name="allocation_id" value="{{ alloc.pk }}">
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">
+        Original quantity: <span class="is-family-monospace">{{ alloc.quantity }}</span>
+        ({{ alloc.part.part_number }}). Good + rejected must sum back to this exactly.
+      </p>
+      <div class="field">
+        <label class="label is-small">Good quantity</label>
+        <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+               name="good_qty" value="{{ alloc.quantity }}" required>
+      </div>
+      <div class="field">
+        <label class="label is-small">Rejected quantity</label>
+        <input class="input is-small is-family-monospace" type="number" step="0.001" min="0"
+               name="rejected_qty" value="0" required>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="split-modal-{{ alloc.pk }}" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button is-primary card-footer-primary">Split</button>
+    </footer>
+  </form>
+</dialog>

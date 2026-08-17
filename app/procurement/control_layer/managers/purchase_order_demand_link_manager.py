@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from app.procurement.control_layer.errors import ProcurementValidationError
 from app.procurement.control_layer.guards.purchase_order_demand_link_guard import (
     PurchaseOrderDemandLinkValidator,
 )
@@ -37,6 +38,7 @@ from app.procurement.control_layer.narrators.purchase_order_narrator import (
     PurchaseOrderNarrator,
 )
 from app.procurement.models import (
+    PURCHASING_STATE_UNSET,
     DemandDimension,
     DemandState,
     PartDemand,
@@ -124,6 +126,14 @@ class PurchaseOrderDemandLinkManager:
             GraphSummaryManager.merge(
                 graph_id_a=demand.graph_id, graph_id_b=line.graph_id, actor=actor
             )
+            # merge() may delete EITHER side's graph (larger membership
+            # survives, tie goes to the lower id) — never assume `line` is
+            # the survivor. Re-read both so a caller holding these same
+            # objects never later writes back a stale, deleted graph_id via
+            # a plain full .save() (surfaced by the Reallocation Resolution
+            # build: PurchaseOrderLineManager.edit_line does exactly that).
+            demand.refresh_from_db(fields=["graph_id"])
+            line.refresh_from_db(fields=["graph_id"])
 
         cls._auto_update_line_quantity_if_needed(
             line=line, actor=actor, commit=commit
@@ -337,6 +347,187 @@ class PurchaseOrderDemandLinkManager:
                 graph_id=line.graph_id, seed_entity=line, actor=actor
             )
         return count
+
+    @classmethod
+    def record_receipt(
+        cls,
+        *,
+        link: PurchaseOrderDemandLink,
+        quantity_received,
+        actor=None,
+        commit: bool = True,
+    ) -> PurchaseOrderDemandLink:
+        """Reallocation Resolution decision (supersedes D55): a Buyer/Receiver
+        deliberately marks part of a claim as received. This is the one and
+        only trigger for is_locked — locking is earned, never assumed
+        (reallocation_resolution_portal.md §7.2)."""
+        PurchaseOrderDemandLinkValidator.check_receipt(
+            link=link, quantity_received=quantity_received
+        )
+
+        link.quantity_received = quantity_received
+        link.is_locked = True
+        link.updated_by = actor
+        link.save(
+            update_fields=["quantity_received", "is_locked", "updated_by", "updated_at"]
+        )
+
+        PurchaseOrderNarrator.post(
+            purchase_order=link.purchase_order_line.purchase_order,
+            message=PurchaseOrderNarrator.receipt_recorded(
+                demand_id=link.part_demand_id,
+                line_number=link.purchase_order_line.line_number,
+                quantity_received=quantity_received,
+            ),
+            actor=actor,
+        )
+        return link
+
+    @classmethod
+    def requeue_if_short(cls, *, demand: PartDemand, actor=None, commit: bool = True) -> None:
+        """§7.12: any reduction to a claim — whatever the path — must put the
+        demand's unmet amount back in front of the Buyer without manual
+        re-entry.
+
+        OpenDemandSearch.for_part/.pool (the actual buying-queue reads) only
+        surface a demand when purchasing_state is unset — outstanding_qty
+        alone is not enough. A partial reduction that leaves the demand still
+        linked to this order would otherwise stay invisible there even though
+        it is genuinely short again. Mirrors the reset
+        PurchaseOrderDemandLinkManager.remove_for_line already performs on a
+        full line cancellation.
+        """
+        PartDemandQuantityManager.refresh_purchased_qty(
+            demand=demand, actor=actor, commit=commit
+        )
+        demand.refresh_from_db(fields=["quantity_requested", "purchased_qty", "purchasing_state"])
+
+        if (
+            demand.purchased_qty < demand.quantity_requested
+            and demand.purchasing_state != PURCHASING_STATE_UNSET
+        ):
+            purchase_order = None
+            active_link = demand.allocations.filter(
+                is_active=True, deleted_at__isnull=True
+            ).select_related("purchase_order_line__purchase_order").first()
+            if active_link is not None:
+                purchase_order = active_link.purchase_order_line.purchase_order
+            PartDemandStateManager.transition(
+                demand=demand,
+                dimension=DemandDimension.PURCHASING,
+                to_stage="",
+                actor=actor,
+                notes=PartDemandNarrator.purchasing_reset_by_reallocation(
+                    po_number=purchase_order.po_number if purchase_order else "?",
+                    line_number=active_link.purchase_order_line.line_number
+                    if active_link
+                    else 0,
+                ),
+                is_system_generated=True,
+                raise_on_refusal=False,
+                commit=False,
+            )
+
+    @classmethod
+    def unlock_claim(
+        cls, *, link: PurchaseOrderDemandLink, actor=None, confirmed: bool
+    ) -> PurchaseOrderDemandLink:
+        """The ONE path that can move a claim LOCKED -> OPEN
+        (reallocation_resolution_portal.md §6, §7.3). `confirmed=True` is the
+        contract: the caller must already have collected the second popup's
+        explicit approval of the downstream-risk warning before calling this
+        — this method does not render or track that confirmation itself, it
+        only refuses to act without it.
+        """
+        if not confirmed:
+            raise ProcurementValidationError(
+                [
+                    "Unlocking a claim requires explicit confirmation of the "
+                    "downstream-risk warning."
+                ]
+            )
+
+        link.is_locked = False
+        link.updated_by = actor
+        link.save(update_fields=["is_locked", "updated_by", "updated_at"])
+
+        PurchaseOrderNarrator.post(
+            purchase_order=link.purchase_order_line.purchase_order,
+            message=PurchaseOrderNarrator.claim_unlocked(
+                demand_id=link.part_demand_id,
+                line_number=link.purchase_order_line.line_number,
+            ),
+            actor=actor,
+        )
+        return link
+
+    @classmethod
+    def apply_reallocation(
+        cls,
+        *,
+        line,
+        new_quantity_ordered: Decimal,
+        resolutions: dict[int, Decimal],
+        actor=None,
+    ) -> None:
+        """Commit a Reallocation Portal resolution in one transaction (§5, §6's
+        commit gate). `resolutions` maps OPEN claim ids to their new
+        quantity_allocated — LOCKED claims are never in this dict and are left
+        untouched. Re-runs the locked-floor/accepted-floor check so this path
+        cannot bypass Phase 1's hard stops even if the caller's own gate check
+        was somehow stale.
+        """
+        from django.db import transaction
+
+        from app.procurement.control_layer.guards.purchase_order_line_guard import (
+            PurchaseOrderLineValidator,
+        )
+        from app.procurement.control_layer.managers.purchase_order_cost_manager import (
+            PurchaseOrderCostManager,
+        )
+
+        with transaction.atomic():
+            PurchaseOrderLineValidator.check_quantity_floor(
+                line=line, new_quantity_ordered=new_quantity_ordered
+            )
+
+            claims = {
+                claim.pk: claim
+                for claim in PurchaseOrderDemandLink.objects.filter(
+                    pk__in=resolutions.keys(),
+                    purchase_order_line=line,
+                    is_active=True,
+                    deleted_at__isnull=True,
+                    is_locked=False,
+                ).select_related("part_demand")
+            }
+            for link_id, new_qty in resolutions.items():
+                claim = claims.get(link_id)
+                if claim is None or new_qty == claim.quantity_allocated:
+                    continue
+                reduced = new_qty < claim.quantity_allocated
+                claim.quantity_allocated = new_qty
+                claim.updated_by = actor
+                claim.save(
+                    update_fields=["quantity_allocated", "updated_by", "updated_at"]
+                )
+                if reduced:
+                    cls.requeue_if_short(demand=claim.part_demand, actor=actor, commit=False)
+
+            line.quantity_ordered = new_quantity_ordered
+            line.updated_by = actor
+            line.save(update_fields=["quantity_ordered", "updated_by", "updated_at"])
+            PurchaseOrderCostManager.recompute(
+                purchase_order=line.purchase_order, actor=actor, commit=False
+            )
+
+            PurchaseOrderNarrator.post(
+                purchase_order=line.purchase_order,
+                message=PurchaseOrderNarrator.reallocation_committed(
+                    line_number=line.line_number, new_quantity=new_quantity_ordered
+                ),
+                actor=actor,
+            )
 
     @staticmethod
     def _auto_update_line_quantity_if_needed(*, line, actor=None, commit: bool = True) -> None:

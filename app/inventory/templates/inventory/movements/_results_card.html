@@ -1,0 +1,42 @@
+<div class="card" id="mv-results-container">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+    Movements ({{ page.paginator.count }})
+  </div></div>
+  <div class="card-content is-flush">
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <thead>
+        <tr><th>Date</th><th>Number</th><th>Type</th><th>Part</th><th class="has-text-right">Qty</th><th>Serial</th><th>From</th><th>To</th><th>Actor</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.movement_date|date:"Y-m-d H:i" }}</td>
+          <td><a href="{% url 'inventory_movement_detail' pk=row.pk %}" class="is-family-monospace">{{ row.movement_number }}</a></td>
+          <td><span class="tag is-small is-light">{{ row.get_movement_type_display }}</span></td>
+          <td class="is-family-monospace">{{ row.part.part_number }}</td>
+          <td class="has-text-right is-family-monospace">{{ row.quantity }}</td>
+          <td class="is-family-monospace">{{ row.serial_number|default:"—" }}</td>
+          <td>{{ row.from_warehouse.code }}/{{ row.from_room.room_name }}{% if row.from_storage_location %}/{{ row.from_storage_location.display_code }}{% endif %}</td>
+          <td>{{ row.to_warehouse.code }}/{{ row.to_room.room_name }}{% if row.to_storage_location %}/{{ row.to_storage_location.display_code }}{% endif %}</td>
+          <td>{{ row.moved_by|default:"—" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9" class="has-text-grey has-text-centered py-5">No movements match your filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <div class="card-footer" style="justify-content:center; padding:0.5rem;">
+    <nav class="pagination is-small is-centered" role="navigation" aria-label="pagination">
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+        <li><a href="?page={{ num }}{% for k, v in filters.items %}{% if v %}&{{ k }}={{ v }}{% endif %}{% endfor %}"
+               class="pagination-link {% if num == page.number %}is-current{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>

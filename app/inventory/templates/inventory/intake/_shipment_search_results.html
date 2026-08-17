@@ -1,0 +1,60 @@
+{% comment %}
+format=htmx-search-results fragment (searchbars.md — plain HTMX list filter).
+Included directly by auto.html on full page load, and returned alone for the
+filtered re-render. Each row's "Select" action re-renders ZONE 3 in place via
+a second, independent HTMX exchange (format=htmx-shipment-lines) — selecting
+a shipment never resubmits this search.
+{% endcomment %}
+<div id="auto-intake-shipment-results">
+  {% if shipments %}
+  <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Shipment</th>
+        <th>PO</th>
+        <th>Vendor</th>
+        <th>Status</th>
+        <th>Open lines</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for shipment in shipments %}
+      <tr {% if shipment.pk == shipment_id %}class="is-selected"{% endif %}>
+        <td>
+          {% if shipment.pk == shipment_id %}
+          <span class="icon has-text-info"><span class="material-icons" aria-hidden="true">radio_button_checked</span></span>
+          {% else %}
+          <span class="icon has-text-grey-light"><span class="material-icons" aria-hidden="true">radio_button_unchecked</span></span>
+          {% endif %}
+        </td>
+        <td class="is-family-monospace">{{ shipment.shipment_number }}</td>
+        <td class="is-family-monospace">{{ shipment.purchase_order.po_number|default:"—" }}</td>
+        <td>{{ shipment.purchase_order.vendor|default:"—" }}</td>
+        <td><span class="tag is-small is-light">{{ shipment.get_status_display }}</span></td>
+        <td>{{ shipment.open_line_count }} open line{{ shipment.open_line_count|pluralize }}</td>
+        <td class="has-text-right">
+          <a class="button is-small {% if shipment.pk == shipment_id %}is-primary{% else %}is-primary is-outlined{% endif %}"
+             href="{% url 'inventory_auto_intake_portal' %}?shipment_id={{ shipment.pk }}"
+             hx-get="{% url 'inventory_auto_intake_portal' %}?shipment_id={{ shipment.pk }}&format=htmx-shipment-lines"
+             hx-target="#auto-intake-lines-region"
+             hx-swap="innerHTML"
+             hx-indicator="#auto-intake-lines-region"
+             hx-push-url="{% url 'inventory_auto_intake_portal' %}?shipment_id={{ shipment.pk }}"
+             onclick="var c = document.getElementById('auto-intake-shipment-card'); if (c) { c.removeAttribute('open'); }">
+            {% if shipment.pk == shipment_id %}
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Selected</span>
+            {% else %}
+            <span>Select</span>
+            {% endif %}
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="has-text-grey is-size-7 p-4">No unfulfilled shipments match.</p>
+  {% endif %}
+</div>

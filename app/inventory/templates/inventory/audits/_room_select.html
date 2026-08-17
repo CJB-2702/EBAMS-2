@@ -1,0 +1,8 @@
+<div class="select is-fullwidth is-small">
+  <select name="start_room_id" {% if not rooms %}disabled{% endif %}>
+    <option value="">-- All Rooms --</option>
+    {% for rm in rooms %}
+    <option value="{{ rm.pk }}" {% if room_id == rm.pk %}selected{% endif %}>{{ rm.room_name }}</option>
+    {% endfor %}
+  </select>
+</div>
