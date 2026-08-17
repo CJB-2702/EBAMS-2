@@ -1,0 +1,25 @@
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>Part Demand Status</div></div>
+  <div class="card-content is-flush pb-3">
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead><tr><th>Action</th><th>Part</th><th class="has-text-right">Requested</th><th>Demand State</th><th>Purchasing</th></tr></thead>
+      <tbody>
+        {% for action in actions %}
+          {% for link in action.demand_links.all %}
+          <tr>
+            <td>{{ action.action_name }}</td>
+            <td>{{ link.part_demand.part }}</td>
+            <td class="has-text-right is-family-monospace">{{ link.part_demand.quantity_requested }}</td>
+            <td>{{ link.part_demand.get_demand_state_display }}</td>
+            <td>{{ link.part_demand.get_purchasing_state_display }}</td>
+          </tr>
+          {% endfor %}
+        {% empty %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if not actions %}
+    <p class="has-text-grey is-size-7 p-3">None.</p>
+    {% endif %}
+  </div>
+</div>

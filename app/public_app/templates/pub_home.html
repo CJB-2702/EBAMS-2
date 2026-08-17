@@ -180,6 +180,7 @@
 
       <p class="sidebar-section-label">Applications</p>
       <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'maintenance_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Maintenance</a>
       <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
       <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon">{% svg "part-icon" %}</span> Parts</a>
       <a href="{% url 'procurement_hub' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span> Procurement</a>
@@ -231,6 +232,26 @@
               <a href="{% url 'event_create' %}" class="button is-small is-light">
                 <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
                 <span>New Event</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="app-card">
+            <div class="app-card-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+            <h3>Maintenance</h3>
+            <p>Plan and execute maintenance work with reusable procedure templates, proto-action libraries, and recurring maintenance plans.</p>
+            <div class="app-card-links">
+              <a href="{% url 'maintenance_index' %}" class="button is-small is-info is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+                <span>All Events</span>
+              </a>
+              <a href="{% url 'maintenance_create' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+                <span>New Event</span>
+              </a>
+              <a href="{% url 'plan_index' %}" class="button is-small is-light">
+                <span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span>
+                <span>Plans</span>
               </a>
             </div>
           </div>

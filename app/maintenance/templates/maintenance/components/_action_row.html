@@ -1,0 +1,104 @@
+{% load static %}
+<div class="card mb-3 depth-2">
+  <div class="card-content is-size-7">
+    <div class="is-flex is-justify-content-space-between is-align-items-flex-start">
+      <div>
+        <p><strong>{{ action.sequence_order }}. {{ action.action_name }}</strong></p>
+        {% if action.description %}<p class="has-text-grey">{{ action.description }}</p>{% endif %}
+        <p class="has-text-grey mt-1">Assigned: {{ action.assigned_user|default:"Unassigned" }}{% if action.estimated_duration_minutes %} · Est. {{ action.estimated_duration_minutes }} min{% endif %}{% if action.billable_hours %} · Billed {{ action.billable_hours }}h{% endif %}</p>
+      </div>
+      <span class="tag is-light">{{ action.status }}</span>
+    </div>
+
+    {% if action.instructions %}
+    <details class="mt-2">
+      <summary class="has-text-grey">Instructions</summary>
+      <p style="white-space: pre-wrap;">{{ action.instructions }}</p>
+    </details>
+    {% endif %}
+
+    <div class="buttons are-small mt-3">
+      {% if action.status == "Not Started" %}
+      <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="transition" value="start">
+        <button type="submit" class="button is-small is-info is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span><span>Start</span>
+        </button>
+      </form>
+      {% endif %}
+      {% if action.status == "Not Started" or action.status == "In Progress" or action.status == "Blocked" %}
+      <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="transition" value="complete">
+        <input type="number" step="0.1" min="0" name="billable_hours" class="input is-small is-family-monospace" style="width:5rem;display:inline-block;" placeholder="hrs">
+        <button type="submit" class="button is-small is-success is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Complete</span>
+        </button>
+      </form>
+      <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="transition" value="fail">
+        <button type="submit" class="button is-small is-danger is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">error</span></span><span>Fail</span>
+        </button>
+      </form>
+      {% endif %}
+      {% if action.status == "Not Started" or action.status == "In Progress" %}
+      <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="transition" value="skip">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">skip_next</span></span><span>Skip</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <details class="mt-2">
+      <summary class="has-text-grey">Tools ({{ action.action_tools.all|length }}) &amp; Part Demands</summary>
+      <div class="columns mt-2">
+        <div class="column">
+          <p class="has-text-weight-semibold">Tools</p>
+          {% for tool in action.action_tools.all %}
+          <p>{{ tool.tool|default:tool.tool_name }} × {{ tool.quantity_required }}
+            <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+              {% csrf_token %}<input type="hidden" name="transition" value="remove_tool">
+              <input type="hidden" name="action_tool_id" value="{{ tool.pk }}">
+              <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">Remove</button>
+            </form>
+          </p>
+          {% empty %}
+          <p class="has-text-grey">None.</p>
+          {% endfor %}
+          <form method="post" action="{% url 'action_update' action_id=action.pk %}" class="mt-2">
+            {% csrf_token %}<input type="hidden" name="transition" value="add_tool">
+            <div class="field has-addons">
+              <div class="control is-expanded"><input class="input is-small" type="text" name="tool_name" placeholder="ad-hoc tool name…"></div>
+              <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" name="quantity_required" value="1" min="1"></div>
+              <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+            </div>
+          </form>
+        </div>
+        <div class="column">
+          <p class="has-text-weight-semibold">Part Demands</p>
+          {% for link in action.demand_links.all %}
+          <p>{{ link.part_demand.part }} × {{ link.part_demand.quantity_requested }}
+            <form method="post" action="{% url 'action_update' action_id=action.pk %}" style="display:inline;">
+              {% csrf_token %}<input type="hidden" name="transition" value="remove_part_demand">
+              <input type="hidden" name="link_id" value="{{ link.pk }}">
+              <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">Remove</button>
+            </form>
+          </p>
+          {% empty %}
+          <p class="has-text-grey">None.</p>
+          {% endfor %}
+          <form method="post" action="{% url 'action_update' action_id=action.pk %}" class="mt-2">
+            {% csrf_token %}<input type="hidden" name="transition" value="add_part_demand">
+            <div class="field has-addons">
+              <div class="control"><input class="input is-small is-family-monospace" style="width:5rem;" type="number" name="part_id" placeholder="part id"></div>
+              <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" step="0.001" name="quantity_requested" value="1"></div>
+              <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>

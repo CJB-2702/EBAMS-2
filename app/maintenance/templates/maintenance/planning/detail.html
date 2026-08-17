@@ -1,0 +1,81 @@
+{% extends "maintenance/base.html" %}
+{% block title %}{{ plan.name }}{% endblock %}
+{% block nav_plan_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'plan_index' %}">Plans</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ plan.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_repeat</span></div>
+      <div>
+        <h1 class="page-title">{{ plan.name }}</h1>
+        <p class="page-subtitle">{{ plan.domain.name }} · {{ plan.template_action_set.task_name }} · {{ plan.asset_class.name }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'plan_index' %}" class="button is-small is-light">← Back</a>
+      {% if plan.status == "Active" %}
+      <form method="post" action="{% url 'plan_detail' pk=plan.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="action" value="deactivate">
+        <button type="submit" class="button is-small is-light">Deactivate</button>
+      </form>
+      <form method="post" action="{% url 'plan_detail' pk=plan.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="action" value="run">
+        <button type="submit" class="button is-small is-link">
+          <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span><span>Run Now</span>
+        </button>
+      </form>
+      {% else %}
+      <form method="post" action="{% url 'plan_detail' pk=plan.pk %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="action" value="activate">
+        <button type="submit" class="button is-small is-success">Activate</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
+    <div class="card-content">
+      <dl class="kv is-size-7">
+        <dt>Status</dt><dd>{{ plan.status }}</dd>
+        <dt>Frequency</dt><dd>{{ plan.frequency_type }}</dd>
+        {% if plan.frequency_type == "Calendar" %}
+        <dt>Interval</dt><dd>Every {{ plan.delta_days|default:"—" }} day(s) since last completed service</dd>
+        {% else %}
+        <dt>Interval</dt><dd class="has-text-grey">Meter-based plans are recognized but not yet evaluated by the planner.</dd>
+        {% endif %}
+        <dt>Template</dt><dd><a href="{% url 'template_detail' pk=plan.template_action_set_id %}">{{ plan.template_action_set.task_name }}</a></dd>
+        <dt>Asset Class</dt><dd>{{ plan.asset_class.name }}</dd>
+        <dt>Asset Model</dt><dd>{{ plan.asset_model|default:"Any" }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">preview</span></span>Due Now ({{ preview|length }})</div></div>
+    <div class="card-content is-flush pb-3">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Asset ID</th><th>Reason</th><th>Recommended Start</th></tr></thead>
+        <tbody>
+          {% for result in preview %}
+          <tr>
+            <td>{{ result.asset_id }}</td>
+            <td>{{ result.reason }}</td>
+            <td>{{ result.recommended_start|date:"Y-m-d H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="has-text-grey has-text-centered py-4">No assets currently due under this plan.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

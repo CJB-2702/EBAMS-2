@@ -1,5 +1,6 @@
 from app.parts.models.core.part import Part
 from app.parts.models.core.part_revision import PartRevision, PartRevisionStatus
+from app.parts.models.core.tool import Tool
 from app.parts.models.domain_scope.part_domain_access_mapping import (
     PartDomainAccessMapping,
 )
@@ -17,4 +18,5 @@ __all__ = [
     "PartRevision",
     "PartRevisionStatus",
     "SupplierItem",
+    "Tool",
 ]

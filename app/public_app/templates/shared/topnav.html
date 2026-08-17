@@ -18,6 +18,36 @@
         </div>
       </li>
 
+      <li role="tab" data-group="Maintenance">
+        <button class="portal-tab-btn" commandfor="portal-maintenance" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">build</span></span> Maintenance <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-maintenance" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Work</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'maintenance_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Maintenance Events</a>
+                <a href="{% url 'maintenance_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Maintenance Event</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Planning</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'plan_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span> Recurring Plans</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Library</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Procedure Templates</a>
+                <a href="{% url 'proto_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Proto Actions</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
       <li role="tab" data-group="Assets">
         <button class="portal-tab-btn" commandfor="portal-assets" command="toggle-popover">
           <span class="portal-tab-icon"><span class="icon">{% svg "asset-icon" %}</span></span> Assets <span class="portal-tab-chevron">▾</span>

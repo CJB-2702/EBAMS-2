@@ -1,0 +1,47 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Maintenance Plans{% endblock %}
+{% block nav_plan_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Plans</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_repeat</span></div>
+      <div>
+        <h1 class="page-title">Maintenance Plans</h1>
+        <p class="page-subtitle">Recurring schedule rules that generate maintenance events from a procedure template.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'plan_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Plan</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Plans ({{ plans|length }})</div></div>
+    <div class="card-content is-flush pb-3">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Name</th><th>Template</th><th>Asset Class</th><th>Frequency</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for plan in plans %}
+          <tr>
+            <td><a href="{% url 'plan_detail' pk=plan.pk %}">{{ plan.name }}</a></td>
+            <td>{{ plan.template_action_set.task_name }}</td>
+            <td>{{ plan.asset_class.name }}</td>
+            <td>{{ plan.frequency_type }}{% if plan.frequency_type == "Calendar" %} — every {{ plan.delta_days|default:"—" }} day(s){% else %} <span class="tag is-light is-small">not yet evaluated</span>{% endif %}</td>
+            <td>{% if plan.status == "Active" %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No maintenance plans yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

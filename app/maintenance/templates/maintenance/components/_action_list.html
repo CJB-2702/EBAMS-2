@@ -1,0 +1,27 @@
+<div id="action-list">
+  {% if completion_verdict and not completion_verdict.allowed and detail.status != "complete" and detail.status != "cancelled" %}
+  <div class="notification is-warning is-light is-size-7">
+    <strong>Not yet completable:</strong>
+    <ul>
+      {% for reason in completion_verdict.reasons %}<li>{{ reason }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% for action in actions %}
+    {% include "maintenance/components/_action_row.html" %}
+  {% empty %}
+  <p class="has-text-grey is-size-7">No action steps yet.</p>
+  {% endfor %}
+
+  <form method="post" action="{% url 'action_create' maintenance_id=detail.pk %}" class="card depth-2 p-3 mt-3">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="blank">
+    <div class="field has-addons">
+      <div class="control is-expanded"><input class="input is-small" type="text" name="action_name" placeholder="new action step name…" required></div>
+      <div class="control"><button type="submit" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add Step</span>
+      </button></div>
+    </div>
+  </form>
+</div>

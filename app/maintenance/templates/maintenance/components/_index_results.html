@@ -1,0 +1,63 @@
+{% load static %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Events ({{ page.paginator.count }})</div>
+  </div>
+  <div class="card-content is-flush pb-3">
+    {% if density == "large" %}
+      {% for event in events %}
+      <div class="card mb-3 depth-2">
+        <div class="card-content is-size-7">
+          <div class="is-flex is-justify-content-space-between">
+            <div>
+              <a href="{% url 'maintenance_detail' pk=event.pk %}"><strong>{{ event.title }}</strong></a>
+              <p class="has-text-grey">{{ event.get_maintenance_type_display|default:"—" }} · {{ event.asset|default:"No asset" }}</p>
+            </div>
+            <div>
+              <span class="tag is-light">{{ event.get_status_display|default:"—" }}</span>
+              {% if event.priority %}<span class="tag is-light ml-1">{{ event.get_priority_display }}</span>{% endif %}
+            </div>
+          </div>
+          <p class="has-text-grey mt-2">WO {{ event.work_order_reference|default:"—" }} · Starts {{ event.event_start|date:"Y-m-d H:i"|default:"—" }} · Assigned {{ event.assigned_user|default:"Unassigned" }}</p>
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey is-size-7 p-4">No maintenance events match these filters.</p>
+      {% endfor %}
+    {% else %}
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Priority</th>
+          <th>Asset</th>
+          <th>Work Order</th>
+          <th>Start</th>
+          <th>Assigned</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+        <tr>
+          <td><a href="{% url 'maintenance_detail' pk=event.pk %}">{{ event.title }}</a></td>
+          <td><span class="tag is-light">{{ event.get_status_display|default:"—" }}</span></td>
+          <td>{{ event.get_priority_display|default:"—" }}</td>
+          <td>{{ event.asset|default:"—" }}</td>
+          <td class="is-family-monospace">{{ event.work_order_reference|default:"—" }}</td>
+          <td>{{ event.event_start|date:"Y-m-d H:i"|default:"—" }}</td>
+          <td>{{ event.assigned_user|default:"Unassigned" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="has-text-grey has-text-centered py-4">No maintenance events match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+  {% if page.paginator.num_pages > 1 %}
+  <footer class="card-footer" style="padding: 0.5rem 1rem;">
+    <span class="is-size-7 has-text-grey">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+  </footer>
+  {% endif %}
+</div>

@@ -1,0 +1,88 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Maintenance Events{% endblock %}
+{% block nav_maintenance_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Events</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+      <div>
+        <h1 class="page-title">Maintenance Events</h1>
+        <p class="page-subtitle">Scheduled, reactive, inspection, and preventive work across your domains.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'maintenance_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Event</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'maintenance_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#maintenance-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#maintenance-results-region">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="title, work order, asset…" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="status">
+                <option value="">Any</option>
+                {% for value, label in statuses %}
+                <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Priority</label>
+            <div class="select is-small is-fullwidth">
+              <select name="priority">
+                <option value="">Any</option>
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Work Order</label>
+            <input class="input is-small" type="search" name="work_order_reference" value="{{ filters.work_order_reference }}" placeholder="WO-1002…">
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <label class="checkbox is-size-7">
+              <input type="checkbox" name="my_work" value="1" {% if filters.my_work %}checked{% endif %}> My assigned work only
+            </label>
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="maintenance-results-region" class="is-relative">
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+      <div class="skeleton-block"></div>
+    </div>
+    {% include "maintenance/components/_index_results.html" %}
+  </div>
+</div>
+{% endblock %}

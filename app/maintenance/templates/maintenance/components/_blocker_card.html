@@ -1,0 +1,50 @@
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">block</span></span>Blockers</div></div>
+  <div class="card-content">
+    {% for blocker in blockers %}
+    <div class="mb-3 pb-2" style="border-bottom:1px solid var(--bulma-border-weak);">
+      <p class="is-size-7"><strong>{{ blocker.reason|default:"—" }}</strong>
+        {% if blocker.end_date %}<span class="tag is-light is-small ml-1">Resolved</span>{% else %}<span class="tag is-warning is-light is-small ml-1">Active</span>{% endif %}
+      </p>
+      <p class="is-size-7 has-text-grey">{{ blocker.priority }} · opened {{ blocker.start_date|date:"Y-m-d H:i" }}{% if blocker.end_date %} · resolved {{ blocker.end_date|date:"Y-m-d H:i" }}{% endif %}</p>
+      {% if blocker.notes %}<p class="is-size-7">{{ blocker.notes }}</p>{% endif %}
+      {% if not blocker.end_date %}
+      <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" class="mt-1">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="end_blocker">
+        <input type="hidden" name="blocker_id" value="{{ blocker.pk }}">
+        <button type="submit" class="button is-small is-success is-light">Resolve</button>
+      </form>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="has-text-grey is-size-7">None.</p>
+    {% endfor %}
+
+    <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" class="mt-2">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_blocker">
+      <div class="field">
+        <label class="label is-small">Reason</label>
+        <input class="input is-small" type="text" name="reason" required>
+      </div>
+      <div class="field">
+        <label class="label is-small">Priority</label>
+        <div class="select is-small is-fullwidth">
+          <select name="priority">
+            {% for value, label in blocker_priorities %}
+            <option value="{{ value }}" {% if value == "Medium" %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small">Notes</label>
+        <textarea class="textarea is-small" name="notes" rows="2"></textarea>
+      </div>
+      <button type="submit" class="button is-small is-warning is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Log Blocker</span>
+      </button>
+    </form>
+  </div>
+</div>

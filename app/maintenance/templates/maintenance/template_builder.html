@@ -1,0 +1,213 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Template Builder{% endblock %}
+{% block nav_template_builder %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'template_index' %}">Templates</a></li>
+<li class="is-active"><a href="#" aria-current="page">Builder</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">construction</span></div>
+      <div>
+        <h1 class="page-title">Template Builder</h1>
+        <p class="page-subtitle">Draft lives in your session — nothing is saved to the database until you Publish. Refreshing this page keeps your progress.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      {% if existing_templates %}
+      <form method="post" action="{% url 'template_builder' %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="action" value="start_revision">
+        <div class="select is-small">
+          <select name="template_action_set_id" onchange="this.form.submit()">
+            <option value="">Start from existing template…</option>
+            {% for t in existing_templates %}
+            <option value="{{ t.pk }}">{{ t.task_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+      {% endif %}
+      <form method="post" action="{% url 'template_builder_update' %}" style="display:inline;">
+        {% csrf_token %}<input type="hidden" name="action" value="clear">
+        <button type="submit" class="button is-small is-light" onclick="return confirm('Discard this draft?');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">restart_alt</span></span><span>Clear Draft</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# Card 1: Metadata #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>1. Template Identity</div></div>
+    <div class="card-content">
+      <form method="post" action="{% url 'template_builder_update' %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="set_metadata">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Task Name</label>
+            <input class="input is-small" type="text" name="task_name" value="{{ draft.task_name }}" required>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Description</label>
+            <input class="input is-small" type="text" name="description" value="{{ draft.description }}">
+          </div>
+        </div>
+        {% if draft.prior_revision_id %}
+        <p class="has-text-grey is-size-7">Revision {{ draft.revision }} of template #{{ draft.prior_revision_id }} — publishing will retire the prior revision.</p>
+        {% endif %}
+        <button type="submit" class="button is-small is-info is-light mt-2">
+          <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Identity</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {# Card 2: Action steps #}
+  <div class="card mt-4">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>2. Action Steps ({{ draft.actions|length }})</div></div>
+    <div class="card-content">
+      {% for action in draft.actions %}
+      <div class="card mb-3 depth-2">
+        <div class="card-content is-size-7">
+          <div class="is-flex is-justify-content-space-between">
+            <p><strong>{{ action.sequence_order }}. {{ action.action_name }}</strong></p>
+            <form method="post" action="{% url 'template_builder_update' %}">
+              {% csrf_token %}<input type="hidden" name="action" value="remove_action">
+              <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+              <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">Remove</button>
+            </form>
+          </div>
+          {% if action.description %}<p class="has-text-grey">{{ action.description }}</p>{% endif %}
+
+          <div class="columns mt-2">
+            <div class="column">
+              <p class="has-text-weight-semibold">Tools</p>
+              {% for tool in action.tools %}
+              <p>{{ tool.tool_name|default:tool.tool_id }} × {{ tool.quantity_required }}
+                <form method="post" action="{% url 'template_builder_update' %}" style="display:inline;">
+                  {% csrf_token %}<input type="hidden" name="action" value="remove_tool">
+                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                  <input type="hidden" name="tool_index" value="{{ forloop.counter0 }}">
+                  <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">×</button>
+                </form>
+              </p>
+              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+              <form method="post" action="{% url 'template_builder_update' %}" class="mt-1">
+                {% csrf_token %}<input type="hidden" name="action" value="add_tool">
+                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                <div class="field has-addons">
+                  <div class="control is-expanded"><input class="input is-small" type="text" name="tool_name" placeholder="tool name…"></div>
+                  <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" name="quantity_required" value="1" min="1"></div>
+                  <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+                </div>
+              </form>
+            </div>
+            <div class="column">
+              <p class="has-text-weight-semibold">Part Demands</p>
+              {% for demand in action.part_demands %}
+              <p>part #{{ demand.part_id }} × {{ demand.quantity_required }}
+                <form method="post" action="{% url 'template_builder_update' %}" style="display:inline;">
+                  {% csrf_token %}<input type="hidden" name="action" value="remove_part_demand">
+                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                  <input type="hidden" name="demand_index" value="{{ forloop.counter0 }}">
+                  <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">×</button>
+                </form>
+              </p>
+              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+              <form method="post" action="{% url 'template_builder_update' %}" class="mt-1">
+                {% csrf_token %}<input type="hidden" name="action" value="add_part_demand">
+                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                <div class="field has-addons">
+                  <div class="control"><input class="input is-small is-family-monospace" style="width:5rem;" type="number" name="part_id" placeholder="part id" required></div>
+                  <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" step="0.001" name="quantity_required" value="1"></div>
+                  <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey is-size-7">No action steps yet — add one below.</p>
+      {% endfor %}
+
+      <div class="columns">
+        <div class="column">
+          <form method="post" action="{% url 'template_builder_update' %}" class="card depth-2 p-3">
+            {% csrf_token %}<input type="hidden" name="action" value="add_action">
+            <p class="has-text-weight-semibold is-size-7 mb-2">Add blank step</p>
+            <div class="field"><input class="input is-small" type="text" name="action_name" placeholder="action name…" required></div>
+            <div class="field"><input class="input is-small" type="text" name="description" placeholder="description…"></div>
+            <button type="submit" class="button is-small is-link">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add Step</span>
+            </button>
+          </form>
+        </div>
+        {% if proto_items %}
+        <div class="column">
+          <form method="post" action="{% url 'template_builder_update' %}" class="card depth-2 p-3">
+            {% csrf_token %}<input type="hidden" name="action" value="add_action_from_proto">
+            <p class="has-text-weight-semibold is-size-7 mb-2">Add from the Action Library</p>
+            <div class="select is-small is-fullwidth mb-2">
+              <select name="proto_action_item_id" required>
+                <option value="">Select a library action…</option>
+                {% for p in proto_items %}
+                <option value="{{ p.pk }}">{{ p.action_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="button is-small is-link">
+              <span class="icon"><span class="material-icons" aria-hidden="true">library_add</span></span><span>Add from Library</span>
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Card 3: Publish #}
+  <div class="card mt-4">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">publish</span></span>3. Publish</div></div>
+    <div class="card-content">
+      <form method="post" action="{% url 'template_builder_commit' %}" id="template-commit-form">
+        {% csrf_token %}
+        {% if show_domain_picker %}
+        <div class="field">
+          <label class="label is-small">Domain</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select name="domain_id" required>
+                {% for d in domains %}
+                <option value="{{ d.id }}">{{ d.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="domain_id" value="{{ single_domain_id }}">
+        {% endif %}
+        <footer class="card-footer custom-card-footer" style="border:none; padding:0;">
+          <div class="card-footer-secondaries"></div>
+          <button type="submit" class="button is-primary card-footer-primary"
+                  {% if not draft.task_name or not draft.actions %}disabled{% endif %}>
+            <span class="icon"><span class="material-icons" aria-hidden="true">publish</span></span><span>Publish Template</span>
+          </button>
+        </footer>
+        {% if not draft.task_name or not draft.actions %}
+        <p class="has-text-grey is-size-7 mt-2">A task name and at least one action step are required before publishing.</p>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

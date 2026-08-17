@@ -1,0 +1,79 @@
+{% extends "maintenance/base.html" %}
+{% block title %}New Library Action{% endblock %}
+{% block nav_proto_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'proto_index' %}">Action Library</a></li>
+<li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_circle</span></div>
+      <div><h1 class="page-title">New Library Action</h1></div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'proto_index' %}" class="button is-small is-light">← Back</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-content">
+      <form method="post" action="{% url 'proto_create' %}">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label is-small">Action Name</label>
+          <input class="input is-small" type="text" name="action_name" required>
+        </div>
+        <div class="field">
+          <label class="label is-small">Description</label>
+          <textarea class="textarea is-small" name="description" rows="2"></textarea>
+        </div>
+        <div class="field">
+          <label class="label is-small">Instructions</label>
+          <textarea class="textarea is-small" name="instructions" rows="3"></textarea>
+        </div>
+        <div class="columns is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small">Estimated Duration (min)</label>
+            <input class="input is-small is-family-monospace" type="number" name="estimated_duration_minutes" min="0">
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Minimum Staff Count</label>
+            <input class="input is-small is-family-monospace" type="number" name="minimum_staff_count" value="1" min="1">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label is-small">Safety Notes</label>
+          <textarea class="textarea is-small" name="safety_notes" rows="2"></textarea>
+        </div>
+        {% if show_domain_picker %}
+        <div class="field">
+          <label class="label is-small">Domain</label>
+          <div class="select is-small is-fullwidth">
+            <select name="domain_id" required>
+              {% for d in domains %}
+              <option value="{{ d.id }}">{{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% else %}
+        <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
+        {% endif %}
+        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
+          <div class="card-footer-secondaries">
+            <a href="{% url 'proto_index' %}" class="button is-small is-light">Cancel</a>
+          </div>
+          <button type="submit" class="button is-primary card-footer-primary">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Create</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

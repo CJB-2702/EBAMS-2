@@ -132,6 +132,7 @@ Activate a focused persona with one of these slash commands. Each loads the corr
 - `/admin-persona` — Admin Engineer (Django auth, RBAC, ownership scoping, admin panels)
 - `/code-architect-persona` — Code Architect (review-only; smells, patterns, severities)
 - `/business-persona` — Business Architect (no-code; user value, workflows, priorities)
+- `/porting-persona` — Porting Engineer (Flask to Django migration, layer inversion, ORM mapping, session memory swap)
 
 These same agents are also spawnable via the Task/Agent tool when you want to delegate a single task in isolation.
 

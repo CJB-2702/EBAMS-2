@@ -1,0 +1,45 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Action Library{% endblock %}
+{% block nav_proto_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Action Library</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">list_alt</span></div>
+      <div>
+        <h1 class="page-title">Action Library</h1>
+        <p class="page-subtitle">Reusable action steps that can be dropped into a template draft or a live event.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'proto_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Library Action</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'proto_index' %}?format=htmx-search-results"
+            hx-trigger="keyup changed delay:350ms from:input[type=search]"
+            hx-target="#proto-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true">
+        <div class="field">
+          <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="search action name…">
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="proto-results-region">
+    {% include "maintenance/proto/_index_results.html" %}
+  </div>
+</div>
+{% endblock %}

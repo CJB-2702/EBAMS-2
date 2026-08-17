@@ -1,0 +1,47 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Procedure Templates{% endblock %}
+{% block nav_template_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Templates</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">description</span></div>
+      <div>
+        <h1 class="page-title">Procedure Templates</h1>
+        <p class="page-subtitle">Master action sequences used to expand new maintenance events.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'template_builder' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span><span>Build a Template</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Templates ({{ templates|length }})</div></div>
+    <div class="card-content is-flush pb-3">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Task Name</th><th>Revision</th><th>Domain</th><th>Asset Class</th><th>Active</th></tr></thead>
+        <tbody>
+          {% for t in templates %}
+          <tr>
+            <td><a href="{% url 'template_detail' pk=t.pk %}">{{ t.task_name }}</a></td>
+            <td class="is-family-monospace">{{ t.revision|default:"—" }}</td>
+            <td>{{ t.domain.name }}</td>
+            <td>{{ t.asset_class|default:"—" }}</td>
+            <td>{% if t.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No procedure templates yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

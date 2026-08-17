@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     "app.parts",
     "app.procurement",
     "app.inventory",
+    "app.maintenance",
 ]
 
 AUTH_USER_MODEL = "administration.User"

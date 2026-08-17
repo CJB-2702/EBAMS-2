@@ -1,0 +1,58 @@
+{% extends "maintenance/base.html" %}
+{% block title %}{{ template.task_name }}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'template_index' %}">Templates</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ template.task_name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">description</span></div>
+      <div>
+        <h1 class="page-title">{{ template.task_name }}{% if template.revision %} <span class="has-text-grey">(rev {{ template.revision }})</span>{% endif %}</h1>
+        <p class="page-subtitle">{{ template.domain.name }} · {{ items|length }} step(s) · ~{{ total_estimated_duration_minutes }} min total</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'template_index' %}" class="button is-small is-light">← Back</a>
+      <a href="{% url 'maintenance_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Use for New Event</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Action Steps</div></div>
+    <div class="card-content">
+      {% for item in items %}
+      <div class="card mb-3 depth-2">
+        <div class="card-content is-size-7">
+          <p><strong>{{ item.sequence_order }}. {{ item.action_name }}</strong></p>
+          {% if item.description %}<p class="has-text-grey">{{ item.description }}</p>{% endif %}
+          <div class="columns mt-2">
+            <div class="column">
+              <p class="has-text-weight-semibold">Tools</p>
+              {% for tool in item.template_action_tools.all %}
+              <p>{{ tool.tool|default:tool.tool_name }} × {{ tool.quantity_required }}</p>
+              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+            </div>
+            <div class="column">
+              <p class="has-text-weight-semibold">Part Demands</p>
+              {% for demand in item.template_part_demands.all %}
+              <p>{{ demand.part }} × {{ demand.quantity_required }}{% if demand.is_optional %} <span class="tag is-light is-small">optional</span>{% endif %}</p>
+              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey is-size-7">No action steps.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

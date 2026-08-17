@@ -165,7 +165,12 @@ def seed_database():
                 return False
 
     print("\n9. Running seed commands...")
-    seed_commands = ['seed_parts_dev', 'seed_procurement_dev', 'seed_inventory_dev']
+    seed_commands = [
+        'seed_parts_dev',
+        'seed_procurement_dev',
+        'seed_inventory_dev',
+        'seed_maintenance_dev',
+    ]
     for seed_cmd in seed_commands:
         result = subprocess.run(
             [sys.executable, 'manage.py', seed_cmd],

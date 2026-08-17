@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Maintenance{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script src="{% static 'web_components/info_popover.js' %}"></script>
+  <style>
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% include "shared/topnav.html" with current_app_group="Maintenance" %}
+
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav hx-boost="true" hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Events</p>
+      <a href="{% url 'maintenance_index' %}" class="sidebar-link {% block nav_maintenance_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Hub &amp; Search</a>
+      <a href="{% url 'maintenance_create' %}" class="sidebar-link {% block nav_maintenance_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Procedure Templates</p>
+      <a href="{% url 'template_index' %}" class="sidebar-link {% block nav_template_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span> Template Library</a>
+      <a href="{% url 'template_builder' %}" class="sidebar-link {% block nav_template_builder %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span> Template Builder</a>
+      <a href="{% url 'proto_index' %}" class="sidebar-link {% block nav_proto_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span> Action Library</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Planning</p>
+      <a href="{% url 'plan_index' %}" class="sidebar-link {% block nav_plan_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span> Maintenance Plans</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'asset_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">precision_manufacturing</span></span> Assets</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="maintenance-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'maintenance_index' %}">Maintenance</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
+</body>
+</html>
