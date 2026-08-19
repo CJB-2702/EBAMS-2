@@ -45,6 +45,14 @@
           <p class="has-text-grey is-size-7">No steps yet. Add one from the Action Creator Portal below.</p>
           {% endfor %}
         </div>
+
+        <button class="button is-small is-info is-fullwidth mt-3"
+                type="button"
+                id="focus-creator-portal"
+                onclick="document.getElementById('action-creator-region').scrollIntoView({ behavior: 'smooth' }); document.getElementById('action-creator-region').classList.add('glow-pulse'); setTimeout(() => document.getElementById('action-creator-region').classList.remove('glow-pulse'), 1500);">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>
+          <span>Add action</span>
+        </button>
       </div>
 
       <div class="column is-6">

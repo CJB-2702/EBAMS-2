@@ -1479,3 +1479,20 @@
     color: var(--bulma-text-weak);
   }
 }
+
+/* ── Glow Pulse Animation ────────────────────────────────────────────────────
+   Used for the "Add action" button to draw attention to the action creator
+   portal when focused. */
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(62, 142, 208, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(62, 142, 208, 0);
+  }
+}
+
+.glow-pulse {
+  animation: glow-pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) 2;
+}
