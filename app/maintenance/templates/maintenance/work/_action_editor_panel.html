@@ -46,13 +46,10 @@
           {% endfor %}
         </div>
 
-        <button class="button is-small is-info is-fullwidth mt-3"
-                type="button"
-                id="focus-creator-portal"
-                onclick="document.getElementById('action-creator-region').scrollIntoView({ behavior: 'smooth' }); document.getElementById('action-creator-region').classList.add('glow-pulse'); setTimeout(() => document.getElementById('action-creator-region').classList.remove('glow-pulse'), 1500);">
-          <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>
-          <span>Add action</span>
-        </button>
+          <a href="#action-creator-region" class="button is-small is-info is-fullwidth mt-3">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>
+            <span>Add action</span>
+          </a>
       </div>
 
       <div class="column is-6">
