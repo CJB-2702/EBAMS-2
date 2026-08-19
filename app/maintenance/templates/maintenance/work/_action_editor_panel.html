@@ -1,0 +1,287 @@
+{# ── Three-pane action editor ─────────────────────────────────────────── #}
+<div class="card" id="action-editor-panel">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Action editor panel</div></div>
+  <div class="card-content">
+    <div class="columns is-variable is-4">
+      <div class="column is-3">
+        <p class="heading is-size-7 has-text-grey mb-3">Action details ({{ actions|length }})</p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for action in actions %}
+          <div class="action-detail-card {% if selected_action and selected_action.pk == action.pk %}is-selected{% endif %}">
+            <a href="?selected={{ action.pk }}"
+               hx-get="?selected={{ action.pk }}&format=htmx-action-editor"
+               hx-target="#action-editor-panel"
+               hx-swap="outerHTML"
+               hx-push-url="true">
+              <p style="font-weight: 500; margin-bottom: 0.25rem;">
+                <span class="tag is-dark is-family-monospace">#{{ action.sequence_order }}</span>
+                {{ action.action_name }}
+              </p>
+              <p class="is-size-7 has-text-grey">{{ action.get_status_display }}{% if action.estimated_duration_minutes %} · Est: {{ action.estimated_duration_minutes }}m{% endif %}</p>
+            </a>
+            <div class="buttons are-very-small mt-2" style="gap: 0.25rem;">
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action_id" value="{{ action.pk }}">
+                <input type="hidden" name="new_sequence_order" value="{{ action.sequence_order|add:'-1' }}">
+                <button class="button is-small" type="submit" name="action" value="reorder_action" title="Move up"
+                        {% if forloop.first %}disabled{% endif %}>↑</button>
+              </form>
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action_id" value="{{ action.pk }}">
+                <input type="hidden" name="new_sequence_order" value="{{ action.sequence_order|add:'1' }}">
+                <button class="button is-small" type="submit" name="action" value="reorder_action" title="Move down"
+                        {% if forloop.last %}disabled{% endif %}>↓</button>
+              </form>
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action_id" value="{{ action.pk }}">
+                <button class="button is-small is-danger is-light" type="submit" name="action" value="delete_action" title="Remove step">✕</button>
+              </form>
+            </div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">No steps yet. Add one from the Action Creator Portal below.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="column is-6">
+        <p class="heading is-size-7 has-text-grey">Action form details</p>
+        {% if selected_action %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_action">
+          <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+          <div class="columns is-multiline is-variable is-3">
+            <div class="column is-12">
+              <label class="label is-small">Action name <span class="has-text-danger">*</span></label>
+              <input class="input is-small" type="text" name="action_name" value="{{ selected_action.action_name }}" required>
+            </div>
+            <div class="column is-12">
+              <label class="label is-small">Description</label>
+              <input class="input is-small" type="text" name="description" value="{{ selected_action.description }}">
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Status</label>
+              <div class="select is-small is-fullwidth">
+                <select name="status">
+                  {% for value, label in action_statuses %}
+                  <option value="{{ value }}" {% if selected_action.status == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Sequence order</label>
+              <input class="input is-small" type="number" min="1" name="sequence_order" value="{{ selected_action.sequence_order }}">
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Estimated duration (minutes)</label>
+              <input class="input is-small" type="number" step="1" min="0" name="estimated_duration_minutes"
+                     value="{{ selected_action.estimated_duration_minutes|default_if_none:'' }}">
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Billable hours</label>
+              <input class="input is-small" type="number" step="0.01" min="0" name="billable_hours"
+                     value="{{ selected_action.billable_hours|default_if_none:'' }}">
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Scheduled start time</label>
+              <input class="input is-small" type="datetime-local" name="scheduled_start_time"
+                     value="{{ selected_action.scheduled_start_time|date:'Y-m-d\TH:i' }}">
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Start time</label>
+              <input class="input is-small" type="datetime-local" name="start_time"
+                     value="{{ selected_action.start_time|date:'Y-m-d\TH:i' }}">
+            </div>
+            <div class="column is-12">
+              <label class="label is-small">End time</label>
+              <input class="input is-small" type="datetime-local" name="end_time"
+                     value="{{ selected_action.end_time|date:'Y-m-d\TH:i' }}">
+            </div>
+            <div class="column is-12">
+              <label class="label is-small">Instructions</label>
+              <textarea class="textarea is-small" name="instructions" rows="3">{{ selected_action.instructions }}</textarea>
+            </div>
+            <div class="column is-12">
+              <label class="label is-small">Safety notes</label>
+              <textarea class="textarea is-small" name="safety_notes" rows="2">{{ selected_action.safety_notes }}</textarea>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Completion notes</label>
+              <textarea class="textarea is-small" name="completion_notes" rows="2">{{ selected_action.completion_notes }}</textarea>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Notes</label>
+              <textarea class="textarea is-small" name="notes" rows="2">{{ selected_action.notes }}</textarea>
+            </div>
+          </div>
+          <div class="is-flex is-justify-content-space-between">
+            <form method="post" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+              <button class="button is-small is-danger is-light" type="submit" name="action" value="delete_action">
+                <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete</span>
+              </button>
+            </form>
+            <div class="buttons are-small">
+              <button class="button is-link" type="submit">
+                <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Submit</span>
+              </button>
+              <button class="button" type="submit" name="action" value="duplicate_action">Duplicate step</button>
+            </div>
+          </div>
+        </form>
+        {% else %}
+        <p class="has-text-grey is-size-7">Select a step from the list to edit it.</p>
+        {% endif %}
+      </div>
+
+      <div class="column is-3">
+        {% if selected_action %}
+        <p class="heading is-size-7 has-text-grey mb-3">Part demands</p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          {% for link in selected_action.demand_rows %}
+          <div class="part-tool-item">
+            <p class="is-size-7 mb-2">
+              <strong>{{ link.part_demand.part }}</strong> × {{ link.part_demand.quantity_requested }}
+            </p>
+            <p class="is-size-7 has-text-grey mb-2">
+              <span class="tag is-light is-small">{{ link.part_demand.get_issuance_state_display }}</span>
+            </p>
+            <div class="buttons are-very-small" style="gap: 0.25rem;">
+              <a href="{% url 'part_demand_detail' pk=link.part_demand_id %}" class="button is-small is-light" target="_blank" rel="noopener" title="View part demand">
+                <span class="icon is-small"><span class="material-icons" style="font-size: 1rem;">visibility</span></span>
+              </a>
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_action_part_demand">
+                <input type="hidden" name="link_id" value="{{ link.pk }}">
+                <button type="submit" class="button is-small is-danger is-light" title="Remove part demand">
+                  <span class="icon is-small"><span class="material-icons" style="font-size: 1rem;">delete</span></span>
+                </button>
+              </form>
+            </div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">None yet.</p>
+          {% endfor %}
+        </div>
+
+        <div class="mb-4 demand-tools-container">
+          <p class="is-size-7 has-text-weight-semibold mb-2 add-section-header">
+            <span class="icon is-small"><span class="material-icons" style="font-size: 1.1rem;">inventory_2</span></span>
+            Add part demand
+          </p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_action_part_demand">
+            <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+            <div class="field mb-2">
+              <input class="input is-small" type="search" name="part_search" placeholder="Search parts…" id="part_search_{{ selected_action.pk }}" autocomplete="off">
+              <select name="part_id" class="part-select" data-search-input="part_search_{{ selected_action.pk }}" required style="display: none;">
+                <option value="">Select a part…</option>
+                {% for part in parts_catalog %}
+                <option value="{{ part.pk }}" data-search="{{ part.part_number|lower }} {{ part.name|lower }}">{{ part.part_number }} — {{ part.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="search-results-dropdown" id="part_results_{{ selected_action.pk }}"></div>
+            </div>
+            <div class="field mb-2">
+              <input class="input is-small" type="number" step="0.001" min="0.001" name="quantity" placeholder="Quantity" value="1" required>
+            </div>
+            <div class="field mb-2">
+              <div class="select is-small is-fullwidth">
+                <select name="priority">
+                  {% for value, label in demand_priorities %}
+                  <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="button is-small is-link is-fullwidth">Add part demand</button>
+          </form>
+        </div>
+
+        <p class="heading is-size-7 has-text-grey mb-3">Tools</p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          {% for tool in selected_action.tool_rows %}
+          <div class="part-tool-item">
+            <p class="is-size-7 mb-2">
+              <strong>{{ tool.tool.name|default:tool.tool_name }}</strong> × {{ tool.quantity_required }}
+            </p>
+            {% if tool.specifications %}<p class="is-size-7 has-text-grey mb-2">{{ tool.specifications }}</p>{% endif %}
+            <div class="buttons are-very-small" style="gap: 0.25rem;">
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_action_tool">
+                <input type="hidden" name="action_tool_id" value="{{ tool.pk }}">
+                <button type="submit" class="button is-small is-danger is-light" title="Remove tool">
+                  <span class="icon is-small"><span class="material-icons" style="font-size: 1rem;">delete</span></span>
+                </button>
+              </form>
+              <details>
+                <summary class="button is-small is-light" style="display:inline-block; cursor: pointer;" title="Edit tool">
+                  <span class="icon is-small"><span class="material-icons" style="font-size: 1rem;">edit</span></span>
+                </summary>
+                <form method="post" class="mt-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="edit_action_tool">
+                  <input type="hidden" name="action_tool_id" value="{{ tool.pk }}">
+                  <div class="field mb-2">
+                    <input class="input is-small" type="number" min="1" name="quantity_required" value="{{ tool.quantity_required }}" placeholder="Quantity">
+                  </div>
+                  <div class="field mb-2">
+                    <input class="input is-small" type="text" name="specifications" value="{{ tool.specifications }}" placeholder="Specifications">
+                  </div>
+                  <div class="field mb-2">
+                    <textarea class="textarea is-small" name="notes" rows="2" placeholder="Notes">{{ tool.notes }}</textarea>
+                  </div>
+                  <button type="submit" class="button is-small is-link is-fullwidth">Save tool</button>
+                </form>
+              </details>
+            </div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">None yet.</p>
+          {% endfor %}
+        </div>
+
+        <div class="demand-tools-container">
+          <p class="is-size-7 has-text-weight-semibold mb-2 add-section-header">
+            <span class="icon is-small"><span class="material-icons" style="font-size: 1.1rem;">build</span></span>
+            Add tool
+          </p>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_action_tool">
+            <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+            <div class="field mb-2">
+              <input class="input is-small" type="search" name="tool_search" placeholder="Search tools…" id="tool_search_{{ selected_action.pk }}" autocomplete="off">
+              <select name="tool_id" class="tool-select" data-search-input="tool_search_{{ selected_action.pk }}" style="display: none;">
+                <option value="">— ad-hoc (name below) —</option>
+                {% for tool in tools_catalog %}
+                <option value="{{ tool.pk }}" data-search="{{ tool.name|lower }}">{{ tool.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="search-results-dropdown" id="tool_results_{{ selected_action.pk }}"></div>
+            </div>
+            <div class="field mb-2">
+              <input class="input is-small" type="text" name="tool_name" placeholder="Ad-hoc tool name (if not in catalog)">
+            </div>
+            <div class="field mb-2">
+              <input class="input is-small" type="number" step="1" min="1" name="quantity_required" placeholder="Quantity" value="1">
+            </div>
+            <button type="submit" class="button is-small is-link is-fullwidth">Add tool</button>
+          </form>
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">Select a step to manage its parts and tools.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

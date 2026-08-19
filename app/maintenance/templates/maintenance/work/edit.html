@@ -455,7 +455,7 @@
 <div class="body-grid full-width mt-4">
 
   {# ── Three-pane action editor ─────────────────────────────────────────── #}
-  <div class="card">
+  <div class="card" id="action-editor-panel">
     <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Action editor panel</div></div>
     <div class="card-content">
       <div class="columns is-variable is-4">
@@ -464,7 +464,11 @@
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             {% for action in actions %}
             <div class="action-detail-card {% if selected_action and selected_action.pk == action.pk %}is-selected{% endif %}">
-              <a href="?selected={{ action.pk }}">
+              <a href="?selected={{ action.pk }}"
+                 hx-get="?selected={{ action.pk }}&format=htmx-action-editor"
+                 hx-target="#action-editor-panel"
+                 hx-swap="outerHTML"
+                 hx-push-url="true">
                 <p style="font-weight: 500; margin-bottom: 0.25rem;">
                   <span class="tag is-dark is-family-monospace">#{{ action.sequence_order }}</span>
                   {{ action.action_name }}

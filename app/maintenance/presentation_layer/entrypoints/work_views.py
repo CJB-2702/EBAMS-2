@@ -530,6 +530,8 @@ def maintenance_edit(request: HttpRequest, pk: int) -> HttpResponse:
     fragment = request.GET.get("format", "")
     if fragment.startswith("htmx-creator"):
         return _action_creator_fragment(request, detail)
+    if fragment == "htmx-action-editor":
+        return _action_editor_panel_fragment(request, detail)
 
     struct = MaintenanceDetailStruct.load(maintenance_detail_id=pk)
     actions = _attach_children(struct.actions)
@@ -975,6 +977,31 @@ def _action_creator_fragment(request: HttpRequest, detail: MaintenanceDetail) ->
     }
     context.update(_creator_tab_context(request, detail, tab=tab, q=q))
     return render(request, "maintenance/work/_action_creator.html", context)
+
+
+def _action_editor_panel_fragment(request: HttpRequest, detail: MaintenanceDetail) -> HttpResponse:
+    """Render just the action editor panel for HTMX updates.
+
+    Used when switching between actions to avoid full page reload."""
+    struct = MaintenanceDetailStruct.load(maintenance_detail_id=detail.pk)
+    actions = _attach_children(struct.actions)
+    selected_id = _int(request.GET.get("selected"))
+    selected = next((a for a in actions if a.pk == selected_id), None)
+
+    if selected is None and actions:
+        selected = actions[0]
+
+    context = {
+        "detail": detail,
+        "actions": actions,
+        "selected_action": selected,
+        "action_statuses": ActionStatus.choices,
+        "demand_priorities": DemandPriority.choices,
+        "tools_catalog": Tool.objects.filter(is_active=True).order_by("name"),
+        "parts_catalog": Part.objects.order_by("part_number"),
+    }
+
+    return render(request, "maintenance/work/_action_editor_panel.html", context)
 
 
 # --------------------------------------------------------------------------- #
