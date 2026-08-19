@@ -60,7 +60,7 @@
             <div class="column is-4">
               <label class="label is-small">Status</label>
               <input class="input is-small" type="text" value="{{ detail.get_status_display|default:'—' }}" disabled
-                     title="Status changes go through Start / Complete / Cancel on the event view page, so completion rules stay enforced.">
+                     title="Normal transitions go through Start / Complete / Cancel on the event view page. Use Force status below to bypass those rules.">
             </div>
             <div class="column is-4">
               <label class="label is-small">Priority</label>
@@ -129,6 +129,36 @@
             </button>
           </div>
         </form>
+
+        <details class="mt-4">
+          <summary class="is-size-7 has-text-weight-semibold has-text-danger">
+            <span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span> Force status
+          </summary>
+          <p class="help mt-1 mb-2">
+            Sets the status directly, skipping the Start / Complete / Cancel rules — the event can end up in a
+            state those verbs would normally refuse (e.g. Complete with open blockers). A comment explaining
+            why is required and is recorded on the event's activity log.
+          </p>
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="force_set_status">
+            <div class="field">
+              <label class="label is-small">New status</label>
+              <div class="select is-small is-fullwidth">
+                <select name="status" required>
+                  {% for value, label in event_statuses %}
+                  <option value="{{ value }}" {% if detail.status == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label is-small">Comment <span class="has-text-danger">*</span></label>
+              <textarea class="textarea is-small" name="comment" rows="2" placeholder="Why is this status being forced?" required></textarea>
+            </div>
+            <button type="submit" class="button is-small is-danger is-light">Force status</button>
+          </form>
+        </details>
       </div>
     </div>
 
@@ -349,6 +379,10 @@
           <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small is-success is-outlined is-fullwidth">
             <span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span><span>Do work</span>
           </a>
+          <button type="button" class="button is-small is-danger is-outlined is-fullwidth"
+                  commandfor="delete-event-dialog" command="show-modal">
+            <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete event</span>
+          </button>
         </div>
       </div>
     </div>
@@ -698,6 +732,29 @@
   </div>
   {% endif %}
 </div>
+
+{# ── Delete event confirmation ───────────────────────────────────────────── #}
+<dialog id="delete-event-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete_event">
+    <header class="card-header">
+      <p class="card-header-title">Delete this event?</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="delete-event-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7">
+        This removes <strong>{{ detail.title }}</strong> from all lists and views. This cannot be undone from the UI.
+      </p>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="delete-event-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Delete event</button>
+    </footer>
+  </form>
+</dialog>
 {% endblock %}
 
 {% block body_scripts %}

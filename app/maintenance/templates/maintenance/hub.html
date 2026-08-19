@@ -26,30 +26,28 @@
 
 <div class="body-grid full-width">
 
-  {# ── One stat strip: the union of the four legacy dashboards ─────────── #}
+  {# ── Metrics section ─────────────────────────────────────────────────────── #}
   <div class="card">
     <div class="card-content">
       <div class="columns is-multiline is-mobile has-text-centered">
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Total events</p><p class="title is-4">{{ stats.total_events }}</p></div>
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Active</p><p class="title is-4">{{ stats.active }}</p></div>
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Planned</p><p class="title is-4">{{ stats.planned }}</p></div>
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Completed</p><p class="title is-4">{{ stats.completed }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Completed (30 days)</p><p class="title is-4">{{ stats.completed_last_30 }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Planned (30 days)</p><p class="title is-4">{{ stats.planned_next_30 }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Overdue</p><p class="title is-4">{{ stats.overdue }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Current active</p><p class="title is-4">{{ stats.active }}</p></div>
         <div class="column is-3-mobile">
           <p class="heading is-size-7 has-text-grey">Pending part demands</p>
           <p class="title is-4"><a href="{% url 'part_demand_index' %}?demand_state=required">{{ stats.pending_demands }}</a></p>
         </div>
         <div class="column is-3-mobile">
-          <p class="heading is-size-7 has-text-grey">Unassigned</p>
-          <p class="title is-4"><a href="{% url 'unassigned_events' %}">{{ stats.unassigned }}</a></p>
+          <p class="heading is-size-7 has-text-grey">Assets with blocked work</p>
+          <p class="title is-4">{{ stats.assets_with_blocked }}</p>
         </div>
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Overdue</p><p class="title is-4">{{ stats.overdue }}</p></div>
-        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Active templates</p><p class="title is-4">{{ stats.active_templates }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Assets with limitations</p><p class="title is-4">{{ stats.assets_with_limitations }}</p></div>
       </div>
     </div>
   </div>
 
-  {# ── My Work band. Hidden entirely when the user has no assigned work —
-       the "feature doesn't apply" exception to Rule #5, not an empty card. #}
+  {# My Work band — hidden entirely when the user has no assigned work (feature doesn't apply exception). #}
   {% if show_my_work %}
   <div class="is-flex is-justify-content-space-between is-align-items-center mt-5 mb-3">
     <h2 class="is-size-5 has-text-weight-semibold mb-0">
@@ -59,46 +57,42 @@
   </div>
 
   <div class="card">
-    <div class="card-content">
-      <div class="columns has-text-centered">
-        <div class="column"><p class="heading is-size-7 has-text-grey">Assigned</p><p class="title is-4">{{ my_stats.assigned }}</p></div>
-        <div class="column"><p class="heading is-size-7 has-text-grey">In progress</p><p class="title is-4">{{ my_stats.in_progress }}</p></div>
-        <div class="column"><p class="heading is-size-7 has-text-grey">Completed today</p><p class="title is-4">{{ my_stats.completed_today }}</p></div>
+    <div class="card-header" style="background-color: rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.1);">
+      <div class="columns is-mobile is-multiline has-text-centered" style="margin: 0;">
+        <div class="column is-4"><p class="heading is-size-7">Assigned</p><p class="title is-5">{{ my_stats.assigned }}</p></div>
+        <div class="column is-4"><p class="heading is-size-7">In progress</p><p class="title is-5">{{ my_stats.in_progress }}</p></div>
+        <div class="column is-4"><p class="heading is-size-7">Completed today</p><p class="title is-5">{{ my_stats.completed_today }}</p></div>
       </div>
     </div>
-  </div>
-
-  <div class="columns is-variable is-4 mt-1">
-    <div class="column is-6">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_ind</span></span>Assigned to me</div>
-          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1">View all</a>
+    <div class="card-content" style="display: flex; gap: 1.5rem; height: 400px; padding: 0;">
+      <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.1); padding: 1.5rem; overflow: hidden;">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3" style="flex-shrink: 0;">
+          <p class="is-size-7 has-text-weight-semibold"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_ind</span></span>Assigned to me</p>
+          <a class="is-size-7" href="{% url 'maintenance_index' %}?my_work=1">View all</a>
         </div>
-        <div class="card-content is-flush pb-3">
+        <div style="overflow-y: auto; flex: 1;">
           {% include "maintenance/components/_event_mini_list.html" with rows=my_events empty_text="Nothing assigned to you right now." %}
         </div>
       </div>
-    </div>
-    <div class="column is-6">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Planned this week</div>
-          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1&amp;status=planned">View all</a>
+
+      <div style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(0,0,0,0.1); padding: 1.5rem; overflow: hidden;">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3" style="flex-shrink: 0;">
+          <p class="is-size-7 has-text-weight-semibold"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Planned this week</p>
+          <a class="is-size-7" href="{% url 'maintenance_index' %}?my_work=1&amp;status=planned">View all</a>
         </div>
-        <div class="card-content is-flush pb-3">
+        <div style="overflow-y: auto; flex: 1;">
           {% include "maintenance/components/_event_mini_list.html" with rows=planned_this_week empty_text="Nothing scheduled for you in the next seven days." %}
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently completed by me</div>
-    </div>
-    <div class="card-content is-flush pb-3">
-      {% include "maintenance/components/_event_mini_list.html" with rows=recent_events empty_text="No completed work yet." %}
+      <div style="flex: 1; display: flex; flex-direction: column; padding: 1.5rem; overflow: hidden;">
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3" style="flex-shrink: 0;">
+          <p class="is-size-7 has-text-weight-semibold"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently completed by me</p>
+        </div>
+        <div style="overflow-y: auto; flex: 1;">
+          {% include "maintenance/components/_event_mini_list.html" with rows=recent_events empty_text="No completed work yet." %}
+        </div>
+      </div>
     </div>
   </div>
   {% endif %}

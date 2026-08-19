@@ -29,7 +29,7 @@ from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_http_methods
 
 from app.events.models.details.maintenance import MaintenanceDetail
-from app.events.models.event import EventPriority
+from app.events.models.event import EventPriority, EventStatus
 from app.events.presentation_layer.tools.generic_cards import build_activity_card
 from app.maintenance.control_layer.action_context import ActionContext
 from app.maintenance.control_layer.action_tool_manager import ActionToolManager
@@ -559,6 +559,7 @@ def maintenance_edit(request: HttpRequest, pk: int) -> HttpResponse:
             "blockers": struct.blockers,
             "limitation_records": struct.limitation_records,
             "priorities": EventPriority.choices,
+            "event_statuses": EventStatus.choices,
             "blocker_priorities": BlockerPriority.choices,
             "blocker_reasons": BlockerReason.choices,
             "capability_statuses": CapabilityStatus.choices,
@@ -618,6 +619,38 @@ def _handle_edit_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
                 detail.updated_by = request.user
                 detail.save(update_fields=changed + ["updated_by", "updated_at"])
             messages.success(request, "Event details saved.")
+
+        # ── Force-set status, bypassing the guarded transition verbs ──────
+        elif action == "force_set_status":
+            new_status = request.POST.get("status", "").strip()
+            valid_statuses = {value for value, _ in EventStatus.choices}
+            if new_status not in valid_statuses:
+                raise ValueError("Choose a valid status.")
+            comment_text = _required_notes(
+                request,
+                "A comment is required to force a status change.",
+                field="comment",
+            )
+            old_status_display = detail.get_status_display()
+            detail.status = new_status
+            detail.updated_by = request.user
+            detail.save(update_fields=["status", "updated_by", "updated_at"])
+            ctx.add_comment(
+                {
+                    "content": (
+                        f"Status force-set from '{old_status_display}' to "
+                        f"'{detail.get_status_display()}'. {comment_text}"
+                    )
+                },
+                actor=request.user,
+            )
+            messages.success(request, f"Status forced to '{detail.get_status_display()}'.")
+
+        # ── Delete the event outright ──────────────────────────────────────
+        elif action == "delete_event":
+            detail._soft_delete(actor=request.user)
+            messages.success(request, "Event deleted.")
+            return redirect(reverse("maintenance_index"))
 
         # ── Blockers / limitations, editable directly from this page ──────
         elif action == "add_blocker":

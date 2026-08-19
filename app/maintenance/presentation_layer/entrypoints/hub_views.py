@@ -26,7 +26,10 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from app.assets.models.core.asset import Asset
 from app.events.models.details.maintenance import MaintenanceDetail
+from app.maintenance.models.asset_limitation import AssetLimitationRecord
+from app.maintenance.models.blocker import MaintenanceBlocker
 from app.maintenance.models.proto_templates.proto_action_item import ProtoActionItem
 from app.maintenance.models.planning.maintenance_plan import MaintenancePlan
 from app.maintenance.models.templates.template_action_set import TemplateActionSet
@@ -65,28 +68,42 @@ def maintenance_hub(request: HttpRequest) -> HttpResponse:
         domain_ids=domain_ids, scope=SCOPE_MAINTENANCE
     )
 
+    thirty_days_ago = now - timedelta(days=30)
+    thirty_days_future = now + timedelta(days=30)
+
     stats = {
-        "total_events": events.count(),
+        "completed_last_30": events.filter(
+            status="completed", updated_at__gte=thirty_days_ago
+        ).count(),
+        "planned_next_30": events.filter(
+            status="planned",
+            event_start__gte=now,
+            event_start__lte=thirty_days_future,
+        ).count(),
+        "overdue": events.filter(
+            event_start__lt=now, status__in=OPEN_STATUSES
+        ).count(),
         "active": events.filter(status__in=OPEN_STATUSES).count(),
-        "planned": events.filter(status="planned").count(),
-        "completed": events.filter(status="completed").count(),
         "pending_demands": demands.filter(
             demand_state__in=[DemandState.PROJECTED, DemandState.REQUIRED]
         ).count(),
-        "active_templates": TemplateActionSet.objects.filter(
-            domain_id__in=domain_ids, deleted_at__isnull=True, is_active=True
+        "assets_with_blocked": Asset.objects.filter(
+            domain_id__in=domain_ids
+        ).filter(
+            pk__in=MaintenanceDetail.objects.filter(
+                blockers__end_date__isnull=True, deleted_at__isnull=True
+            )
+            .values_list("asset_id", flat=True)
+            .distinct()
         ).count(),
-        "proto_actions": ProtoActionItem.objects.filter(
-            domain_id__in=domain_ids, deleted_at__isnull=True
-        ).count(),
-        "active_plans": MaintenancePlan.objects.filter(
-            deleted_at__isnull=True, status="Active"
-        ).count(),
-        "unassigned": events.filter(assigned_user__isnull=True)
-        .exclude(status__in=CLOSED_STATUSES)
-        .count(),
-        "overdue": events.filter(
-            event_start__lt=now, status__in=OPEN_STATUSES
+        "assets_with_limitations": Asset.objects.filter(
+            domain_id__in=domain_ids
+        ).filter(
+            pk__in=MaintenanceDetail.objects.filter(
+                limitation_records__end_time__isnull=True, deleted_at__isnull=True
+            )
+            .values_list("asset_id", flat=True)
+            .distinct()
         ).count(),
     }
 

@@ -84,7 +84,9 @@ def _detail_or_404_in_domain(request: HttpRequest, pk: int) -> MaintenanceDetail
 def maintenance_index(request: HttpRequest) -> HttpResponse:
     """Maintenance Hub Index (index.html) — status filters, Rule #5 compliant
     empty states. `format=` supports density (condensed/medium/large) and the
-    htmx-search-results fragment (endpoint_patterns.md §3.5)."""
+    htmx-search-results fragment (endpoint_patterns.md §3.5). Preview mode
+    (?preview=1) adds a list/preview split with the event details on the
+    preview pane."""
     domain_ids = accessible_domain_ids(request)
 
     status = request.GET.get("status", "").strip()
@@ -111,6 +113,9 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
     commented_by_id = int(commented_by_raw) if commented_by_raw.isdigit() else None
     assigned_to_raw = request.GET.get("assigned_to", "").strip()
     assigned_to_id = int(assigned_to_raw) if assigned_to_raw.isdigit() else None
+    preview = request.GET.get("preview", "").strip()
+    preview_mode = preview == "1"
+    selected_id_raw = request.GET.get("selected", "").strip()
 
     qs = MaintenanceSearch.index_list(
         domain_ids=domain_ids,
@@ -141,6 +146,23 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(qs, PAGE_SIZE)
     page = paginator.get_page(request.GET.get("page", "1"))
 
+    # The preview pane — never blank; auto-select first event if none chosen.
+    selected = None
+    struct = None
+    if preview_mode:
+        selected_id = None
+        if selected_id_raw.isdigit():
+            selected_id = int(selected_id_raw)
+        elif page.object_list:
+            selected_id = page.object_list[0].pk
+
+        if selected_id:
+            try:
+                selected = _detail_or_404_in_domain(request, selected_id)
+                struct = MaintenanceDetailStruct.load(maintenance_detail_id=selected_id)
+            except Http404:
+                pass
+
     context = {
         "page": page,
         "events": page.object_list,
@@ -165,6 +187,8 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
             "created_by": created_by_raw,
             "commented_by": commented_by_raw,
             "assigned_to": assigned_to_raw,
+            "preview": preview,
+            "selected": selected_id_raw,
         },
         "statuses": EventStatus.choices,
         "priorities": EventPriority.choices,
@@ -174,10 +198,18 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         "models": AssetModel.objects.order_by("model_name", "version_rank", "version"),
         "manufacturers": Manufacturer.objects.order_by("name"),
         "users": User.objects.filter(is_active=True).order_by("username"),
+        "preview_mode": preview_mode,
+        "selected": selected,
+        "struct": struct,
     }
 
+    results_template = (
+        "maintenance/_maintenance_index_preview_split.html"
+        if preview_mode
+        else "maintenance/components/_index_results.html"
+    )
     if request.GET.get("format") == "htmx-search-results":
-        return render(request, "maintenance/components/_index_results.html", context)
+        return render(request, results_template, context)
     return render(request, "maintenance/index.html", context)
 
 

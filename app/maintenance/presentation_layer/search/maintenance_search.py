@@ -80,6 +80,10 @@ class MaintenanceSearch:
                 domain_id__in=domain_ids, deleted_at__isnull=True
             )
             .select_related("domain", "asset", "assigned_user", "template_action_set")
+            .annotate(
+                has_active_blocker=_active_blocker_exists(),
+                has_active_limitation=_active_limitation_exists(),
+            )
         )
 
         if status:
