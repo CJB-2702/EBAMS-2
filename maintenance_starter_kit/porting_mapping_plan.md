@@ -71,6 +71,17 @@ The migration follows the **App-First Layer Inversion** pattern (`app/maintenanc
 
 ## 4. Presentation & Route Layer Mapping
 
+> **This table is incomplete.** It collapses six legacy portals into six rows and
+> omits the part-demand approval portal, part-demand detail, create-&-assign
+> portal, unassigned queue, build-templates hub, proto-action detail, action
+> creator portal, plan edit, plan due-asset worklist, event work portal, event
+> edit portal, and technician dashboard. See
+> [legacy_ui/gap_analysis.md](legacy_ui/gap_analysis.md) for the verified
+> 19-surface gap list, [legacy_ui/route_inventory.md](legacy_ui/route_inventory.md)
+> for the full legacy HTTP surface, and
+> [legacy_ui/page_catalog.md](legacy_ui/page_catalog.md) for screenshot-backed
+> page anatomy. Correct this table from those documents before building.
+
 | Legacy Route Path (`asset_management/app/presentation/routes/maintenance/`) | EBAMS-2 Target Path | View Entrypoint / Search Module | UX/UI & HTMX Conventions |
 | :--- | :--- | :--- | :--- |
 | `main.py` | `app/maintenance/presentation_layer/entrypoints/event_views.py` | `maintenance_index`, `maintenance_detail`, `maintenance_create` | Full page reload support + HTMX table filtering (`format=` density support). |

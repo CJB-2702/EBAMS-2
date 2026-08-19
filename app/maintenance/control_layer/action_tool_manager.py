@@ -46,6 +46,22 @@ class ActionToolManager:
         )
 
     @classmethod
+    def update(cls, *, action_tool_id: int, actor=None, **fields) -> ActionTool:
+        tool = ActionTool.objects.get(pk=action_tool_id, deleted_at__isnull=True)
+        update_fields: list[str] = []
+        for field_name in (
+            "tool_id", "tool_name", "quantity_required", "specifications", "notes",
+        ):
+            if field_name in fields and fields[field_name] is not None:
+                setattr(tool, field_name, fields[field_name])
+                update_fields.append(field_name)
+        if update_fields:
+            tool.updated_by = actor
+            update_fields += ["updated_by", "updated_at"]
+            tool.save(update_fields=update_fields)
+        return tool
+
+    @classmethod
     def delete(cls, *, action_tool_id: int, actor=None) -> None:
         ActionTool.objects.filter(pk=action_tool_id).update(
             deleted_at=timezone.now(), updated_by=actor

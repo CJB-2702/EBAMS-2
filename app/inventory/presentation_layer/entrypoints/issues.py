@@ -776,3 +776,36 @@ def issue_detail(request: HttpRequest, pk: int) -> HttpResponse:
         f"{TEMPLATE_DIR}/detail.html",
         {"issue": issue, "can_issue": can_issue(request)},
     )
+
+
+@require_http_methods(["GET"])
+def pending_stock_adjustments_index(request: HttpRequest) -> HttpResponse:
+    """List demands that were issued without formal stock adjustment.
+
+    Inventory managers use this to track what needs to be formally recorded
+    in the inventory system. Shows demands in ISSUED_WITHOUT_STOCK_ADJUSTMENT
+    state that haven't yet been processed through normal issuance.
+    """
+    domain_ids = accessible_domain_ids(request)
+
+    demands_qs = PartDemand.objects.filter(
+        issuance_state=IssuanceState.ISSUED_WITHOUT_STOCK_ADJUSTMENT,
+        domain_id__in=domain_ids,
+        deleted_at__isnull=True,
+    ).select_related(
+        "part",
+        "domain",
+        "requested_by",
+    ).order_by("-updated_at")
+
+    paginator = Paginator(demands_qs, PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("page", "1"))
+
+    context = {
+        "page": page,
+        "demands": page.object_list,
+    }
+
+    if request.GET.get("format") == "htmx-search-results":
+        return render(request, f"{TEMPLATE_DIR}/_pending_adjustments_results.html", context)
+    return render(request, f"{TEMPLATE_DIR}/pending_adjustments.html", context)

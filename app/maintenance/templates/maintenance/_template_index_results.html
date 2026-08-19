@@ -1,0 +1,65 @@
+<div class="card">
+  <header class="card-header">
+    <h2 class="card-header-title is-size-5">
+      <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+      Templates ({{ templates|length }})
+    </h2>
+  </header>
+  <div class="card-content is-flush pb-3">
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead><tr><th>Task Name</th><th>Revision</th><th>Domain</th><th>Asset Class</th><th>Models</th><th>Active</th><th class="has-text-right">Actions</th></tr></thead>
+      <tbody>
+        {% for t in templates %}
+        <tr {% if t.subsequent_revision_count %}class="is-superseded-revision"{% endif %}>
+          <td><a href="{% url 'template_detail' pk=t.pk %}">{{ t.task_name }}</a></td>
+          <td class="is-family-monospace">
+            {{ t.revision|default:"—" }}
+            {% if t.subsequent_revision_count %}<span class="tag is-warning is-light is-size-7 ml-1">superseded</span>{% endif %}
+          </td>
+          <td>{{ t.domain.name }}</td>
+          <td>{{ t.asset_class|default:"—" }}</td>
+          <td>
+            {% with models=t.asset_models.all %}
+            {% if models %}
+            {% for m in models|slice:":2" %}<span class="tag is-light mr-1 mb-1">{{ m }}</span>{% endfor %}
+            {% if models|length > 2 %}<span class="tag is-light mr-1 mb-1">+{{ models|length|add:"-2" }} more</span>{% endif %}
+            {% else %}
+            <span class="has-text-grey">Any</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td>{% if t.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
+          <td class="has-text-right">
+            <div class="buttons are-small is-right" style="display:inline-flex;">
+              <a href="{% url 'template_detail' pk=t.pk %}" class="button is-small is-light" title="View template details">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">visibility</span></span>
+              </a>
+              <form method="post" action="{% url 'template_builder' %}" class="is-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="start_revision">
+                <input type="hidden" name="template_action_set_id" value="{{ t.pk }}">
+                <button type="submit" class="button is-small is-light" title="Create a revision of this template">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span>
+                </button>
+              </form>
+              <form method="post" action="{% url 'template_builder' %}" class="is-inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="start_copy">
+                <input type="hidden" name="template_action_set_id" value="{{ t.pk }}">
+                <button type="submit" class="button is-small is-light" title="Copy this template as a new, independent template">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">content_copy</span></span>
+                </button>
+              </form>
+              <a href="{% url 'create_assign' %}?template={{ t.pk }}" class="button is-small is-link" title="Create a maintenance event from this template">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add_circle</span></span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="has-text-grey has-text-centered py-4">No procedure templates yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

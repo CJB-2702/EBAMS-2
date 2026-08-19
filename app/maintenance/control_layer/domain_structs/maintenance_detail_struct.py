@@ -28,9 +28,9 @@ class MaintenanceDetailStruct:
             "domain", "asset", "assigned_user", "template_action_set"
         ).get(pk=maintenance_detail_id, deleted_at__isnull=True)
         actions = list(
-            maintenance_detail.actions.filter(deleted_at__isnull=True).order_by(
-                "sequence_order"
-            )
+            maintenance_detail.actions.filter(deleted_at__isnull=True)
+            .select_related("assigned_user")
+            .order_by("sequence_order")
         )
         blockers = list(
             maintenance_detail.blockers.filter(deleted_at__isnull=True).order_by(

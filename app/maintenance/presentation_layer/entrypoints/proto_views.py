@@ -82,3 +82,59 @@ def proto_create(request: HttpRequest) -> HttpResponse:
             "single_domain": domains.first() if domains.count() == 1 else None,
         },
     )
+
+
+@require_http_methods(["GET"])
+def proto_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    """One library item, plus the reverse-reference card that is the whole
+    point of keeping a proto library.
+
+    Legacy: main.py's /maintenance/proto-actions/<id>/view. Without the
+    "Referenced By Template Action Items" list the library is write-only —
+    you can author protos and never learn what breaks if you change one.
+    """
+    from django.http import Http404
+    from django.shortcuts import get_object_or_404
+
+    from app.maintenance.models.proto_templates.proto_action_tool import ProtoActionTool
+    from app.maintenance.models.proto_templates.proto_part_demand import ProtoPartDemand
+    from app.maintenance.models.templates.template_action_item import TemplateActionItem
+    from app.maintenance.presentation_layer.tools.maintenance_access import is_in_domain
+
+    item = get_object_or_404(
+        ProtoActionItem.objects.select_related("domain", "prior_revision"),
+        pk=pk,
+        deleted_at__isnull=True,
+    )
+    if not is_in_domain(request, item.domain_id):
+        raise Http404
+
+    tools = list(
+        ProtoActionTool.objects.filter(
+            proto_action_item_id=pk, deleted_at__isnull=True
+        ).select_related("tool")
+    )
+    part_demands = list(
+        ProtoPartDemand.objects.filter(
+            proto_action_item_id=pk, deleted_at__isnull=True
+        ).select_related("part")
+    )
+    # The reverse reference. Read through the nullable FK that links a template
+    # step back to the library item it was derived from.
+    references = list(
+        TemplateActionItem.objects.filter(
+            proto_action_item_id=pk, deleted_at__isnull=True
+        ).select_related("template_action_set")
+    )
+
+    return render(
+        request,
+        "maintenance/proto/detail.html",
+        {
+            "item": item,
+            "tools": tools,
+            "part_demands": part_demands,
+            "references": references,
+            "reference_count": len(references),
+        },
+    )

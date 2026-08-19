@@ -17,9 +17,16 @@ from django.db import transaction
 from app.procurement.control_layer.domain_structs.part_demand_struct import (
     PartDemandStruct,
 )
+from app.procurement.control_layer.errors import TransitionRefused
 from app.procurement.control_layer.guards.part_demand_deletion_guard import (
     DeletionVerdict,
     PartDemandDeletionPolicy,
+)
+from app.procurement.control_layer.guards.part_demand_substitution_guard import (
+    PartDemandSubstitutionPolicy,
+)
+from app.procurement.control_layer.managers.graph_summary_manager import (
+    GraphSummaryManager,
 )
 from app.procurement.control_layer.managers.part_demand_issuance_manager import (
     PartDemandIssuanceManager,
@@ -325,6 +332,51 @@ class PartDemandContext:
             update_fields += ["updated_by", "updated_at"]
             demand.save(update_fields=update_fields)
         return demand
+
+    def substitute_part(self, *, new_part_id: int, actor=None, notes: str = "") -> PartDemand:
+        """Swap what is being asked for — "we don't stock that, use this".
+
+        Not a state transition and deliberately writes no journal row: this
+        changes the SUBJECT of the request, not its position on any of the four
+        axes. What it does change is graph-load-bearing, so
+        PartDemandSubstitutionPolicy refuses everything except a demand nothing
+        has happened to yet, alone in its own graph; see that guard for why.
+
+        The graph is recalculated rather than left alone, because
+        GraphSummaryManager caches the part on the summary row and would
+        otherwise keep pointing at the part that is no longer being requested.
+        """
+        demand = self.demand
+        verdict = PartDemandSubstitutionPolicy.decide(
+            demand=demand, new_part_id=new_part_id
+        )
+        if not verdict.allowed:
+            raise TransitionRefused([verdict.reason])
+
+        previous_part_id = demand.part_id
+        with transaction.atomic():
+            demand.part_id = new_part_id
+            demand.updated_by = actor
+            demand.notes = self._append_substitution_note(
+                demand.notes, previous_part_id=previous_part_id, notes=notes
+            )
+            demand.save(update_fields=["part", "notes", "updated_by", "updated_at"])
+            if demand.graph_id is not None:
+                GraphSummaryManager.recalculate(graph_id=demand.graph_id)
+        self._demand = None
+        return self.demand
+
+    @staticmethod
+    def _append_substitution_note(
+        existing: str, *, previous_part_id: int, notes: str
+    ) -> str:
+        """The substitution leaves its trace in notes because it writes no
+        journal row — without this the swap would be invisible to the person
+        who raised the demand."""
+        trace = f"Part substituted (was part #{previous_part_id})."
+        if notes.strip():
+            trace = f"{trace} {notes.strip()}"
+        return f"{existing}\n{trace}".strip() if existing else trace
 
     # ------------------------------------------------------------------ #
     # Quantities and lifecycle

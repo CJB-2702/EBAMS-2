@@ -112,6 +112,13 @@
   /* Chamfer design token: 45° cut length used by the beveled-container layer
      below. Bump this one value to resize every chamfer app-wide. */
   --app-chamfer: 20px;
+  /* Nested surfaces get a proportionally smaller cut. A 20px bevel on a
+     panel that is itself only ~40px tall reads as an octagon, not a
+     chamfered rectangle — the cut has to stay small relative to the box it
+     is cutting. Two steps: one for a card inside a card, one for a card
+     three levels in. */
+  --app-chamfer-nested: 10px;
+  --app-chamfer-nested-2: 6px;
   --bulma-button-padding-vertical: 0.625em;
   --bulma-button-padding-horizontal: 1.25em;
 
@@ -964,4 +971,93 @@ file-browser:not(.file-browser) .fb-item .fb-thumb img { width: 28px; height: 28
    rule above, including the .modal-styled bevel (which is itself !important). */
 .sharp-corners {
   border-radius: 0 !important;
+}
+
+/* ── Superseded template revision — dampened, not hidden ──────────────
+ * A template row/card whose chain has a newer revision stays visible (the
+ * template library lists every revision by default) but reads as
+ * secondary: reduced opacity plus a soft-yellow left edge, distinct from
+ * the red/warning "Inactive" tag used for a manually deactivated template
+ * that was never superseded. */
+.is-superseded-revision {
+  opacity: 0.65;
+  border-left: 3px solid var(--bulma-warning, #ffdd57);
+}
+.is-superseded-revision td:first-child,
+.is-superseded-revision.box {
+  padding-left: 0.5rem;
+}
+
+/* ── Nested cards: smaller chamfer, no double border ────────────────────
+   The work portal stacks three card levels (actions list > step > parts
+   panel). Left alone, each level would take the full 20px bevel and the
+   inner ones would read as octagons, and three concentric 1px borders make
+   the innermost panel look boxed-in rather than nested. Depth is carried by
+   the .depth-N background step instead (see color_overrides.css), so the
+   inner surfaces drop their own border and lean on the fill change. */
+@supports (corner-shape: bevel) {
+  .card .card {
+    border-radius: var(--app-chamfer-nested);
+  }
+
+  .card .card .card {
+    border-radius: var(--app-chamfer-nested-2);
+  }
+}
+
+.card .card {
+  border: 0;
+}
+
+/* The panel header is a label, not a card header — keep the divider, drop
+   the vertical weight so a two-word heading does not out-shout the step it
+   belongs to. */
+.nested-panel > .card-header {
+  padding-block: 0.25rem;
+}
+
+.nested-panel > .card-header .card-header-title {
+  padding-block: 0.15rem;
+  font-weight: 600;
+  color: var(--bulma-text-weak, #6b6b6b);
+}
+
+/* Tables inside a nested panel must not paint their own white/scheme fill
+   over the panel's depth colour — the fill is the whole point of the
+   nesting. */
+.table.is-transparent,
+.table.is-transparent td,
+.table.is-transparent th,
+.table.is-transparent tr {
+  background-color: transparent;
+}
+
+/* ── Stacked progress bar ───────────────────────────────────────────────
+   <progress> carries exactly one colour, and the work portal needs three:
+   a step can end complete, failed, or skipped, and all three are settled
+   work that should fill the bar. Segments sit side by side in a flex row;
+   the track shows through as the unfinished remainder. */
+.progress-stack {
+  display: flex;
+  width: 100%;
+  height: 0.85rem;
+  overflow: hidden;
+  background-color: var(--bulma-border-weak, #dbdbdb);
+}
+
+.progress-stack-seg {
+  height: 100%;
+  transition: width 0.2s ease;
+}
+
+.progress-stack-seg.is-complete {
+  background-color: var(--bulma-success, #48c78e);
+}
+
+.progress-stack-seg.is-failed {
+  background-color: var(--bulma-danger, #f14668);
+}
+
+.progress-stack-seg.is-skipped {
+  background-color: var(--bulma-grey-light, #b5b5b5);
 }

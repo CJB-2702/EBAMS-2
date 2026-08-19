@@ -262,6 +262,33 @@ Do write:
 
 This keeps page layout stable and signals to the user that the section was checked and is simply empty, rather than looking broken or missing. Only omit a card entirely when the *feature itself* doesn't apply to that object (not when it applies but has zero rows).
 
+## 6. Django template comments: never use multi-line `{# ... #}`
+
+**The bug:** Multi-line `{# ... #}` comments (spanning across line breaks) are error-prone and difficult to parse visually. They frequently appear throughout the filters section and cause confusion during maintenance.
+
+Do **not** write:
+```django
+{# ── This is a comment
+   that spans multiple lines ── #}
+```
+
+Do write:
+```django
+{# ── This is a comment ── #}
+{# That spans multiple lines. ── #}
+```
+
+Or use the block-comment tag for longer explanations:
+```django
+{% comment %}
+This is a longer multi-line comment explaining a complex
+section of template logic. Use this when the comment is
+too long to reasonably fit on one line.
+{% endcomment %}
+```
+
+**Why:** Single-line `{# #}` comments are faster to scan, harder to accidentally break, and play well with git diffs. If you must write a longer comment, the `{% comment %}` block is explicitly designed for multi-line explanations and is unambiguous to the parser.
+
 ---
 
 ## Project conventions worth knowing

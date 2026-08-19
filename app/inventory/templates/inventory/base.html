@@ -1,4 +1,4 @@
-{% load static %}
+{% load static svg_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@
   <collapsable-side-bar aria-label="Section navigation">
     <nav hx-boost="true" hx-target="#inventory-main-content" hx-select="#inventory-main-content" hx-push-url="true">
       <p class="sidebar-section-label">Inventory</p>
-      <a href="{% url 'inventory_home' %}" class="sidebar-link {% block nav_inventory_home %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Overview</a>
+      <a href="{% url 'inventory_home' %}" class="sidebar-link {% block nav_inventory_home %}{% endblock %}"><span class="icon">{% svg "inventory-icon" %}</span> Overview</a>
       <a href="{% url 'active_inventory_index' %}" class="sidebar-link {% block nav_active_inventory %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
       <a href="{% url 'inventory_intake_dashboard' %}" class="sidebar-link {% block nav_intake %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake</a>
       <a href="{% url 'inventory_putaway_worklist' %}" class="sidebar-link {% block nav_putaway %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway</a>

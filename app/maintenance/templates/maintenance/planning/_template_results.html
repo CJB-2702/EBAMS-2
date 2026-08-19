@@ -1,0 +1,20 @@
+{# Click-to-search results for the plan form's template picker. Deliberately a
+   selectable list, not a live dropdown — matching the legacy plan form. #}
+<table class="table is-fullwidth is-size-7" style="margin:0;">
+  <tbody>
+    {% for template in templates %}
+    <tr>
+      <td>
+        <label class="radio">
+          <input type="radio" name="template_action_set_id" value="{{ template.pk }}">
+          <strong>{{ template.task_name }}</strong>
+        </label>
+        <p class="has-text-grey">{{ template.description|default:"—" }}</p>
+      </td>
+      <td class="has-text-right"><span class="tag is-info is-light">{{ template.action_count }} action{{ template.action_count|pluralize }}</span></td>
+    </tr>
+    {% empty %}
+    <tr><td class="has-text-grey p-3">No templates match. Enter a search term and press Search.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -11,92 +11,341 @@
   <div class="page-header">
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">add_circle</span></div>
-      <div><h1 class="page-title">New Maintenance Plan</h1></div>
+      <div>
+        <h1 class="page-title">New Maintenance Plan</h1>
+        <p class="page-subtitle">Configure recurring maintenance parameters and model eligibility.</p>
+      </div>
     </div>
     <div class="page-header-actions">
-      <a href="{% url 'plan_index' %}" class="button is-small is-light">← Back</a>
+      <a href="{% url 'plan_index' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to List</span>
+      </a>
     </div>
   </div>
 </div>
 
 <div class="body-grid full-width">
+  {% if templates %}
+  <form id="plan-create-form" method="post" action="{% url 'plan_create' %}">
+    {% csrf_token %}
+    
+    <div class="columns is-variable is-4">
+      <!-- Left Column: Basic Info & Template -->
+      <div class="column is-6">
+        <!-- Basic Information -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+              <span>Basic Information</span>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="field">
+              <label class="label is-small">Plan Name</label>
+              <div class="control">
+                <input class="input is-small" type="text" name="name" required placeholder="e.g. Quarterly Fleet PM">
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small">Description</label>
+              <div class="control">
+                <textarea class="textarea is-small" name="description" rows="3" placeholder="Optional description of this schedule rule..."></textarea>
+              </div>
+            </div>
+
+            <div class="columns">
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Asset Class</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="asset_class_id" required
+                              hx-get="{% url 'plan_create' %}?format=htmx-models"
+                              hx-target="#available-models"
+                              hx-trigger="change, load">
+                        {% for ac in asset_classes %}
+                        <option value="{{ ac.pk }}">{{ ac.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column is-6">
+                {% if show_domain_picker %}
+                <div class="field">
+                  <label class="label is-small">Domain</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="domain_id" required>
+                        {% for d in domains %}
+                        <option value="{{ d.id }}">{{ d.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                {% else %}
+                <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
+                <div class="field">
+                  <label class="label is-small">Domain</label>
+                  <div class="control">
+                    <input class="input is-small" type="text" value="{{ single_domain.name }}" readonly disabled>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Maintenance Template Picker -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>
+              <span>Maintenance Template</span>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="field">
+              <label class="label is-small">Search Template</label>
+              <div class="field has-addons">
+                <div class="control is-expanded">
+                  <input class="input is-small" type="text" id="template-search-q" name="q" placeholder="Filter by template name or description...">
+                </div>
+                <div class="control">
+                  <button type="button" class="button is-small is-link"
+                          hx-get="{% url 'plan_create' %}?format=htmx-templates"
+                          hx-include="#template-search-q"
+                          hx-target="#template-search-results">
+                    Search
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small">Select Template <span class="has-text-danger">*</span></label>
+              <div id="template-search-results" class="box is-flush p-0" style="max-height: 250px; overflow-y: auto; border: 1px solid #dbdbdb; border-radius: 0;">
+                <table class="table is-fullwidth is-size-7" style="margin:0;">
+                  <tbody>
+                    {% for template in templates %}
+                    <tr>
+                      <td>
+                        <label class="radio">
+                          <input type="radio" name="template_action_set_id" value="{{ template.pk }}" {% if forloop.first %}checked{% endif %} required>
+                          <strong>{{ template.task_name }}</strong>
+                        </label>
+                        <p class="has-text-grey mt-1">{{ template.description|default:"—" }}</p>
+                      </td>
+                      <td class="has-text-right">
+                        <span class="tag is-info is-light">{{ template.template_action_items.count }} actions</span>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Models & Frequency -->
+      <div class="column is-6">
+        <!-- Model Associations -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">label</span></span>
+              <span>Model Associations</span>
+            </div>
+          </div>
+          <div class="card-content">
+            <p class="is-size-7 has-text-grey mb-3">
+              Tag specific models to limit this plan. If no models are assigned, the plan applies to <strong>all</strong> models in the class.
+            </p>
+            
+            <div class="columns is-mobile is-vcentered">
+              <div class="column is-5">
+                <label class="label is-size-7 has-text-grey mb-1">Available Models</label>
+                <div class="select is-multiple is-fullwidth">
+                  <select id="available-models" multiple style="height: 180px;">
+                    <!-- Populated via HTMX -->
+                  </select>
+                </div>
+              </div>
+              <div class="column is-2 has-text-centered" style="padding-top: 1.5rem;">
+                <div class="buttons is-centered">
+                  <button type="button" class="button is-small" id="btn-add-models" title="Add selected">
+                    <span class="icon"><span class="material-icons">arrow_forward</span></span>
+                  </button>
+                  <button type="button" class="button is-small mt-2" id="btn-remove-models" title="Remove selected">
+                    <span class="icon"><span class="material-icons">arrow_back</span></span>
+                  </button>
+                </div>
+              </div>
+              <div class="column is-5">
+                <label class="label is-size-7 has-text-grey mb-1">Assigned Models</label>
+                <div class="select is-multiple is-fullwidth">
+                  <select id="assigned-models" name="asset_model_ids" multiple style="height: 180px;">
+                    <!-- User assignments -->
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frequency Configuration -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">alarm</span></span>
+              <span>Frequency Configuration</span>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="columns">
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Frequency Type</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="frequency_type">
+                        {% for value, label in frequency_types %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Calendar Interval (Days)</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_days" min="1" placeholder="e.g. 90">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="message is-info is-light is-size-7 my-3">
+              <div class="message-body p-2">
+                Specify meter thresholds for meter-based tracking. Meter-based plans are not yet evaluated by the automated planner.
+              </div>
+            </div>
+
+            <div class="columns is-multiline">
+              <div class="column is-6 pb-2">
+                <div class="field">
+                  <label class="label is-small">Meter 1 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m1" placeholder="e.g. 5000">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pb-2">
+                <div class="field">
+                  <label class="label is-small">Meter 2 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m2" placeholder="e.g. 10000">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pt-0">
+                <div class="field">
+                  <label class="label is-small">Meter 3 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m3" placeholder="e.g. 15000">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pt-0">
+                <div class="field">
+                  <label class="label is-small">Meter 4 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m4" placeholder="e.g. 20000">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="level mt-5">
+          <div class="level-left"></div>
+          <div class="level-right">
+            <div class="level-item">
+              <a href="{% url 'plan_index' %}" class="button is-small is-light">Cancel</a>
+            </div>
+            <div class="level-item">
+              <button type="submit" class="button is-small is-link">
+                <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Create Plan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+  {% else %}
   <div class="card">
-    <div class="card-content">
-      {% if templates %}
-      <form method="post" action="{% url 'plan_create' %}">
-        {% csrf_token %}
-        <div class="field">
-          <label class="label is-small">Plan Name</label>
-          <input class="input is-small" type="text" name="name" required>
-        </div>
-        <div class="field">
-          <label class="label is-small">Description</label>
-          <textarea class="textarea is-small" name="description" rows="2"></textarea>
-        </div>
-        <div class="columns is-variable is-3">
-          <div class="column is-6">
-            <label class="label is-small">Procedure Template</label>
-            <div class="select is-small is-fullwidth">
-              <select name="template_action_set_id" required>
-                {% for t in templates %}
-                <option value="{{ t.pk }}">{{ t.task_name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="column is-6">
-            <label class="label is-small">Asset Class</label>
-            <div class="select is-small is-fullwidth">
-              <select name="asset_class_id" required>
-                {% for ac in asset_classes %}
-                <option value="{{ ac.pk }}">{{ ac.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="column is-6">
-            <label class="label is-small">Frequency Type</label>
-            <div class="select is-small is-fullwidth">
-              <select name="frequency_type">
-                {% for value, label in frequency_types %}
-                <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="column is-6">
-            <label class="label is-small">Interval (Calendar days — Meter plans are not yet evaluated by the planner)</label>
-            <input class="input is-small is-family-monospace" type="number" name="delta_days" min="1">
-          </div>
-        </div>
-        {% if show_domain_picker %}
-        <div class="field">
-          <label class="label is-small">Domain</label>
-          <div class="select is-small is-fullwidth">
-            <select name="domain_id" required>
-              {% for d in domains %}
-              <option value="{{ d.id }}">{{ d.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        {% else %}
-        <input type="hidden" name="domain_id" value="{{ single_domain.id }}">
-        {% endif %}
-        <footer class="card-footer custom-card-footer" style="border:none; padding:0; margin-top:1rem;">
-          <div class="card-footer-secondaries">
-            <a href="{% url 'plan_index' %}" class="button is-small is-light">Cancel</a>
-          </div>
-          <button type="submit" class="button is-primary card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Create Plan</span>
-          </button>
-        </footer>
-      </form>
-      {% else %}
-      <p class="has-text-grey is-size-7">No active procedure templates are available yet — build one first.</p>
-      <a href="{% url 'template_builder' %}" class="button is-small is-link mt-2">Build a Template</a>
-      {% endif %}
+    <div class="card-content has-text-centered py-5">
+      <span class="icon is-large has-text-grey"><span class="material-icons is-large" aria-hidden="true">warning</span></span>
+      <p class="has-text-grey is-size-6 mt-3">No active procedure templates are available yet — build one first.</p>
+      <a href="{% url 'template_builder' %}" class="button is-small is-link mt-3">Build a Template</a>
     </div>
   </div>
+  {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const btnAdd = document.getElementById('btn-add-models');
+  const btnRemove = document.getElementById('btn-remove-models');
+  const availSelect = document.getElementById('available-models');
+  const assignedSelect = document.getElementById('assigned-models');
+  
+  if (btnAdd && btnRemove && availSelect && assignedSelect) {
+    btnAdd.addEventListener('click', function() {
+      const selected = Array.from(availSelect.selectedOptions);
+      selected.forEach(opt => {
+        assignedSelect.appendChild(opt);
+      });
+    });
+    
+    btnRemove.addEventListener('click', function() {
+      const selected = Array.from(assignedSelect.selectedOptions);
+      selected.forEach(opt => {
+        availSelect.appendChild(opt);
+      });
+    });
+  }
+
+  // Clear assigned models when asset class changes
+  const classSelect = document.querySelector('select[name="asset_class_id"]');
+  if (classSelect && assignedSelect) {
+    classSelect.addEventListener('change', function() {
+      assignedSelect.innerHTML = '';
+    });
+  }
+
+  // Make sure all options in assigned-models are selected before form submit
+  const form = document.getElementById('plan-create-form');
+  if (form && assignedSelect) {
+    form.addEventListener('submit', function() {
+      for (let i = 0; i < assignedSelect.options.length; i++) {
+        assignedSelect.options[i].selected = true;
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

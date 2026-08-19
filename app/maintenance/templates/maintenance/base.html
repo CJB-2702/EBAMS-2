@@ -1,4 +1,4 @@
-{% load static %}
+{% load static svg_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,15 +25,26 @@
 <div class="app-shell">
   <collapsable-side-bar aria-label="Section navigation">
     <nav hx-boost="true" hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Home</p>
+      <a href="{% url 'maintenance_hub' %}" class="sidebar-link {% block nav_maintenance_hub %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
+      <a href="{% url 'technician_dashboard' %}" class="sidebar-link {% block nav_technician_dashboard %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span> Technician Dashboard</a>
+      <a href="{% url 'maintenance_asset_dashboard' %}" class="sidebar-link {% block nav_asset_dashboard %}{% endblock %}"><span class="icon">{% svg "asset-icon" %}</span> Assets Dashboard</a>
+
+      <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Events</p>
-      <a href="{% url 'maintenance_index' %}" class="sidebar-link {% block nav_maintenance_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Hub &amp; Search</a>
-      <a href="{% url 'maintenance_create' %}" class="sidebar-link {% block nav_maintenance_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+      <a href="{% url 'maintenance_index' %}" class="sidebar-link {% block nav_maintenance_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> All Events</a>
+      <a href="{% url 'create_assign' %}" class="sidebar-link {% block nav_create_assign %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span> Create &amp; Assign</a>
+      <a href="{% url 'unassigned_events' %}" class="sidebar-link {% block nav_unassigned_events %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_late</span></span> Unassigned</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Parts</p>
+      <a href="{% url 'part_demand_index' %}" class="sidebar-link {% block nav_part_demand_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Part Demands</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Procedure Templates</p>
       <a href="{% url 'template_index' %}" class="sidebar-link {% block nav_template_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span> Template Library</a>
-      <a href="{% url 'template_builder' %}" class="sidebar-link {% block nav_template_builder %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span> Template Builder</a>
-      <a href="{% url 'proto_index' %}" class="sidebar-link {% block nav_proto_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span> Action Library</a>
+      <a href="{% url 'template_builder' %}" class="sidebar-link {% block nav_template_builder %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span> Template Builder</a>
+      <a href="{% url 'proto_index' %}" class="sidebar-link {% block nav_proto_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span> Proto Actions</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Planning</p>
@@ -50,12 +61,15 @@
   <div class="app-scrollarea">
     <div class="app-container">
       <main id="maintenance-main-content">
-        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
-          <ul>
-            <li><a href="{% url 'maintenance_index' %}">Maintenance</a></li>
-            {% block breadcrumb %}{% endblock %}
-          </ul>
-        </nav>
+        <div class="is-flex is-justify-content-between is-align-items-center mb-4">
+          <nav class="breadcrumb mb-0" aria-label="breadcrumbs">
+            <ul>
+              <li><a href="{% url 'maintenance_index' %}">Maintenance</a></li>
+              {% block breadcrumb %}{% endblock %}
+            </ul>
+          </nav>
+          {% block breadcrumb_actions %}{% endblock %}
+        </div>
 
         {% if messages %}
           {% for message in messages %}

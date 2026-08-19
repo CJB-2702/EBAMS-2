@@ -1,8 +1,19 @@
 {% extends "maintenance/base.html" %}
+{% load static %}
 {% block title %}{{ template.task_name }}{% endblock %}
+{% block extra_head %}
+<script src="{% static 'web_components/dual_listbox.js' %}"></script>
+{% endblock %}
+{% block nav_template_index %}is-active{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'template_index' %}">Templates</a></li>
 <li class="is-active"><a href="#" aria-current="page">{{ template.task_name }}</a></li>
+{% endblock %}
+
+{% block breadcrumb_actions %}
+<a href="{% url 'template_index' %}" class="button is-small is-light">
+  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">arrow_back</span></span><span>Back to Templates</span>
+</a>
 {% endblock %}
 
 {% block content %}
@@ -11,48 +22,358 @@
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">description</span></div>
       <div>
-        <h1 class="page-title">{{ template.task_name }}{% if template.revision %} <span class="has-text-grey">(rev {{ template.revision }})</span>{% endif %}</h1>
-        <p class="page-subtitle">{{ template.domain.name }} · {{ items|length }} step(s) · ~{{ total_estimated_duration_minutes }} min total</p>
+        <h1 class="page-title">{{ template.task_name }}</h1>
+        <p class="page-subtitle">{{ template.description|default:"Standard procedure." }}</p>
       </div>
     </div>
-    <div class="page-header-actions">
-      <a href="{% url 'template_index' %}" class="button is-small is-light">← Back</a>
-      <a href="{% url 'maintenance_create' %}" class="button is-small is-link">
-        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Use for New Event</span>
-      </a>
+    <div class="page-header-actions" style="justify-content: flex-end;">
+      <form method="post" action="{% url 'template_builder' %}" class="is-inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start_revision">
+        <input type="hidden" name="template_action_set_id" value="{{ template.pk }}">
+        <button type="submit" class="button is-small is-link">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span><span>Edit (new revision)</span>
+        </button>
+      </form>
+      <form method="post" action="{% url 'template_builder' %}" class="is-inline-block">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start_copy">
+        <input type="hidden" name="template_action_set_id" value="{{ template.pk }}">
+        <button type="submit" class="button is-small is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">content_copy</span></span><span>Copy</span>
+        </button>
+      </form>
+      {% if template.is_active %}
+      <button class="button is-small is-warning is-light" commandfor="deactivate-modal" command="show-modal">
+        <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">power_settings_new</span></span><span>Deactivate</span>
+      </button>
+      {% else %}
+      <form method="post" action="{% url 'template_toggle_active' pk=template.pk %}" class="is-inline-block">
+        {% csrf_token %}
+        <button type="submit" class="button is-small is-success is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">power_settings_new</span></span><span>Activate</span>
+        </button>
+      </form>
+      {% endif %}
     </div>
   </div>
 </div>
 
 <div class="body-grid full-width">
-  <div class="card">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Action Steps</div></div>
-    <div class="card-content">
-      {% for item in items %}
-      <div class="card mb-3 depth-2">
-        <div class="card-content is-size-7">
-          <p><strong>{{ item.sequence_order }}. {{ item.action_name }}</strong></p>
-          {% if item.description %}<p class="has-text-grey">{{ item.description }}</p>{% endif %}
-          <div class="columns mt-2">
-            <div class="column">
-              <p class="has-text-weight-semibold">Tools</p>
-              {% for tool in item.template_action_tools.all %}
-              <p>{{ tool.tool|default:tool.tool_name }} × {{ tool.quantity_required }}</p>
-              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+
+  {# ── Stat tiles ──────────────────────────────────────────────────────── #}
+  <div class="stat-grid mb-4">
+    <div class="stat-tile">
+      <p class="stat-value">{% if template.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</p>
+      <p class="stat-label">Status</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-value">{{ template.revision|default:"1.0" }}</p>
+      <p class="stat-label">Revision</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-value">{{ total_action_items }}</p>
+      <p class="stat-label">Action Items</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-value">{{ all_parts_required|length }}</p>
+      <p class="stat-label">Parts Required</p>
+    </div>
+  </div>
+
+  {# ── Template Details (Full Width Card) ────────────────────────────── #}
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Template Details
+      </div>
+    </div>
+    <div class="card-content is-size-7">
+      <div class="columns is-variable is-4">
+        <!-- Base Info (2/4 columns, i.e. is-6) -->
+        <div class="column is-6">
+          <h3 class="subtitle is-6 mb-3" style="border-bottom: 1px solid var(--bulma-border-light, #dbdbdb); padding-bottom: 0.25rem;">
+            <span class="icon"><span class="material-icons is-size-6" aria-hidden="true">notes</span></span>Base Info
+          </h3>
+          <div class="columns is-multiline is-variable is-2">
+            <div class="column is-6"><p class="has-text-grey mb-1">Task Name</p><p class="has-text-weight-medium">{{ template.task_name }}</p></div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Estimated Duration</p><p class="has-text-weight-medium">{% if template.estimated_duration %}{{ template.estimated_duration }} hours (estimated){% else %}—{% endif %}</p></div>
+            <div class="column is-12"><p class="has-text-grey mb-1">Description</p><p class="has-text-weight-medium">{{ template.description|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Staff Count</p><p class="has-text-weight-medium">{{ template.staff_count|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Revision</p><p class="has-text-weight-medium">{{ template.revision|default:"1.0" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Parts Cost</p><p class="has-text-weight-medium">{% if template.parts_cost %}${{ template.parts_cost }}{% else %}N/A{% endif %}</p></div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Labor Hours</p><p class="has-text-weight-medium">{{ template.labor_hours|default:"—" }}</p></div>
+            <div class="column is-6">
+              <p class="has-text-grey mb-1">Is Active</p>
+              <p>{% if template.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</p>
             </div>
-            <div class="column">
-              <p class="has-text-weight-semibold">Part Demands</p>
-              {% for demand in item.template_part_demands.all %}
-              <p>{{ demand.part }} × {{ demand.quantity_required }}{% if demand.is_optional %} <span class="tag is-light is-small">optional</span>{% endif %}</p>
-              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
+            <div class="column is-6">
+              <p class="has-text-grey mb-1">Safety Review</p>
+              <p>{% if template.safety_review_required %}<span class="tag is-warning is-light">Required</span>{% else %}<span class="tag is-light">Not required</span>{% endif %}</p>
+            </div>
+            <div class="column is-6"><p class="has-text-grey mb-1">Asset Class</p><p class="has-text-weight-medium">{{ template.asset_class|default:"N/A" }}</p></div>
+          </div>
+        </div>
+
+        <!-- Metadata (1/4 columns, i.e. is-3) -->
+        <div class="column is-3">
+          <h3 class="subtitle is-6 mb-3" style="border-bottom: 1px solid var(--bulma-border-light, #dbdbdb); padding-bottom: 0.25rem;">
+            <span class="icon"><span class="material-icons is-size-6" aria-hidden="true">description</span></span>Metadata
+          </h3>
+          <p class="has-text-grey mb-1">Template ID</p><p class="mb-3 has-text-weight-medium">{{ template.pk }}</p>
+          <p class="has-text-grey mb-1">Revision</p><p class="mb-3 has-text-weight-medium">{{ template.revision|default:"1.0" }}</p>
+          {% if not is_newest_revision %}
+          <p class="has-text-grey mb-1">Revision note</p><p class="mb-3 has-text-weight-medium">{{ template.revision_note|default:"—" }}</p>
+          {% endif %}
+          <p class="has-text-grey mb-1">Status</p><p class="mb-3">{% if template.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</p>
+          <p class="has-text-grey mb-1">Created</p><p class="mb-3 has-text-weight-medium">{{ template.created_at|date:"Y-m-d H:i" }}</p>
+          <p class="has-text-grey mb-1">Created By</p><p class="mb-3 has-text-weight-medium">{{ template.created_by|default:"system" }}</p>
+        </div>
+
+        <!-- Summary (1/4 columns, i.e. is-3, sub card) -->
+        <div class="column is-3">
+          <div class="card depth-2" style="height: 100%;">
+            <header class="card-header">
+              <p class="card-header-title">
+                <span class="icon"><span class="material-icons" aria-hidden="true">bar_chart</span></span>Summary
+              </p>
+            </header>
+            <div class="card-content is-size-6">
+              <div class="mb-2"><span class="has-text-grey">Total Action Items:</span> <strong class="is-pulled-right">{{ total_action_items }}</strong></div>
+              <div class="mb-2"><span class="has-text-grey">Total Parts:</span> <strong class="is-pulled-right">{{ all_parts_required|length }}</strong></div>
+              <div class="mb-2"><span class="has-text-grey">Total Tools:</span> <strong class="is-pulled-right">{{ all_tools_required|length }}</strong></div>
+              <div class="mb-2"><span class="has-text-grey">Total Attachments:</span> <strong class="is-pulled-right">{{ comments_card.direct_attachments|length }}</strong></div>
+              <div class="mb-2"><span class="has-text-grey">Total Est. Duration:</span> <strong class="is-pulled-right">{{ total_estimated_duration_minutes }} min</strong></div>
+              <div class="mb-2"><span class="has-text-grey">Labor Hours:</span> <strong class="is-pulled-right">{{ template.labor_hours|default:"—" }}</strong></div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="columns is-variable is-4">
+    <div class="column is-8">
+
+      {# ── Template Action Items ─────────────────────────────────────── #}
+      <h2 class="title is-5"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Template Action Items ({{ total_action_items }})</h2>
+
+      {% for step in steps %}
+      {% with item=step.item %}
+      <div class="card mb-3">
+        <div class="card-content is-size-7">
+          <p><span class="tag is-light mr-2">#{{ item.sequence_order }}</span><strong>{{ item.action_name }}</strong></p>
+          {% if item.description %}<p class="has-text-grey mt-1">{{ item.description }}</p>{% endif %}
+          <p class="has-text-grey mt-2">
+            <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">schedule</span></span>
+            Est: {{ item.estimated_duration_minutes|default:0 }} min
+            <span class="icon is-small ml-3"><span class="material-icons is-size-7" aria-hidden="true">groups</span></span>
+            Staff: {{ item.minimum_staff_count }}
+          </p>
+
+          {% if item.safety_notes %}
+          <div class="notification is-warning is-light is-size-7 p-2 mt-2">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span>
+            <strong>Safety Notes:</strong> {{ item.safety_notes }}
+          </div>
+          {% endif %}
+
+          <h4 class="has-text-weight-semibold mt-3 mb-1">
+            <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">handyman</span></span> Tools Required
+          </h4>
+          <table class="table is-narrow is-fullwidth is-striped is-bordered mb-2">
+            <tbody>
+              {% for tool in step.tools %}
+              <tr>
+                <td>{{ tool.tool|default:tool.tool_name }}</td>
+                <td class="has-text-right" style="width: 25%;">x{{ tool.quantity_required }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="2" class="has-text-grey">None.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          {% if step.parts %}
+          <h4 class="has-text-weight-semibold mt-3 mb-1">
+            <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">inventory_2</span></span> Parts Required
+          </h4>
+          <table class="table is-narrow is-fullwidth is-striped is-bordered mb-2">
+            <tbody>
+              {% for demand in step.parts %}
+              <tr>
+                <td>{{ demand.part }}{% if demand.is_optional %} <span class="has-text-grey is-size-7">(optional)</span>{% endif %}</td>
+                <td class="has-text-right" style="width: 25%;">x{{ demand.quantity_required }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endwith %}
       {% empty %}
-      <p class="has-text-grey is-size-7">No action steps.</p>
+      <p class="has-text-grey">No action steps.</p>
       {% endfor %}
+
+    </div>
+
+    <div class="column is-4">
+
+      {# ── Attachments and Activity Thread ── #}
+      <div id="event-card-{{ comments_card.hash }}">
+        {% include "events/fragments/direct_attachments_card.html" with card=comments_card %}
+        <div class="mt-4">
+          {% include "events/fragments/comments_card.html" with card=comments_card %}
+        </div>
+      </div>
+
+      {# ── Parts Required ── #}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Parts Required
+            <span class="tag is-info is-light ml-2">{{ all_parts_required|length }}</span>
+          </div>
+        </div>
+        <div class="card-content is-flush pb-3">
+          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
+            <thead>
+              <tr>
+                <th>PN</th>
+                <th>Common Name</th>
+                <th>Step</th>
+                <th class="has-text-right">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for demand, action_name in all_parts_required %}
+              <tr>
+                <td>{{ demand.part.part_number }}</td>
+                <td>{{ demand.part.name }}</td>
+                <td>{{ action_name }}</td>
+                <td class="has-text-right">{{ demand.quantity_required }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="has-text-grey p-3">No parts required for this template.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {# ── Tools Required ── #}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span>Tools Required
+            <span class="tag is-light ml-2">{{ all_tools_required|length }}</span>
+          </div>
+        </div>
+        <div class="card-content is-flush pb-3">
+          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
+            <thead>
+              <tr>
+                <th>Tool Name</th>
+                <th>Step</th>
+                <th class="has-text-right">Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for tool, action_name in all_tools_required %}
+              <tr>
+                <td>{{ tool.tool|default:tool.tool_name }}</td>
+                <td>{{ action_name }}</td>
+                <td class="has-text-right">{{ tool.quantity_required }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="3" class="has-text-grey p-3">No tools required for this template.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {# ── Models ── #}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">directions_car</span></span>Models
+            <span class="tag is-light ml-2">{{ models_assigned|length }}</span>
+          </div>
+        </div>
+        <div class="card-content is-size-7">
+          {% if template.asset_class_id %}
+            <div style="max-height: 200px; overflow-y: auto;">
+              {% if models_assigned %}
+                <ul class="mb-0">
+                  {% for item in models_assigned %}
+                  <li class="py-1" {% if not forloop.last %}style="border-bottom: 1px solid var(--bulma-border-light, #dbdbdb);"{% endif %}>
+                    <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">directions_car</span></span>
+                    {{ item }}
+                  </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="has-text-grey">None.</p>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="has-text-grey">Set an asset class on this template to enable model tagging.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Revision History ── #}
+      {% if revision_chain|length > 1 %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Revision History
+          </div>
+        </div>
+        <div class="card-content is-size-7">
+          {% for rev in revision_chain %}
+          <p class="mb-2">
+            {% if rev.pk == template.pk %}
+            <strong>Rev {{ rev.revision|default:"—" }}</strong> <span class="tag is-info is-light">This one</span>
+            {% else %}
+            <a href="{% url 'template_detail' pk=rev.pk %}">Rev {{ rev.revision|default:"—" }}</a>
+            {% if rev.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Retired</span>{% endif %}
+            {% endif %}
+            {% if rev.revision_note %}<br><span class="has-text-grey">{{ rev.revision_note }}</span>{% endif %}
+          </p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
     </div>
   </div>
 </div>
+
+{# ── Deactivate confirmation modal ── #}
+<dialog id="deactivate-modal" class="card modal-styled" style="padding: 0;">
+  <header class="card-header">
+    <p class="card-header-title">Confirm Deactivation</p>
+    <button class="delete is-large" aria-label="close" commandfor="deactivate-modal" command="close"></button>
+  </header>
+  <div class="card-content">
+    <div class="content">
+      <p>Are you sure you want to deactivate this template? It will no longer be available for creating new maintenance plans.</p>
+    </div>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <button class="button is-small is-light" commandfor="deactivate-modal" command="close">Cancel</button>
+    </div>
+    <form method="post" action="{% url 'template_toggle_active' pk=template.pk %}" class="is-inline-block" id="deactivate-form">
+      {% csrf_token %}
+      <button type="submit" class="button is-danger card-footer-primary">Deactivate</button>
+    </form>
+  </footer>
+</dialog>
 {% endblock %}

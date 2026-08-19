@@ -20,9 +20,11 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from app.administration.models import Domain
+from app.administration.models import Domain, User
+from app.assets.models import AssetClass, AssetModel, Manufacturer
 from app.events.models.details.maintenance import MaintenanceDetail
 from app.events.models.event import EventPriority, EventStatus
+from app.events.presentation_layer.tools.generic_cards import build_activity_card
 from app.maintenance.control_layer.domain_structs.maintenance_detail_struct import (
     MaintenanceDetailStruct,
 )
@@ -40,6 +42,28 @@ from app.maintenance.presentation_layer.tools.maintenance_access import (
 )
 
 PAGE_SIZE = 25
+
+
+def _assigned_technicians(detail: MaintenanceDetail, actions) -> list[dict]:
+    """Group event-level + per-action assignments by user for the read-only
+    view's Assigned Technicians card. Event lead (detail.assigned_user, if
+    any) is always listed first."""
+    groups: dict[int, dict] = {}
+    if detail.assigned_user_id:
+        groups[detail.assigned_user_id] = {
+            "user": detail.assigned_user,
+            "is_lead": True,
+            "actions": [],
+        }
+    for action in actions:
+        if not action.assigned_user_id:
+            continue
+        entry = groups.setdefault(
+            action.assigned_user_id,
+            {"user": action.assigned_user, "is_lead": False, "actions": []},
+        )
+        entry["actions"].append(action)
+    return list(groups.values())
 
 
 def _detail_or_404_in_domain(request: HttpRequest, pk: int) -> MaintenanceDetail:
@@ -71,6 +95,22 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
     work_order_reference = request.GET.get("work_order_reference", "").strip()
     my_work = request.GET.get("my_work", "").strip() == "1"
     q = request.GET.get("q", "").strip()
+    domain_raw = request.GET.get("domain", "").strip()
+    domain_filter = int(domain_raw) if domain_raw.isdigit() else None
+    asset_class = request.GET.get("asset_class", "").strip()
+    model = request.GET.get("model", "").strip()
+    manufacturer = request.GET.get("manufacturer", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+    has_blockers = request.GET.get("has_blockers", "").strip() == "1"
+    has_limitations = request.GET.get("has_limitations", "").strip() == "1"
+    action_title = request.GET.get("action_title", "").strip()
+    created_by_raw = request.GET.get("created_by", "").strip()
+    created_by_id = int(created_by_raw) if created_by_raw.isdigit() else None
+    commented_by_raw = request.GET.get("commented_by", "").strip()
+    commented_by_id = int(commented_by_raw) if commented_by_raw.isdigit() else None
+    assigned_to_raw = request.GET.get("assigned_to", "").strip()
+    assigned_to_id = int(assigned_to_raw) if assigned_to_raw.isdigit() else None
 
     qs = MaintenanceSearch.index_list(
         domain_ids=domain_ids,
@@ -79,8 +119,19 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         priority=priority,
         maintenance_type=maintenance_type,
         work_order_reference=work_order_reference,
-        assigned_user_id=request.user.pk if my_work else None,
+        assigned_user_id=request.user.pk if my_work else assigned_to_id,
         q=q,
+        domain_id=domain_filter,
+        asset_class=asset_class,
+        model=model,
+        manufacturer=manufacturer,
+        date_from=date_from or None,
+        date_to=date_to or None,
+        has_blockers=has_blockers,
+        has_limitations=has_limitations,
+        action_title=action_title,
+        created_by_id=created_by_id,
+        commented_by_id=commented_by_id,
     )
 
     density = request.GET.get("format", "condensed")
@@ -102,10 +153,27 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
             "work_order_reference": work_order_reference,
             "my_work": "1" if my_work else "",
             "q": q,
+            "domain": domain_raw,
+            "asset_class": asset_class,
+            "model": model,
+            "manufacturer": manufacturer,
+            "date_from": date_from,
+            "date_to": date_to,
+            "has_blockers": "1" if has_blockers else "",
+            "has_limitations": "1" if has_limitations else "",
+            "action_title": action_title,
+            "created_by": created_by_raw,
+            "commented_by": commented_by_raw,
+            "assigned_to": assigned_to_raw,
         },
         "statuses": EventStatus.choices,
         "priorities": EventPriority.choices,
+        "maintenance_types": MaintenanceDetail._meta.get_field("maintenance_type").choices,
         "domains": Domain.objects.filter(pk__in=domain_ids).order_by("name"),
+        "classes": AssetClass.objects.order_by("name"),
+        "models": AssetModel.objects.order_by("model_name", "version_rank", "version"),
+        "manufacturers": Manufacturer.objects.order_by("name"),
+        "users": User.objects.filter(is_active=True).order_by("username"),
     }
 
     if request.GET.get("format") == "htmx-search-results":
@@ -114,80 +182,6 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
 
 
 @require_http_methods(["GET", "POST"])
-def maintenance_create(request: HttpRequest) -> HttpResponse:
-    """Single-card create form (not a wizard — MaintenanceFactory expands the
-    template's actions/tools/part-demands atomically; the user is not asked to
-    pick actions one by one at creation time)."""
-    user_domain_ids = list(request.user.get_all_domain_ids())
-
-    if request.method == "POST":
-        domain_id_raw = request.POST.get("domain_id", "").strip()
-        domain_id = int(domain_id_raw) if domain_id_raw.isdigit() else None
-        if domain_id not in user_domain_ids:
-            messages.error(
-                request, "You may only create a maintenance event in a domain you are assigned to."
-            )
-            return redirect(reverse("maintenance_create"))
-
-        asset_id_raw = request.POST.get("asset_id", "").strip()
-        asset_id = int(asset_id_raw) if asset_id_raw.isdigit() else None
-        template_id_raw = request.POST.get("template_action_set_id", "").strip()
-        template_id = int(template_id_raw) if template_id_raw.isdigit() else None
-        title = request.POST.get("title", "").strip()
-        maintenance_type = request.POST.get("maintenance_type", "").strip()
-        work_order_reference = request.POST.get("work_order_reference", "").strip()
-        priority = request.POST.get("priority", "").strip() or None
-        event_start_raw = request.POST.get("event_start", "").strip()
-        event_start = None
-        if event_start_raw:
-            from django.utils.dateparse import parse_datetime
-
-            event_start = parse_datetime(event_start_raw)
-
-        if not template_id:
-            messages.error(request, "A procedure template is required to create a maintenance event.")
-            return redirect(reverse("maintenance_create"))
-
-        try:
-            detail = MaintenanceFactory.create_from_template(
-                template_action_set_id=template_id,
-                domain_id=domain_id,
-                asset_id=asset_id,
-                title=title or None,
-                maintenance_type=maintenance_type,
-                work_order_reference=work_order_reference,
-                event_start=event_start or timezone.now(),
-                priority=priority,
-                assigned_user=request.user,
-                assigned_by=request.user,
-                actor=request.user,
-            )
-        except TemplateActionSet.DoesNotExist:
-            messages.error(request, "Selected template not found.")
-            return redirect(reverse("maintenance_create"))
-
-        messages.success(request, f"Maintenance event #{detail.pk} created.")
-        return redirect(reverse("maintenance_detail", kwargs={"pk": detail.pk}))
-
-    domains = Domain.objects.filter(pk__in=user_domain_ids).order_by("name")
-    templates = TemplateActionSet.objects.filter(
-        domain_id__in=user_domain_ids, deleted_at__isnull=True, is_active=True
-    ).order_by("task_name")
-    default_event_start = timezone.now().strftime("%Y-%m-%dT%H:%M")
-    return render(
-        request,
-        "maintenance/create.html",
-        {
-            "domains": domains,
-            "show_domain_picker": domains.count() > 1,
-            "single_domain": domains.first() if domains.count() == 1 else None,
-            "templates": templates,
-            "priorities": EventPriority.choices,
-            "default_event_start": default_event_start,
-        },
-    )
-
-
 @require_http_methods(["GET", "POST"])
 def maintenance_detail(request: HttpRequest, pk: int) -> HttpResponse:
     """Parent event info, action step list, blocker section, part demand
@@ -218,7 +212,11 @@ def maintenance_detail(request: HttpRequest, pk: int) -> HttpResponse:
                 messages.success(request, "Blocker logged.")
             elif action == "end_blocker":
                 blocker_id = int(request.POST.get("blocker_id", 0))
-                ctx.blocker_manager.end_blocker(blocker_id=blocker_id, actor=request.user)
+                ctx.blocker_manager.end_blocker(
+                    blocker_id=blocker_id,
+                    resolution_notes=request.POST.get("resolution_notes", ""),
+                    actor=request.user,
+                )
                 messages.success(request, "Blocker resolved.")
             elif action == "add_limitation":
                 ctx.limitation_manager.create_record(
@@ -230,7 +228,11 @@ def maintenance_detail(request: HttpRequest, pk: int) -> HttpResponse:
                 messages.success(request, "Asset limitation record opened.")
             elif action == "close_limitation":
                 record_id = int(request.POST.get("record_id", 0))
-                ctx.limitation_manager.close_record(record_id=record_id, actor=request.user)
+                ctx.limitation_manager.close_record(
+                    record_id=record_id,
+                    resolution_notes=request.POST.get("resolution_notes", ""),
+                    actor=request.user,
+                )
                 messages.success(request, "Asset limitation record closed.")
             elif action == "set_billable_hours":
                 value = float(request.POST.get("actual_billable_hours", 0) or 0)
@@ -261,12 +263,23 @@ def maintenance_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "actions": struct.actions,
         "blockers": struct.blockers,
         "limitation_records": struct.limitation_records,
+        # Drive the above-the-fold "work is blocked" / "asset is limited"
+        # banners — the two facts a reader must see before anything else.
+        "active_blockers": struct.active_blockers,
+        "active_limitations": struct.active_limitation_records,
         "completion_verdict": completion_verdict,
         "billable_hours_manager": ctx.billable_hours_manager,
         "billable_hours_warning": ctx.billable_hours_manager.get_warning(),
         "blocker_priorities": BlockerPriority.choices,
         "capability_statuses": CapabilityStatus.choices,
         "can_edit": is_in_domain(request, detail.domain_id),
+        "activity_card": build_activity_card(detail, request.user),
+        "assigned_technicians": _assigned_technicians(detail, struct.actions),
+        "part_demand_rows": [
+            {"action": action, "link": link}
+            for action in struct.actions
+            for link in action.demand_links.all()
+        ],
     }
 
     if request.GET.get("format") == "htmx-focused":

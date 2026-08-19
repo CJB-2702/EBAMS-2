@@ -30,8 +30,38 @@
       hx-push-url="true"
     >
       <p class="sidebar-section-label">Extensions</p>
+      <a href="{% url 'extension_home' %}" class="sidebar-link {% block nav_home %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Overview
+      </a>
       <a href="{% url 'extension_config_landing' %}" class="sidebar-link {% block nav_config %}{% endblock %}">
         <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configuration
+      </a>
+
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Single Table Asset Extensions</p>
+      <a href="{% url 'extension_summary' 'purchase_info' %}" class="sidebar-link {% block nav_purchase_info %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">receipt</span></span> Purchase Information
+      </a>
+      <a href="{% url 'extension_summary' 'vehicle_registration' %}" class="sidebar-link {% block nav_vehicle_reg %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Vehicle Registration
+      </a>
+      <a href="{% url 'extension_summary' 'smog_record' %}" class="sidebar-link {% block nav_smog %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span> Smog History
+      </a>
+
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Single Table Model Extensions</p>
+      <a href="{% url 'extension_summary' 'emissions_info' %}" class="sidebar-link {% block nav_emissions %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">co2</span></span> Emissions Specifications
+      </a>
+
+      <div class="sidebar-divider"></div>
+
+      <p class="sidebar-section-label">Serial Numbers</p>
+      <a href="{% url 'extension_serial_number_templates' %}" class="sidebar-link {% block nav_serial_templates %}{% endblock %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates &amp; Tracking
       </a>
 
       <div class="sidebar-divider"></div>

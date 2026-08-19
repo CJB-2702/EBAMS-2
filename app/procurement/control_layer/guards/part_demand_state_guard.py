@@ -100,6 +100,7 @@ ISSUANCE_STATE_TRANSITIONS: dict[str, frozenset[str]] = {
         {
             IssuanceState.PARTIALLY_ISSUED,
             IssuanceState.ISSUED,
+            IssuanceState.ISSUED_WITHOUT_STOCK_ADJUSTMENT,
             IssuanceState.ISSUED_PENDING_RECONCILIATION,
             IssuanceState.ISSUED_RECONCILIATION_REQUIRED,
         }

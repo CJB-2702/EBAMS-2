@@ -13,15 +13,4 @@
   {% empty %}
   <p class="has-text-grey is-size-7">No action steps yet.</p>
   {% endfor %}
-
-  <form method="post" action="{% url 'action_create' maintenance_id=detail.pk %}" class="card depth-2 p-3 mt-3">
-    {% csrf_token %}
-    <input type="hidden" name="source" value="blank">
-    <div class="field has-addons">
-      <div class="control is-expanded"><input class="input is-small" type="text" name="action_name" placeholder="new action step name…" required></div>
-      <div class="control"><button type="submit" class="button is-small is-link">
-        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add Step</span>
-      </button></div>
-    </div>
-  </form>
 </div>

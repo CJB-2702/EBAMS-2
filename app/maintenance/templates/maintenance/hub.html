@@ -1,0 +1,178 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Maintenance{% endblock %}
+{% block nav_maintenance_hub %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Hub</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">build</span></div>
+      <div>
+        <h1 class="page-title">Maintenance</h1>
+        <p class="page-subtitle">Your work, the schedule, and the libraries behind it.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'create_assign' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Create &amp; Assign</span>
+      </a>
+      <a href="{% url 'maintenance_index' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span><span>All events</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── One stat strip: the union of the four legacy dashboards ─────────── #}
+  <div class="card">
+    <div class="card-content">
+      <div class="columns is-multiline is-mobile has-text-centered">
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Total events</p><p class="title is-4">{{ stats.total_events }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Active</p><p class="title is-4">{{ stats.active }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Planned</p><p class="title is-4">{{ stats.planned }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Completed</p><p class="title is-4">{{ stats.completed }}</p></div>
+        <div class="column is-3-mobile">
+          <p class="heading is-size-7 has-text-grey">Pending part demands</p>
+          <p class="title is-4"><a href="{% url 'part_demand_index' %}?demand_state=required">{{ stats.pending_demands }}</a></p>
+        </div>
+        <div class="column is-3-mobile">
+          <p class="heading is-size-7 has-text-grey">Unassigned</p>
+          <p class="title is-4"><a href="{% url 'unassigned_events' %}">{{ stats.unassigned }}</a></p>
+        </div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Overdue</p><p class="title is-4">{{ stats.overdue }}</p></div>
+        <div class="column is-3-mobile"><p class="heading is-size-7 has-text-grey">Active templates</p><p class="title is-4">{{ stats.active_templates }}</p></div>
+      </div>
+    </div>
+  </div>
+
+  {# ── My Work band. Hidden entirely when the user has no assigned work —
+       the "feature doesn't apply" exception to Rule #5, not an empty card. #}
+  {% if show_my_work %}
+  <div class="is-flex is-justify-content-space-between is-align-items-center mt-5 mb-3">
+    <h2 class="is-size-5 has-text-weight-semibold mb-0">
+      <span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span> My work
+    </h2>
+    <a href="{% url 'technician_dashboard' %}" class="is-size-7">Open technician dashboard</a>
+  </div>
+
+  <div class="card">
+    <div class="card-content">
+      <div class="columns has-text-centered">
+        <div class="column"><p class="heading is-size-7 has-text-grey">Assigned</p><p class="title is-4">{{ my_stats.assigned }}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">In progress</p><p class="title is-4">{{ my_stats.in_progress }}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">Completed today</p><p class="title is-4">{{ my_stats.completed_today }}</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-variable is-4 mt-1">
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_ind</span></span>Assigned to me</div>
+          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1">View all</a>
+        </div>
+        <div class="card-content is-flush pb-3">
+          {% include "maintenance/components/_event_mini_list.html" with rows=my_events empty_text="Nothing assigned to you right now." %}
+        </div>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Planned this week</div>
+          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1&amp;status=planned">View all</a>
+        </div>
+        <div class="card-content is-flush pb-3">
+          {% include "maintenance/components/_event_mini_list.html" with rows=planned_this_week empty_text="Nothing scheduled for you in the next seven days." %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Recently completed by me</div>
+    </div>
+    <div class="card-content is-flush pb-3">
+      {% include "maintenance/components/_event_mini_list.html" with rows=recent_events empty_text="No completed work yet." %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Manage band ───────────────────────────────────────────────────── #}
+  <h2 class="is-size-5 has-text-weight-semibold mt-5 mb-3">
+    <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Manage
+  </h2>
+
+  <div class="columns is-variable is-4 is-multiline">
+    <div class="column is-6">
+      <div class="card" style="height:100%;">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span>Create &amp; assign</div></div>
+        <div class="card-content">
+          <p class="is-size-7 has-text-grey mb-3">Create maintenance events from templates and assign them to assets and technicians.</p>
+          <div class="buttons are-small">
+            <a href="{% url 'create_assign' %}" class="button is-link">Create &amp; assign</a>
+            <a href="{% url 'unassigned_events' %}" class="button">Unassigned queue ({{ stats.unassigned }})</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="column is-6">
+      <div class="card" style="height:100%;">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Part demands</div></div>
+        <div class="card-content">
+          <p class="is-size-7 has-text-grey mb-3">Approve, reject, or substitute the parts maintenance work has asked for.</p>
+          <div class="buttons are-small">
+            <a href="{% url 'part_demand_index' %}" class="button is-warning">Part demand queue ({{ stats.pending_demands }})</a>
+          </div>
+          {% if not can_manage_demands %}
+          <p class="help">You can read the queue; approving requires the <code>demand_manage</code> permission.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="column is-6">
+      <div class="card" style="height:100%;">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span>Build maintenance templates</div></div>
+        <div class="card-content">
+          <p class="is-size-7 has-text-grey mb-3">Create and manage procedure templates, revisions, and the reusable proto-action library.</p>
+          <div class="buttons are-small">
+            <a href="{% url 'template_index' %}?preview=1" class="button is-info">Build templates</a>
+            <a href="{% url 'template_index' %}" class="button">Template library ({{ stats.active_templates }})</a>
+            <a href="{% url 'proto_index' %}" class="button">Proto actions ({{ stats.proto_actions }})</a>
+            <a href="{% url 'proto_create' %}" class="button">New proto action</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="column is-6">
+      <div class="card" style="height:100%;">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span>Plan maintenance</div></div>
+        <div class="card-content">
+          <p class="is-size-7 has-text-grey mb-3">Recurring plans and the assets currently due under them.</p>
+          <div class="buttons are-small">
+            <a href="{% url 'plan_index' %}" class="button is-primary">Recurring plans ({{ stats.active_plans }})</a>
+            <a href="{% url 'plan_create' %}" class="button">New plan</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">report_problem</span></span>Blocked work</div>
+    </div>
+    <div class="card-content is-flush pb-3">
+      {% include "maintenance/components/_event_mini_list.html" with rows=attention_events empty_text="Nothing is blocked." %}
+    </div>
+  </div>
+</div>
+{% endblock %}

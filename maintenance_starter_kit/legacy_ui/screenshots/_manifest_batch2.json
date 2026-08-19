@@ -1,0 +1,82 @@
+[
+  {
+    "slug": "34_template_builder_1_edit",
+    "path": "/maintenance/manager/template-builder/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/template-builder/1",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Edit Template Builder |  | Initialized New Template |  |  Back to Build Templates |  Ready to create your template? Once you're satisfied with your template builder, click below to create the final template. |  Create Template from Build |  Templa"
+  },
+  {
+    "slug": "35_template_builder_1_action_creator",
+    "path": "/maintenance/manager/template-builder/1/action-creator-portal",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/template-builder/1/action-creator-portal",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Action Creator Portal |  From Template |  From Template Action |  From Proto Action |  From Current Build |  Blank Action |  Select Template Action Set | Search Templates | Searching template action sets and their action items | Template Action Sets | B"
+  },
+  {
+    "slug": "36_event_22_edit",
+    "path": "/maintenance/maintenance-event/22/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/22/edit",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Edit Maintenance Event |  | Planned Brake Inspection Procedure |  |  Assign Event |  Back to View |  Maintenance Event Details | Maintenance Action Set ID | Task Name * | Estimated Duration (hours) | Description | Status | Planned | In Progress | Complete | Cance"
+  },
+  {
+    "slug": "37_event_22_work",
+    "path": "/maintenance/maintenance-event/22/work",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/22/work",
+    "title": "Brake Inspection Procedure - Perform Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Brake Inspection Procedure |  | Asset: FTK-001 (FTK0012023001) |  |  Back to View |  Maintenance Status | Planned | Completion Progress | 0% | 0 / 2 Actions | 2 | Total | 0 | In Progress | 0 | Complete |  Mark Complete |  Place in Blocked Status |  Add Capability Limit"
+  },
+  {
+    "slug": "38_event_22_assign",
+    "path": "/maintenance/maintenance-event/22/assign",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/22/assign",
+    "title": "Assign Event - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Assign Maintenance Event |  | Assign or reassign this maintenance event to a technician |  |  Back to Event |  Current Assignment | Not Assigned |  Event Information | Event ID: #22 | Task: Brake Inspection Procedure | Asset: FTK-001 | Status: Planned | Pro"
+  },
+  {
+    "slug": "39_technician_most_recent_event",
+    "path": "/maintenance/technician/most-recent-event",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/technician/dashboard",
+    "title": "View Maintenance Events",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | No assigned events found. | Technician Portal |  | View assigned work, complete actions, and track your maintenance history |  |  Back to Portals | Assigned Work | 0 | In Progress | 0 | Completed Today | 0 |  Quick Asset Lookup | Search for assets to view thei"
+  },
+  {
+    "slug": "40_maintenance_plan_1_view",
+    "path": "/maintenance/maintenance-plan/1/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/1/view",
+    "title": "Vehicle Oil Change 6 Months - Maintenance Plan",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Vehicle Oil Change 6 Months |  Plan Maintenance  Edit Plan  Back to Plans | Plan Information | ID: | 1 | Name: | Vehicle Oil Change 6 Months | Description: | Regular oil change maintenance every 6 months for Toyota Corolla | Status: | Active | Asset Class "
+  },
+  {
+    "slug": "41_maintenance_plan_1_plan",
+    "path": "/maintenance/maintenance-plan/1/plan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/1/plan",
+    "title": "Plan Maintenance - Vehicle Oil Change 6 Months",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Plan Maintenance: Vehicle Oil Change 6 Months |  Back to Plan | Plan Summary | Plan ID: | 1 | Frequency Type: | days | Status: | Active | Template: | Toyota Corolla Oil Change Procedure | Assets Needing Maintenance: | 0 | Plan Information | ID: | 1 | Name: | Vehicle O"
+  },
+  {
+    "slug": "42_proto_action_4_view",
+    "path": "/maintenance/proto-actions/4/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/proto-actions/4/view",
+    "title": "Check Brake Pads - Proto Action",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Check Brake Pads |  | Inspect brake pad thickness and condition |  |  Back to View Templates | Required | Yes | Revision | N/A | Parts Required | 0 | Tools Required | 2 |  Proto Action Details | Action Name: | Check Brake Pads | Description: | Inspect brake pad thick"
+  },
+  {
+    "slug": "43_part_demand_4_view",
+    "path": "/maintenance/part_demand/4/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/part_demand/4/view",
+    "title": "Asset Management System",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Maintenance | Event #21 | Add Engine Oil 5W-30 | Part Demand #4 | Part Demand Details |  | OIL-001 - Engine Oil 5W-30 |  |  View Lifecycle |  View Action |  Back to Event | STATUS | Planned | PRIORITY | Medium | QUANTITY REQUIRED | 10.0 | Part Information | Part Number | "
+  }
+]

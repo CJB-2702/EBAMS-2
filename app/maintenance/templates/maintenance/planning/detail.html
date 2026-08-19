@@ -1,5 +1,5 @@
 {% extends "maintenance/base.html" %}
-{% block title %}{{ plan.name }}{% endblock %}
+{% block title %}Maintenance Plan: {{ plan.name }}{% endblock %}
 {% block nav_plan_index %}is-active{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'plan_index' %}">Plans</a></li>
@@ -13,20 +13,28 @@
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_repeat</span></div>
       <div>
         <h1 class="page-title">{{ plan.name }}</h1>
-        <p class="page-subtitle">{{ plan.domain.name }} · {{ plan.template_action_set.task_name }} · {{ plan.asset_class.name }}</p>
+        <p class="page-subtitle">{{ plan.domain.name }} · {{ plan.asset_class.name }}</p>
       </div>
     </div>
     <div class="page-header-actions">
-      <a href="{% url 'plan_index' %}" class="button is-small is-light">← Back</a>
+      <a href="{% url 'plan_index' %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to List</span>
+      </a>
+      <a href="{% url 'plan_worklist' pk=plan.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">build</span></span><span>Plan Maintenance</span>
+      </a>
+      <a href="{% url 'plan_edit' pk=plan.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit Plan</span>
+      </a>
       {% if plan.status == "Active" %}
       <form method="post" action="{% url 'plan_detail' pk=plan.pk %}" style="display:inline;">
         {% csrf_token %}<input type="hidden" name="action" value="deactivate">
-        <button type="submit" class="button is-small is-light">Deactivate</button>
+        <button type="submit" class="button is-small is-warning is-light">Deactivate</button>
       </form>
       <form method="post" action="{% url 'plan_detail' pk=plan.pk %}" style="display:inline;">
         {% csrf_token %}<input type="hidden" name="action" value="run">
-        <button type="submit" class="button is-small is-link">
-          <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span><span>Run Now</span>
+        <button type="submit" class="button is-small is-success">
+          <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span><span>Run Planner</span>
         </button>
       </form>
       {% else %}
@@ -35,47 +43,235 @@
         <button type="submit" class="button is-small is-success">Activate</button>
       </form>
       {% endif %}
+      
+      <button type="button" class="button is-small is-danger is-light" onclick="openDeleteModal()">
+        <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete</span>
+      </button>
     </div>
   </div>
 </div>
 
 <div class="body-grid full-width">
-  <div class="card">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Details</div></div>
-    <div class="card-content">
-      <dl class="kv is-size-7">
-        <dt>Status</dt><dd>{{ plan.status }}</dd>
-        <dt>Frequency</dt><dd>{{ plan.frequency_type }}</dd>
-        {% if plan.frequency_type == "Calendar" %}
-        <dt>Interval</dt><dd>Every {{ plan.delta_days|default:"—" }} day(s) since last completed service</dd>
-        {% else %}
-        <dt>Interval</dt><dd class="has-text-grey">Meter-based plans are recognized but not yet evaluated by the planner.</dd>
-        {% endif %}
-        <dt>Template</dt><dd><a href="{% url 'template_detail' pk=plan.template_action_set_id %}">{{ plan.template_action_set.task_name }}</a></dd>
-        <dt>Asset Class</dt><dd>{{ plan.asset_class.name }}</dd>
-        <dt>Asset Model</dt><dd>{{ plan.asset_model|default:"Any" }}</dd>
-      </dl>
-    </div>
-  </div>
+  <div class="columns is-multiline">
+    <!-- Left Column: Basic Info & Frequency -->
+    <div class="column is-4">
+      <!-- Basic Information -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>
+            <span>Basic Information</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <dl class="kv is-size-7">
+            <dt>Status</dt>
+            <dd>
+              {% if plan.status == "Active" %}
+              <span class="tag is-success is-light">Active</span>
+              {% else %}
+              <span class="tag is-danger is-light">Inactive</span>
+              {% endif %}
+            </dd>
+            
+            <dt>Domain</dt>
+            <dd>{{ plan.domain.name }}</dd>
 
-  <div class="card mt-4">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">preview</span></span>Due Now ({{ preview|length }})</div></div>
-    <div class="card-content is-flush pb-3">
-      <table class="table is-fullwidth is-size-7" style="margin:0;">
-        <thead><tr><th>Asset ID</th><th>Reason</th><th>Recommended Start</th></tr></thead>
-        <tbody>
-          {% for result in preview %}
-          <tr>
-            <td>{{ result.asset_id }}</td>
-            <td>{{ result.reason }}</td>
-            <td>{{ result.recommended_start|date:"Y-m-d H:i" }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="3" class="has-text-grey has-text-centered py-4">No assets currently due under this plan.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            <dt>Asset Class</dt>
+            <dd>{{ plan.asset_class.name }}</dd>
+
+            <dt>Procedure Template</dt>
+            <dd>
+              <a href="{% url 'template_detail' pk=plan.template_action_set_id %}">{{ plan.template_action_set.task_name }}</a>
+            </dd>
+            
+            {% if plan.description %}
+            <dt>Description</dt>
+            <dd>{{ plan.description }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+
+      <!-- Associated Models -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">label</span></span>
+            <span>Associated Models</span>
+          </div>
+        </div>
+        <div class="card-content">
+          {% if plan.asset_models.exists %}
+          <div class="tags">
+            {% for model in plan.asset_models.all %}
+            <span class="tag is-info is-light">{{ model.model_name }}</span>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="has-text-grey is-size-7">All models in this asset class.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Frequency Configuration -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">alarm</span></span>
+            <span>Frequency Configuration</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <dl class="kv is-size-7">
+            <dt>Frequency Type</dt>
+            <dd><strong>{{ plan.frequency_type }}</strong></dd>
+
+            <dt>Days Interval</dt>
+            <dd>{{ plan.delta_days|default:"—"|floatformat:"0" }}</dd>
+
+            <dt>Meter 1 Delta</dt>
+            <dd>{{ plan.delta_m1|default:"—"|floatformat:"0" }}</dd>
+
+            <dt>Meter 2 Delta</dt>
+            <dd>{{ plan.delta_m2|default:"—"|floatformat:"0" }}</dd>
+
+            <dt>Meter 3 Delta</dt>
+            <dd>{{ plan.delta_m3|default:"—"|floatformat:"0" }}</dd>
+
+            <dt>Meter 4 Delta</dt>
+            <dd>{{ plan.delta_m4|default:"—"|floatformat:"0" }}</dd>
+          </dl>
+          {% if plan.frequency_type == "Meter" %}
+          <div class="notification is-warning is-light is-size-7 mt-3 p-2">
+            Meter-based plans are recognized but not yet evaluated by the planner.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ── Attachments and Activity Thread ── #}
+      <div id="event-card-{{ comments_card.hash }}" class="mb-4">
+        {% include "events/fragments/direct_attachments_card.html" with card=comments_card %}
+        <div class="mt-4">
+          {% include "events/fragments/comments_card.html" with card=comments_card %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Procedure Steps & Live Preview -->
+    <div class="column is-8">
+      <!-- Procedure Template Steps -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add_check</span></span>
+            <span>Procedure Template Steps: {{ plan.template_action_set.task_name }}</span>
+          </div>
+        </div>
+        <div class="card-content is-flush">
+          <table class="table is-fullwidth is-striped is-size-7" style="margin: 0;">
+            <thead>
+              <tr>
+                <th style="width: 10%;">Seq</th>
+                <th style="width: 30%;">Action Name</th>
+                <th style="width: 15%;">Duration</th>
+                <th style="width: 45%;">Instructions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for step in template_items %}
+              <tr>
+                <td><code>{{ step.sequence_order }}</code></td>
+                <td>
+                  <strong>{{ step.action_name }}</strong>
+                  {% if step.notes %}
+                  <p class="has-text-grey is-size-7 mt-1">{{ step.notes }}</p>
+                  {% endif %}
+                </td>
+                <td>{{ step.estimated_duration_minutes }} mins</td>
+                <td>{{ step.instructions|default:"—" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="has-text-grey has-text-centered py-4">No steps defined in this template.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Assets Due Now -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">preview</span></span>
+            <span>Due Now ({{ preview|length }})</span>
+          </div>
+        </div>
+        <div class="card-content is-flush">
+          <table class="table is-fullwidth is-size-7" style="margin: 0;">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Reason</th>
+                <th>Recommended Start</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for result in preview %}
+              <tr>
+                <td>
+                  <strong>{{ result.asset }}</strong>
+                  <br>
+                  <span class="tag is-light is-size-7">{{ result.asset.serial_number }}</span>
+                </td>
+                <td>{{ result.reason }}</td>
+                <td>{{ result.recommended_start|date:"Y-m-d H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="has-text-grey has-text-centered py-4">No assets currently due under this plan.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+  <div class="modal-background" onclick="closeDeleteModal()"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Confirm Delete</p>
+      <button class="delete" aria-label="close" onclick="closeDeleteModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <p>Are you sure you want to delete maintenance plan <strong>{{ plan.name }}</strong>?</p>
+      <p class="has-text-danger is-size-7 mt-2">This action is soft-delete but cannot be easily undone.</p>
+    </section>
+    <footer class="modal-card-foot">
+      <form method="post" action="{% url 'plan_detail' pk=plan.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="button is-danger">Delete Plan</button>
+      </form>
+      <button class="button" onclick="closeDeleteModal()">Cancel</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+function openDeleteModal() {
+  document.getElementById('delete-modal').classList.add('is-active');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('is-active');
+}
+</script>
 {% endblock %}

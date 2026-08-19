@@ -36,9 +36,11 @@ class EventContext:
         from app.events.control_layer.handlers.event_handler import EventHandler
         return EventHandler(self.actor).edit(self.struct.event, post_data)
 
-    def add_comment(self, post_data) -> object:
+    def add_comment(self, post_data, *, is_human_made: bool = True) -> object:
         from app.events.control_layer.handlers.comment_handler import CommentHandler
-        return CommentHandler(self.actor).add(self.struct.event, post_data)
+        return CommentHandler(self.actor).add(
+            self.struct.event, post_data, is_human_made=is_human_made
+        )
 
     def add_attachment(self, uploaded_file: "UploadedFile") -> object:
         """Attach a file directly to the event as a standalone attachment."""

@@ -39,6 +39,16 @@ class MaintenanceDetail(Event):
         related_name="maintenance_details",
     )
     
+    # Technician-recorded actual billable total for the whole event, reconciled
+    # against the sum of child Action.billable_hours by
+    # maintenance.BillableHoursManager (calculated_hours vs. actual_hours,
+    # auto-raised but never auto-lowered). Its expectation baseline is the
+    # originating template's labor_hours, reachable via template_action_set
+    # below — that comparison is not made automatically anywhere. This field is
+    # also independent of actual elapsed duration (event_start/event_end, or
+    # child Action.start_time/end_time): 6 hours elapsed and 4 billable hours
+    # recorded are both legitimate values here at once, and neither is derived
+    # from the other.
     actual_billable_hours = models.FloatField(null=True, blank=True)
     
     # Assignments

@@ -31,6 +31,20 @@ _DEGRADED_STATUSES = frozenset(
 )
 
 
+class AssetLimitationNarrator:
+    """Narrator: machine-written activity-log sentences for limitations."""
+
+    @staticmethod
+    def created(*, actor, status: str) -> str:
+        who = getattr(actor, "username", None) or "system"
+        return f"Asset capability limitation opened by {who}: {status}."
+
+    @staticmethod
+    def closed(*, actor, status: str, resolution_notes: str) -> str:
+        who = getattr(actor, "username", None) or "system"
+        return f"Asset capability limitation ({status}) closed by {who}: {resolution_notes}"
+
+
 class AssetLimitationManager:
     def __init__(self, maintenance_context) -> None:
         self._ctx = maintenance_context
@@ -60,8 +74,28 @@ class AssetLimitationManager:
         temporary_modifications: str = "",
         start_time=None,
         maintenance_blocker_id: int | None = None,
+        link_to_active_blocker: bool = False,
+        comment: str = "",
         actor=None,
     ) -> AssetLimitationRecord:
+        """Open a limitation.
+
+        `link_to_active_blocker` resolves the event's current active blocker
+        and hangs this record off it. The FK has existed on the model since
+        the first pass with nothing ever setting it — the link is what lets a
+        reader tell "the asset is degraded AND that is why work stopped" from
+        "the asset is degraded, and separately work stopped for some other
+        reason". Those are different situations and the FK is the only thing
+        that distinguishes them.
+
+        An explicit `maintenance_blocker_id` wins over the flag, so a caller
+        that already knows which blocker it means is never second-guessed.
+        """
+        if status not in CapabilityStatus.values:
+            raise ValueError(
+                f"'{status}' is not a valid capability status. "
+                f"Choose one of: {', '.join(CapabilityStatus.values)}."
+            )
         if self._ctx.struct.active_limitation_records:
             raise ValueError(
                 "An active limitation record already exists. Close it before "
@@ -70,6 +104,15 @@ class AssetLimitationManager:
         self._validate_modification_rules(
             status=status, temporary_modifications=temporary_modifications
         )
+
+        if maintenance_blocker_id is None and link_to_active_blocker:
+            active = self._ctx.struct.active_blockers
+            if not active:
+                raise ValueError(
+                    "There is no active blocker to link this limitation to."
+                )
+            maintenance_blocker_id = active[0].pk
+
         with transaction.atomic():
             record = AssetLimitationRecord.objects.create(
                 maintenance_detail=self._ctx.maintenance_detail,
@@ -82,8 +125,24 @@ class AssetLimitationManager:
                 updated_by=actor,
             )
             self.refresh_capability_status(asset_id=self._ctx.maintenance_detail.asset_id)
+
+        self._narrate(
+            comment=comment,
+            fallback=AssetLimitationNarrator.created(actor=actor, status=status),
+            actor=actor,
+        )
         self._ctx.refresh()
         return record
+
+    def _narrate(self, *, comment: str, fallback: str, actor) -> None:
+        """Activity-log entry for a limitation transition. Outside the
+        transaction on purpose — a failed comment must not lose the record."""
+        text = (comment or "").strip()
+        self._ctx.add_comment(
+            {"content": text or fallback},
+            actor=actor,
+            is_human_made=bool(text),
+        )
 
     def update_record(self, *, record_id: int, actor=None, **fields) -> AssetLimitationRecord:
         record = AssetLimitationRecord.objects.get(
@@ -110,20 +169,60 @@ class AssetLimitationManager:
         self._ctx.refresh()
         return record
 
-    def close_record(self, *, record_id: int, end_time=None, actor=None) -> AssetLimitationRecord:
+    def close_record(
+        self,
+        *,
+        record_id: int,
+        resolution_notes: str,
+        start_time=None,
+        end_time=None,
+        comment: str = "",
+        actor=None,
+    ) -> AssetLimitationRecord:
+        """Close a limitation — the close-out form, matching legacy's.
+
+        `start_time` and `end_time` are both editable here because a
+        limitation is routinely recorded after the fact: the asset was
+        degraded from Tuesday morning, but somebody opened the record on
+        Wednesday. Closing is the moment the true window is known.
+
+        `resolution_notes` is mandatory. Closing asserts the asset can do the
+        thing again, and that assertion propagates to Asset.capability_status
+        where other people act on it — it needs a stated reason.
+        """
+        if not (resolution_notes or "").strip():
+            raise ValueError("A resolution note is required to close a limitation.")
+
         record = AssetLimitationRecord.objects.get(
             pk=record_id, maintenance_detail_id=self._ctx.maintenance_detail_id
         )
         if record.end_time is not None:
             raise ValueError(f"Record {record_id} is already closed.")
+
+        final_start_time = start_time or record.start_time
         final_end_time = end_time or timezone.now()
-        if record.start_time > final_end_time:
+        if final_start_time > final_end_time:
             raise ValueError("Start time cannot be after end time.")
         with transaction.atomic():
+            record.start_time = final_start_time
             record.end_time = final_end_time
+            record.resolution_notes = resolution_notes.strip()
             record.updated_by = actor
-            record.save(update_fields=["end_time", "updated_by", "updated_at"])
+            record.save(
+                update_fields=[
+                    "start_time", "end_time", "resolution_notes",
+                    "updated_by", "updated_at",
+                ]
+            )
             self.refresh_capability_status(asset_id=self._ctx.maintenance_detail.asset_id)
+
+        self._narrate(
+            comment=comment,
+            fallback=AssetLimitationNarrator.closed(
+                actor=actor, status=record.status, resolution_notes=resolution_notes
+            ),
+            actor=actor,
+        )
         self._ctx.refresh()
         return record
 

@@ -30,6 +30,7 @@ from app.inventory.presentation_layer.entrypoints.issues import (
     issue_detail,
     issue_session_detail,
     issues_index,
+    pending_stock_adjustments_index,
 )
 from app.inventory.presentation_layer.entrypoints.movements import (
     movement_detail,
@@ -136,6 +137,7 @@ urlpatterns = [
         name="inventory_issue_session_detail",
     ),
     path("issue/<int:pk>/", issue_detail, name="inventory_issue_detail"),
+    path("pending-adjustments/", pending_stock_adjustments_index, name="inventory_pending_adjustments_index"),
     # Phase 7 — Auditing
     path("audits/", audit_session_index, name="inventory_audit_session_index"),
     path("audits/start/", audit_session_start, name="inventory_audit_session_start"),

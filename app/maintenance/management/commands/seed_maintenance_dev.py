@@ -326,6 +326,7 @@ class Command(BaseCommand):
         description: str,
         proto_action_ids: list[int],
         manual_actions: list[dict],
+        asset_model_ids: list[int] | None = None,
     ) -> TemplateActionSet:
         request = _FakeSessionRequest()
         adapter = TemplateBuilderSessionAdapter(request)
@@ -333,6 +334,7 @@ class Command(BaseCommand):
             task_name=task_name,
             description=description,
             asset_class_id=asset_class_id,
+            asset_model_ids=asset_model_ids or [],
         )
         for proto_action_item_id in proto_action_ids:
             adapter.add_action_from_proto(proto_action_item_id=proto_action_item_id)
@@ -352,6 +354,17 @@ class Command(BaseCommand):
     def _seed_templates(
         self, *, actor, domain, proto_items, asset_class_id: int, brake_pads: Part
     ) -> tuple[TemplateActionSet, TemplateActionSet]:
+        from app.assets.models import AssetModel
+
+        # Tag template_a with a couple of models in the class, to demonstrate
+        # the multi-model case; template_b is left untagged ("any model in
+        # this class"), which the UI must also render cleanly.
+        seed_model_ids = list(
+            AssetModel.objects.filter(asset_class_id=asset_class_id)
+            .order_by("pk")
+            .values_list("pk", flat=True)[:2]
+        )
+
         template_a = self._build_template(
             actor=actor,
             domain=domain,
@@ -362,6 +375,7 @@ class Command(BaseCommand):
                 proto_items["oil_change"].pk,
                 proto_items["air_filter_swap"].pk,
             ],
+            asset_model_ids=seed_model_ids,
             manual_actions=[
                 {
                     "action_name": "Torque Check -- Wheel Lug Nuts",
@@ -473,6 +487,17 @@ class Command(BaseCommand):
             reason="Parts Not Available",
             notes="Waiting on cabin air filter restock.",
             priority=BlockerPriority.HIGH,
+            billable_hours_lost=3.5,
+            event_priority="high",
+            actor=actor,
+        )
+        # A limitation hung off that blocker, so the dev DB carries one
+        # example of the linked case: the asset is degraded AND that is the
+        # reason work stopped, rather than two unrelated facts.
+        blocked_context.limitation_manager.create_record(
+            status=CapabilityStatus.NON_CAPABLE,
+            limitation_description="Cabin air filtration offline; vehicle grounded.",
+            link_to_active_blocker=True,
             actor=actor,
         )
 
@@ -494,9 +519,14 @@ class Command(BaseCommand):
             reason="Equipment Unavailable",
             notes="Lift bay occupied; released once free.",
             priority=BlockerPriority.MEDIUM,
+            billable_hours_lost=1.25,
             actor=actor,
         )
-        completed_context.blocker_manager.end_blocker(blocker_id=blocker.pk, actor=actor)
+        completed_context.blocker_manager.end_blocker(
+            blocker_id=blocker.pk,
+            resolution_notes="Parts arrived and work resumed.",
+            actor=actor,
+        )
         completed_context.refresh()
         for action in completed_context.struct.actions:
             ActionContext(action.pk).start(actor=actor)
@@ -514,7 +544,8 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------ #
 
     def _seed_plan(self, *, actor, domain, template, asset_class_id: int) -> None:
-        MaintenancePlan.objects.get_or_create(
+        from app.assets.models import AssetModel
+        plan, created = MaintenancePlan.objects.get_or_create(
             name="Quarterly PM -- Light Vehicles",
             domain=domain,
             defaults={
@@ -531,3 +562,8 @@ class Command(BaseCommand):
                 "updated_by": actor,
             },
         )
+        if created:
+            seed_models = list(
+                AssetModel.objects.filter(asset_class_id=asset_class_id).order_by("pk")[:2]
+            )
+            plan.asset_models.set(seed_models)

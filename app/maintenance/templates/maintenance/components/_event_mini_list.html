@@ -1,0 +1,25 @@
+{% comment %}
+Compact event rows for the hub's list cards. Always renders — an empty
+collection shows `empty_text`, never nothing (Rule #5).
+{% endcomment %}
+<table class="table is-fullwidth is-size-7" style="margin:0;">
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>
+        <a href="{% url 'maintenance_detail' pk=row.pk %}">{{ row.title|default:"Untitled" }}</a>
+        <p class="has-text-grey">{{ row.asset|default:"No asset" }}{% if row.work_order_reference %} · WO {{ row.work_order_reference }}{% endif %}</p>
+      </td>
+      <td class="has-text-right" style="white-space:nowrap;">
+        <span class="tag is-light">{{ row.get_status_display|default:"—" }}</span>
+        <p class="has-text-grey">{{ row.event_start|date:"Y-m-d H:i"|default:"—" }}</p>
+      </td>
+      <td class="has-text-right" style="white-space:nowrap;">
+        <a href="{% url 'maintenance_work' pk=row.pk %}" class="button is-small is-light">Work</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td class="has-text-grey p-3">{{ empty_text|default:"None." }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

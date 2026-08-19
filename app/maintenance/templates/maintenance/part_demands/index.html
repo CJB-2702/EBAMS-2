@@ -1,0 +1,212 @@
+{% extends "maintenance/base.html" %}
+{% load static %}
+{% block title %}Part Demand Approvals{% endblock %}
+{% block nav_part_demand_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Part Demands</a></li>{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+      <div>
+        <h1 class="page-title">Part Demand Approvals</h1>
+        <p class="page-subtitle">Filter by approval status and approve, reject, or substitute part demands raised by maintenance work.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <span class="tag is-warning is-light">{{ pending_count }} awaiting approval</span>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── Filters ─────────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters</div></div>
+    <div class="card-content">
+      <form id="demand-filter-form" method="get"
+            hx-get="{% url 'part_demand_index' %}?format=htmx-search-results"
+            hx-trigger="change, keyup changed delay:350ms from:input[type=search]"
+            hx-target="#demand-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+            hx-indicator="#demand-results-region">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="part number, name, notes…" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Part ID</label>
+            <input class="input is-small" type="search" name="part_id" value="{{ filters.part_id }}" placeholder="e.g. 14" inputmode="numeric">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Approval status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="demand_state">
+                <option value="">All approval statuses</option>
+                {% for value, label in demand_states %}
+                <option value="{{ value }}" {% if filters.demand_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Issue status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="issuance_state">
+                <option value="">Any</option>
+                {% for value, label in issuance_states %}
+                <option value="{{ value }}" {% if filters.issuance_state == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Priority</label>
+            <div class="select is-small is-fullwidth">
+              <select name="priority">
+                <option value="">Any</option>
+                {% for value, label in priorities %}
+                <option value="{{ value }}" {% if filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <button class="button is-small is-info is-fullwidth" type="submit" title="Apply filters">
+              <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+            </button>
+          </div>
+
+          <div class="column is-3">
+            <label class="label is-small">Created from</label>
+            <input class="input is-small" type="date" name="created_from" value="{{ filters.created_from }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Created to</label>
+            <input class="input is-small" type="date" name="created_to" value="{{ filters.created_to }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Last updated from</label>
+            <input class="input is-small" type="date" name="updated_from" value="{{ filters.updated_from }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Last updated to</label>
+            <input class="input is-small" type="date" name="updated_to" value="{{ filters.updated_to }}">
+          </div>
+        </div>
+
+        {# The legacy page's collapsed second filter tier. Open on load when any
+           of its fields is set, so an F5 never hides an active filter. #}
+        <details class="mt-2" {% if event_filters_open %}open{% endif %}>
+          <summary class="is-size-7 has-text-weight-semibold" style="cursor:pointer;">
+            <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">build</span></span>
+            Maintenance event filters
+          </summary>
+          <div class="columns is-multiline is-variable is-3 mt-1">
+            <div class="column is-2">
+              <label class="label is-small">Event ID</label>
+              <input class="input is-small" type="search" name="event_id" value="{{ filters.event_id }}" inputmode="numeric">
+            </div>
+            <div class="column is-2">
+              <label class="label is-small">Asset ID</label>
+              <input class="input is-small" type="search" name="asset_id" value="{{ filters.asset_id }}" inputmode="numeric">
+            </div>
+            <div class="column is-3">
+              <label class="label is-small">Event status</label>
+              <div class="select is-small is-fullwidth">
+                <select name="event_status">
+                  <option value="">Any</option>
+                  {% for value, label in event_statuses %}
+                  <option value="{{ value }}" {% if filters.event_status == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-3 is-flex is-align-items-flex-end">
+              <label class="checkbox is-size-7">
+                <input type="checkbox" name="my_events" value="1" {% if filters.my_events %}checked{% endif %}>
+                Only events assigned to me
+              </label>
+            </div>
+          </div>
+        </details>
+
+        <hr class="my-3">
+
+        <div class="columns is-variable is-3 is-vcentered">
+          <div class="column is-4">
+            <label class="label is-small">Scope</label>
+            <div class="select is-small is-fullwidth">
+              <select name="scope">
+                {% for value, label in scopes %}
+                <option value="{{ value }}" {% if filters.scope == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Sort by</label>
+            <div class="select is-small is-fullwidth">
+              <select name="sort">
+                <option value="" {% if not filters.sort %}selected{% endif %}>Newest first</option>
+                <option value="created_asc" {% if filters.sort == "created_asc" %}selected{% endif %}>Oldest first</option>
+                <option value="updated_desc" {% if filters.sort == "updated_desc" %}selected{% endif %}>Recently updated</option>
+                <option value="part" {% if filters.sort == "part" %}selected{% endif %}>Part number</option>
+                <option value="quantity_desc" {% if filters.sort == "quantity_desc" %}selected{% endif %}>Largest quantity</option>
+                <option value="state" {% if filters.sort == "state" %}selected{% endif %}>Approval status</option>
+              </select>
+            </div>
+          </div>
+          <div class="column is-flex is-justify-content-flex-end is-align-items-flex-end">
+            <a href="{% url 'part_demand_index' %}" class="button is-small">
+              <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span><span>Clear</span>
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Results + bulk actions ──────────────────────────────────────────── #}
+  <div id="demand-results-region" class="is-relative">
+    <div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+      <div class="skeleton-block"></div>
+    </div>
+    {% include "maintenance/part_demands/_index_results.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+  // Select-all mirrors into every row checkbox. Scoped to the results region
+  // so an htmx swap that replaces the table re-binds nothing — the handler is
+  // delegated from document, and every element it touches is looked up fresh.
+  document.addEventListener('change', function (event) {
+    var region = document.getElementById('demand-results-region');
+    if (!region) return;
+    if (event.target.matches('[data-demand-select-all]')) {
+      region.querySelectorAll('[data-demand-checkbox]').forEach(function (box) {
+        box.checked = event.target.checked;
+      });
+    }
+    if (event.target.matches('[data-demand-checkbox], [data-demand-select-all]')) {
+      var count = region.querySelectorAll('[data-demand-checkbox]:checked').length;
+      region.querySelectorAll('[data-demand-selected-count]').forEach(function (el) {
+        el.textContent = count;
+      });
+      region.querySelectorAll('[data-demand-bulk-submit]').forEach(function (el) {
+        el.disabled = count === 0;
+      });
+    }
+  });
+</script>
+{% endblock %}

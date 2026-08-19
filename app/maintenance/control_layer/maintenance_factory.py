@@ -70,3 +70,46 @@ class MaintenanceFactory:
             with transaction.atomic():
                 return _create()
         return _create()
+
+    @classmethod
+    def create_blank(
+        cls,
+        *,
+        domain_id: int,
+        asset_id: int | None = None,
+        title: str,
+        maintenance_type: str = "",
+        work_order_reference: str = "",
+        event_start=None,
+        priority=None,
+        assigned_user=None,
+        assigned_by=None,
+        actor=None,
+    ) -> MaintenanceDetail:
+        """Create a maintenance event with no template — no Action/ActionTool/
+        PartDemand rows are expanded, so the event starts with zero steps.
+
+        Legacy had no equivalent (every creation path there required a
+        TemplateActionSet — see maintenance_starter_kit incident notes); this
+        exists because the edit portal's Action Creator Portal can already
+        build a step list from scratch (Blank Action tab), so nothing stops a
+        user starting from an empty event and adding steps as they go. The
+        caller is expected to have already warned that this skips a template's
+        known-good procedure.
+        """
+        return MaintenanceDetail.objects.create(
+            domain_id=domain_id,
+            asset_id=asset_id,
+            title=title,
+            event_type=EventType.MAINTENANCE,
+            status=EventStatus.PLANNED,
+            priority=priority,
+            event_start=event_start or timezone.now(),
+            maintenance_type=maintenance_type,
+            work_order_reference=work_order_reference,
+            template_action_set=None,
+            assigned_user=assigned_user,
+            assigned_by=assigned_by,
+            created_by=actor,
+            updated_by=actor,
+        )

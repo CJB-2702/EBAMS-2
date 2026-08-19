@@ -1,0 +1,13 @@
+{% if assets %}
+<div class="menu-list mt-2">
+  {% for asset in assets %}
+  <a href="{% url 'maintenance_index' %}?asset_id={{ asset.id }}" class="panel-block is-size-7"
+     style="display:flex; justify-content:space-between; border:1px solid var(--bulma-border, #dbdbdb); border-top:none; padding:0.5rem 0.75rem;">
+    <span>{{ asset.name }}</span>
+    <span class="has-text-grey">{{ asset.serial_number|default:"—" }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% elif q %}
+<p class="has-text-grey is-size-7 mt-2">No matching assets.</p>
+{% endif %}

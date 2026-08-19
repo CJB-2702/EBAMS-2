@@ -1,0 +1,148 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Plan Maintenance — {{ plan.name }}{% endblock %}
+{% block nav_plan_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'plan_index' %}">Plans</a></li>
+<li><a href="{% url 'plan_detail' pk=plan.pk %}">{{ plan.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Plan maintenance</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_available</span></div>
+      <div>
+        <h1 class="page-title">Plan maintenance: {{ plan.name }}</h1>
+        <p class="page-subtitle">Assets currently due under this plan, and the events they would produce.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'plan_edit' pk=plan.pk %}" class="button is-small">Edit plan</a>
+      <a href="{% url 'plan_detail' pk=plan.pk %}" class="button is-small">Back to plan</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── Plan summary ────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">summarize</span></span>Plan summary</div></div>
+    <div class="card-content is-size-7">
+      <div class="columns is-multiline is-variable is-3">
+        <div class="column is-3"><p class="has-text-grey">Plan ID</p><p class="is-family-monospace">{{ plan.pk }}</p></div>
+        <div class="column is-3"><p class="has-text-grey">Template</p><p>{{ plan.template_action_set|default:"—" }}</p></div>
+        <div class="column is-3"><p class="has-text-grey">Frequency type</p><p><span class="tag is-light">{{ plan.get_frequency_type_display }}</span></p></div>
+        <div class="column is-3"><p class="has-text-grey">Status</p><p><span class="tag is-light">{{ plan.get_status_display }}</span></p></div>
+        <div class="column is-3"><p class="has-text-grey">Asset class</p><p>{{ plan.asset_class|default:"—" }}</p></div>
+        <div class="column is-3">
+          <p class="has-text-grey">Model(s)</p>
+          <p>
+            {% if plan.asset_models.exists %}
+              {% for model in plan.asset_models.all %}
+                <span class="tag is-light">{{ model.model_name }}</span>
+              {% endfor %}
+            {% else %}
+              All models
+            {% endif %}
+          </p>
+        </div>
+        <div class="column is-3"><p class="has-text-grey">Delta days</p><p>{{ plan.delta_days|default_if_none:"—" }}</p></div>
+        <div class="column is-3"><p class="has-text-grey">Assets needing maintenance</p><p class="title is-5">{{ due_count }}</p></div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Frequency configuration, four meter slots ───────────────────────── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Frequency configuration</div></div>
+    <div class="card-content is-size-7">
+      <div class="columns is-variable is-3">
+        <div class="column"><p class="has-text-grey">Delta days</p><p>{{ plan.delta_days|default_if_none:"-" }}</p></div>
+        <div class="column"><p class="has-text-grey">Delta meter 1</p><p>{{ plan.delta_m1|default_if_none:"-" }}</p></div>
+        <div class="column"><p class="has-text-grey">Delta meter 2</p><p>{{ plan.delta_m2|default_if_none:"-" }}</p></div>
+        <div class="column"><p class="has-text-grey">Delta meter 3</p><p>{{ plan.delta_m3|default_if_none:"-" }}</p></div>
+        <div class="column"><p class="has-text-grey">Delta meter 4</p><p>{{ plan.delta_m4|default_if_none:"-" }}</p></div>
+      </div>
+      {% if meter_plan_unevaluated %}
+      <div class="notification is-info is-light is-size-7 p-2 mt-2">
+        This is a meter-based plan. The planner evaluates calendar plans only in
+        this build, so nothing will appear below automatically — say so rather
+        than showing an empty worklist that looks like "nothing is due".
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── The due-asset worklist. Always renders. ─────────────────────────── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">precision_manufacturing</span></span>Assets needing maintenance ({{ due_count }})</div>
+      {% if due_count %}
+      <span class="card-header-icon">
+        <form method="post">
+          {% csrf_token %}
+          <button class="button is-small is-link" type="submit" name="action" value="create_all">Create all {{ due_count }} events</button>
+        </form>
+      </span>
+      {% endif %}
+    </div>
+    <div class="card-content is-flush pb-3">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <tbody>
+          {% for result in due %}
+          <tr>
+            <td>
+              <strong>{{ result.asset }}</strong>
+              {% if result.reason %}<p class="has-text-grey">{{ result.reason }}</p>{% endif %}
+            </td>
+            <td class="has-text-right has-text-grey">
+              {% if result.due_date %}Due {{ result.due_date|date:"Y-m-d" }}{% endif %}
+            </td>
+            <td class="has-text-right">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="asset_id" value="{{ result.asset.pk }}">
+                <button class="button is-small is-link" type="submit" name="action" value="create_event">Create event</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td class="has-text-grey p-4">
+              No assets currently need maintenance under this plan.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# ── The template this plan would instantiate ────────────────────────── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Template action set: {{ template|default:"none" }}</div>
+    </div>
+    <div class="card-content is-flush pb-3">
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead><tr><th>Order</th><th>Action</th><th>Description</th><th>Required</th><th class="has-text-right">Estimated</th></tr></thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td><span class="tag is-dark is-family-monospace">#{{ item.sequence_order }}</span></td>
+            <td><strong>{{ item.action_name }}</strong></td>
+            <td class="has-text-grey">{{ item.description|default:"—" }}</td>
+            <td>{% if item.is_required %}<span class="tag is-success is-light">Required</span>{% else %}<span class="tag is-light">Optional</span>{% endif %}</td>
+            <td class="has-text-right">{% if item.estimated_duration_minutes %}{{ item.estimated_duration_minutes }} min{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="has-text-grey p-3">This plan has no template steps to expand.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

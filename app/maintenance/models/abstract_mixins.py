@@ -12,6 +12,15 @@ class AbstractActionSet(models.Model):
     safety_review_required = models.BooleanField(default=False)
     staff_count = models.IntegerField(null=True, blank=True)
     parts_cost = models.FloatField(null=True, blank=True)
+
+    # Whole-procedure expected billable total — the template's "budget" for the
+    # task as a whole, the figure a real maintenance event's recorded billable
+    # hours (events.MaintenanceDetail.actual_billable_hours) should be judged
+    # against. Only TemplateActionSet actually carries this value in practice;
+    # the live event has no equivalent field of its own and currently has to be
+    # compared by following MaintenanceDetail.template_action_set.labor_hours
+    # back to the source template. Not copied onto the event at creation and not
+    # enforced against actual_billable_hours anywhere — reference only.
     labor_hours = models.FloatField(null=True, blank=True)
 
     class Meta:
@@ -25,6 +34,14 @@ class AbstractActionItem(models.Model):
     action_name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     instructions = models.TextField(blank=True)
+
+    # On a TemplateActionItem/ProtoActionItem, this is the expected duration for
+    # one step — the per-step half of the template's labor_hours budget
+    # (AbstractActionSet.labor_hours above). ActionFactory copies this value onto
+    # the live Action row it creates from the template step, so on Action it's
+    # the target the technician's actual Action.billable_hours is implicitly
+    # measured against — not automatically compared or enforced, just the number
+    # that was expected going in.
     estimated_duration_minutes = models.IntegerField(null=True, blank=True)
     safety_notes = models.TextField(blank=True)
     notes = models.TextField(blank=True)

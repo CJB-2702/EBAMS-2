@@ -31,10 +31,8 @@ class MaintenancePlan(AuditFieldsMixin, SoftDeleteMixin):
         on_delete=models.PROTECT,
         related_name="maintenance_plans",
     )
-    asset_model = models.ForeignKey(
+    asset_models = models.ManyToManyField(
         "assets.AssetModel",
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name="maintenance_plans",
     )
@@ -62,8 +60,28 @@ class MaintenancePlan(AuditFieldsMixin, SoftDeleteMixin):
         related_name="maintenance_plans",
     )
 
+    activity_thread = models.OneToOneField(
+        "events.ActivityThread",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="maintenance_plan_thread",
+    )
+
     class Meta:
         db_table = "maintenance_plan"
 
     def __str__(self) -> str:
         return f"{self.name} ({self.frequency_type})"
+
+    def save(self, *args, **kwargs):
+        if not self.activity_thread_id and self.domain_id:
+            from app.events.models import ActivityThread
+            thread = ActivityThread.objects.create(
+                domain_id=self.domain_id,
+                created_by=getattr(self, "created_by", None),
+                updated_by=getattr(self, "updated_by", None),
+            )
+            self.activity_thread = thread
+        super().save(*args, **kwargs)
+

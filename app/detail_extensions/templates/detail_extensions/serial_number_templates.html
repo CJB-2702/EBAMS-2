@@ -1,0 +1,70 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}Asset Serial Number Templates and Tracking — Pending{% endblock %}
+{% block nav_serial_templates %}is-active{% endblock %}
+
+{% block breadcrumb %}
+  <li><a href="{% url 'extension_home' %}">Overview</a></li>
+  <li class="is-active"><a aria-current="page">Serial Templates &amp; Tracking</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div style="font-size: 2rem; margin-right: 0.5rem; color: var(--bulma-primary);">⬡</div>
+      <div>
+        <h1 class="page-title">Asset Serial Number Templates &amp; Tracking</h1>
+        <p class="page-subtitle">Placeholder for serial number schema modeling, layout constraints, and lifecycle tracking.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-5">
+  <div class="card-content" style="text-align:center; padding:4rem 1.5rem; color: var(--bulma-text-weak);">
+    <span class="material-icons" style="font-size:4rem; display:block; margin-bottom:1rem; color: var(--bulma-link);" aria-hidden="true">qr_code_scanner</span>
+    <p style="font-size:1.2rem; font-weight:600; color: var(--bulma-text);">Placeholder Page: Serial Number Tracking Systems</p>
+    <p style="font-size:0.9rem; margin-top:0.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+      This portal will allow administrators to configure barcode schemas, regex verification rules, and automated suffix/prefix masks for specific manufacturer serial standards.
+    </p>
+    <div class="buttons is-centered mt-4">
+      <a href="{% url 'extension_home' %}" class="button is-light">Back to Overview</a>
+      <a href="{% url 'extension_config_landing' %}" class="button is-primary">Configure Policies</a>
+    </div>
+  </div>
+</div>
+
+<div class="columns">
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-content">
+        <h3 class="title is-6 mb-2">Regex Verification</h3>
+        <p class="is-size-7 has-text-grey">
+          Configure custom expression checks (e.g. <code>^[A-Z]{3}-\d{4}-[A-Z]\d$</code>) per asset class to assert matching serial syntax before inventory intake or dispatch.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-content">
+        <h3 class="title is-6 mb-2">Automated Plate Templates</h3>
+        <p class="is-size-7 has-text-grey">
+          Define mask builders (e.g. <code>{Manufacturer}-{Year}-{Sequence}</code>) to assist technicians when etching or verifying internal plates and tag serial numbers.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="column is-4">
+    <div class="card">
+      <div class="card-content">
+        <h3 class="title is-6 mb-2">Intake Registry Links</h3>
+        <p class="is-size-7 has-text-grey">
+          Establish automated serial registration prompts during inventory putaway, preventing unregistered equipment from being stored without a tracking tag.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

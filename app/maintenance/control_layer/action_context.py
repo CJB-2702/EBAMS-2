@@ -112,12 +112,81 @@ class ActionContext:
 
     def mark_skipped(self, *, actor=None, notes: str = "") -> Action:
         action = self.action
-        if action.status not in (ActionStatus.NOT_STARTED, ActionStatus.IN_PROGRESS):
+        if action.status not in (
+            ActionStatus.NOT_STARTED,
+            ActionStatus.IN_PROGRESS,
+            ActionStatus.BLOCKED,
+        ):
             return action
         action.status = ActionStatus.SKIPPED
         if notes:
             action.completion_notes = notes
         self._handle_user_assignment(action, actor=actor, new_status=ActionStatus.SKIPPED)
+        action.updated_by = actor
+        action.save()
+        self.refresh()
+        return action
+
+    def mark_blocked(self, *, actor=None, notes: str = "") -> Action:
+        """Work on THIS STEP has stopped. The job as a whole has not.
+
+        There are two different blocking concepts in this app and they must
+        not be merged:
+
+        * ``Action.status = Blocked`` (here) — one step cannot proceed. The
+          technician moves on to the next step. Nothing else changes: no
+          MaintenanceBlocker row is created and MaintenanceDetail.status is
+          NOT touched. Deliberately writes only this Action.
+        * ``MaintenanceBlocker`` (MaintenanceBlockerManager.add_blocker) —
+          the whole maintenance activity is stopped. That one hangs off the
+          maintenance header, flips the event to Blocked, can re-prioritise
+          the event, records billable hours lost, and holds completion open.
+
+        A step being blocked is an ordinary working condition; an event being
+        blocked is an escalation someone has to answer for. If this method
+        ever starts creating MaintenanceBlocker rows, that distinction is
+        gone and every "step waiting on a torque wrench" becomes a reportable
+        work stoppage.
+
+        Deliberately NOT terminal (see TERMINAL_STATUSES): a blocked step is
+        expected to come back via reopen(), so end_time stays unset and no
+        completed_by is stamped — nobody finished anything.
+        """
+        action = self.action
+        if action.status not in (ActionStatus.NOT_STARTED, ActionStatus.IN_PROGRESS):
+            return action
+        action.status = ActionStatus.BLOCKED
+        if notes:
+            action.completion_notes = notes
+        self._handle_user_assignment(action, actor=actor, new_status=ActionStatus.BLOCKED)
+        action.updated_by = actor
+        action.save()
+        self.refresh()
+        return action
+
+    def reopen(self, *, actor=None, notes: str = "") -> Action:
+        """Put a settled step back to In Progress — the legacy "Resume" (from
+        Blocked) and "Change" (from Complete/Failed) verbs, which are the same
+        transition with different button labels.
+
+        Clears end_time because the step is no longer finished, and backfills
+        start_time when reopening something that was skipped without ever
+        having been started.
+        """
+        action = self.action
+        if action.status not in (
+            ActionStatus.BLOCKED,
+            ActionStatus.COMPLETE,
+            ActionStatus.FAILED,
+            ActionStatus.SKIPPED,
+        ):
+            return action
+        action.status = ActionStatus.IN_PROGRESS
+        action.end_time = None
+        action.start_time = action.start_time or timezone.now()
+        if notes:
+            action.completion_notes = notes
+        self._handle_user_assignment(action, actor=actor, new_status=ActionStatus.IN_PROGRESS)
         action.updated_by = actor
         action.save()
         self.refresh()

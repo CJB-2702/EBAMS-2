@@ -18,8 +18,8 @@ class MaintenancePlanContext:
     def maintenance_plan(self) -> MaintenancePlan:
         if self._plan is None:
             self._plan = MaintenancePlan.objects.select_related(
-                "template_action_set", "asset_class", "asset_model", "domain"
-            ).get(pk=self.maintenance_plan_id, deleted_at__isnull=True)
+                "template_action_set", "asset_class", "domain"
+            ).prefetch_related("asset_models").get(pk=self.maintenance_plan_id, deleted_at__isnull=True)
         return self._plan
 
     def refresh(self) -> None:

@@ -29,9 +29,10 @@ def _blank_draft() -> dict:
         "task_name": "",
         "description": "",
         "asset_class_id": None,
-        "asset_model_id": None,
+        "asset_model_ids": [],
         "prior_revision_id": None,
         "revision": "0",
+        "revision_note": "",
         "actions": [],
     }
 
@@ -55,7 +56,7 @@ class TemplateBuilderSessionAdapter:
         draft["task_name"] = template.task_name
         draft["description"] = template.description
         draft["asset_class_id"] = template.asset_class_id
-        draft["asset_model_id"] = template.asset_model_id
+        draft["asset_model_ids"] = list(template.asset_models.values_list("id", flat=True))
         draft["prior_revision_id"] = template.pk
         try:
             draft["revision"] = str(int(template.revision or "0") + 1)
@@ -103,6 +104,21 @@ class TemplateBuilderSessionAdapter:
         request.session.modified = True
         return cls(request)
 
+    @classmethod
+    def start_copy(cls, request, *, template_action_set_id: int) -> "TemplateBuilderSessionAdapter":
+        """Seed a fresh draft by copying an existing template's contents,
+        same as start_revision(), but as an independent template — no
+        prior_revision chain, no revision bump. A dedicated method rather
+        than start_revision() with the lineage fields stripped client-side,
+        since that would let a forged POST leave prior_revision_id set."""
+        cls.start_revision(request, template_action_set_id=template_action_set_id)
+        adapter = cls(request)
+        adapter.draft["prior_revision_id"] = None
+        adapter.draft["revision"] = "1"
+        adapter.draft["revision_note"] = ""
+        adapter._save()
+        return adapter
+
     @property
     def draft(self) -> dict:
         return self._request.session[SESSION_KEY]
@@ -118,9 +134,26 @@ class TemplateBuilderSessionAdapter:
     # ------------------------------------------------------------------ #
 
     def set_metadata(self, **fields) -> None:
+        if "asset_class_id" in fields and fields["asset_class_id"] != self.draft["asset_class_id"]:
+            # Assigned models are scoped to the old class — switching class
+            # invalidates them rather than leaving cross-class stragglers.
+            self.draft["asset_model_ids"] = []
         for key, value in fields.items():
             if key in self.draft:
                 self.draft[key] = value
+        self._save()
+
+    def add_asset_models(self, model_ids) -> None:
+        existing = set(self.draft["asset_model_ids"])
+        existing.update(model_ids)
+        self.draft["asset_model_ids"] = sorted(existing)
+        self._save()
+
+    def remove_asset_models(self, model_ids) -> None:
+        removed = set(model_ids)
+        self.draft["asset_model_ids"] = [
+            pk for pk in self.draft["asset_model_ids"] if pk not in removed
+        ]
         self._save()
 
     # ------------------------------------------------------------------ #
@@ -171,6 +204,48 @@ class TemplateBuilderSessionAdapter:
                 }
             )
         for demand in proto.proto_part_demands.filter(deleted_at__isnull=True):
+            action["part_demands"].append(
+                {
+                    "part_id": demand.part_id,
+                    "quantity_required": float(demand.quantity_required),
+                    "notes": demand.notes,
+                    "is_optional": demand.is_optional,
+                }
+            )
+        self._save()
+        return action
+
+    def add_action_from_template_item(self, *, template_action_item_id: int) -> dict:
+        """Copy a step from another (already-published) maintenance template
+        into this draft. A copy, not a link — the source template item keeps
+        living on its own template set, and this draft's copy can diverge
+        freely (same relationship add_action_from_proto has to the library)."""
+        from app.maintenance.models.templates.template_action_item import TemplateActionItem
+
+        source = TemplateActionItem.objects.get(
+            pk=template_action_item_id, deleted_at__isnull=True
+        )
+        action = self.add_action(
+            action_name=source.action_name,
+            description=source.description,
+            instructions=source.instructions,
+            safety_notes=source.safety_notes,
+            notes=source.notes,
+            estimated_duration_minutes=source.estimated_duration_minutes,
+            proto_action_item_id=source.proto_action_item_id,
+        )
+        for tool in source.template_action_tools.filter(deleted_at__isnull=True):
+            action["tools"].append(
+                {
+                    "tool_id": tool.tool_id,
+                    "tool_name": tool.tool_name,
+                    "quantity_required": tool.quantity_required,
+                    "specifications": tool.specifications,
+                    "notes": tool.notes,
+                    "is_required": tool.is_required,
+                }
+            )
+        for demand in source.template_part_demands.filter(deleted_at__isnull=True):
             action["part_demands"].append(
                 {
                     "part_id": demand.part_id,
@@ -255,6 +330,8 @@ class TemplateBuilderSessionAdapter:
         draft = self.draft
         if not draft.get("task_name"):
             raise ValueError("task_name is required.")
+        if draft.get("prior_revision_id") and not draft.get("revision_note", "").strip():
+            raise ValueError("A revision note is required when publishing a revision.")
 
         with transaction.atomic():
             template_set = TemplateActionSet.objects.create(
@@ -263,12 +340,12 @@ class TemplateBuilderSessionAdapter:
                 revision=draft.get("revision", "0"),
                 prior_revision_id=draft.get("prior_revision_id"),
                 asset_class_id=draft.get("asset_class_id"),
-                asset_model_id=draft.get("asset_model_id"),
                 domain_id=domain_id,
                 is_active=True,
                 created_by=actor,
                 updated_by=actor,
             )
+            template_set.asset_models.set(draft.get("asset_model_ids", []))
             for action in sorted(draft["actions"], key=lambda a: a["sequence_order"]):
                 if not action.get("action_name"):
                     raise ValueError(
@@ -315,10 +392,15 @@ class TemplateBuilderSessionAdapter:
 
             # Superseding a prior revision is opt-in at the draft level (set via
             # start_revision()) — never inferred, so a fresh non-revision build
-            # never accidentally retires an unrelated template.
+            # never accidentally retires an unrelated template. The revision
+            # note is recorded on the retiring (prior) template, not the new
+            # one — it explains why *that* record is no longer current, which
+            # is exactly the record template_detail shows it on.
             if draft.get("prior_revision_id"):
                 TemplateActionSet.objects.filter(pk=draft["prior_revision_id"]).update(
-                    is_active=False, updated_by=actor
+                    is_active=False,
+                    updated_by=actor,
+                    revision_note=draft.get("revision_note", "").strip() or None,
                 )
 
         self.clear()

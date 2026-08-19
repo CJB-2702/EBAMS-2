@@ -2,17 +2,18 @@
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Library Actions ({{ items|length }})</div></div>
   <div class="card-content is-flush pb-3">
     <table class="table is-fullwidth is-size-7" style="margin:0;">
-      <thead><tr><th>Action Name</th><th>Domain</th><th class="has-text-right">Est. Duration (min)</th><th>Min. Staff</th></tr></thead>
+      <thead><tr><th>Action Name</th><th>Domain</th><th class="has-text-right">Est. Duration (min)</th><th>Min. Staff</th><th class="has-text-right">Used by</th></tr></thead>
       <tbody>
         {% for item in items %}
         <tr>
-          <td>{{ item.action_name }}</td>
+          <td><a href="{% url 'proto_detail' pk=item.pk %}">{{ item.action_name }}</a></td>
           <td>{{ item.domain.name }}</td>
           <td class="has-text-right is-family-monospace">{{ item.estimated_duration_minutes|default:"—" }}</td>
           <td>{{ item.minimum_staff_count }}</td>
+          <td class="has-text-right"><a class="button is-small is-light" href="{% url 'proto_detail' pk=item.pk %}">View</a></td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="has-text-grey has-text-centered py-4">No library actions yet.</td></tr>
+        <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No library actions yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

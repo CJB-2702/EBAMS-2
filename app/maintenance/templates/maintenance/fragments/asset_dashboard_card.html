@@ -1,0 +1,84 @@
+{% comment %}
+One hand-rolled fleet-health card. Expects `card` (AssetMaintenanceDashboardStruct).
+Chrome always renders; each panel shows an explicit empty state (Rule #5).
+Styling: app/static/css/asset_dashboard.css.
+{% endcomment %}
+<article class="ah-card ah-card--{{ card.health_status }}">
+  <div class="ah-card-rail"></div>
+  <div class="ah-card-body">
+
+    <div class="ah-card-head">
+      <div class="ah-card-id">
+        <span class="ah-card-name"><a href="{% url 'asset_detail' asset_id=card.asset.id %}">{{ card.asset.name }}</a></span>
+        <span class="ah-card-serial">{{ card.asset.serial_number }}</span>
+      </div>
+      <div class="ah-card-badges">
+        {% if card.is_blocked %}
+        <span class="ah-badge ah-badge--blocked"><span class="material-icons" aria-hidden="true">block</span>Blocked</span>
+        {% endif %}
+        {% if card.has_active_limitation %}
+        <span class="ah-badge ah-badge--limited"><span class="material-icons" aria-hidden="true">warning</span>Limited</span>
+        {% endif %}
+        {% if not card.is_blocked and not card.has_active_limitation %}
+        <span class="ah-badge ah-badge--healthy"><span class="material-icons" aria-hidden="true">check_circle</span>Healthy</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <dl class="ah-card-meta">
+      <div><dt>Class</dt><dd>{{ card.asset.asset_class.name }}</dd></div>
+      <div><dt>Model</dt><dd>{{ card.asset.model }}</dd></div>
+      <div><dt>Make</dt><dd>{% for m in card.asset.model.manufacturers.all %}{{ m.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
+      <div><dt>Domain</dt><dd>{{ card.asset.domain.name }}</dd></div>
+    </dl>
+
+    <div class="ah-panels">
+      <div class="ah-panel">
+        <p class="ah-panel-title"><span class="material-icons" aria-hidden="true">event_upcoming</span>Next planned maintenance</p>
+        {% if card.next_planned_events %}
+        <ol class="ah-timeline">
+          {% for event in card.next_planned_events %}
+          <li>
+            <a href="{% url 'maintenance_detail' pk=event.pk %}">{{ event.title|default:"Untitled" }}</a>
+            <span class="ah-timeline-date">{{ event.event_start|date:"Y-m-d H:i" }}</span>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="ah-empty">No planned maintenance.</p>
+        {% endif %}
+      </div>
+
+      <div class="ah-panel">
+        <p class="ah-panel-title"><span class="material-icons" aria-hidden="true">report_problem</span>Active blockers &amp; limitations</p>
+        {% if card.active_blockers or card.active_limitation_records %}
+        <ul class="ah-issues">
+          {% for blocker in card.active_blockers %}
+          <li class="ah-issue ah-issue--blocker">
+            <span class="material-icons" aria-hidden="true">block</span>
+            <span class="ah-issue-text">
+              {{ blocker.get_reason_display|default:"Reason not set" }}
+              {% if blocker.expected_resolution_date %}<small>Expected {{ blocker.expected_resolution_date|date:"Y-m-d" }}</small>{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+          {% for record in card.active_limitation_records %}
+          <li class="ah-issue ah-issue--limitation">
+            <span class="material-icons" aria-hidden="true">warning</span>
+            <span class="ah-issue-text">{{ record.status }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="ah-empty">None.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ah-card-actions">
+      <a href="{% url 'maintenance_index' %}?asset_id={{ card.asset.id }}"><span class="material-icons" aria-hidden="true">history</span>Maintenance history</a>
+      <a href="{% url 'asset_detail' asset_id=card.asset.id %}"><span class="material-icons" aria-hidden="true">open_in_new</span>Asset detail</a>
+    </div>
+
+  </div>
+</article>

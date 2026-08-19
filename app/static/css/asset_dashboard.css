@@ -1,0 +1,267 @@
+/* Assets Dashboard — hand-rolled fleet-health cards.
+   Chamfered per harness/UX_UI/design_patterns/chamfers.md: corner-shape:bevel
+   paired with border-radius, gated behind @supports so unsupported browsers
+   fall back to a square corner (never a rounded one). Status accent pattern
+   (left rail + tinted panel, light/dark pairs) follows maintenance_event.css. */
+
+:root {
+  --ah-healthy: var(--teal-60);
+  --ah-healthy-tint: rgba(0, 125, 121, 0.08);
+  --ah-limited: var(--orange-40);
+  --ah-limited-tint: rgba(255, 131, 43, 0.10);
+  --ah-blocked: var(--red-60);
+  --ah-blocked-tint: rgba(218, 46, 40, 0.10);
+}
+
+.ah-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 1.25rem;
+}
+
+.ah-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  overflow: hidden;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.ah-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
+}
+
+@supports (corner-shape: bevel) {
+  .ah-card {
+    corner-shape: bevel;
+    border-radius: var(--app-chamfer);
+  }
+  .ah-badge {
+    corner-shape: bevel;
+    border-radius: var(--app-chamfer-nested-2);
+  }
+}
+
+.ah-card-rail {
+  flex-shrink: 0;
+  width: 7px;
+  background: var(--bulma-border-weak);
+}
+.ah-card--healthy .ah-card-rail { background: var(--ah-healthy); }
+.ah-card--limited .ah-card-rail { background: var(--ah-limited); }
+.ah-card--blocked .ah-card-rail { background: var(--ah-blocked); }
+
+.ah-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ── Identity header ── */
+.ah-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.ah-card-id {
+  min-width: 0;
+}
+
+.ah-card-name {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ah-card-name a { color: inherit; }
+.ah-card-name a:hover { text-decoration: underline; }
+
+.ah-card-serial {
+  display: block;
+  font-family: var(--app-font-mono-input);
+  font-size: 0.7rem;
+  color: var(--bulma-text-weak);
+  letter-spacing: 0.02em;
+}
+
+.ah-card-badges {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ah-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.ah-badge .material-icons { font-size: 0.85rem; }
+
+.ah-badge--healthy { background: var(--ah-healthy-tint); color: var(--ah-healthy); }
+.ah-badge--limited { background: var(--ah-limited-tint); color: var(--ah-limited); }
+.ah-badge--blocked { background: var(--ah-blocked-tint); color: var(--ah-blocked); }
+
+/* ── Meta strip ── */
+.ah-card-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 1.2rem;
+  margin: 0;
+  padding: 0.6rem 0;
+  border-top: 1px dashed var(--bulma-border-weak);
+  border-bottom: 1px dashed var(--bulma-border-weak);
+}
+
+.ah-card-meta dt {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bulma-text-weak);
+  margin: 0;
+}
+.ah-card-meta dd {
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin: 0.05rem 0 0;
+}
+
+/* ── Two panel layout ── */
+.ah-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.1rem;
+  flex: 1;
+}
+
+.ah-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--bulma-text-weak);
+  margin: 0 0 0.5rem;
+}
+.ah-panel-title .material-icons { font-size: 0.85rem; }
+
+/* Planned-maintenance timeline: a vertical guide with a dot per event. */
+.ah-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ah-timeline li {
+  position: relative;
+  padding-left: 1rem;
+  padding-bottom: 0.55rem;
+  border-left: 1px solid var(--bulma-border-weak);
+  font-size: 0.76rem;
+}
+.ah-timeline li:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+.ah-timeline li::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 0.2rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bulma-link);
+}
+
+.ah-timeline a { font-weight: 600; }
+.ah-timeline .ah-timeline-date {
+  display: block;
+  color: var(--bulma-text-weak);
+  font-family: var(--app-font-mono-input);
+  font-size: 0.68rem;
+}
+
+.ah-empty {
+  font-size: 0.76rem;
+  color: var(--bulma-text-weak);
+}
+
+/* Blocker / limitation issue list */
+.ah-issues {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ah-issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.76rem;
+  padding: 0.3rem 0.5rem;
+}
+.ah-issue .material-icons { font-size: 0.9rem; margin-top: 0.05rem; }
+
+.ah-issue--blocker { background: var(--ah-blocked-tint); color: var(--ah-blocked); }
+.ah-issue--limitation { background: var(--ah-limited-tint); color: var(--ah-limited); }
+
+.ah-issue-text { color: var(--bulma-text); flex: 1; min-width: 0; }
+.ah-issue-text small { display: block; color: var(--bulma-text-weak); font-weight: 400; }
+
+/* ── Footer actions ── */
+.ah-card-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--bulma-border-weak);
+}
+
+.ah-card-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--bulma-link);
+}
+.ah-card-actions a .material-icons { font-size: 0.9rem; }
+.ah-card-actions a:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .ah-panels { grid-template-columns: 1fr; }
+  .ah-card-meta { grid-template-columns: 1fr 1fr; }
+}
+
+.ah-load-more,
+.ah-empty-state {
+  grid-column: 1 / -1;
+}
+
+.ah-empty-state {
+  text-align: center;
+  color: var(--bulma-text-weak);
+  padding: 3rem 0;
+  border: 1px dashed var(--bulma-border-weak);
+}

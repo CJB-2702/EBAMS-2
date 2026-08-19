@@ -155,10 +155,17 @@ class MaintenanceContext:
         self.refresh()
         return detail
 
-    def add_comment(self, post_data, *, actor):
+    def add_comment(self, post_data, *, actor, is_human_made: bool = True):
         """MaintenanceDetail IS an Event row (MTI) sharing the same pk — comments
         are event comments, so this is a thin pass-through to EventContext rather
-        than a duplicate comment path."""
+        than a duplicate comment path.
+
+        `is_human_made=False` marks a machine-written narration (a blocker
+        opening, a limitation closing) so the activity log's Human/Machine
+        filter can separate what a person said from what the system recorded.
+        """
         from app.events.control_layer.event_context import EventContext
 
-        return EventContext(self.maintenance_detail_id, actor).add_comment(post_data)
+        return EventContext(self.maintenance_detail_id, actor).add_comment(
+            post_data, is_human_made=is_human_made
+        )

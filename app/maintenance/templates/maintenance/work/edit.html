@@ -1,0 +1,705 @@
+{% extends "maintenance/base.html" %}
+{% load static %}
+{% block title %}Edit {{ detail.title|default:"event" }}{% endblock %}
+{% block nav_maintenance_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'maintenance_index' %}">Events</a></li>
+<li><a href="{% url 'maintenance_detail' pk=detail.pk %}">#{{ detail.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit_note</span></div>
+      <div>
+        <h1 class="page-title">Edit maintenance event</h1>
+        <p class="page-subtitle">
+          <span class="tag is-light">{{ detail.get_status_display|default:"—" }}</span>
+          {{ detail.title }}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'maintenance_assign' pk=detail.pk %}" class="button is-small is-warning">
+        <span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span><span>Assign event</span>
+      </a>
+      <a href="{% url 'maintenance_detail' pk=detail.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to view</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid has-rail">
+  <div>
+
+    {# ── Event metadata ──────────────────────────────────────────────────── #}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Maintenance event details</div></div>
+      <div class="card-content">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="save_event">
+          <div class="columns is-multiline is-variable is-3">
+            <div class="column is-6">
+              <label class="label is-small">Task name <span class="has-text-danger">*</span></label>
+              <input class="input is-small" type="text" name="title" value="{{ detail.title }}" required>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Work order reference</label>
+              <input class="input is-small" type="text" name="work_order_reference" value="{{ detail.work_order_reference }}">
+            </div>
+            <div class="column is-12">
+              <label class="label is-small">Description</label>
+              <textarea class="textarea is-small" name="description" rows="2" placeholder="Describe this maintenance task…">{{ detail.description }}</textarea>
+            </div>
+            <div class="column is-4">
+              <label class="label is-small">Status</label>
+              <input class="input is-small" type="text" value="{{ detail.get_status_display|default:'—' }}" disabled
+                     title="Status changes go through Start / Complete / Cancel on the event view page, so completion rules stay enforced.">
+            </div>
+            <div class="column is-4">
+              <label class="label is-small">Priority</label>
+              <div class="select is-small is-fullwidth">
+                <select name="priority">
+                  {% for value, label in priorities %}
+                  <option value="{{ value }}" {% if detail.priority == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column is-4">
+              <label class="label is-small">Maintenance type</label>
+              <div class="select is-small is-fullwidth">
+                <select name="maintenance_type">
+                  <option value="">—</option>
+                  <option value="scheduled" {% if detail.maintenance_type == "scheduled" %}selected{% endif %}>Scheduled</option>
+                  <option value="reactive" {% if detail.maintenance_type == "reactive" %}selected{% endif %}>Reactive</option>
+                  <option value="inspection" {% if detail.maintenance_type == "inspection" %}selected{% endif %}>Inspection</option>
+                  <option value="preventive" {% if detail.maintenance_type == "preventive" %}selected{% endif %}>Preventive</option>
+                </select>
+              </div>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">Planned / actual start</label>
+              <input class="input is-small" type="datetime-local" name="event_start"
+                     value="{{ detail.event_start|date:'Y-m-d\TH:i' }}">
+              <p class="help">Set at creation as the planned start; Start on the view page only fills this in if it's still empty — there's no separate "actual start" column.</p>
+            </div>
+            <div class="column is-6">
+              <label class="label is-small">End date</label>
+              <input class="input is-small" type="datetime-local" name="event_end"
+                     value="{{ detail.event_end|date:'Y-m-d\TH:i' }}">
+            </div>
+          </div>
+
+          <details class="mb-3">
+            <summary class="is-size-7 has-text-weight-semibold">
+              <span class="icon"><span class="material-icons" aria-hidden="true">expand_more</span></span> Additional details
+            </summary>
+            <div class="columns is-multiline is-variable is-3 mt-1">
+              <div class="column is-4">
+                <label class="label is-small">Actual billable hours</label>
+                <input class="input is-small" type="number" step="0.01" min="0" name="actual_billable_hours"
+                       value="{{ detail.actual_billable_hours|default_if_none:'' }}">
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">Completion notes</label>
+                <textarea class="textarea is-small" name="completion_notes" rows="2" placeholder="Add completion notes…">{{ detail.completion_notes }}</textarea>
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">Blocker notes</label>
+                <textarea class="textarea is-small" name="blocker_notes" rows="2" placeholder="Add blocker notes…">{{ detail.blocker_notes }}</textarea>
+              </div>
+            </div>
+            <p class="help">
+              Assignee and completed-by are managed from the <a href="{% url 'maintenance_assign' pk=detail.pk %}">Assign page</a>
+              and the completion guard, not here — a bare dropdown here can't show technician workload the way the Assign page does,
+              and completed-by should reflect who actually closed the event out.
+            </p>
+          </details>
+
+          <div class="is-flex is-justify-content-flex-end">
+            <button class="button is-small is-link" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save changes</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {# ── Blockers ─────────────────────────────────────────────────────────── #}
+    <div class="card mt-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">pause_circle</span></span>Blockers</div></div>
+      <div class="card-content">
+        {% for blocker in blockers %}
+        <div class="mb-3 pb-2" style="border-bottom:1px solid var(--bulma-border-weak);">
+          <p class="is-size-7"><strong>{{ blocker.reason|default:"—" }}</strong>
+            {% if blocker.end_date %}<span class="tag is-light is-small ml-1">Resolved</span>{% else %}<span class="tag is-warning is-light is-small ml-1">Active</span>{% endif %}
+          </p>
+          <p class="is-size-7 has-text-grey">{{ blocker.priority }} · opened {{ blocker.start_date|date:"Y-m-d H:i" }}{% if blocker.end_date %} · resolved {{ blocker.end_date|date:"Y-m-d H:i" }}{% endif %}</p>
+          {% if blocker.notes %}<p class="is-size-7">{{ blocker.notes }}</p>{% endif %}
+          {% if blocker.resolution_notes %}<p class="is-size-7 has-text-success">Resolved: {{ blocker.resolution_notes }}</p>{% endif %}
+          <div class="buttons are-small mt-1">
+            {% if not blocker.end_date %}
+            {# Resolving takes a mandatory reason (BlockerManager.end_blocker),
+               so the control is a small form, not a bare button. #}
+            <details>
+              <summary class="button is-small is-success is-light" style="display:inline-block;">Resolve</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="end_blocker">
+                <input type="hidden" name="blocker_id" value="{{ blocker.pk }}">
+                <div class="field">
+                  <label class="label is-small">What unblocked the work?</label>
+                  <textarea class="textarea is-small" name="resolution_notes" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="button is-small is-success">Resolve blocker</button>
+              </form>
+            </details>
+            {% endif %}
+            <details>
+              <summary class="button is-small is-light" style="display:inline-block;">Edit</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_blocker">
+                <input type="hidden" name="blocker_id" value="{{ blocker.pk }}">
+                <div class="field">
+                  <label class="label is-small">Reason</label>
+                  <div class="select is-small is-fullwidth">
+                    <select name="reason">
+                      {% for value, label in blocker_reasons %}
+                      <option value="{{ value }}" {% if blocker.reason == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">Priority</label>
+                  <div class="select is-small is-fullwidth">
+                    <select name="priority">
+                      {% for value, label in blocker_priorities %}
+                      <option value="{{ value }}" {% if blocker.priority == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">Billable hours lost</label>
+                  <input class="input is-small" type="number" step="0.25" min="0" name="billable_hours_lost" value="{{ blocker.billable_hours_lost|default_if_none:'' }}">
+                </div>
+                <div class="field">
+                  <label class="label is-small">Notes</label>
+                  <textarea class="textarea is-small" name="notes" rows="2">{{ blocker.notes }}</textarea>
+                </div>
+                <button type="submit" class="button is-small is-link">Save blocker</button>
+              </form>
+            </details>
+          </div>
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No blockers recorded.</p>
+        {% endfor %}
+
+        <details class="mt-2">
+          <summary class="is-size-7 has-text-weight-semibold">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Add blocker
+          </summary>
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_blocker">
+            <div class="field">
+              <label class="label is-small">Reason</label>
+              <div class="select is-small is-fullwidth">
+                <select name="reason" required>
+                  <option value="">Select a reason…</option>
+                  {% for value, label in blocker_reasons %}
+                  <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label is-small">Priority</label>
+              <div class="select is-small is-fullwidth">
+                <select name="priority">
+                  {% for value, label in blocker_priorities %}
+                  <option value="{{ value }}" {% if value == "Medium" %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label is-small">Notes</label>
+              <textarea class="textarea is-small" name="notes" rows="2"></textarea>
+            </div>
+            <button type="submit" class="button is-small is-warning is-light">Log blocker</button>
+          </form>
+        </details>
+      </div>
+    </div>
+
+    {# ── Asset capability limitations ────────────────────────────────────── #}
+    <div class="card mt-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>Work order specific capability limitations</div></div>
+      <div class="card-content">
+        {% for record in limitation_records %}
+        <div class="mb-3 pb-2" style="border-bottom:1px solid var(--bulma-border-weak);">
+          <p class="is-size-7"><strong>{{ record.get_status_display }}</strong>
+            {% if record.end_time %}<span class="tag is-light is-small ml-1">Closed</span>{% else %}<span class="tag is-warning is-light is-small ml-1">Active</span>{% endif %}
+          </p>
+          {% if record.limitation_description %}<p class="is-size-7">{{ record.limitation_description }}</p>{% endif %}
+          {% if record.temporary_modifications %}<p class="is-size-7 has-text-grey">Compensation: {{ record.temporary_modifications }}</p>{% endif %}
+          {% if record.resolution_notes %}<p class="is-size-7 has-text-success">Closed: {{ record.resolution_notes }}</p>{% endif %}
+          {% if not record.end_time %}
+          <div class="buttons are-small mt-1">
+            {# Closing takes a mandatory reason (AssetLimitationManager.close_record). #}
+            <details>
+              <summary class="button is-small is-success is-light" style="display:inline-block;">Close</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="close_limitation">
+                <input type="hidden" name="record_id" value="{{ record.pk }}">
+                <div class="field">
+                  <label class="label is-small">What restored the capability?</label>
+                  <textarea class="textarea is-small" name="resolution_notes" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="button is-small is-success">Close limitation</button>
+              </form>
+            </details>
+            <details>
+              <summary class="button is-small is-light" style="display:inline-block;">Edit</summary>
+              <form method="post" class="mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit_limitation">
+                <input type="hidden" name="record_id" value="{{ record.pk }}">
+                <div class="field">
+                  <label class="label is-small">Status</label>
+                  <div class="select is-small is-fullwidth">
+                    <select name="status">
+                      {% for value, label in capability_statuses %}
+                      <option value="{{ value }}" {% if record.status == value %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label is-small">Description</label>
+                  <textarea class="textarea is-small" name="limitation_description" rows="2">{{ record.limitation_description }}</textarea>
+                </div>
+                <div class="field">
+                  <label class="label is-small">Compensation (required for compensation statuses only)</label>
+                  <textarea class="textarea is-small" name="temporary_modifications" rows="2">{{ record.temporary_modifications }}</textarea>
+                </div>
+                <button type="submit" class="button is-small is-link">Save limitation</button>
+              </form>
+            </details>
+          </div>
+          {% endif %}
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No limitations recorded.</p>
+        {% endfor %}
+
+        <details class="mt-2">
+          <summary class="is-size-7 has-text-weight-semibold">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Add limitation
+          </summary>
+          <form method="post" class="mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_limitation">
+            <div class="field">
+              <label class="label is-small">Status</label>
+              <div class="select is-small is-fullwidth">
+                <select name="status">
+                  {% for value, label in capability_statuses %}
+                  <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label is-small">Description</label>
+              <textarea class="textarea is-small" name="limitation_description" rows="2"></textarea>
+            </div>
+            <div class="field">
+              <label class="label is-small">Compensation (required for compensation statuses only)</label>
+              <textarea class="textarea is-small" name="temporary_modifications" rows="2"></textarea>
+            </div>
+            <button type="submit" class="button is-small is-warning is-light">Log limitation</button>
+          </form>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-rail">
+    {# Quick actions #}
+    <div class="card mb-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick actions</div></div>
+      <div class="card-content">
+        <div class="buttons are-small">
+          <a href="{% url 'maintenance_detail' pk=detail.pk %}" class="button is-small is-link is-outlined is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span><span>View event</span>
+          </a>
+          <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small is-success is-outlined is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span><span>Do work</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {# Metadata #}
+    <div class="card mb-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Metadata</div></div>
+      <div class="card-content">
+        <dl class="kv is-size-7">
+          <dt>Event ID</dt><dd>{{ detail.pk }}</dd>
+          <dt>Asset</dt><dd>{{ detail.asset|default:"—" }}</dd>
+          <dt>Template action set</dt>
+          <dd>
+            {% if detail.template_action_set %}
+            <a href="{% url 'template_detail' pk=detail.template_action_set_id %}">{{ detail.template_action_set.task_name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+          <dt>Maintenance plan</dt>
+          <dd>
+            {% if detail.maintenance_plan %}
+            <a href="{% url 'plan_detail' pk=detail.maintenance_plan_id %}">{{ detail.maintenance_plan.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+          <dt>Meter reading</dt><dd>{{ detail.meter_reading|default:"None" }}</dd>
+        </dl>
+        <hr class="my-2">
+        <p class="heading is-size-7 has-text-grey">Audit information</p>
+        <dl class="kv is-size-7">
+          <dt>Created at</dt><dd class="is-family-monospace">{{ detail.created_at|date:"Y-m-d H:i:s" }}</dd>
+          <dt>Updated at</dt><dd class="is-family-monospace">{{ detail.updated_at|date:"Y-m-d H:i:s" }}</dd>
+          <dt>Created by</dt><dd>{{ detail.created_by|default:"system" }}</dd>
+          <dt>Updated by</dt><dd>{{ detail.updated_by|default:"system" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    {# Part demands summary #}
+    <div class="card mb-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Part demands summary{% if all_demands %} <span class="tag is-info is-light ml-2">{{ all_demands|length }}</span>{% endif %}</div></div>
+      <div class="card-content">
+        {% for a, link in all_demands %}
+        <p class="is-size-7 mb-1">
+          <span class="tag is-dark is-small">Action #{{ a.sequence_order }}</span>
+          <strong>{{ link.part_demand.part }}</strong> × {{ link.part_demand.quantity_requested }}
+          <span class="tag is-light is-small">{{ link.part_demand.get_issuance_state_display }}</span>
+        </p>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No part demands yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Tools summary #}
+    <div class="card mb-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span>Tools summary{% if all_tools %} <span class="tag is-info is-light ml-2">{{ all_tools|length }}</span>{% endif %}</div></div>
+      <div class="card-content">
+        {% for a, tool in all_tools %}
+        <p class="is-size-7 mb-1">
+          <span class="tag is-dark is-small">Action #{{ a.sequence_order }}</span>
+          <strong>{{ tool.tool.name|default:tool.tool_name }}</strong> × {{ tool.quantity_required }}
+        </p>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No tools recorded yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width mt-4">
+
+  {# ── Three-pane action editor ─────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Action editor panel</div></div>
+    <div class="card-content">
+      <div class="columns is-variable is-4">
+        <div class="column is-3">
+          <p class="heading is-size-7 has-text-grey">Action details ({{ actions|length }})</p>
+          <table class="table is-fullwidth is-size-7" style="margin:0;">
+            <tbody>
+              {% for action in actions %}
+              <tr {% if selected_action and selected_action.pk == action.pk %}class="is-selected"{% endif %}>
+                <td>
+                  <a href="?selected={{ action.pk }}">
+                    <span class="tag is-dark is-family-monospace">#{{ action.sequence_order }}</span>
+                    {{ action.action_name }}
+                  </a>
+                  <p class="has-text-grey">{{ action.get_status_display }}{% if action.estimated_duration_minutes %} · Est: {{ action.estimated_duration_minutes }}m{% endif %}</p>
+                </td>
+                <td class="has-text-right" style="white-space:nowrap;">
+                  <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_id" value="{{ action.pk }}">
+                    <input type="hidden" name="new_sequence_order" value="{{ action.sequence_order|add:'-1' }}">
+                    <button class="button is-small" type="submit" name="action" value="reorder_action" title="Move up"
+                            {% if forloop.first %}disabled{% endif %}>↑</button>
+                  </form>
+                  <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_id" value="{{ action.pk }}">
+                    <input type="hidden" name="new_sequence_order" value="{{ action.sequence_order|add:'1' }}">
+                    <button class="button is-small" type="submit" name="action" value="reorder_action" title="Move down"
+                            {% if forloop.last %}disabled{% endif %}>↓</button>
+                  </form>
+                  <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action_id" value="{{ action.pk }}">
+                    <button class="button is-small is-danger is-light" type="submit" name="action" value="delete_action" title="Remove step">✕</button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td class="has-text-grey p-3">No steps yet. Add one from the Action Creator Portal below.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="column is-6">
+          <p class="heading is-size-7 has-text-grey">Action form details</p>
+          {% if selected_action %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save_action">
+            <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+            <div class="columns is-multiline is-variable is-3">
+              <div class="column is-12">
+                <label class="label is-small">Action name <span class="has-text-danger">*</span></label>
+                <input class="input is-small" type="text" name="action_name" value="{{ selected_action.action_name }}" required>
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">Description</label>
+                <input class="input is-small" type="text" name="description" value="{{ selected_action.description }}">
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Status</label>
+                <div class="select is-small is-fullwidth">
+                  <select name="status">
+                    {% for value, label in action_statuses %}
+                    <option value="{{ value }}" {% if selected_action.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Sequence order</label>
+                <input class="input is-small" type="number" min="1" name="sequence_order" value="{{ selected_action.sequence_order }}">
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Estimated duration (minutes)</label>
+                <input class="input is-small" type="number" step="1" min="0" name="estimated_duration_minutes"
+                       value="{{ selected_action.estimated_duration_minutes|default_if_none:'' }}">
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Billable hours</label>
+                <input class="input is-small" type="number" step="0.01" min="0" name="billable_hours"
+                       value="{{ selected_action.billable_hours|default_if_none:'' }}">
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Scheduled start time</label>
+                <input class="input is-small" type="datetime-local" name="scheduled_start_time"
+                       value="{{ selected_action.scheduled_start_time|date:'Y-m-d\TH:i' }}">
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Start time</label>
+                <input class="input is-small" type="datetime-local" name="start_time"
+                       value="{{ selected_action.start_time|date:'Y-m-d\TH:i' }}">
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">End time</label>
+                <input class="input is-small" type="datetime-local" name="end_time"
+                       value="{{ selected_action.end_time|date:'Y-m-d\TH:i' }}">
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">Instructions</label>
+                <textarea class="textarea is-small" name="instructions" rows="3">{{ selected_action.instructions }}</textarea>
+              </div>
+              <div class="column is-12">
+                <label class="label is-small">Safety notes</label>
+                <textarea class="textarea is-small" name="safety_notes" rows="2">{{ selected_action.safety_notes }}</textarea>
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Completion notes</label>
+                <textarea class="textarea is-small" name="completion_notes" rows="2">{{ selected_action.completion_notes }}</textarea>
+              </div>
+              <div class="column is-6">
+                <label class="label is-small">Notes</label>
+                <textarea class="textarea is-small" name="notes" rows="2">{{ selected_action.notes }}</textarea>
+              </div>
+            </div>
+            <div class="is-flex is-justify-content-space-between">
+              <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+                <button class="button is-small is-danger is-light" type="submit" name="action" value="delete_action">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span><span>Delete</span>
+                </button>
+              </form>
+              <div class="buttons are-small">
+                <button class="button is-link" type="submit">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Submit</span>
+                </button>
+                <button class="button" type="submit" name="action" value="duplicate_action">Duplicate step</button>
+              </div>
+            </div>
+          </form>
+          {% else %}
+          <p class="has-text-grey is-size-7">Select a step from the list to edit it.</p>
+          {% endif %}
+        </div>
+
+        <div class="column is-3">
+          {% if selected_action %}
+          <p class="heading is-size-7 has-text-grey">Part demands</p>
+          {% for link in selected_action.demand_rows %}
+          <div class="mb-2 pb-1" style="border-bottom:1px solid var(--bulma-border-weak);">
+            <p class="is-size-7">{{ link.part_demand.part }} × {{ link.part_demand.quantity_requested }}
+              <span class="tag is-light is-small">{{ link.part_demand.get_issuance_state_display }}</span></p>
+            <div class="buttons are-small">
+              <a href="{% url 'part_demand_detail' pk=link.part_demand_id %}" class="button is-small is-light" target="_blank" rel="noopener">
+                Manage
+              </a>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_action_part_demand">
+                <input type="hidden" name="link_id" value="{{ link.pk }}">
+                <button type="submit" class="button is-small is-danger is-light">Remove</button>
+              </form>
+            </div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">None.</p>
+          {% endfor %}
+          <details class="mb-4">
+            <summary class="is-size-7 has-text-weight-semibold">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Add part demand
+            </summary>
+            <form method="post" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_action_part_demand">
+              <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+              <div class="field">
+                <div class="select is-small is-fullwidth">
+                  <select name="part_id" required>
+                    <option value="">Select a part…</option>
+                    {% for part in parts_catalog %}
+                    <option value="{{ part.pk }}">{{ part.part_number }} — {{ part.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <input class="input is-small" type="number" step="0.001" min="0.001" name="quantity" placeholder="Quantity" value="1" required>
+              </div>
+              <div class="field">
+                <div class="select is-small is-fullwidth">
+                  <select name="priority">
+                    {% for value, label in demand_priorities %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="button is-small is-link is-light is-fullwidth">Add part demand</button>
+            </form>
+          </details>
+
+          <p class="heading is-size-7 has-text-grey">Tools</p>
+          {% for tool in selected_action.tool_rows %}
+          <div class="mb-2 pb-1" style="border-bottom:1px solid var(--bulma-border-weak);">
+            <p class="is-size-7">{{ tool.tool.name|default:tool.tool_name }} × {{ tool.quantity_required }}</p>
+            {% if tool.specifications %}<p class="is-size-7 has-text-grey">{{ tool.specifications }}</p>{% endif %}
+            <div class="buttons are-small">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_action_tool">
+                <input type="hidden" name="action_tool_id" value="{{ tool.pk }}">
+                <button type="submit" class="button is-small is-danger is-light">Remove</button>
+              </form>
+              <details>
+                <summary class="button is-small is-light" style="display:inline-block;">Edit</summary>
+                <form method="post" class="mt-2">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="edit_action_tool">
+                  <input type="hidden" name="action_tool_id" value="{{ tool.pk }}">
+                  <div class="field">
+                    <input class="input is-small" type="number" min="1" name="quantity_required" value="{{ tool.quantity_required }}" placeholder="Quantity">
+                  </div>
+                  <div class="field">
+                    <input class="input is-small" type="text" name="specifications" value="{{ tool.specifications }}" placeholder="Specifications">
+                  </div>
+                  <div class="field">
+                    <textarea class="textarea is-small" name="notes" rows="2" placeholder="Notes">{{ tool.notes }}</textarea>
+                  </div>
+                  <button type="submit" class="button is-small is-link is-fullwidth">Save tool</button>
+                </form>
+              </details>
+            </div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">None.</p>
+          {% endfor %}
+          <details>
+            <summary class="is-size-7 has-text-weight-semibold">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> Add tool
+            </summary>
+            <form method="post" class="mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_action_tool">
+              <input type="hidden" name="action_id" value="{{ selected_action.pk }}">
+              <div class="field">
+                <div class="select is-small is-fullwidth">
+                  <select name="tool_id">
+                    <option value="">— ad-hoc (name below) —</option>
+                    {% for tool in tools_catalog %}
+                    <option value="{{ tool.pk }}">{{ tool.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <input class="input is-small" type="text" name="tool_name" placeholder="Ad-hoc tool name (if not in catalog)">
+              </div>
+              <div class="field">
+                <input class="input is-small" type="number" step="1" min="1" name="quantity_required" placeholder="Quantity" value="1">
+              </div>
+              <button type="submit" class="button is-small is-link is-light is-fullwidth">Add tool</button>
+            </form>
+          </details>
+          {% else %}
+          <p class="has-text-grey is-size-7">Select a step to manage its parts and tools.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── The five-source Action Creator Portal ────────────────────────────── #}
+  <div id="action-creator-region">
+    {% include "maintenance/work/_action_creator.html" with tab=creator_tab tabs=tabs q="" %}
+  </div>
+
+  {# ── Event activity (comments / attachments / metadata) ───────────────── #}
+  {% if activity_card %}
+  <div class="mt-4">
+    {% include "events/fragments/event_card.html" with card=activity_card %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
+{% endblock %}

@@ -1,0 +1,274 @@
+[
+  {
+    "slug": "00_maintenance_index",
+    "path": "/maintenance/index",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/index",
+    "title": "Maintenance Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Maintenance Portal |  | Choose your portal based on your role |  | View Maintenance Events |  | Browse and filter all maintenance events with comprehensive search, filtering, and enhanced data views. |  |  View Events Portal | Technician Portal |  | View assigned work, complete actions, request parts, and track your maintenance history. |  |  Go to Technici"
+  },
+  {
+    "slug": "01_manager_dashboard",
+    "path": "/maintenance/manager/dashboard",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/dashboard",
+    "title": "Manager Portal - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Manager Portal |  | Plan, schedule, and manage maintenance operations |  |  Back to Portals | Total Events | 2 | Active Maintenance | 2 | Pending Part Demands | 4 | Active Templates | 2 |  Maintenance Workflows | Create & Assign |  | Create maintenance events from templates and assign them to assets and technicians. |  |  Create & Assign | Part Demands |  | View and approv"
+  },
+  {
+    "slug": "02_manager_part_demands",
+    "path": "/maintenance/manager/part-demands",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/part-demands",
+    "title": "Part Demand Approvals - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Part Demand Approvals |  | Filter by approval status and approve or reject part demands for maintenance events |  |  Back to Dashboard |  Filters | Part ID | Part Description | Approval status | All approval statuses | Planned | Created From | Created To | Last Updated From | Last Updated To |  Maintenance Event Filters | Sort By | Default | Price (Low to High) | Price"
+  },
+  {
+    "slug": "03_part_demand_1_view",
+    "path": "/maintenance/part_demand/1/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/part_demand/1/view",
+    "title": "Asset Management System",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Maintenance | Part Demand #1 | Part Demand Details |  | OIL-001 - Engine Oil 5W-30 |  |  View Lifecycle | STATUS | Planned | PRIORITY | Medium | QUANTITY REQUIRED | 2.0 | Part Information | Part Number | OIL-001 | Category | Lubricants | Description | Synthetic engine oil for modern vehicles | Manufacturer | Mobil | Unit of Measure | quarts | Maintenance Context | ACTION |  | This part"
+  },
+  {
+    "slug": "04_part_demand_3_view",
+    "path": "/maintenance/part_demand/3/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/part_demand/3/view",
+    "title": "Asset Management System",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Maintenance | Event #21 | Replace Oil Filter | Part Demand #3 | Part Demand Details |  | FIL-001 - Oil Filter |  |  View Lifecycle |  View Action |  Back to Event | STATUS | Planned | PRIORITY | Medium | QUANTITY REQUIRED | 1.0 | Part Information | Part Number | FIL-001 | Category | Filters | Description | High-quality oil filter for Toyota vehicles | Manufacturer | Fram | Unit of Me"
+  },
+  {
+    "slug": "05_manager_create_assign",
+    "path": "/maintenance/manager/create-assign",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/create-assign",
+    "title": "Create & Assign - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Create & Assign |  | Create maintenance events from templates and assign them to assets and technicians |  |  View Unassigned Events |  Back to Dashboard |  Create Maintenance Event |  Select Template |  View All Templates | Template * | Brake Inspection Procedure (Rev. 1.0) | Toyota Corolla Oil Change Procedure (Rev. 1.0) | 2 matches | Select a maintenance"
+  },
+  {
+    "slug": "06_manager_create_assign_create",
+    "path": "/maintenance/manager/create-assign/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/create-assign",
+    "title": "Create & Assign - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Error loading form. Please try again. |  Create & Assign |  | Create maintenance events from templates and assign them to assets and technicians |  |  View Unassigned Events |  Back to Dashboard |  Create Maintenance Event |  Select Template |  View All Templates | Template * | Brake Inspection Procedure (Rev. 1.0) | Toyota Corolla Oil Change Procedure (Re"
+  },
+  {
+    "slug": "07_manager_create_assign_unassigned",
+    "path": "/maintenance/manager/create-assign/unassigned",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/create-assign/unassigned",
+    "title": "Unassigned Events - Create & Assign",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Unassigned Events |  | View and assign maintenance events that haven't been assigned to technicians |  |  Back to Create & Assign | Asset Class | All Types | Vehicle | vehicle_accessories | Status | All Statuses | Planned | In Progress | Delayed | Blocked | Priority | All Priorities | Low | Medium | High | Critical | \u00a0 |  Filter |  Clear |  Unassigned Events (2) |  Select All | \tEve"
+  },
+  {
+    "slug": "08_manager_build_maintenance_templates",
+    "path": "/maintenance/manager/build-maintenance-templates",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/build-maintenance-templates",
+    "title": "Build Maintenance Templates - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Build Maintenance Templates |  | Create and manage maintenance templates, action sets, and prototype actions |  |  Back to Dashboard |  Create New Template from Scratch |  View your drafts |  View All Proto Actions |  Create Proto Action | From Existing Templates |  New Template from Existing |  New Revision of Existing Template |  Filters | Template name | M"
+  },
+  {
+    "slug": "09_maintenance_template_2_view",
+    "path": "/maintenance/maintenance-template/2/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-template/2/view",
+    "title": "Brake Inspection Procedure - Maintenance Template",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Brake Inspection Procedure |  | Standard brake inspection procedure for trucks |  |  Deactivate |  Back to View Templates | Status | Active | Revision | 1.0 | Action Items | 2 | Parts Required | 0 |  Template Details | Task Name: | Brake Inspection Procedure | Description: | Standard brake inspection procedure for trucks | Revision: | 1.0 | Is Active: | Active | Asset Class: | N"
+  },
+  {
+    "slug": "10_maintenance_template_1_view",
+    "path": "/maintenance/maintenance-template/1/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-template/1/view",
+    "title": "Toyota Corolla Oil Change Procedure - Maintenance Template",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Toyota Corolla Oil Change Procedure |  | Standard oil change procedure for Toyota Corolla vehicles |  |  Deactivate |  Back to View Templates | Status | Active | Revision | 1.0 | Action Items | 3 | Parts Required | 2 |  Template Details | Task Name: | Toyota Corolla Oil Change Procedure | Description: | Standard oil change procedure for Toyota Corolla vehicles | Revisi"
+  },
+  {
+    "slug": "11_view_templates",
+    "path": "/maintenance/view-templates",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/view-templates",
+    "title": "View Maintenance Templates",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Maintenance Templates |  | View and filter maintenance templates |  |  Back to Maintenance Portal |  Filters | Search Templates | Status | All | Active only | Inactive only | Asset Class | All | Vehicle | vehicle_accessories | Make / Model | All | Ford F-250 (2023) | John Deere Standard Trailer (2024) | Toyota Corolla (2023) | Volkswagen Bus (2024) |  Apply | Showing 2 of 2 "
+  },
+  {
+    "slug": "12_proto_actions_list",
+    "path": "/maintenance/proto-actions/list",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/proto-actions/list",
+    "title": "Proto Actions - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Proto Actions |  | Reusable action templates for maintenance procedures |  |  Create Proto Action  Back to Build | Search | Required | All | Required | Optional | Sort By | Name | Created Date | Duration | Order | Ascending | Descending |  Search |  Proto Actions 5 total | Add Engine Oil 5W-30 | Required |  | Add fresh 5W-30 engine oil to engine |  |  0.08h |  1 parts |  2026-08-09 | "
+  },
+  {
+    "slug": "13_proto_action_1_view",
+    "path": "/maintenance/proto-actions/1/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/proto-actions/1/view",
+    "title": "Drain Oil - Proto Action",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Drain Oil |  | Drain old oil from engine |  |  Back to View Templates | Required | Yes | Revision | N/A | Parts Required | 0 | Tools Required | 1 |  Proto Action Details | Action Name: | Drain Oil | Description: | Drain old oil from engine | Revision: | N/A | Is Required: | Required | Estimated Duration: | 0.25 hours (estimated) | Expected Billable Hours: | 0.25 | Minimum Staff Coun"
+  },
+  {
+    "slug": "14_proto_action_create",
+    "path": "/maintenance/proto-actions/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/proto-actions/create",
+    "title": "Create Proto Action - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Create Proto Action |  | Create a reusable action template for maintenance procedures |  |  Back to Proto Actions |  Basic Information | Action Name * | A clear, descriptive name for this action | Description | A brief overview of the action | Revision | Optional version identifier for tracking changes |  Instructions | Detailed Instructions | Detailed step-b"
+  },
+  {
+    "slug": "15_manager_maintenance_plans",
+    "path": "/maintenance/manager/maintenance-plans",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/maintenance-plans",
+    "title": "Maintenance Plans - Asset Management System",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Maintenance Plans |  Create Maintenance Plan | Maintenance Plans (3 total) | ID\tName\tAsset Class\tModel\tFrequency Type\tTemplate\tStatus\tCreated\tActions | 3\tTruck Brake Inspection\tVehicle\tAll Models\tdays\tBrake Inspection Procedure\tActive\t2026-08-09\t |  | 2\tVehicle Oil Change 5k miles\tVehicle\tToyota Corolla\tmeter1\tToyota Corolla Oil Change Procedur"
+  },
+  {
+    "slug": "16_maintenance_plan_3_view",
+    "path": "/maintenance/maintenance-plan/3/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/3/view",
+    "title": "Truck Brake Inspection - Maintenance Plan",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Truck Brake Inspection |  Plan Maintenance  Edit Plan  Back to Plans | Plan Information | ID: | 3 | Name: | Truck Brake Inspection | Description: | Brake system inspection for trucks | Status: | Active | Asset Class ID: | 1 (Vehicle) | Model ID: | All Models | Template Action Set ID: | 2 (Brake Inspection Procedure) | Created: | 2026-08-09 08:42:19 by system | Created B"
+  },
+  {
+    "slug": "17_maintenance_plan_create",
+    "path": "/maintenance/maintenance-plan/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/create",
+    "title": "Create Maintenance Plan - Asset Management System",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Create Maintenance Plan |  Back to Plans | Maintenance Plan Information | Basic Information | Plan Name * | Description | Asset Class * | Select Asset Class | Vehicle (Transportation) | vehicle_accessories | Model | All Models | Ford F-250 (2023) | John Deere Standard Trailer (2024) | Toyota Corolla (2023) | Volkswagen Bus (2024) | Leave blank to apply to all mode"
+  },
+  {
+    "slug": "18_maintenance_plan_3_edit",
+    "path": "/maintenance/maintenance-plan/3/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/3/edit",
+    "title": "Edit Truck Brake Inspection - Maintenance Plan",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Edit Maintenance Plan |  Back to Plan | Edit Maintenance Plan Information | Basic Information | Plan Name * | Description | Asset Class * | Select Asset Class | Vehicle (Transportation) | vehicle_accessories | Model | All Models | Ford F-250 (2023) | Toyota Corolla (2023) | Volkswagen Bus (2024) | Leave blank to apply to all models of the selected asset type. | St"
+  },
+  {
+    "slug": "19_maintenance_plan_3_plan",
+    "path": "/maintenance/maintenance-plan/3/plan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-plan/3/plan",
+    "title": "Plan Maintenance - Truck Brake Inspection",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Plan Maintenance: Truck Brake Inspection |  Back to Plan | Plan Summary | Plan ID: | 3 | Frequency Type: | days | Status: | Active | Template: | Brake Inspection Procedure | Assets Needing Maintenance: | 0 | Plan Information | ID: | 3 | Name: | Truck Brake Inspection | Description: | Brake system inspection for trucks | Status: | Active | Asset Class ID: | 1 (Vehicle) | Model ID:"
+  },
+  {
+    "slug": "20_technician_dashboard",
+    "path": "/maintenance/technician/dashboard",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/technician/dashboard",
+    "title": "View Maintenance Events",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | Technician Portal |  | View assigned work, complete actions, and track your maintenance history |  |  Back to Portals | Assigned Work | 0 | In Progress | 0 | Completed Today | 0 |  Quick Asset Lookup | Search for assets to view their maintenance history |  | View Events by Your Location | Complete an event to see location-based events |  | Event Viewer Dashboard |  As"
+  },
+  {
+    "slug": "21_fleet_dashboard",
+    "path": "/maintenance/fleet/dashboard",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/fleet/dashboard",
+    "title": "Fleet Portal - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Fleet/Admin Portal |  | Fleet-wide dashboard, analytics, and comprehensive maintenance oversight |  |  Back to Portals | Total Assets | 5 | Assets Due | 0 | Overdue | 0 | Active Maintenance | 2 | Fleet/Admin Portal |  | Fleet-wide maintenance oversight will be implemented here |  | Features: Fleet dashboard, analytics, comprehensive data views, reporting |  | \u00a9 2024 As"
+  },
+  {
+    "slug": "22_manager_view_maintenance",
+    "path": "/maintenance/manager/view-maintenance",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/view-maintenance",
+    "title": "View Maintenance - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  View Maintenance |  | Browse maintenance events, templates, and prototypes |  |  Back to Dashboard |  Maintenance Events 2 |  Templates |  Prototypes |  All |  Maintenance Events | Planned | In Progress | Complete | All | Brake Inspection Procedure |  FTK-001 Planned Medium |  Planned: 2026-08-09 08:42 |  View | Toyota Corolla Oil Change Procedure |  VTC-002 Planned Me"
+  },
+  {
+    "slug": "23_manager_plan_maintenance",
+    "path": "/maintenance/manager/plan-maintenance",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/plan-maintenance",
+    "title": "Plan Maintenance - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Plan Maintenance |  | Create maintenance plans, schedule events, and manage assets due for maintenance |  |  Back to Dashboard |  Maintenance Plans |  | Create and manage maintenance plans |  |  View All Plans |  Create New Plan |  Planning Tools |  | Schedule and assign maintenance |  | Coming Soon |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "24_manager_assign_monitor",
+    "path": "/maintenance/manager/assign-monitor",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/assign-monitor",
+    "title": "Assign & Monitor - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Assign & Monitor |  | Assign work to technicians, monitor progress, and manage active maintenance |  |  Back to Dashboard | Coming Soon |  | Assign & monitor functionality will be implemented here |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "25_view_events",
+    "path": "/maintenance/view-events",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/view-events",
+    "title": "View Maintenance Events",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Maintenance Events |  | View and filter maintenance events with comprehensive search |  |  Back to Maintenance Portal |  Filters | Search Events |  ENHANCED FILTERS | Date From | Date To | Search Events | Showing 2 of 2 events | Brake Inspection Procedure | Planned | Medium | FTK-001 (FTK0012023001) | SanDiegoHQ | Ford F-250 | Actions: 0/2 complete | 0% | Planned: 2026-0"
+  },
+  {
+    "slug": "26_event_21_view",
+    "path": "/maintenance/maintenance-event/21/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/21/view",
+    "title": "Toyota Corolla Oil Change Procedure - Maintenance Event",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Toyota Corolla Oil Change Procedure |  | Maintenance Event Details |  |  Back to View Events | Status | Planned | Priority | Medium | Actions | 3 | Blockers | 0 |  Maintenance Event Details | Task Name: | Toyota Corolla Oil Change Procedure | Description: | N/A | Asset: |  | VTC-002 | Template Source: | Toyota Corolla Oil Change Procedure | Planned Start: | 2024-01-15 08:00 | Actu"
+  },
+  {
+    "slug": "27_event_21_edit",
+    "path": "/maintenance/maintenance-event/21/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/21/edit",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Edit Maintenance Event |  | Planned Toyota Corolla Oil Change Procedure |  |  Assign Event |  Back to View |  Maintenance Event Details | Maintenance Action Set ID | Task Name * | Estimated Duration (hours) | Description | Status | Planned | In Progress | Complete | Cancelled | Blocked | Priority | Low | Medium | High | Critical | Planned Start | Start Date | End Date |  Additiona"
+  },
+  {
+    "slug": "28_event_21_work",
+    "path": "/maintenance/maintenance-event/21/work",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/21/work",
+    "title": "Toyota Corolla Oil Change Procedure - Perform Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Toyota Corolla Oil Change Procedure |  | Asset: VTC-002 (VTC0022023002) |  |  Back to View |  Maintenance Status | Planned | Completion Progress | 0% | 0 / 3 Actions | 3 | Total | 0 | In Progress | 0 | Complete |  Mark Complete |  Place in Blocked Status |  Add Capability Limitation |  Maintenance Event Details | Task Name: | Toyota Corolla Oil Change Procedure | Description"
+  },
+  {
+    "slug": "29_event_21_assign",
+    "path": "/maintenance/maintenance-event/21/assign",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/21/assign",
+    "title": "Assign Event - Maintenance",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Assign Maintenance Event |  | Assign or reassign this maintenance event to a technician |  |  Back to Event |  Current Assignment | Not Assigned |  Event Information | Event ID: #21 | Task: Toyota Corolla Oil Change Procedure | Asset: VTC-002 | Status: Planned | Progress: 0 / 3 actions complete (0.0%) |  Assignment Form | Technician * | Generic_User | 0 active | ad"
+  },
+  {
+    "slug": "30_event_22_view",
+    "path": "/maintenance/maintenance-event/22/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/maintenance-event/22/view",
+    "title": "Brake Inspection Procedure - Maintenance Event",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Brake Inspection Procedure |  | Maintenance Event Details |  |  Back to View Events | Status | Planned | Priority | Medium | Actions | 2 | Blockers | 0 |  Maintenance Event Details | Task Name: | Brake Inspection Procedure | Description: | N/A | Asset: |  | FTK-001 | Template Source: | Brake Inspection Procedure | Planned Start: | 2026-08-09 08:42 | Actual Start: | N/A | Actual End: | N"
+  },
+  {
+    "slug": "31_template_builder_drafts",
+    "path": "/maintenance/manager/template-builder/drafts",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/template-builder/drafts",
+    "title": "View Draft Templates - Manager Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  View Draft Templates |  | View and manage your incomplete template builder drafts |  |  Back to Build Templates |  Filters | Draft Name | Draft ID | User ID | Search Content |  Apply Filters  Clear Filters |  Draft Templates 0 |  | No draft templates found. |  |  Create New Draft |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "32_template_builder_new",
+    "path": "/maintenance/manager/template-builder/new",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/manager/template-builder/1",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  | New template builder created |  Edit Template Builder |  | Initialized New Template |  |  Back to Build Templates |  Ready to create your template? Once you're satisfied with your template builder, click below to create the final template. |  Create Template from Build |  Template Builder Metadata | Builder ID | Task Name * | Estimated Duration (hours) | D"
+  },
+  {
+    "slug": "33_action_creator_portal_set1",
+    "path": "/maintenance/action-creator-portal/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/maintenance/action-creator-portal/1",
+    "title": "Action Creator Portal",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Action Creator Portal |  From Template |  From Template Action |  From Proto Action |  From Current Action Set |  Blank Action |  Select Template Action Set | Search Templates | Searching template action sets and their action items | Template Action Sets | Brake Inspection Procedure | Template action set with 2 actions | 2 actions | Toyota Corolla Oil Chang"
+  }
+]

@@ -1,0 +1,211 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Edit Plan: {{ plan.name }}{% endblock %}
+{% block nav_plan_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'plan_index' %}">Plans</a></li>
+<li><a href="{% url 'plan_detail' pk=plan.pk %}">{{ plan.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_repeat</span></div>
+      <div>
+        <h1 class="page-title">Edit Maintenance Plan</h1>
+        <p class="page-subtitle">{{ plan.name }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'plan_detail' pk=plan.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span><span>View Details</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="columns is-variable is-4">
+    <!-- Left Column: Basic Information and Template -->
+    <div class="column is-6">
+      <form method="post" action="{% url 'plan_edit' pk=plan.pk %}">
+        {% csrf_token %}
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+              <span>Plan Parameters</span>
+            </div>
+          </div>
+          <div class="card-content">
+            <!-- Basic Information -->
+            <p class="heading is-size-7 has-text-grey mb-3">Basic Information</p>
+            
+            <div class="field">
+              <label class="label is-small">Plan Name <span class="has-text-danger">*</span></label>
+              <div class="control">
+                <input class="input is-small" type="text" name="name" value="{{ plan.name }}" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label is-small">Description</label>
+              <div class="control">
+                <textarea class="textarea is-small" name="description" rows="3">{{ plan.description }}</textarea>
+              </div>
+            </div>
+
+            <div class="columns">
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Status</label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="status">
+                        {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if plan.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Asset Class <span class="has-text-danger">*</span></label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="asset_class_id">
+                        {% for asset_class in asset_classes %}
+                        <option value="{{ asset_class.pk }}" {% if plan.asset_class_id == asset_class.pk %}selected{% endif %}>{{ asset_class.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Maintenance Template -->
+            <p class="heading is-size-7 has-text-grey mb-3">Maintenance Template</p>
+            
+            <div class="field">
+              <label class="label is-small">Template Action Set <span class="has-text-danger">*</span></label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="template_action_set_id">
+                    {% for template in templates %}
+                    <option value="{{ template.pk }}" {% if plan.template_action_set_id == template.pk %}selected{% endif %}>{{ template.task_name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Frequency Configuration -->
+            <p class="heading is-size-7 has-text-grey mb-3">Frequency Configuration</p>
+            
+            <div class="columns">
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Frequency Type <span class="has-text-danger">*</span></label>
+                  <div class="control">
+                    <div class="select is-small is-fullwidth">
+                      <select name="frequency_type">
+                        {% for value, label in frequency_types %}
+                        <option value="{{ value }}" {% if plan.frequency_type == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="column is-6">
+                <div class="field">
+                  <label class="label is-small">Calendar Interval (Days)</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" step="0.5" min="0" name="delta_days" value="{{ plan.delta_days|default_if_none:'' }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="message is-info is-light is-size-7 my-3">
+              <div class="message-body p-2">
+                Specify meter thresholds for meter-based tracking. Meter-based plans are not yet evaluated by the automated planner.
+              </div>
+            </div>
+
+            <div class="columns is-multiline">
+              <div class="column is-6 pb-2">
+                <div class="field">
+                  <label class="label is-small">Meter 1 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m1" value="{{ plan.delta_m1|default_if_none:'' }}">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pb-2">
+                <div class="field">
+                  <label class="label is-small">Meter 2 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m2" value="{{ plan.delta_m2|default_if_none:'' }}">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pt-0">
+                <div class="field">
+                  <label class="label is-small">Meter 3 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m3" value="{{ plan.delta_m3|default_if_none:'' }}">
+                  </div>
+                </div>
+              </div>
+              <div class="column is-6 pt-0">
+                <div class="field">
+                  <label class="label is-small">Meter 4 Delta</label>
+                  <div class="control">
+                    <input class="input is-small is-family-monospace" type="number" name="delta_m4" value="{{ plan.delta_m4|default_if_none:'' }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <footer class="card-footer" style="padding:0.75rem 1rem; justify-content:space-between;">
+            <a href="{% url 'plan_detail' pk=plan.pk %}" class="button is-small is-light">Cancel</a>
+            <button class="button is-small is-link" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Plan</span>
+            </button>
+          </footer>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right Column: Live Model Associations -->
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title">
+            <span class="icon"><span class="material-icons" aria-hidden="true">label</span></span>
+            <span>Model Associations</span>
+          </div>
+        </div>
+        <div class="card-content">
+          <p class="is-size-7 has-text-grey mb-3">
+            Add or remove specific model tags. Changes commit immediately to the database. If empty, the plan applies to <strong>all</strong> models in the class.
+          </p>
+          {% include "maintenance/components/_plan_models_dlb_only.html" %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

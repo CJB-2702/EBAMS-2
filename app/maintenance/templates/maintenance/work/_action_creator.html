@@ -1,0 +1,171 @@
+{% comment %}
+The Action Creator Portal — five sources for one new step.
+
+The most reused composite in the legacy module: the same five tabs appear in
+the event edit portal, the template builder, and standalone. Only the POST
+target changes, so this partial takes `creator_url` and nothing else that is
+host-specific.
+
+Tab switching is a GET against the host's own canonical URL with
+`format=htmx-creator`, per the format= contract — not five fragment routes.
+Without JS the tab links still work as plain full-page loads (F5 rule).
+{% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>Action creator portal</div>
+  </div>
+  <div class="card-content">
+    <div class="tabs is-small is-boxed">
+      <ul>
+        {% for value, label in tabs %}
+        <li {% if tab == value %}class="is-active"{% endif %}>
+          <a href="{{ creator_url }}?tab={{ value }}"
+             hx-get="{{ creator_url }}?format=htmx-creator&amp;tab={{ value }}"
+             hx-target="#action-creator-region"
+             hx-swap="innerHTML">{{ label }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% if tab != "blank" and tab != "current" %}
+    <form class="mb-3"
+          hx-get="{{ creator_url }}?format=htmx-creator&amp;tab={{ tab }}"
+          hx-trigger="keyup changed delay:350ms from:input[type=search]"
+          hx-target="#action-creator-region"
+          hx-swap="innerHTML">
+      <input class="input is-small" type="search" name="q" value="{{ q }}"
+             placeholder="filter by name, description{% if tab == 'proto' %}, or instructions{% endif %}…" autocomplete="off">
+    </form>
+    {% endif %}
+
+    {# ── From a whole template action set ─────────────────────────────── #}
+    {% if tab == "template_set" %}
+    <p class="heading is-size-7 has-text-grey">Select a template action set — every step in it is copied onto this event.</p>
+    {% if not q %}
+      {% if template_sets_asset_scoped %}
+      <p class="help mb-2">Showing templates matching this event's asset model — search above to browse the full library.</p>
+      {% else %}
+      <p class="help mb-2">Showing the most recent templates in your domain — search above to browse the full library.</p>
+      {% endif %}
+    {% endif %}
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <tbody>
+        {% for template in template_sets %}
+        <tr>
+          <td>
+            <strong>{{ template.task_name }}</strong>
+            <p class="has-text-grey">{{ template.description|default:"—" }}</p>
+          </td>
+          <td class="has-text-right" style="white-space:nowrap;">
+            <span class="tag is-info is-light">{{ template.action_count }} action{{ template.action_count|pluralize }}</span>
+            <form method="post" style="display:inline;" action="{{ creator_url }}">
+              {% csrf_token %}
+              <input type="hidden" name="template_action_set_id" value="{{ template.pk }}">
+              <button class="button is-small is-link" type="submit" name="action" value="add_from_template_set">Add all</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="has-text-grey p-3">No templates match.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# ── From one template step ───────────────────────────────────────── #}
+    {% elif tab == "template_action" %}
+    <p class="heading is-size-7 has-text-grey">Copy a single step out of any procedure template.</p>
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <tbody>
+        {% for item in template_actions %}
+        <tr>
+          <td>
+            <strong>{{ item.action_name }}</strong>
+            <p class="has-text-grey">from {{ item.template_action_set.task_name }}</p>
+          </td>
+          <td class="has-text-right">
+            <form method="post" style="display:inline;" action="{{ creator_url }}">
+              {% csrf_token %}
+              <input type="hidden" name="template_action_id" value="{{ item.pk }}">
+              <button class="button is-small is-link" type="submit" name="action" value="add_from_template_action">Add</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="has-text-grey p-3">No template actions match.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# ── From the proto library ───────────────────────────────────────── #}
+    {% elif tab == "proto" %}
+    <p class="heading is-size-7 has-text-grey">
+      Pull from the reusable library. A proto action brings its own parts, tools,
+      skills, and safety notes with it.
+    </p>
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <tbody>
+        {% for proto in proto_actions %}
+        <tr>
+          <td>
+            <a href="{% url 'proto_detail' pk=proto.pk %}"><strong>{{ proto.action_name }}</strong></a>
+            <p class="has-text-grey">{{ proto.description|default:"—" }}</p>
+          </td>
+          <td class="has-text-right">
+            <form method="post" style="display:inline;" action="{{ creator_url }}">
+              {% csrf_token %}
+              <input type="hidden" name="proto_id" value="{{ proto.pk }}">
+              <button class="button is-small is-link" type="submit" name="action" value="add_from_proto">Add</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="has-text-grey p-3">No proto actions match. <a href="{% url 'proto_create' %}">Create one</a>.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# ── Clone a step already on this event ───────────────────────────── #}
+    {% elif tab == "current" %}
+    <p class="heading is-size-7 has-text-grey">Duplicate a step already on this event.</p>
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <tbody>
+        {% for item in current_actions %}
+        <tr>
+          <td><span class="tag is-dark is-family-monospace">#{{ item.sequence_order }}</span> {{ item.action_name }}</td>
+          <td class="has-text-right">
+            <form method="post" style="display:inline;" action="{{ creator_url }}">
+              {% csrf_token %}
+              <input type="hidden" name="action_id" value="{{ item.pk }}">
+              <button class="button is-small is-link" type="submit" name="action" value="duplicate_action">Duplicate</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td class="has-text-grey p-3">Nothing to clone yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {# ── Ad-hoc ───────────────────────────────────────────────────────── #}
+    {% else %}
+    <p class="heading is-size-7 has-text-grey">Add an ad-hoc step that exists only on this event.</p>
+    <form method="post" action="{{ creator_url }}">
+      {% csrf_token %}
+      <div class="columns is-variable is-3">
+        <div class="column is-5">
+          <label class="label is-small">Step name</label>
+          <input class="input is-small" type="text" name="action_name" placeholder="e.g. Re-torque wheel nuts" required>
+        </div>
+        <div class="column is-5">
+          <label class="label is-small">Description</label>
+          <input class="input is-small" type="text" name="description" placeholder="optional">
+        </div>
+        <div class="column is-2 is-flex is-align-items-flex-end">
+          <button class="button is-small is-link is-fullwidth" type="submit" name="action" value="add_blank_action">Add step</button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>

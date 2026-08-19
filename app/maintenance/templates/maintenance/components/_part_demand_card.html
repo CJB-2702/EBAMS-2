@@ -1,25 +1,48 @@
 <div class="card">
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>Part Demand Status</div></div>
-  <div class="card-content is-flush pb-3">
-    <table class="table is-fullwidth is-size-7" style="margin:0;">
-      <thead><tr><th>Action</th><th>Part</th><th class="has-text-right">Requested</th><th>Demand State</th><th>Purchasing</th></tr></thead>
-      <tbody>
-        {% for action in actions %}
-          {% for link in action.demand_links.all %}
-          <tr>
-            <td>{{ action.action_name }}</td>
-            <td>{{ link.part_demand.part }}</td>
-            <td class="has-text-right is-family-monospace">{{ link.part_demand.quantity_requested }}</td>
-            <td>{{ link.part_demand.get_demand_state_display }}</td>
-            <td>{{ link.part_demand.get_purchasing_state_display }}</td>
-          </tr>
-          {% endfor %}
-        {% empty %}
-        {% endfor %}
-      </tbody>
-    </table>
-    {% if not actions %}
-    <p class="has-text-grey is-size-7 p-3">None.</p>
+  <div class="card-content">
+    {% for row in part_demand_rows %}
+    {% if row.link.part_demand.demand_state == 'rejected' %}
+    <div class="card mb-3 part-demand-card--rejected" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
+    {% elif row.link.part_demand.demand_state == 'cancelled' %}
+    <div class="card mb-3 part-demand-card--cancelled" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
+    {% elif row.link.part_demand.issuance_state == 'not_issued' %}
+    <div class="card mb-3 part-demand-card--not-issued" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
+    {% elif row.link.part_demand.issuance_state == 'partially_issued' or row.link.part_demand.issuance_state == 'issued_without_stock_adjustment' %}
+    <div class="card mb-3 part-demand-card--issued-no-stock" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
+    {% elif row.link.part_demand.issuance_state == 'issued' or row.link.part_demand.issuance_state == 'issued_pending_reconciliation' or row.link.part_demand.issuance_state == 'issued_reconciliation_required' %}
+    <div class="card mb-3 part-demand-card--issued" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
+    {% else %}
+    <div class="card mb-3" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none; border-radius: 0;">
     {% endif %}
+      <div class="card-content is-size-7">
+        <p class="has-text-weight-semibold">{{ row.link.part_demand.part.part_number|default:row.link.part_demand.part }}</p>
+        <p class="has-text-grey mb-2">{{ row.link.part_demand.part.name }}</p>
+        <p class="has-text-grey">Action</p>
+        <p class="mb-2">{{ row.action.action_name }}</p>
+        <div class="tags mb-2">
+          <span class="tag is-light" style="border-radius:0;">{{ row.link.part_demand.get_demand_state_display }}</span>
+          <span class="tag is-light" style="border-radius:0;">{{ row.link.part_demand.get_purchasing_state_display|default:"Purchasing: —" }}</span>
+          <span class="tag is-light" style="border-radius:0;">{{ row.link.part_demand.get_issuance_state_display }}</span>
+        </div>
+        <div class="columns is-mobile is-variable is-2">
+          <div class="column has-text-centered">
+            <p class="has-text-grey" style="font-size:0.68rem; text-transform:uppercase;">Requested</p>
+            <p class="is-family-monospace">{{ row.link.part_demand.quantity_requested }}</p>
+          </div>
+          <div class="column has-text-centered">
+            <p class="has-text-grey" style="font-size:0.68rem; text-transform:uppercase;">Purchased</p>
+            <p class="is-family-monospace">{{ row.link.part_demand.purchased_qty }}</p>
+          </div>
+          <div class="column has-text-centered">
+            <p class="has-text-grey" style="font-size:0.68rem; text-transform:uppercase;">Issued</p>
+            <p class="is-family-monospace">{{ row.link.part_demand.issued_qty }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <p class="has-text-grey is-size-7">None.</p>
+    {% endfor %}
   </div>
 </div>

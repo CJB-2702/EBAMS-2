@@ -1,0 +1,149 @@
+{% extends "maintenance/base.html" %}
+{% block title %}{{ item.action_name }} — Proto Action{% endblock %}
+{% block nav_proto_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'proto_index' %}">Proto Actions</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ item.action_name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">checklist</span></div>
+      <div>
+        <h1 class="page-title">{{ item.action_name }}</h1>
+        <p class="page-subtitle">{{ item.description|default:"Reusable action template for maintenance procedures." }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'proto_index' %}" class="button is-small">Back to library</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── Stat tiles ──────────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-content">
+      <div class="columns has-text-centered">
+        <div class="column"><p class="heading is-size-7 has-text-grey">Required</p><p class="title is-4">{% if item.is_required %}Yes{% else %}No{% endif %}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">Revision</p><p class="title is-4">{{ item.revision|default:"—" }}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">Parts required</p><p class="title is-4">{{ part_demands|length }}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">Tools required</p><p class="title is-4">{{ tools|length }}</p></div>
+        <div class="column"><p class="heading is-size-7 has-text-grey">Used by templates</p><p class="title is-4">{{ reference_count }}</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-variable is-4">
+    <div class="column is-8">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Proto action details</div></div>
+        <div class="card-content is-size-7">
+          <div class="columns is-multiline is-variable is-2">
+            <div class="column is-6"><p class="has-text-grey">Action name</p><p>{{ item.action_name }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Estimated duration</p><p>{% if item.estimated_duration_minutes %}{{ item.estimated_duration_minutes }} min{% else %}—{% endif %}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Minimum staff</p><p>{{ item.minimum_staff_count }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Instructions format</p><p>{{ item.instructions_type|default:"Plain text" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Domain</p><p>{{ item.domain }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Created</p><p>{{ item.created_at|date:"Y-m-d H:i" }} by {{ item.created_by|default:"—" }}</p></div>
+            <div class="column is-12"><p class="has-text-grey">Description</p><p>{{ item.description|default:"—" }}</p></div>
+            <div class="column is-12">
+              <p class="has-text-grey">Required skills</p>
+              <p>{{ item.required_skills|default:"—" }}</p>
+            </div>
+            <div class="column is-12">
+              <p class="has-text-grey">Instructions</p>
+              <p style="white-space:pre-wrap;">{{ item.instructions|default:"—" }}</p>
+            </div>
+          </div>
+
+          {# The safety callout that propagates proto → template → live step. #}
+          {% if item.safety_notes %}
+          <div class="notification is-warning is-light is-size-7 p-2 mt-2">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span>
+            <strong>Safety notes:</strong> {{ item.safety_notes }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Parts required ({{ part_demands|length }})</div></div>
+        <div class="card-content is-flush pb-3">
+          <table class="table is-fullwidth is-size-7" style="margin:0;">
+            <tbody>
+              {% for demand in part_demands %}
+              <tr>
+                <td>{{ demand.part.part_number }} — {{ demand.part.name }}</td>
+                <td class="has-text-right is-family-monospace">x{{ demand.quantity_required }}</td>
+              </tr>
+              {% empty %}
+              <tr><td class="has-text-grey p-3">No parts required for this proto action.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span>Tools required ({{ tools|length }})</div></div>
+        <div class="card-content">
+          {% for tool in tools %}
+          <span class="tag is-dark mr-1 mb-1">{{ tool.tool_name|default:tool.tool }} x{{ tool.quantity_required }}</span>
+          {% empty %}
+          <p class="has-text-grey is-size-7">No tools required for this proto action.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="column is-4">
+      {# ── The reverse reference. The reason a proto library is worth
+           maintaining: it answers "what breaks if I change this?" ──────── #}
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>Referenced by template steps ({{ reference_count }})</div>
+        </div>
+        <div class="card-content is-flush pb-3">
+          <table class="table is-fullwidth is-size-7" style="margin:0;">
+            <tbody>
+              {% for ref in references %}
+              <tr>
+                <td>
+                  <strong>{{ ref.action_name }}</strong>
+                  <p class="has-text-grey">from {{ ref.template_action_set.task_name }}</p>
+                </td>
+                <td class="has-text-right">
+                  <a href="{% url 'template_detail' pk=ref.template_action_set.pk %}" class="button is-small is-light">View template</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td class="has-text-grey p-3">
+                  No procedure template uses this proto action yet. Add it to one from
+                  a template's Action Creator Portal.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bar_chart</span></span>Summary</div></div>
+        <div class="card-content is-size-7">
+          <p>Parts required: <strong>{{ part_demands|length }}</strong></p>
+          <p>Tools required: <strong>{{ tools|length }}</strong></p>
+          <p>Referenced by templates: <strong>{{ reference_count }}</strong></p>
+          <p>Minimum staff: <strong>{{ item.minimum_staff_count }}</strong></p>
+          <p>Required: <strong>{% if item.is_required %}Yes{% else %}No{% endif %}</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

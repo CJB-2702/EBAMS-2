@@ -1,8 +1,10 @@
 {% extends "maintenance/base.html" %}
+{% load static %}
 {% block title %}{{ detail.title }}{% endblock %}
 {% block breadcrumb %}
 <li class="is-active"><a href="#" aria-current="page">{{ detail.title }}</a></li>
 {% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">{% endblock %}
 
 {% block content %}
 <div class="page-hero">
@@ -18,52 +20,108 @@
       <a href="{% url 'maintenance_index' %}" class="button is-small is-light">
         <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>All Events</span>
       </a>
-      {% if can_edit %}
-      {% if detail.status == "planned" %}
-      <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" style="display:inline;">
-        {% csrf_token %}<input type="hidden" name="action" value="start">
-        <button type="submit" class="button is-small is-info">
-          <span class="icon"><span class="material-icons" aria-hidden="true">play_arrow</span></span><span>Start</span>
-        </button>
-      </form>
-      {% endif %}
-      {% if detail.status == "planned" or detail.status == "in_progress" or detail.status == "blocked" %}
-      <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" style="display:inline;">
-        {% csrf_token %}<input type="hidden" name="action" value="complete">
-        <button type="submit" class="button is-small is-success" {% if not completion_verdict.allowed %}disabled title="{{ completion_verdict.reasons|join:'; ' }}"{% endif %}>
-          <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Complete</span>
-        </button>
-      </form>
-      <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" style="display:inline;">
-        {% csrf_token %}<input type="hidden" name="action" value="cancel">
-        <button type="submit" class="button is-small is-danger is-light" onclick="return confirm('Cancel this maintenance event?');">
-          <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Cancel</span>
-        </button>
-      </form>
-      {% endif %}
-      {% endif %}
+      <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span><span>Work</span>
+      </a>
+      <a href="{% url 'maintenance_edit' pk=detail.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span><span>Edit</span>
+      </a>
+      <a href="{% url 'maintenance_assign' pk=detail.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span><span>Assign</span>
+      </a>
     </div>
   </div>
 </div>
 
+{% comment %} ── Blocked / degraded banner ──────────────────────────────────
+   An active blocker means nobody can work this job right now; an active
+   limitation means the ASSET is degraded. Both are facts a reader needs
+   before they read anything else, so they sit above the fold at full width
+   — and above the body grid, not inside it, or the grid squeezes them into
+   a single column.
+{% endcomment %}
+{% if active_blockers %}
+<div class="notification is-warning mb-4">
+  <div class="is-flex is-align-items-flex-start">
+    <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">pause_circle</span></span>
+    <div style="flex:1 1 auto; min-width:0;">
+      <p class="title is-5 mb-1">Work is blocked</p>
+      {% for blocker in active_blockers %}
+      <p class="is-size-6"><strong>{{ blocker.reason }}</strong>{% if blocker.notes %} — {{ blocker.notes }}{% endif %}</p>
+      <p class="is-size-7">
+        Since {{ blocker.start_date|date:"Y-m-d H:i" }}
+        · {{ blocker.get_priority_display }} priority
+        {% if blocker.billable_hours_lost %} · {{ blocker.billable_hours_lost }}h lost so far{% endif %}
+        {% if blocker.expected_resolution_date %} · expected to clear {{ blocker.expected_resolution_date|date:"Y-m-d H:i" }}{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Resolve in work portal</a>
+  </div>
+</div>
+{% endif %}
+{% if active_limitations %}
+<div class="notification is-danger mb-4">
+  <div class="is-flex is-align-items-flex-start">
+    <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">warning</span></span>
+    <div style="flex:1 1 auto; min-width:0;">
+      <p class="title is-5 mb-1">Asset capability is limited</p>
+      {% for record in active_limitations %}
+      <p class="is-size-6"><strong>{{ record.get_status_display }}</strong>{% if record.limitation_description %} — {{ record.limitation_description }}{% endif %}</p>
+      {% if record.temporary_modifications %}<p class="is-size-7">Compensation in place: {{ record.temporary_modifications }}</p>{% endif %}
+      <p class="is-size-7">
+        Since {{ record.start_time|date:"Y-m-d H:i" }}
+        {% if record.maintenance_blocker_id %} · this is why work is blocked{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Close in work portal</a>
+  </div>
+</div>
+{% endif %}
+
+
 <div class="body-grid has-rail">
+
   <div>
     {# Event details #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Event Details</div></div>
       <div class="card-content">
         {% if detail.description %}<p class="is-size-7 mb-3">{{ detail.description }}</p>{% endif %}
-        <dl class="kv is-size-7">
-          <dt>Status</dt><dd><span class="tag is-light">{{ detail.get_status_display|default:"—" }}</span></dd>
-          <dt>Priority</dt><dd>{{ detail.get_priority_display|default:"—" }}</dd>
-          <dt>Asset</dt><dd>{{ detail.asset|default:"—" }}</dd>
-          <dt>Assigned To</dt><dd>{{ detail.assigned_user|default:"Unassigned" }}</dd>
-          <dt>Start</dt><dd class="is-family-monospace">{{ detail.event_start|date:"Y-m-d H:i"|default:"—" }}</dd>
-          <dt>End</dt><dd class="is-family-monospace">{{ detail.event_end|date:"Y-m-d H:i"|default:"—" }}</dd>
-          {% if detail.template_action_set %}
-          <dt>Template</dt><dd><a href="{% url 'template_detail' pk=detail.template_action_set_id %}">{{ detail.template_action_set.task_name }}</a></dd>
-          {% endif %}
-        </dl>
+        <div class="columns is-variable is-4">
+          <div class="column is-4">
+            <dl class="kv is-size-7">
+              <dt>Status</dt><dd><span class="tag is-light">{{ detail.get_status_display|default:"—" }}</span></dd>
+              <dt>Priority</dt><dd>{{ detail.get_priority_display|default:"—" }}</dd>
+              <dt>Asset</dt><dd>{{ detail.asset|default:"—" }}</dd>
+              <dt>Assigned To</dt><dd>{{ detail.assigned_user|default:"Unassigned" }}</dd>
+              <dt>Start</dt><dd class="is-family-monospace">{{ detail.event_start|date:"Y-m-d H:i"|default:"—" }}</dd>
+              <dt>End</dt><dd class="is-family-monospace">{{ detail.event_end|date:"Y-m-d H:i"|default:"—" }}</dd>
+              {% if detail.template_action_set %}
+              <dt>Template</dt><dd><a href="{% url 'template_detail' pk=detail.template_action_set_id %}">{{ detail.template_action_set.task_name }}</a></dd>
+              {% endif %}
+            </dl>
+          </div>
+          <div class="column is-4">
+            <dl class="kv is-size-7">
+              <dt>Created</dt><dd class="is-family-monospace">{{ detail.created_at|date:"Y-m-d H:i" }}</dd>
+              <dt>Created By</dt><dd>{{ detail.created_by|default:"—" }}</dd>
+              <dt>Updated</dt><dd class="is-family-monospace">{{ detail.updated_at|date:"Y-m-d H:i" }}</dd>
+              <dt>Updated By</dt><dd>{{ detail.updated_by|default:"—" }}</dd>
+            </dl>
+          </div>
+          <div class="column is-4">
+            <div class="card" style="border: 1px solid var(--bulma-border-weak, #dbdbdb); box-shadow: none;">
+              <div class="card-header" style="box-shadow: none; border-bottom: 1px solid var(--bulma-border-weak, #dbdbdb);"><div class="card-header-title is-size-7"><span class="icon"><span class="material-icons" aria-hidden="true">schedule</span></span>Billable Hours</div></div>
+              <div class="card-content is-size-7">
+                <p>Calculated (sum of action hours): <strong>{{ billable_hours_manager.calculated_hours }}</strong></p>
+                <p>Actual (override): <strong>{{ detail.actual_billable_hours|default:"—" }}</strong></p>
+                {% if billable_hours_warning %}<p class="has-text-warning">{{ billable_hours_warning }}</p>{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -75,10 +133,12 @@
       </div>
     </div>
 
-    {# Part demand status #}
+    {# Activity Card (Standard Event Card) #}
+    {% if activity_card %}
     <div class="mt-4">
-      {% include "maintenance/components/_part_demand_card.html" %}
+      {% include "events/fragments/event_card.html" with card=activity_card %}
     </div>
+    {% endif %}
   </div>
 
   <div class="body-rail">
@@ -98,75 +158,25 @@
           </p>
           {% if record.limitation_description %}<p class="is-size-7">{{ record.limitation_description }}</p>{% endif %}
           {% if record.temporary_modifications %}<p class="is-size-7 has-text-grey">Compensation: {{ record.temporary_modifications }}</p>{% endif %}
-          {% if not record.end_time %}
-          <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" class="mt-1">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="close_limitation">
-            <input type="hidden" name="record_id" value="{{ record.pk }}">
-            <button type="submit" class="button is-small is-success is-light">Close</button>
-          </form>
-          {% endif %}
         </div>
         {% empty %}
         <p class="has-text-grey is-size-7">None.</p>
         {% endfor %}
-
-        <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" class="mt-2">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_limitation">
-          <div class="field">
-            <label class="label is-small">Status</label>
-            <div class="select is-small is-fullwidth">
-              <select name="status">
-                {% for value, label in capability_statuses %}
-                <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-small">Description</label>
-            <textarea class="textarea is-small" name="limitation_description" rows="2"></textarea>
-          </div>
-          <div class="field">
-            <label class="label is-small">Compensation (required for compensation statuses only)</label>
-            <textarea class="textarea is-small" name="temporary_modifications" rows="2"></textarea>
-          </div>
-          <button type="submit" class="button is-small is-warning is-light">
-            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Log Limitation</span>
-          </button>
-        </form>
       </div>
     </div>
 
-    {# Billable hours #}
-    <div class="card mb-4">
-      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">schedule</span></span>Billable Hours</div></div>
-      <div class="card-content is-size-7">
-        <p>Calculated (sum of action hours): <strong>{{ billable_hours_manager.calculated_hours }}</strong></p>
-        <p>Actual (override): <strong>{{ detail.actual_billable_hours|default:"—" }}</strong></p>
-        {% if billable_hours_warning %}<p class="has-text-warning">{{ billable_hours_warning }}</p>{% endif %}
-        <form method="post" action="{% url 'maintenance_detail' pk=detail.pk %}" class="mt-2">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="set_billable_hours">
-          <div class="field has-addons">
-            <div class="control"><input class="input is-small is-family-monospace" type="number" step="0.1" min="0" name="actual_billable_hours" style="width:6rem;"></div>
-            <div class="control"><button type="submit" class="button is-small is-light">Set</button></div>
-          </div>
-        </form>
-      </div>
+    {# Assigned technicians #}
+    <div class="mb-4">
+      {% include "maintenance/components/_assigned_technicians_card.html" %}
     </div>
 
-    {# Meta #}
-    <div class="card">
-      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info_outline</span></span>Meta</div></div>
-      <div class="card-content is-size-7">
-        <p class="has-text-grey mb-1">Created</p>
-        <p class="mb-3 is-family-monospace">{{ detail.created_at|date:"Y-m-d H:i" }} by {{ detail.created_by|default:"—" }}</p>
-        <p class="has-text-grey mb-1">Updated</p>
-        <p class="is-family-monospace">{{ detail.updated_at|date:"Y-m-d H:i" }} by {{ detail.updated_by|default:"—" }}</p>
-      </div>
+    {# Part demand status #}
+    <div class="mb-4">
+      {% include "maintenance/components/_part_demand_card.html" %}
     </div>
   </div>
-</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script src="{% static 'web_components/app_specific/add_comment.js' %}" defer></script>
 {% endblock %}

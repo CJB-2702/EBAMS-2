@@ -1,0 +1,301 @@
+{% extends "maintenance/base.html" %}
+{% load static %}
+{% block title %}Part Demand #{{ demand.pk }}{% endblock %}
+{% block nav_part_demand_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'part_demand_index' %}">Part Demands</a></li>
+<li class="is-active"><a href="#" aria-current="page">#{{ demand.pk }}</a></li>
+{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">inventory_2</span></div>
+      <div>
+        <h1 class="page-title">Part Demand Details</h1>
+        <p class="page-subtitle">{{ demand.part.part_number }} — {{ demand.part.name }}</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'demand_detail' pk=demand.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">timeline</span></span><span>Procurement view</span>
+      </a>
+      <a href="{% url 'part_demand_index' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to queue</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── Status banner ───────────────────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-content">
+      <div class="columns is-vcentered">
+        <div class="column">
+          <p class="heading is-size-7 has-text-grey">Approval status</p>
+          <p class="title is-4">{{ demand.get_demand_state_display }}</p>
+        </div>
+        <div class="column has-text-right">
+          <p class="heading is-size-7 has-text-grey">Priority</p>
+          <p class="subtitle is-5">{{ demand.get_priority_display }}</p>
+        </div>
+        <div class="column has-text-right">
+          <p class="heading is-size-7 has-text-grey">Quantity required</p>
+          <p class="subtitle is-5 is-family-monospace">{{ demand.quantity_requested }}</p>
+        </div>
+        <div class="column has-text-right">
+          <p class="heading is-size-7 has-text-grey">Issued</p>
+          <p class="subtitle is-5 is-family-monospace">{{ demand.issued_qty }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-variable is-4">
+
+    {# ── Part information ─────────────────────────────────────────────── #}
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span>Part Information</div></div>
+        <div class="card-content is-size-7">
+          <div class="columns is-multiline is-variable is-2">
+            <div class="column is-6">
+              <p class="has-text-grey">Part number</p>
+              <p class="has-text-weight-semibold is-family-monospace">{{ demand.part.part_number }}</p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Name</p>
+              <p class="has-text-weight-semibold">{{ demand.part.name|default:"—" }}</p>
+            </div>
+            <div class="column is-12">
+              <p class="has-text-grey">Description</p>
+              <p>{{ demand.part.description|default:"—" }}</p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Domain</p>
+              <p>{{ demand.domain }}</p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Expected cost</p>
+              <p class="is-family-monospace">{% if demand.expected_cost %}{{ demand.expected_cost }}{% else %}—{% endif %}</p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Needed by</p>
+              <p>{{ demand.needed_by|date:"Y-m-d H:i"|default:"—" }}</p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Source module</p>
+              <p>{{ demand.get_source_module_display }}</p>
+            </div>
+            <div class="column is-12">
+              <p class="has-text-grey">Notes</p>
+              <p style="white-space:pre-wrap;">{{ demand.notes|default:"—" }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Maintenance context — always renders (Rule #5), with the two
+         explicit empty states the legacy page used. ──────────────────── #}
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span>Maintenance Context</div></div>
+        <div class="card-content is-size-7">
+          {% if has_maintenance_link %}
+            <p class="heading is-size-7 has-text-grey">Maintenance event</p>
+            {% if event %}
+            <p class="mb-1">
+              <a href="{% url 'maintenance_detail' pk=event.pk %}"><strong>Event #{{ event.pk }} — {{ event.title|default:"Untitled" }}</strong></a>
+            </p>
+            <p class="has-text-grey mb-3">
+              {{ event.get_status_display }} ·
+              {% if asset %}{{ asset }}{% else %}No asset{% endif %} ·
+              {% if event.assigned_user %}Assigned to {{ event.assigned_user }}{% else %}Unassigned{% endif %}
+            </p>
+            {% else %}
+            <p class="has-text-grey mb-3">The linked action has no parent event.</p>
+            {% endif %}
+
+            <p class="heading is-size-7 has-text-grey">
+              Action step{{ links|length|pluralize }} requiring this part
+            </p>
+            <table class="table is-fullwidth is-size-7" style="margin:0;">
+              <thead><tr><th>#</th><th>Action</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for link in links %}
+                <tr>
+                  <td class="is-family-monospace">{{ link.sequence_order }}</td>
+                  <td>{{ link.action.action_name }}</td>
+                  <td>{{ link.action.get_status_display|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="has-text-grey is-italic">
+              This part demand is not linked to a maintenance action — it may
+              have been raised by Dispatching or as a general request.
+            </p>
+            <p class="has-text-grey is-italic mt-2">No associated maintenance event found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Workflow information: the two independent gates ─────────────────── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Workflow Information</div></div>
+    <div class="card-content is-size-7">
+      <div class="columns is-variable is-4">
+        <div class="column is-3">
+          <p class="heading is-size-7 has-text-grey">Requested by</p>
+          <p class="has-text-weight-semibold">{{ demand.requested_by|default:"—" }}</p>
+          <p class="has-text-grey">{{ demand.created_at|date:"Y-m-d H:i" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="heading is-size-7 has-text-grey">Maintenance approval</p>
+          <p class="has-text-weight-semibold">{{ demand.get_demand_state_display }}</p>
+          <p class="has-text-grey">Is the need real and authorized?</p>
+        </div>
+        <div class="column is-3">
+          <p class="heading is-size-7 has-text-grey">Supply / purchasing</p>
+          <p class="has-text-weight-semibold">{{ demand.get_purchasing_state_display|default:"No decision yet" }}</p>
+          <p class="has-text-grey">Independent of maintenance approval — approving here funds nothing.</p>
+        </div>
+        <div class="column is-3">
+          <p class="heading is-size-7 has-text-grey">Issuance</p>
+          <p class="has-text-weight-semibold">{{ demand.get_issuance_state_display }}</p>
+          <p class="has-text-grey">{{ demand.issued_qty }} of {{ demand.quantity_requested }} handed over.</p>
+        </div>
+      </div>
+      <hr class="my-3">
+      <div class="columns is-variable is-4">
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey">Shipment</p>
+          <p>{{ demand.get_shipment_state_display }}</p>
+        </div>
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey">On order</p>
+          <p class="is-family-monospace">{{ demand.purchased_qty }}</p>
+        </div>
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey">Last updated</p>
+          <p>{{ demand.updated_at|date:"Y-m-d H:i" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Actions. Always renders; explains itself when the user may not act. #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Actions</div></div>
+    <div class="card-content">
+      {% if can_manage or is_requester %}
+      <div class="columns is-variable is-4">
+
+        {% if can_manage %}
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey mb-2">Approval</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="field">
+              <label class="label is-small" for="approval-notes">Notes (optional)</label>
+              <input class="input is-small" type="text" id="approval-notes" name="notes" placeholder="reason, work order reference…">
+            </div>
+            <div class="buttons are-small">
+              <button type="submit" name="action" value="approve" class="button is-success">Approve</button>
+              <button type="submit" name="action" value="reject" class="button is-danger">Reject</button>
+              <button type="submit" name="action" value="mark_required" class="button">Mark required</button>
+              <button type="submit" name="action" value="resubmit" class="button">Resubmit</button>
+              <button type="submit" name="action" value="cancel" class="button is-warning">Cancel demand</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey mb-2">Substitute part</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="field">
+              <search-dropdown name="new_part_id" placeholder="search part number or name…"
+                               hx-get="{% url 'part_demand_detail' pk=demand.pk %}?format=htmx-part-search"></search-dropdown>
+            </div>
+            <div class="field">
+              <input class="input is-small" type="text" name="notes" placeholder="why the substitution (optional)">
+            </div>
+            <button type="submit" name="action" value="substitute_part" class="button is-small is-warning">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">swap_horiz</span></span><span>Substitute</span>
+            </button>
+            <p class="help">
+              Allowed only while nothing has happened to this demand yet — no purchasing
+              decision, nothing on order, nothing issued. Otherwise raise a new demand.
+            </p>
+          </form>
+        </div>
+        {% endif %}
+
+        <div class="column is-4">
+          <p class="heading is-size-7 has-text-grey mb-2">Edit request</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="field">
+              <label class="label is-small" for="edit-qty">Quantity requested</label>
+              <input class="input is-small" type="number" step="0.001" min="0" id="edit-qty"
+                     name="quantity_requested" value="{{ demand.quantity_requested }}">
+              <p class="help">Quantity can only be raised here, never lowered.</p>
+            </div>
+            <div class="field">
+              <label class="label is-small" for="edit-priority">Priority</label>
+              <div class="select is-small is-fullwidth">
+                <select id="edit-priority" name="priority">
+                  {% for value, label in priorities %}
+                  <option value="{{ value }}" {% if demand.priority == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label class="label is-small" for="edit-notes">Notes</label>
+              <textarea class="textarea is-small" id="edit-notes" name="notes" rows="2">{{ demand.notes }}</textarea>
+            </div>
+            <button type="submit" name="action" value="update_fields" class="button is-small is-link">Save</button>
+          </form>
+
+          <hr class="my-3">
+
+          <p class="heading is-size-7 has-text-grey mb-2">Issuance</p>
+          <form method="post">
+            {% csrf_token %}
+            <div class="field">
+              <div class="select is-small is-fullwidth">
+                <select name="to_stage" aria-label="Issuance state">
+                  {% for value, label in issuance_states %}
+                  <option value="{{ value }}" {% if demand.issuance_state == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" name="action" value="set_issuance" class="button is-small">Update issuance</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <p class="has-text-grey is-size-7">
+        You can read this demand but not act on it. Approving, rejecting, and
+        substituting require the <code>demand_manage</code> permission; editing
+        also works if you are the person who raised it.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

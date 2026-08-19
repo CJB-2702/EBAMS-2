@@ -38,8 +38,26 @@ class Action(AbstractActionItem, AuditFieldsMixin, SoftDeleteMixin):
     )
     
     scheduled_start_time = models.DateTimeField(null=True, blank=True)
+
+    # start_time / end_time: set once each by ActionContext.start() / .complete()
+    # (actual wall-clock — when work genuinely began and ended). Reference only:
+    # nothing enforces start_time < end_time, and nothing computes a duration from
+    # them automatically. They exist to answer "how long did this actually take"
+    # as a fact independent of billable_hours below, which answers a different
+    # question ("how much of that gets billed"). The two are expected to diverge
+    # — e.g. 6 hours elapsed (end_time - start_time) but only 4 billable_hours
+    # recorded — and that divergence is not an error to correct, just something
+    # to surface if it ever needs comparing.
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
+
+    # The technician-recorded actual billable figure for this step, entered
+    # independently of start_time/end_time above (never derived from them).
+    # Its expectation baseline is TemplateActionItem.estimated_duration_minutes
+    # on the template step this action was created from (see
+    # ActionFactory / template_action_item field, and AbstractActionSet.labor_hours
+    # for the whole-procedure figure) — the template says what a task should take;
+    # this field is what one technician says it actually took to bill for.
     billable_hours = models.FloatField(null=True, blank=True)
     completion_notes = models.TextField(blank=True)
     

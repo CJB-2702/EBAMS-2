@@ -1,0 +1,23 @@
+{% comment %}
+One page of asset dashboard cards + infinite-scroll sentinel. Expects: cards,
+page_obj, base_query. Mirrors events/fragments/event_cards_page.html.
+{% endcomment %}
+{% for card in cards %}
+  {% include "maintenance/fragments/asset_dashboard_card.html" with card=card %}
+{% empty %}
+  {% if page_obj.number == 1 %}
+  <div class="ah-empty-state">No assets match these filters.</div>
+  {% endif %}
+{% endfor %}
+
+{% if page_obj.has_next %}
+<div class="ah-load-more"
+     hx-get="?{{ base_query }}{% if base_query %}&{% endif %}format=htmx-asset-cards&page={{ page_obj.next_page_number }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML">
+  <div class="has-text-centered py-4 has-text-grey is-size-7 htmx-indicator">
+    <span class="icon"><span class="material-icons" aria-hidden="true">hourglass_empty</span></span>
+    <span>Loading more…</span>
+  </div>
+</div>
+{% endif %}

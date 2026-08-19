@@ -65,6 +65,44 @@ class PartDemandManager:
         return link
 
     @classmethod
+    def record_technician_issue(
+        cls,
+        *,
+        demand_id: int,
+        qty_issued: Decimal,
+        actor=None,
+        notes: str = "",
+    ):
+        """The work portal's "Record Qty Issued" verb (legacy
+        /part-demand/<id>/update-issue with record_issue=1).
+
+        A technician acquired the part outside the formal inventory process and
+        is stating how much they actually took. That is a real quantity, so it
+        goes through PartDemandContext.record_issuance() — the verb that writes
+        issued_qty — rather than set_issuance_state(), which deliberately does
+        not touch the number.
+
+        D12 names app/inventory/ as the normal caller of record_issuance,
+        because inventory is where a PartIssue row would be created. There is
+        no PartIssue here on purpose: ISSUED_WITHOUT_STOCK_ADJUSTMENT means
+        exactly "no stock movement was recorded". This wrapper exists so that
+        exception is stated in one place with a name, instead of an entrypoint
+        reaching for the inventory seam directly.
+        """
+        from app.procurement.control_layer.part_demand_context import PartDemandContext
+        from app.procurement.models import IssuanceState
+
+        if qty_issued is None or qty_issued <= 0:
+            raise ValueError("Quantity issued must be greater than zero.")
+
+        return PartDemandContext(demand_id).record_issuance(
+            net_issued_qty=qty_issued,
+            to_stage=IssuanceState.ISSUED_WITHOUT_STOCK_ADJUSTMENT,
+            actor=actor,
+            notes=notes,
+        )
+
+    @classmethod
     def remove_link(cls, *, link_id: int, actor=None) -> None:
         """Soft-deletes the link only — the hub PartDemand row is never deleted
         by this app (D7); its own lifecycle is owned by procurement.PartDemandContext."""

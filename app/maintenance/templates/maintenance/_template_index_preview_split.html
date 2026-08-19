@@ -1,0 +1,146 @@
+{% comment %}
+Preview mode: half-width filtered list, half-width preview. The preview
+pane always renders — before a pick it says so rather than showing a
+blank box (CLAUDE.md rule #5). Row actions live atop the preview pane,
+not buried in the list, mirroring the retired build-hub layout.
+{% endcomment %}
+
+<style>
+.table tr.is-selected-preview {
+  background-color: #ebf2fc !important;
+  border-left: 4px solid #209cee !important;
+}
+.table tr.is-selected-preview td {
+  background-color: #ebf2fc !important;
+}
+.table tr.is-selected-preview a {
+  color: #1d68cd !important;
+}
+.table tr.is-selected-preview .has-text-grey {
+  color: #4a4a4a !important;
+}
+.table tr.is-selected-preview .tag {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<div class="columns is-variable is-4">
+  <div class="column is-6">
+    <h3 class="heading is-size-3 has-text-grey">Templates ({{ templates|length }})</h3>
+    <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+      <tbody>
+        {% for t in templates %}
+        <tr class="{% if selected and selected.pk == t.pk %}is-selected-preview {% endif %}{% if t.subsequent_revision_count %}is-superseded-revision{% endif %}"
+            hx-get="{% url 'template_index' %}{% querystring selected=t.pk format='htmx-search-results' %}"
+            hx-target="#template-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="{% url 'template_index' %}{% querystring selected=t.pk %}"
+            onclick="const el = document.getElementById('id_selected_filter'); if (el) el.value = '{{ t.pk }}';"
+            style="cursor: pointer;">
+          <td>
+            <a href="{% querystring selected=t.pk %}">
+              <strong>{{ t.task_name }}</strong>
+            </a>
+            <span class="tag is-light ml-1">Rev {{ t.revision|default:"—" }}</span>
+            {% if t.subsequent_revision_count %}<span class="tag is-warning is-light ml-1">Superseded</span>{% endif %}
+            {% if not t.is_active %}<span class="tag is-light ml-1">Inactive</span>{% endif %}
+            <p class="has-text-grey">{{ t.description|default:"—" }}</p>
+            <p class="has-text-grey">{{ t.action_count }} action{{ t.action_count|pluralize }}</p>
+          </td>
+          <td class="has-text-right" style="white-space:nowrap;">
+            <span class="tag is-info is-light">ID {{ t.pk }}</span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2" class="has-text-grey p-3">No templates match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="column is-6">
+    <h3 class="heading is-size-3 has-text-grey">Preview</h3>
+    {% if selected %}
+    <div class="box p-3">
+      <p>
+        <strong>{{ selected.task_name }}</strong>
+        <span class="tag is-light">Rev {{ selected.revision|default:"—" }}</span>
+        {% if not selected.is_active %}<span class="tag is-light">Inactive</span>{% endif %}
+      </p>
+      <p class="is-size-7 has-text-grey mb-2">{{ selected.description|default:"—" }}</p>
+
+      <div class="buttons are-small mb-2">
+        <a href="{% url 'template_detail' pk=selected.pk %}" class="button is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">visibility</span></span><span>View</span>
+        </a>
+        <a href="{% url 'create_assign' %}?template={{ selected.pk }}" class="button is-success is-light">
+          <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add_circle</span></span><span>Create event</span>
+        </a>
+      </div>
+      <div class="buttons are-small mb-3">
+        <form method="post" action="{% url 'template_builder' %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="template_action_set_id" value="{{ selected.pk }}">
+          <button class="button is-link" type="submit" name="action" value="start_revision">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span><span>Edit (new revision)</span>
+          </button>
+        </form>
+        <form method="post" action="{% url 'template_builder' %}" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="template_action_set_id" value="{{ selected.pk }}">
+          <button class="button" type="submit" name="action" value="start_copy">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">content_copy</span></span><span>Copy for a new template</span>
+          </button>
+        </form>
+      </div>
+
+      <h3 class="title is-6 mb-2 mt-4"><span class="icon"><span class="material-icons is-size-6" aria-hidden="true">checklist</span></span>Action Steps</h3>
+      {% for step in selected_steps %}
+      <div class="card mb-3 depth-2">
+        <div class="card-content is-size-7 p-3">
+          <p class="mb-1"><span class="tag is-dark mr-2">#{{ step.item.sequence_order }}</span><strong>{{ step.item.action_name }}</strong>{% if step.item.proto_action_item_id %} <span class="tag is-info is-light">proto</span>{% endif %}</p>
+          {% if step.item.description %}<p class="has-text-grey mt-1 mb-1">{{ step.item.description }}</p>{% endif %}
+          <p class="has-text-grey mb-2">
+            <span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">schedule</span></span>
+            Est: {{ step.item.estimated_duration_minutes|default:0 }} min
+            <span class="icon is-small ml-3"><span class="material-icons is-size-7" aria-hidden="true">groups</span></span>
+            Staff: {{ step.item.minimum_staff_count }}
+          </p>
+
+          {% if step.item.safety_notes %}
+          <div class="notification is-warning is-light is-size-7 p-2 mt-2 mb-2">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span>
+            <strong>Safety Notes:</strong> {{ step.item.safety_notes }}
+          </div>
+          {% endif %}
+
+          <div class="mt-2">
+            <span class="has-text-weight-semibold"><span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">handyman</span></span> Tools:</span>
+            {% for tool in step.tools %}
+            <span class="tag is-dark mr-1 mb-1">{{ tool.tool|default:tool.tool_name }} x{{ tool.quantity_required }}</span>
+            {% empty %}
+            <span class="has-text-grey">None.</span>
+            {% endfor %}
+          </div>
+
+          {% if step.parts %}
+          <div class="mt-2">
+            <span class="has-text-weight-semibold"><span class="icon is-small"><span class="material-icons is-size-7" aria-hidden="true">inventory_2</span></span> Parts:</span>
+            {% for demand in step.parts %}
+            <span class="tag is-light mr-1 mb-1">{{ demand.part }} x{{ demand.quantity_required }}{% if demand.is_optional %} <span class="has-text-grey">(optional)</span>{% endif %}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="has-text-grey is-size-7">This template has no steps.</p>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="box p-4 has-text-centered">
+      <p class="has-text-grey is-size-7">Click a template from the list to preview its actions, part demands, and tools.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>

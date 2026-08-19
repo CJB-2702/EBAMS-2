@@ -25,10 +25,19 @@
         <div id="portal-maintenance" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Work</p>
+              <p class="portal-dropdown-label">Home</p>
               <div class="portal-dropdown-inner">
+                <a href="{% url 'maintenance_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
+                <a href="{% url 'technician_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span> Technician Dashboard</a>
                 <a href="{% url 'maintenance_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Maintenance Events</a>
-                <a href="{% url 'maintenance_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Maintenance Event</a>
+                <a href="{% url 'create_assign' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span> Create &amp; Assign</a>
+                <a href="{% url 'unassigned_events' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_late</span></span> Unassigned Events</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Parts</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'part_demand_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Part Demand Queue</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
@@ -101,6 +110,13 @@
                 <a href="{% url 'part_manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
               </div>
             </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Part Demands (in Procurement)</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'demand_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
+                <a href="{% url 'demand_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+              </div>
+            </div>
           </div>
         </div>
       </li>
@@ -137,7 +153,7 @@
 
       <li role="tab" data-group="Inventory">
         <button class="portal-tab-btn" commandfor="portal-inventory" command="toggle-popover">
-          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">warehouse</span></span> Inventory <span class="portal-tab-chevron">▾</span>
+          <span class="portal-tab-icon"><span class="icon">{% svg "inventory-icon" %}</span></span> Inventory <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-inventory" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
@@ -198,6 +214,43 @@
                 <a href="{% url 'domain_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">layers</span></span> Domains</a>
                 <a href="{% url 'domain_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span> Domain Templates</a>
                 <a href="{% url 'domain_organizations_portal' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">link</span></span> Domain ↔ Organization Links</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Extensions">
+        <button class="portal-tab-btn" commandfor="portal-extensions" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">extension</span></span> Extensions <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-extensions" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Detail Extensions</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'extension_home' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Overview</a>
+                <a href="{% url 'extension_config_landing' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configuration</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Asset Extensions</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'extension_summary' 'purchase_info' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">receipt</span></span> Purchase Info</a>
+                <a href="{% url 'extension_summary' 'vehicle_registration' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Vehicle Registration</a>
+                <a href="{% url 'extension_summary' 'smog_record' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span> Smog History</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Model Extensions</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'extension_summary' 'emissions_info' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">co2</span></span> Emissions Specifications</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Custom Tracking</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'extension_serial_number_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates</a>
               </div>
             </div>
           </div>

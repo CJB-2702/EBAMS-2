@@ -1,0 +1,1081 @@
+{% extends "maintenance/base.html" %}
+{% load static %}
+{% block title %}{{ detail.title|default:"Maintenance" }} — Perform{% endblock %}
+{% block nav_maintenance_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'maintenance_index' %}">Events</a></li>
+<li><a href="{% url 'maintenance_detail' pk=detail.pk %}">#{{ detail.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Work</a></li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+<script src="{% static 'js/maintenance_work.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">handyman</span></div>
+      <div>
+        <h1 class="page-title">{{ detail.title|default:"Maintenance event" }}</h1>
+        <p class="page-subtitle">
+          Asset:
+          {% if detail.asset %}<a href="{% url 'asset_detail' asset_id=detail.asset.pk %}">{{ detail.asset }}</a>{% else %}none{% endif %}
+          {% if detail.work_order_reference %} · WO {{ detail.work_order_reference }}{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'maintenance_detail' pk=detail.pk %}" class="button is-small">Back to view</a>
+    </div>
+  </div>
+</div>
+
+{% comment %} ── Blocked / degraded banner ──────────────────────────────────
+   An active blocker means nobody can work this job right now; an active
+   limitation means the ASSET is degraded. Both are facts a reader needs
+   before they read anything else, so they sit above the fold at full width
+   — and above the body grid, not inside it, or the grid squeezes them into
+   a single column.
+{% endcomment %}
+{% if active_blockers %}
+<div class="notification is-warning mb-4">
+  <div class="is-flex is-align-items-flex-start">
+    <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">pause_circle</span></span>
+    <div style="flex:1 1 auto; min-width:0;">
+      <p class="title is-5 mb-1">Work is blocked</p>
+      {% for blocker in active_blockers %}
+      <p class="is-size-6"><strong>{{ blocker.reason }}</strong>{% if blocker.notes %} — {{ blocker.notes }}{% endif %}</p>
+      <p class="is-size-7">
+        Since {{ blocker.start_date|date:"Y-m-d H:i" }}
+        · {{ blocker.get_priority_display }} priority
+        {% if blocker.billable_hours_lost %} · {{ blocker.billable_hours_lost }}h lost so far{% endif %}
+        {% if blocker.expected_resolution_date %} · expected to clear {{ blocker.expected_resolution_date|date:"Y-m-d H:i" }}{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Resolve in work portal</a>
+  </div>
+</div>
+{% endif %}
+{% if active_limitations %}
+<div class="notification is-danger mb-4">
+  <div class="is-flex is-align-items-flex-start">
+    <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">warning</span></span>
+    <div style="flex:1 1 auto; min-width:0;">
+      <p class="title is-5 mb-1">Asset capability is limited</p>
+      {% for record in active_limitations %}
+      <p class="is-size-6"><strong>{{ record.get_status_display }}</strong>{% if record.limitation_description %} — {{ record.limitation_description }}{% endif %}</p>
+      {% if record.temporary_modifications %}<p class="is-size-7">Compensation in place: {{ record.temporary_modifications }}</p>{% endif %}
+      <p class="is-size-7">
+        Since {{ record.start_time|date:"Y-m-d H:i" }}
+        {% if record.maintenance_blocker_id %} · this is why work is blocked{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Close in work portal</a>
+  </div>
+</div>
+{% endif %}
+
+
+<div class="body-grid full-width">
+
+
+  {% comment %} ── Status card: progress on the left, the three verbs on the right ──
+     There is deliberately no "Start event" button. Starting any step starts
+     the event (see start_action) — beginning work is one act, not two. {% endcomment %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Maintenance status</div>
+      <span class="card-header-icon">
+        <span class="tag
+          {% if detail.status == 'complete' %}is-success
+          {% elif detail.status == 'in_progress' %}is-info
+          {% elif detail.status == 'cancelled' %}is-danger
+          {% else %}is-light{% endif %}">{{ detail.get_status_display|default:"—" }}</span>
+      </span>
+    </div>
+    <div class="card-content">
+      <div class="columns is-variable is-4">
+        <div class="column is-6">
+          <div class="is-flex is-justify-content-space-between is-size-7">
+            <span>Completion progress</span><strong>{{ progress.percent }}%</strong>
+          </div>
+{% comment %} A stacked bar rather than <progress>, which can only carry one
+   colour. Green complete, red failed, grey skipped — every settled outcome
+   fills, because the bar measures how much of the job still needs a decision,
+   not how much of it succeeded. {% endcomment %}
+          <div class="progress-stack" role="img"
+               aria-label="{{ progress.in_progress }} in progress, {{ progress.complete }} complete, {{ progress.failed }} failed, {{ progress.skipped }} skipped, of {{ progress.total }} steps">
+            <div class="progress-stack-seg is-in-progress" style="width: {{ progress.percent_in_progress }}%;" title="{{ progress.in_progress }} in progress"></div>
+            <div class="progress-stack-seg is-complete" style="width: {{ progress.percent_complete }}%;" title="{{ progress.complete }} complete"></div>
+            <div class="progress-stack-seg is-failed" style="width: {{ progress.percent_failed }}%;" title="{{ progress.failed }} failed"></div>
+            <div class="progress-stack-seg is-skipped" style="width: {{ progress.percent_skipped }}%;" title="{{ progress.skipped }} skipped"></div>
+          </div>
+          <div class="columns is-mobile has-text-centered mt-2">
+            <div class="column"><p class="heading is-size-7 has-text-grey">Total</p><p class="title is-5">{{ progress.total }}</p></div>
+            <div class="column"><p class="heading is-size-7 has-text-grey">In progress</p><p class="title is-5">{{ progress.in_progress }}</p></div>
+            <div class="column"><p class="heading is-size-7 has-text-grey">Complete</p><p class="title is-5 has-text-success">{{ progress.complete }}</p></div>
+            <div class="column"><p class="heading is-size-7 has-text-grey">Failed</p><p class="title is-5 has-text-danger">{{ progress.failed }}</p></div>
+            <div class="column"><p class="heading is-size-7 has-text-grey">Skipped</p><p class="title is-5">{{ progress.skipped }}</p></div>
+          </div>
+        </div>
+
+        <div class="column is-6">
+          <button class="button is-success is-fullwidth mb-2" type="button"
+                  commandfor="event-complete-dialog" command="show-modal"
+                  {% if not completion_verdict.allowed %}disabled
+                  title="{% for reason in completion_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% endfor %}"{% endif %}>
+            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Mark complete</span>
+          </button>
+          {% if not completion_verdict.allowed %}
+          <p class="help has-text-warning">
+            {% for reason in completion_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% empty %}Completion is currently blocked.{% endfor %}
+          </p>
+          {% endif %}
+
+          {% comment %} Two different interruptions, deliberately two buttons: a blocker
+             stops the WORK, a limitation degrades the ASSET. {% endcomment %}
+          <div class="columns is-variable is-2 mt-2">
+            <div class="column is-6">
+              <button class="button is-warning is-fullwidth" type="button"
+                      commandfor="event-blocker-dialog" command="show-modal">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">pause_circle</span></span><span>Place in blocked status</span>
+              </button>
+            </div>
+            <div class="column is-6">
+              <button class="button is-danger is-fullwidth" type="button"
+                      commandfor="event-limitation-dialog" command="show-modal"
+                      {% if active_limitations %}disabled title="Close the open limitation before adding another"{% endif %}>
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span><span>Add capability limitation</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-variable is-4">
+{% comment %} ── Left: event details, then the work list ─────────────────────
+   Event details is a 2/3 card sitting above the action list, matching the
+   legacy left column. The Billable Hours editor that used to fill the other
+   third is gone: recording the final billable figure is part of closing the
+   job, so it lives in the Mark-complete dialog rather than standing open as
+   a separate form the technician can drift out of sync with.
+{% endcomment %}
+    <div class="column is-8">
+      <div class="card mb-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Event details</div></div>
+        <div class="card-content is-size-7">
+          <div class="columns is-multiline is-variable is-2">
+            <div class="column is-6"><p class="has-text-grey">Task</p><p>{{ detail.title|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Planned start</p><p>{{ detail.event_start|date:"Y-m-d H:i"|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Description</p><p>{{ detail.description|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Actual start</p><p>{{ actual_start|date:"Y-m-d H:i"|default:"Not started" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Asset</p><p>{% if detail.asset %}<a href="{% url 'asset_detail' asset_id=detail.asset.pk %}">{{ detail.asset }}</a>{% else %}—{% endif %}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Actual end</p><p>{{ detail.event_end|date:"Y-m-d H:i"|default:"—" }}</p></div>
+            <div class="column is-6">
+              <p class="has-text-grey">Template source</p>
+              <p>
+                {% if detail.template_action_set %}
+                <a href="{% url 'template_detail' pk=detail.template_action_set.pk %}">{{ detail.template_action_set }}</a>
+                {% else %}Ad-hoc (no template){% endif %}
+              </p>
+            </div>
+            <div class="column is-6">
+              <p class="has-text-grey">Estimated duration</p>
+              <p>{% if detail.template_action_set.labor_hours %}{{ detail.template_action_set.labor_hours }} hours{% else %}—{% endif %}</p>
+            </div>
+            <div class="column is-6"><p class="has-text-grey">Type</p><p>{{ detail.get_maintenance_type_display|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Priority</p><p>{{ detail.get_priority_display|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Assigned to</p><p>{{ detail.assigned_user|default:"Unassigned" }}</p></div>
+            <div class="column is-6">
+              <p class="has-text-grey">Billable hours</p>
+              <p>
+                {{ detail.actual_billable_hours|default_if_none:"—" }} recorded
+                <span class="has-text-grey">· {{ calculated_hours|floatformat:2 }} calculated from steps</span>
+              </p>
+              {% if billable_hours_warning %}<p class="help has-text-warning">{{ billable_hours_warning }}</p>{% endif %}
+            </div>
+            <div class="column is-6"><p class="has-text-grey">Created</p><p class="is-family-monospace">{{ detail.created_at|date:"Y-m-d H:i" }} by {{ detail.created_by|default:"—" }}</p></div>
+            <div class="column is-6"><p class="has-text-grey">Updated</p><p class="is-family-monospace">{{ detail.updated_at|date:"Y-m-d H:i" }} by {{ detail.updated_by|default:"—" }}</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="work-action-region">
+        {% include "maintenance/work/_action_list.html" %}
+      </div>
+    </div>
+
+    {# ── Right: orientation, reference, approvals, interruptions ────── #}
+    <div class="column is-4">
+
+      <div class="card">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick actions</div></div>
+        <div class="card-content">
+          <div class="buttons are-small is-flex-direction-column is-align-items-stretch">
+            <a href="{% url 'maintenance_detail' pk=detail.pk %}" class="button is-link is-light">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">visibility</span></span><span>View event</span>
+            </a>
+            <a href="{% url 'maintenance_edit' pk=detail.pk %}" class="button is-warning is-light">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span><span>Edit event</span>
+            </a>
+            <a href="{% url 'maintenance_assign' pk=detail.pk %}" class="button">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">person_add</span></span><span>Reassign</span>
+            </a>
+            {% if detail.template_action_set %}
+            <a href="{% url 'template_detail' pk=detail.template_action_set.pk %}" class="button is-info is-light">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">dashboard_customize</span></span><span>View template</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span>Assigned staff</div></div>
+        <div class="card-content is-size-7">
+          <div class="assigned-staff-display">
+            {% if detail.assigned_user %}
+            <div class="staff-item">
+              <div class="staff-avatar">{{ detail.assigned_user.get_initials|default:detail.assigned_user.username|slice:":1" }}</div>
+              <div class="staff-info">
+                <p class="staff-name">{{ detail.assigned_user.get_full_name|default:detail.assigned_user.username }}</p>
+                <p class="staff-email has-text-grey">{{ detail.assigned_user.email|default:"—" }}</p>
+              </div>
+            </div>
+            {% else %}
+            <p class="has-text-grey has-text-centered py-4">
+              <span class="icon"><span class="material-icons is-size-5">person_off</span></span>
+              <br>Unassigned
+            </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4{% if active_blockers %} blockers-card-active{% endif %}">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">pause_circle</span></span>Blockers ({{ active_blockers|length }} active)</div></div>
+        <div class="card-content pb-0">
+          <div class="blockers-list">
+            {% for blocker in blockers %}
+            <div class="blocker-item{% if blocker.end_date %} is-resolved{% endif %}">
+              <div class="blocker-header">
+                <div class="blocker-reason">
+                  <strong>{{ blocker.reason|default:"—" }}</strong>
+                </div>
+                <div class="blocker-priority">
+                  <span class="tag is-light">{{ blocker.get_priority_display }}</span>
+                </div>
+              </div>
+
+              {% if blocker.notes %}
+              <div class="blocker-notes">
+                {{ blocker.notes }}
+              </div>
+              {% endif %}
+
+              <div class="blocker-timeline">
+                <p class="blocker-date">
+                  <strong>Started:</strong> {{ blocker.start_date|date:"Y-m-d H:i" }}
+                  {% if blocker.end_date %}<br><strong>Ended:</strong> {{ blocker.end_date|date:"Y-m-d H:i" }}{% endif %}
+                </p>
+              </div>
+
+              <div class="blocker-metrics">
+                {% if blocker.billable_hours_lost %}
+                <div class="metric-item">
+                  <span class="metric-label">Billable hours lost:</span>
+                  <span class="metric-value has-text-danger">{{ blocker.billable_hours_lost }}h</span>
+                </div>
+                {% endif %}
+                {% if blocker.expected_resolution_date %}
+                <div class="metric-item">
+                  <span class="metric-label">Expected resolution:</span>
+                  <span class="metric-value">{{ blocker.expected_resolution_date|date:"Y-m-d H:i" }}</span>
+                </div>
+                {% endif %}
+              </div>
+
+              {% if blocker.resolution_notes %}
+              <div class="blocker-resolution">
+                <p class="has-text-success"><strong>Resolved:</strong> {{ blocker.resolution_notes }}</p>
+              </div>
+              {% endif %}
+
+              {% if not blocker.end_date %}
+              <div class="blocker-actions">
+                <button class="button is-warning is-small" type="button"
+                        commandfor="blocker-resolve-dialog" command="show-modal"
+                        onclick="prefillResolveBlocker(this)"
+                        data-blocker-id="{{ blocker.pk }}"
+                        data-reason="{{ blocker.reason }}"
+                        data-priority="{{ blocker.get_priority_display }}"
+                        data-start="{{ blocker.start_date|date:'Y-m-d\TH:i' }}"
+                        data-hours-lost="{{ blocker.billable_hours_lost|default_if_none:'0' }}">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check_circle</span></span>
+                  <span>Resolve</span>
+                </button>
+              </div>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="blockers-empty-state">
+              <p class="has-text-grey">No blockers recorded.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4{% if active_limitations %} limitations-card-active{% endif %}">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>Capability limitations ({{ active_limitations|length }} active)</div></div>
+        <div class="card-content pb-0">
+          <div class="limitations-list">
+            {% for record in limitation_records %}
+            <div class="limitation-item{% if record.end_time %} is-closed{% endif %}">
+              <div class="limitation-header">
+                <div class="limitation-status">
+                  <span class="tag is-light">{{ record.get_status_display|default:"—" }}</span>
+                </div>
+                {% if record.maintenance_blocker_id %}
+                <div class="limitation-blocker-link">
+                  <span class="tag is-warning is-light">Linked to blocker</span>
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="limitation-description">
+                <strong>{{ record.limitation_description|default:"—" }}</strong>
+              </div>
+
+              {% if record.temporary_modifications %}
+              <div class="limitation-compensation">
+                <p class="compensation-label">Compensation:</p>
+                <p class="compensation-text">{{ record.temporary_modifications }}</p>
+              </div>
+              {% endif %}
+
+              <div class="limitation-timeline">
+                <p class="limitation-date">
+                  <strong>Started:</strong> {{ record.start_time|date:"Y-m-d H:i" }}
+                  {% if record.end_time %}<br><strong>Ended:</strong> {{ record.end_time|date:"Y-m-d H:i" }}{% endif %}
+                </p>
+              </div>
+
+              {% if record.resolution_notes %}
+              <div class="limitation-resolution">
+                <p class="has-text-success"><strong>Closed:</strong> {{ record.resolution_notes }}</p>
+              </div>
+              {% endif %}
+
+              {% if not record.end_time %}
+              <div class="limitation-actions">
+                <button class="button is-danger is-small" type="button"
+                        commandfor="limitation-close-dialog" command="show-modal"
+                        onclick="prefillCloseLimitation(this)"
+                        data-record-id="{{ record.pk }}"
+                        data-description="{{ record.limitation_description }}"
+                        data-status="{{ record.get_status_display }}"
+                        data-start="{{ record.start_time|date:'Y-m-d\TH:i' }}">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check_circle</span></span>
+                  <span>Close</span>
+                </button>
+              </div>
+              {% endif %}
+            </div>
+            {% empty %}
+            <div class="limitations-empty-state">
+              <p class="has-text-grey">No capability limitations recorded.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      {% comment %} Second approval surface: a manager can clear this event's demands
+         without going to the queue. Same endpoints, different doorway. {% endcomment %}
+      <div class="card mt-4">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Part demand approval</div>
+          <span class="card-header-icon"><span class="tag is-light">{{ pending_approval_count }}</span></span>
+        </div>
+        <div class="card-content pb-0">
+          <div class="approval-cards">
+            {% for action, link in demand_rows %}
+            <div class="approval-card">
+              <div class="approval-card-header">
+                <div class="approval-card-part">
+                  <p class="approval-part-number-line">
+                    <a href="{% url 'part_demand_detail' pk=link.part_demand.pk %}" class="approval-part-number">{{ link.part_demand.part.part_number }}</a>
+                  </p>
+                  <p class="approval-part-name">{{ link.part_demand.part.name|default:"—" }}</p>
+                  {% if link.part_demand.part.description %}<p class="approval-part-desc">{{ link.part_demand.part.description }}</p>{% endif %}
+                </div>
+              </div>
+
+              <div class="approval-card-body">
+                <div class="approval-action-info">
+                  <p class="approval-action-label">Action</p>
+                  <p class="approval-action-name">{{ action.action_name }}</p>
+                </div>
+
+                <div class="approval-status-tags">
+                  <span class="tag is-light">{{ link.part_demand.get_demand_state_display }}</span>
+                  <span class="tag is-light">{{ link.part_demand.get_issuance_state_display }}</span>
+                </div>
+
+                <div class="approval-metrics">
+                  <div class="metric-column">
+                    <p class="metric-label">Requested</p>
+                    <p class="metric-value">{{ link.part_demand.quantity_requested }}</p>
+                  </div>
+                  <div class="metric-column">
+                    <p class="metric-label">Purchased</p>
+                    <p class="metric-value">{{ link.part_demand.qty_purchased|default:"—" }}</p>
+                  </div>
+                  <div class="metric-column">
+                    <p class="metric-label">Issued</p>
+                    <p class="metric-value">{{ link.part_demand.issued_qty|default:"—" }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="approval-card-footer">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="demand_id" value="{{ link.part_demand.pk }}">
+                  <button class="button is-success is-small is-fullwidth" type="submit" name="action" value="approve_part_demand" title="Approve this part demand">
+                    <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check_circle</span></span>
+                    <span>Approve</span>
+                  </button>
+                </form>
+                <button class="button is-danger is-outlined is-small is-fullwidth mt-2" type="button"
+                        commandfor="demand-reject-dialog" command="show-modal"
+                        onclick="prefillRejectDemand(this)"
+                        data-demand-id="{{ link.part_demand.pk }}"
+                        data-part-name="{{ link.part_demand.part.part_number }}"
+                        title="Deny this part demand">
+                  <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">cancel</span></span>
+                  <span>Deny</span>
+                </button>
+              </div>
+            </div>
+            {% empty %}
+            <div class="approval-empty-state">
+              <p class="has-text-grey">No part demands on this event.</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} ── Event activity: its own full-width row under the two columns.
+     It is the event's whole comment/attachment/metadata record, not a
+     sidebar of the work list, so it gets the page width rather than
+     eight twelfths of it. ── {% endcomment %}
+  {% if activity_card %}
+  <div class="mt-4">
+    {% include "events/fragments/event_card.html" with card=activity_card %}
+  </div>
+  {% endif %}
+</div>
+
+{% comment %} ─────────────────────────────────────────────────────────────────────────
+   Dialogs. One per kind of decision, shared by every row, and deliberately
+   OUTSIDE #work-action-region so an htmx swap of the action list can never
+   destroy an open dialog. Prefill lives in js/maintenance_work.js.
+   ───────────────────────────────────────────────────────────────────────── {% endcomment %}
+
+{# ── Settle a step: complete / fail / skip / block / reopen ── #}
+<dialog id="action-status-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="action-status-verb" value="">
+    <input type="hidden" name="action_id" id="action-status-id" value="">
+    <header class="card-header">
+      <p class="card-header-title" id="action-status-title">Update step</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="action-status-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">
+        Step: <strong id="action-status-name"></strong> ·
+        currently <span class="tag is-light" id="action-status-current"></span>
+      </p>
+      <div class="field">
+        <label class="label is-small" for="action-status-notes" id="action-status-notes-label">Notes</label>
+        <div class="control">
+          <textarea class="textarea is-small" id="action-status-notes" name="notes" rows="3" required></textarea>
+        </div>
+        <p class="help">A reason is recorded for every outcome. Edit the suggested text before submitting.</p>
+      </div>
+      <div class="field" id="action-status-billable-field" hidden>
+        <label class="label is-small" for="action-status-billable">Billable hours</label>
+        <div class="control">
+          <input class="input is-small" type="number" step="0.25" min="0" id="action-status-billable" name="billable_hours">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="action-status-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-success" id="action-status-submit">Save</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Edit a step ── #}
+<dialog id="action-edit-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="edit_action">
+    <input type="hidden" name="action_id" id="action-edit-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Edit step</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="action-edit-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">Step: <strong id="action-edit-heading"></strong></p>
+      <div class="field">
+        <label class="label is-small" for="action-edit-name">Step name</label>
+        <div class="control"><input class="input is-small" type="text" id="action-edit-name" name="action_name" required></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="action-edit-description">Description</label>
+        <div class="control"><textarea class="textarea is-small" id="action-edit-description" name="description" rows="2"></textarea></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="action-edit-instructions">Instructions</label>
+        <div class="control"><textarea class="textarea is-small" id="action-edit-instructions" name="instructions" rows="3"></textarea></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="action-edit-safety">Safety notes</label>
+        <div class="control"><textarea class="textarea is-small" id="action-edit-safety" name="safety_notes" rows="2"></textarea></div>
+      </div>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-edit-estimated">Estimated duration (minutes)</label>
+            <div class="control"><input class="input is-small" type="number" min="0" id="action-edit-estimated" name="estimated_duration_minutes"></div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-edit-billable">Billable hours</label>
+            <div class="control"><input class="input is-small" type="number" step="0.25" min="0" id="action-edit-billable" name="billable_hours"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="action-edit-completion-notes">Completion notes</label>
+        <div class="control"><textarea class="textarea is-small" id="action-edit-completion-notes" name="completion_notes" rows="2"></textarea></div>
+      </div>
+      <p class="help">
+        Status is not editable here — use the outcome buttons on the step, so the
+        transition is recorded with its reason.
+      </p>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="action-edit-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-link">Save step</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Add a part demand mid-job ── #}
+<dialog id="action-part-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_part_demand">
+    <input type="hidden" name="action_id" id="action-part-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Add part demand</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="action-part-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">Step: <strong id="action-part-heading"></strong></p>
+      <div class="field">
+        <label class="label is-small">Part</label>
+        <search-dropdown name="part_id" placeholder="search part…"
+                         hx-get="{% url 'maintenance_work' pk=detail.pk %}?format=htmx-part-search"></search-dropdown>
+      </div>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-part-quantity">Quantity required</label>
+            <div class="control"><input class="input is-small" type="number" step="0.001" min="0.001" id="action-part-quantity" name="quantity" value="1" required></div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-part-priority">Priority</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="action-part-priority" name="priority">
+                  {% for value, label in demand_priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="action-part-notes">Notes</label>
+        <div class="control"><textarea class="textarea is-small" id="action-part-notes" name="notes" rows="2"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="action-part-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-link">Raise demand</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Record qty issued ── #}
+<dialog id="demand-issue-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="issue_part_demand">
+    <input type="hidden" name="demand_id" id="demand-issue-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Record qty issued</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="demand-issue-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7">Part: <strong id="demand-issue-part"></strong></p>
+      <p class="is-size-7 has-text-grey mb-3">Demand quantity: <strong id="demand-issue-demanded"></strong></p>
+      <div class="notification is-warning is-light is-size-7 p-2">
+        This sets the demand to <strong>Issued Without Stock Adjustment</strong> —
+        the material moved, and supply still has to record the stock movement.
+      </div>
+      <div class="field">
+        <label class="label is-small" for="demand-issue-qty">Qty issued</label>
+        <div class="control"><input class="input is-small" type="number" step="0.001" min="0.001" id="demand-issue-qty" name="qty_issued" required></div>
+        <p class="help">Prefilled with the demanded quantity — change it if you took a different amount.</p>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="demand-issue-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-success">Record issue</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Edit a part demand ── #}
+<dialog id="demand-update-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="update_part_demand">
+    <input type="hidden" name="demand_id" id="demand-update-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Update part demand</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="demand-update-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">Part: <strong id="demand-update-part"></strong></p>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="demand-update-quantity">Qty demanded</label>
+            <div class="control"><input class="input is-small" type="number" step="0.001" min="0.001" id="demand-update-quantity" name="quantity_requested"></div>
+            <p class="help">Can only be raised — lowering an ask has no verb in this build.</p>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="demand-update-priority">Priority</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="demand-update-priority" name="priority">
+                  {% for value, label in demand_priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="demand-update-issuance">Issue status</label>
+        <div class="control">
+          <div class="select is-small is-fullwidth">
+            <select id="demand-update-issuance" name="issuance_state">
+              {% for value, label in issuance_states %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="demand-update-qty-issued">Qty issued</label>
+        <div class="control"><input class="input is-small" type="number" step="0.001" min="0" id="demand-update-qty-issued" name="qty_issued" placeholder="leave blank to keep current"></div>
+        <p class="help">Supply a quantity to record the movement; leave blank to move the status only.</p>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="demand-update-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-link">Update</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Cancel a part demand (destructive: comment required) ── #}
+<dialog id="demand-cancel-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="cancel_part_demand">
+    <input type="hidden" name="demand_id" id="demand-cancel-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Cancel part demand</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="demand-cancel-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7">Part: <strong id="demand-cancel-part"></strong></p>
+      <p class="is-size-7 has-text-grey mb-3">Quantity: <strong id="demand-cancel-quantity"></strong></p>
+      <div class="notification is-danger is-light is-size-7 p-2">
+        Cancelling is final — this demand cannot be reinstated afterwards.
+      </div>
+      <div class="field">
+        <label class="label is-small" for="demand-cancel-notes">Cancellation comment</label>
+        <div class="control"><textarea class="textarea is-small" id="demand-cancel-notes" name="notes" rows="3" required></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="demand-cancel-dialog" command="close">Keep it</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Cancel part demand</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Manager denial from the approval queue ── #}
+<dialog id="demand-reject-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="reject_part_demand">
+    <input type="hidden" name="demand_id" id="demand-reject-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Deny part demand</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="demand-reject-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">Part: <strong id="demand-reject-part"></strong></p>
+      <div class="field">
+        <label class="label is-small" for="demand-reject-notes">Reason</label>
+        <div class="control"><textarea class="textarea is-small" id="demand-reject-notes" name="notes" rows="3" required placeholder="Reason for denial"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="demand-reject-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Deny</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Complete the event ── #}
+<dialog id="event-complete-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="complete_event">
+    <header class="card-header">
+      <p class="card-header-title">Mark maintenance complete</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="event-complete-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">
+        {{ progress.complete }} of {{ progress.total }} steps complete,
+        {{ progress.skipped }} skipped. Closing the event stamps the end time now.
+      </p>
+      <div class="field">
+        <label class="label is-small" for="event-complete-notes">Completion notes</label>
+        <div class="control"><textarea class="textarea is-small" id="event-complete-notes" name="notes" rows="3"></textarea></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-complete-hours">Recorded billable hours</label>
+        <div class="control">
+          <input class="input is-small" type="number" step="0.25" min="0" id="event-complete-hours"
+                 name="actual_billable_hours" value="{{ detail.actual_billable_hours|default_if_none:'' }}"
+                 placeholder="{{ calculated_hours|floatformat:2 }} calculated">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="event-complete-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-success">Mark complete</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Place the event in blocked status ── #}
+<dialog id="event-blocker-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_blocker">
+    <header class="card-header">
+      <p class="card-header-title">Place in blocked status</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="event-blocker-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">A blocker stops the work. It does not change what the asset can do — for that, log a capability limitation instead.</p>
+      <div class="field">
+        <label class="label is-small" for="event-blocker-reason">Reason <span class="has-text-danger">*</span></label>
+        <div class="control">
+          <div class="select is-small is-fullwidth">
+            <select id="event-blocker-reason" name="reason" required>
+              <option value="">— Select reason —</option>
+              {% for value, label in blocker_reasons %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <p class="help">A fixed list, so "how much did we lose to parts this quarter" stays answerable. Use Other plus notes when nothing fits.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-blocker-notes">Notes</label>
+        <div class="control"><textarea class="textarea is-small" id="event-blocker-notes" name="notes" rows="3"></textarea></div>
+      </div>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-blocker-start">Start time <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="event-blocker-start" name="start_date" required></div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-blocker-expected">Expected resolution</label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="event-blocker-expected" name="expected_resolution_date"></div>
+          </div>
+        </div>
+      </div>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-blocker-lost">Billable hours lost</label>
+            <div class="control"><input class="input is-small" type="number" step="0.25" min="0" id="event-blocker-lost" name="billable_hours_lost"></div>
+            <p class="help">Hours this stoppage costs — not hours worked.</p>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-blocker-priority">Blocker priority</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select id="event-blocker-priority" name="priority">
+                  {% for value, label in blocker_priorities %}<option value="{{ value }}"{% if value == "Medium" %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-blocker-event-priority">Update event priority</label>
+        <div class="control">
+          <div class="select is-small is-fullwidth">
+            <select id="event-blocker-event-priority" name="event_priority">
+              <option value="">— Keep current ({{ detail.get_priority_display|default:"none" }}) —</option>
+              {% for value, label in event_priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <p class="help">Finding a blocker is usually the moment the job's urgency changes.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-blocker-comment">Comment to add to event</label>
+        <div class="control"><textarea class="textarea is-small" id="event-blocker-comment" name="comment" rows="2" placeholder="optional — one is written automatically if you leave this blank"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="event-blocker-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-warning">Log blocker</button>
+    </footer>
+  </form>
+</dialog>
+
+{# ── Open a capability limitation ── #}
+<dialog id="event-limitation-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_limitation">
+    <header class="card-header">
+      <p class="card-header-title">Add capability limitation</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="event-limitation-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 has-text-grey mb-3">A limitation degrades the asset. It outlives this maintenance event and stays open until someone closes it.</p>
+      <div class="field">
+        <label class="label is-small" for="limitation-status">Capability status</label>
+        <div class="control">
+          <div class="select is-small is-fullwidth">
+            <select id="limitation-status" name="status">
+              {% for value, label in capability_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="limitation-description">What the asset can no longer do</label>
+        <div class="control"><textarea class="textarea is-small" id="limitation-description" name="limitation_description" rows="3" required></textarea></div>
+      </div>
+      <div class="field" id="limitation-modifications-field" hidden>
+        <label class="label is-small" for="limitation-modifications">Temporary modifications <span class="has-text-danger">*</span></label>
+        <div class="control"><textarea class="textarea is-small" id="limitation-modifications" name="temporary_modifications" rows="2" placeholder="procedural, component, or safety compensations"></textarea></div>
+        <p class="help">Required for the Compensation statuses, and refused for the degraded ones — an asset that simply cannot do the job has no workaround to describe.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="limitation-start">Start time <span class="has-text-danger">*</span></label>
+        <div class="control"><input class="input is-small" type="datetime-local" id="limitation-start" name="start_time" required></div>
+      </div>
+      {% if active_blockers %}
+      <div class="field">
+        <label class="checkbox is-size-7">
+          <input type="checkbox" name="link_to_blocker" value="true">
+          Link to the active blocker ({{ active_blockers.0.reason }})
+        </label>
+        <p class="help">Ticks the box that says this degradation is <em>why</em> work stopped, rather than a separate fact that happens to coincide with it.</p>
+      </div>
+      {% endif %}
+      <div class="field">
+        <label class="label is-small" for="limitation-comment">Comment to add to event</label>
+        <div class="control"><textarea class="textarea is-small" id="limitation-comment" name="comment" rows="2" placeholder="optional — one is written automatically if you leave this blank"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="event-limitation-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Open limitation</button>
+    </footer>
+  </form>
+</dialog>
+
+{% comment %} ── Resolve a blocker (reason required) ── {% endcomment %}
+<dialog id="blocker-resolve-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="end_blocker">
+    <input type="hidden" name="blocker_id" id="blocker-resolve-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Resolve blocker</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="blocker-resolve-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7">Blocker: <strong id="blocker-resolve-reason"></strong></p>
+      <p class="is-size-7 has-text-grey mb-3">Priority: <span id="blocker-resolve-priority"></span></p>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="blocker-resolve-start">Start time <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="blocker-resolve-start" name="start_date" required></div>
+            <p class="help">Correct it if work actually stopped before the blocker was logged.</p>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="blocker-resolve-end">End time <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="blocker-resolve-end" name="end_date" required></div>
+            <p class="help">When it did or will end — not necessarily now.</p>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="blocker-resolve-lost">Billable hours lost <span class="has-text-danger">*</span></label>
+        <div class="control"><input class="input is-small" type="number" step="0.25" min="0" id="blocker-resolve-lost" name="billable_hours_lost" value="0" required></div>
+        <p class="help">The real figure. At open it was an estimate; this overwrites it. Enter 0 if none.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="blocker-resolve-update-notes">Update notes</label>
+        <div class="control"><textarea class="textarea is-small" id="blocker-resolve-update-notes" name="notes" rows="2" placeholder="amend the description of the stoppage itself"></textarea></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="blocker-resolve-notes">What unblocked the work? <span class="has-text-danger">*</span></label>
+        <div class="control"><textarea class="textarea is-small" id="blocker-resolve-notes" name="resolution_notes" rows="3" required></textarea></div>
+        <p class="help">Required. The record of why work stopped is worth little without the record of what changed.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="blocker-resolve-comment">Event comment</label>
+        <div class="control"><textarea class="textarea is-small" id="blocker-resolve-comment" name="comment" rows="2" placeholder="optional — one is written automatically if you leave this blank"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="blocker-resolve-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-warning">Resolve blocker</button>
+    </footer>
+  </form>
+</dialog>
+
+{% comment %} ── Close a capability limitation (reason required) ── {% endcomment %}
+<dialog id="limitation-close-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="close_limitation">
+    <input type="hidden" name="record_id" id="limitation-close-id" value="">
+    <header class="card-header">
+      <p class="card-header-title">Close capability limitation</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="limitation-close-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7">Limitation: <strong id="limitation-close-description"></strong></p>
+      <p class="is-size-7 has-text-grey mb-3">Status: <span id="limitation-close-status"></span></p>
+      <div class="notification is-warning is-light is-size-7 p-2">
+        Closing this asserts the asset can do the thing again. It feeds the
+        asset's capability status, so other people will act on it.
+      </div>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="limitation-close-start">Start time <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="limitation-close-start" name="start_time" required></div>
+            <p class="help">Correct it if the asset was degraded before this was logged.</p>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="limitation-close-end">End time <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" type="datetime-local" id="limitation-close-end" name="end_time" required></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="limitation-close-notes">What restored the capability? <span class="has-text-danger">*</span></label>
+        <div class="control"><textarea class="textarea is-small" id="limitation-close-notes" name="resolution_notes" rows="3" required></textarea></div>
+        <p class="help">Required.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="limitation-close-comment">Event comment</label>
+        <div class="control"><textarea class="textarea is-small" id="limitation-close-comment" name="comment" rows="2" placeholder="optional — one is written automatically if you leave this blank"></textarea></div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="limitation-close-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Close limitation</button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}

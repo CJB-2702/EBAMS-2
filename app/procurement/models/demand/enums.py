@@ -104,11 +104,18 @@ class IssuanceState(models.TextChoices):
     happened and the inventory system has not recorded it yet" — the books are
     behind reality. Deliberately a distinct value rather than an overload of
     the existing one, because a later Inventory kit needs to tell them apart.
+
+    ISSUED_WITHOUT_STOCK_ADJUSTMENT indicates a technician acquired the part
+    outside the formal inventory process — tracked but no stock movement recorded yet.
     """
 
     NOT_ISSUED = "not_issued", "Not Issued"
     PARTIALLY_ISSUED = "partially_issued", "Partially Issued"
     ISSUED = "issued", "Issued"
+    ISSUED_WITHOUT_STOCK_ADJUSTMENT = (
+        "issued_without_stock_adjustment",
+        "Issued Without Stock Adjustment",
+    )
     ISSUED_PENDING_RECONCILIATION = (
         "issued_pending_reconciliation",
         "Issued Pending Reconciliation",

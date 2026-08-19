@@ -90,8 +90,8 @@ class MaintenancePlanner:
 
         # Asset has no soft-delete column — is_active is the liveness filter.
         qs = Asset.objects.filter(is_active=True, asset_class_id=plan.asset_class_id)
-        if plan.asset_model_id:
-            qs = qs.filter(model_id=plan.asset_model_id)
+        if plan.asset_models.exists():
+            qs = qs.filter(model_id__in=plan.asset_models.all())
         return qs
 
     @staticmethod

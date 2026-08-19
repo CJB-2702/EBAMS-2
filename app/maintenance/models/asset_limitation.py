@@ -35,7 +35,12 @@ class AssetLimitationRecord(AuditFieldsMixin, SoftDeleteMixin):
     )
     limitation_description = models.TextField(blank=True)
     temporary_modifications = models.TextField(blank=True)
-    
+
+    # What restored the capability, captured when the limitation is closed.
+    # A limitation degrades an asset, so "it is closed now" without a stated
+    # reason is the one thing an auditor cannot reconstruct later.
+    resolution_notes = models.TextField(blank=True)
+
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)  # Null means active limitation
     

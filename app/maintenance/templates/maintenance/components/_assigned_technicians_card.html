@@ -1,0 +1,22 @@
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span>Assigned Technicians</div></div>
+  <div class="card-content">
+    {% for entry in assigned_technicians %}
+    <div class="mb-3 pb-2" style="border-bottom:1px solid var(--bulma-border-weak);">
+      <p class="is-size-7">
+        <strong>{{ entry.user }}</strong>
+        {% if entry.is_lead %}<span class="tag is-link is-light is-small ml-1">Event Lead</span>{% endif %}
+      </p>
+      {% if entry.actions %}
+      <ul class="is-size-7 has-text-grey">
+        {% for action in entry.actions %}
+        <li>{{ action.action_name }} <span class="tag is-light is-small">{{ action.status }}</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="has-text-grey is-size-7">No technicians assigned.</p>
+    {% endfor %}
+  </div>
+</div>

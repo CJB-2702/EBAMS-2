@@ -1,0 +1,25 @@
+{# The preview the legacy portal filled once a template was picked. Always
+   renders — before a pick it explains itself rather than showing a blank box. #}
+{% if template %}
+<p class="heading is-size-7 has-text-grey">{{ template.task_name }}</p>
+<p class="is-size-7 has-text-grey mb-2">{{ template.description|default:"—" }}</p>
+<p class="is-size-7 mb-2">
+  <span class="tag is-light">{{ items|length }} step{{ items|length|pluralize }}</span>
+  {% if template.estimated_duration %}<span class="tag is-light">{{ template.estimated_duration }}h estimated</span>{% endif %}
+  {% if template.safety_review_required %}<span class="tag is-warning is-light">Safety review required</span>{% endif %}
+</p>
+<table class="table is-fullwidth is-size-7" style="margin:0;">
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td><span class="tag is-dark is-family-monospace">#{{ item.sequence_order }}</span> {{ item.action_name }}</td>
+      <td class="has-text-right has-text-grey">{% if item.estimated_duration_minutes %}{{ item.estimated_duration_minutes }} min{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td class="has-text-grey">This template has no steps.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="has-text-grey is-size-7">Pick a template to preview its steps, parts, and tools.</p>
+{% endif %}

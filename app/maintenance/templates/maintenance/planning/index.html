@@ -22,22 +22,202 @@
 </div>
 
 <div class="body-grid full-width">
+  <!-- Filters Card -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">filter_list</span></span>
+        <span>Filters</span>
+      </div>
+    </div>
+    <div class="card-content">
+      <form method="GET" action="{% url 'plan_index' %}">
+        <div class="columns is-multiline">
+          <div class="column is-one-fifth">
+            <div class="field">
+              <label class="label is-small">Name</label>
+              <div class="control">
+                <input class="input is-small" type="text" name="name" value="{{ current_filters.name }}" placeholder="Filter by name">
+              </div>
+            </div>
+          </div>
+          <div class="column is-one-fifth">
+            <div class="field">
+              <label class="label is-small">Asset Class</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="asset_class_id">
+                    <option value="">All Asset Classes</option>
+                    {% for ac in asset_classes %}
+                    <option value="{{ ac.id }}" {% if current_filters.asset_class_id == ac.id %}selected{% endif %}>{{ ac.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-one-fifth">
+            <div class="field">
+              <label class="label is-small">Model</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="model_id">
+                    <option value="">All Models</option>
+                    {% for mm in make_models %}
+                    <option value="{{ mm.id }}" {% if current_filters.model_id == mm.id %}selected{% endif %}>{{ mm }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-one-fifth">
+            <div class="field">
+              <label class="label is-small">Status</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="status">
+                    <option value="">All Statuses</option>
+                    {% for choice in statuses %}
+                    <option value="{{ choice.0 }}" {% if current_filters.status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="column is-one-fifth">
+            <div class="field">
+              <label class="label is-small">Frequency Type</label>
+              <div class="control">
+                <div class="select is-small is-fullwidth">
+                  <select name="frequency_type">
+                    <option value="">All Frequencies</option>
+                    {% for choice in frequency_types %}
+                    <option value="{{ choice.0 }}" {% if current_filters.frequency_type == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="level mt-2">
+          <div class="level-left"></div>
+          <div class="level-right">
+            <div class="level-item">
+              <a href="{% url 'plan_index' %}" class="button is-small is-light">Reset</a>
+            </div>
+            <div class="level-item">
+              <button type="submit" class="button is-small is-link">
+                <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>
+                <span>Apply Filters</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Plans Table Card -->
   <div class="card">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Plans ({{ plans|length }})</div></div>
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+        <span>Plans ({{ plans|length }})</span>
+      </div>
+    </div>
     <div class="card-content is-flush pb-3">
       <table class="table is-fullwidth is-size-7" style="margin:0;">
-        <thead><tr><th>Name</th><th>Template</th><th>Asset Class</th><th>Frequency</th><th>Status</th></tr></thead>
+        <thead>
+          <tr>
+            <th style="width: 5%;">ID</th>
+            <th style="width: 25%;">Name</th>
+            <th style="width: 15%;">Template</th>
+            <th style="width: 15%;">Asset Class</th>
+            <th style="width: 15%;">Models</th>
+            <th style="width: 15%;">Frequency</th>
+            <th style="width: 5%;">Status</th>
+            <th class="has-text-right" style="width: 10%;">Actions</th>
+          </tr>
+        </thead>
         <tbody>
           {% for plan in plans %}
           <tr>
-            <td><a href="{% url 'plan_detail' pk=plan.pk %}">{{ plan.name }}</a></td>
-            <td>{{ plan.template_action_set.task_name }}</td>
-            <td>{{ plan.asset_class.name }}</td>
-            <td>{{ plan.frequency_type }}{% if plan.frequency_type == "Calendar" %} — every {{ plan.delta_days|default:"—" }} day(s){% else %} <span class="tag is-light is-small">not yet evaluated</span>{% endif %}</td>
-            <td>{% if plan.status == "Active" %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
+            <td><code>{{ plan.pk }}</code></td>
+            <td>
+              <div>
+                <strong><a href="{% url 'plan_detail' pk=plan.pk %}">{{ plan.name }}</a></strong>
+                {% if plan.description %}
+                <p class="has-text-grey is-size-7 mt-1">{{ plan.description|truncatechars:100 }}</p>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <span class="icon-text">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">description</span></span>
+                <span>{{ plan.template_action_set.task_name }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="tag is-info is-light">{{ plan.asset_class.name }}</span>
+            </td>
+            <td>
+              {% if plan.asset_models.exists %}
+                <div class="tags">
+                  {% for model in plan.asset_models.all %}
+                  <span class="tag is-light">{{ model.model_name }}</span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="has-text-grey">All Models</span>
+              {% endif %}
+            </td>
+            <td>
+              <div>
+                <strong>{{ plan.frequency_type }}</strong>
+                {% if plan.frequency_type == "Calendar" %}
+                <p class="has-text-grey is-size-7">Every {{ plan.delta_days|default:"—"|floatformat:"0" }} days</p>
+                {% else %}
+                <p class="has-text-grey is-size-7">
+                  {% if plan.delta_m1 %}M1: {{ plan.delta_m1|floatformat:"0" }}{% endif %}
+                  {% if plan.delta_m2 %} M2: {{ plan.delta_m2|floatformat:"0" }}{% endif %}
+                  {% if plan.delta_m3 %} M3: {{ plan.delta_m3|floatformat:"0" }}{% endif %}
+                  {% if plan.delta_m4 %} M4: {{ plan.delta_m4|floatformat:"0" }}{% endif %}
+                </p>
+                <span class="tag is-warning is-light is-size-7" style="zoom: 0.85;">not yet evaluated</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              {% if plan.status == "Active" %}
+              <span class="tag is-success is-light">Active</span>
+              {% else %}
+              <span class="tag is-danger is-light">Inactive</span>
+              {% endif %}
+            </td>
+            <td class="has-text-right">
+              <div class="buttons is-right">
+                <a href="{% url 'plan_detail' pk=plan.pk %}" class="button is-small is-light" title="View details">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>
+                </a>
+                <a href="{% url 'plan_edit' pk=plan.pk %}" class="button is-small is-light" title="Edit">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
+                </a>
+                <a href="{% url 'plan_worklist' pk=plan.pk %}" class="button is-small is-link is-light" title="Worklist">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">build</span></span>
+                </a>
+              </div>
+            </td>
           </tr>
           {% empty %}
-          <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No maintenance plans yet.</td></tr>
+          <tr>
+            <td colspan="8" class="has-text-grey has-text-centered py-5">
+              <span class="icon is-large"><span class="material-icons is-large" aria-hidden="true">sentiment_dissatisfied</span></span>
+              <p class="mt-2">No maintenance plans match the current filters.</p>
+            </td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>

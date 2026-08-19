@@ -1,0 +1,65 @@
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Demands Awaiting Recording</div></div>
+  <div class="card-content">
+    {% if demands %}
+    <div class="table-responsive">
+      <table class="table is-striped is-hoverable is-fullwidth">
+        <thead>
+          <tr>
+            <th>Demand ID</th>
+            <th>Part Number</th>
+            <th>Part Name</th>
+            <th>Qty Requested</th>
+            <th>Requested By</th>
+            <th>Priority</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for demand in demands %}
+          <tr>
+            <td><a href="{% url 'demand_detail' demand.id %}">{{ demand.id }}</a></td>
+            <td>{{ demand.part.part_number }}</td>
+            <td>{{ demand.part.part_name }}</td>
+            <td>{{ demand.quantity_requested }}</td>
+            <td>{{ demand.requested_by.display_name }}</td>
+            <td>{{ demand.get_priority_display }}</td>
+            <td><time datetime="{{ demand.updated_at|date:'c' }}">{{ demand.updated_at|date:'Y-m-d H:i' }}</time></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page.has_other_pages %}
+    <nav class="pagination" role="navigation" aria-label="pagination">
+      {% if page.has_previous %}
+      <a class="pagination-previous" href="?page=1">First</a>
+      <a class="pagination-previous" href="?page={{ page.previous_page_number }}">Previous</a>
+      {% else %}
+      <a class="pagination-previous" disabled>Previous</a>
+      {% endif %}
+
+      <ul class="pagination-list">
+        {% for num in page.paginator.page_range %}
+          {% if page.number == num %}
+          <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+          {% else %}
+          <li><a class="pagination-link" aria-label="Go to page {{ num }}" href="?page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+
+      {% if page.has_next %}
+      <a class="pagination-next" href="?page={{ page.next_page_number }}">Next</a>
+      <a class="pagination-next" href="?page={{ page.paginator.num_pages }}">Last</a>
+      {% else %}
+      <a class="pagination-next" disabled>Next</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+    {% else %}
+    <p class="has-text-grey is-size-7">None.</p>
+    {% endif %}
+  </div>
+</div>

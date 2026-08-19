@@ -14,34 +14,107 @@
       </div>
     </div>
     <div class="page-header-actions">
-      <a href="{% url 'template_builder' %}" class="button is-small is-link">
-        <span class="icon"><span class="material-icons" aria-hidden="true">construction</span></span><span>Build a Template</span>
+      <form method="post" action="{% url 'template_builder' %}" style="display:inline;">
+        {% csrf_token %}
+        <button class="button is-small is-link" type="submit" name="action" value="start_blank">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New template from scratch</span>
+        </button>
+      </form>
+      <a href="{% url 'template_builder' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">drafts</span></span>
+        <span>{% if draft.actions %}Resume draft ({{ draft.actions|length }} step{{ draft.actions|length|pluralize }}){% else %}Open the builder{% endif %}</span>
       </a>
+      {% if preview_mode %}
+      <a href="{% querystring preview="0" selected=None %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">view_list</span></span><span>List view</span>
+      </a>
+      {% else %}
+      <a href="{% querystring preview="1" %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">preview</span></span><span>Preview mode</span>
+      </a>
+      {% endif %}
     </div>
   </div>
 </div>
 
 <div class="body-grid full-width">
   <div class="card">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Templates ({{ templates|length }})</div></div>
-    <div class="card-content is-flush pb-3">
-      <table class="table is-fullwidth is-size-7" style="margin:0;">
-        <thead><tr><th>Task Name</th><th>Revision</th><th>Domain</th><th>Asset Class</th><th>Active</th></tr></thead>
-        <tbody>
-          {% for t in templates %}
-          <tr>
-            <td><a href="{% url 'template_detail' pk=t.pk %}">{{ t.task_name }}</a></td>
-            <td class="is-family-monospace">{{ t.revision|default:"—" }}</td>
-            <td>{{ t.domain.name }}</td>
-            <td>{{ t.asset_class|default:"—" }}</td>
-            <td>{% if t.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Inactive</span>{% endif %}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No procedure templates yet.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <header class="card-header">
+      <h2 class="card-header-title is-size-5">
+        <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+        Filters
+      </h2>
+    </header>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'template_index' %}?format=htmx-search-results"
+            hx-trigger="keyup changed delay:350ms from:input[type=search], change from:select"
+            hx-target="#template-results-region"
+            hx-swap="innerHTML"
+            hx-push-url="true">
+        <input type="hidden" name="preview" value="{{ filters.preview }}">
+        <input type="hidden" name="selected" id="id_selected_filter" value="{{ filters.selected }}">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-4">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ filters.q }}" placeholder="search task name…">
+          </div>
+          {% if domains|length > 1 %}
+          <div class="column is-3">
+            <label class="label is-small">Domain</label>
+            <div class="select is-small is-fullwidth">
+              <select name="domain_id">
+                <option value="">All domains</option>
+                {% for domain in domains %}
+                <option value="{{ domain.pk }}" {% if filters.domain_id == domain.pk|stringformat:"s" %}selected{% endif %}>{{ domain.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% endif %}
+          <div class="column is-3">
+            <label class="label is-small">Asset Class</label>
+            <div class="select is-small is-fullwidth">
+              <select name="asset_class_id">
+                <option value="">All asset classes</option>
+                {% for asset_class in asset_classes %}
+                <option value="{{ asset_class.pk }}" {% if filters.asset_class_id == asset_class.pk|stringformat:"s" %}selected{% endif %}>{{ asset_class.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Model</label>
+            <div class="select is-small is-fullwidth">
+              <select name="model_id">
+                <option value="">All models</option>
+                {% for model in models_for_filter %}
+                <option value="{{ model.pk }}" {% if filters.model_id == model.pk|stringformat:"s" %}selected{% endif %}>{{ model }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth">
+              <select name="active">
+                <option value="" {% if not filters.active %}selected{% endif %}>All</option>
+                <option value="active" {% if filters.active == "active" %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if filters.active == "inactive" %}selected{% endif %}>Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
+  </div>
+
+  <div id="template-results-region">
+    {% if preview_mode %}
+    {% include "maintenance/_template_index_preview_split.html" %}
+    {% else %}
+    {% include "maintenance/_template_index_results.html" %}
+    {% endif %}
   </div>
 </div>
 {% endblock %}

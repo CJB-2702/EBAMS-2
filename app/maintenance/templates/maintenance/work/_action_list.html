@@ -1,0 +1,279 @@
+{% comment %} The work list. One block per step: identity, timing, safety callout, the
+   right-hand verb stack, the per-step parts panel, and the tools panel.
+   Rendered whole on load and by `format=htmx-actions` after a mutation.
+
+   Every verb except Start opens one of the shared dialogs defined in
+   work.html — this fragment is swapped wholesale, so it must not own any
+   dialog itself. Start is deliberately the exception: picking up a step is
+   not a decision worth an interstitial. {% endcomment %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Maintenance actions ({{ actions|length }})</div>
+  </div>
+  <div class="card-content">
+    {% for action in actions %}
+    <div class="card mb-3 depth-2 action-step
+                {% if action.status == 'In Progress' %}is-in-progress
+                {% elif action.status == 'Complete' %}is-complete
+                {% elif action.status == 'Failed' %}is-failed
+                {% elif action.status == 'Blocked' %}is-blocked
+                {% elif action.status == 'Skipped' %}is-skipped{% endif %}">
+    <div class="card-content p-3">
+      <div class="columns is-variable is-2">
+        <div class="column">
+          <p>
+            <span class="tag is-dark is-family-monospace">#{{ action.sequence_order }}</span>
+            <strong class="ml-2">{{ action.action_name }}</strong>
+            <span class="tag ml-2
+              {% if action.status == 'Complete' %}is-success
+              {% elif action.status == 'In Progress' %}is-info
+              {% elif action.status == 'Failed' %}is-danger
+              {% elif action.status == 'Blocked' %}is-warning
+              {% else %}is-light{% endif %}">{{ action.get_status_display }}</span>
+          </p>
+          {% if action.description %}<p class="is-size-7 has-text-grey mt-1">{{ action.description }}</p>{% endif %}
+          <p class="is-size-7 has-text-grey mt-1">
+            {% if action.estimated_duration_minutes %}Est: {{ action.estimated_duration_minutes }} min{% else %}Est: —{% endif %}
+            · Billable: {{ action.billable_hours|default_if_none:"—" }}
+            {% if action.start_time %} · Started {{ action.start_time|date:"Y-m-d H:i" }}{% endif %}
+            {% if action.end_time %} · Ended {{ action.end_time|date:"Y-m-d H:i" }}{% endif %}
+          </p>
+
+          {% if action.instructions %}
+          <details class="mt-2">
+            <summary class="is-size-7">Instructions</summary>
+            <p class="is-size-7" style="white-space:pre-wrap;">{{ action.instructions }}</p>
+          </details>
+          {% endif %}
+
+          {# The safety callout propagates proto → template → live step. #}
+          {% if action.safety_notes %}
+          <div class="notification is-warning is-light is-size-7 p-2 mt-2">
+            <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span>
+            <strong>Safety notes:</strong> {{ action.safety_notes }}
+          </div>
+          {% endif %}
+
+          {% if action.completion_notes %}
+          <p class="is-size-7 mt-2"><strong class="has-text-success">Notes:</strong> {{ action.completion_notes }}</p>
+          {% endif %}
+        </div>
+
+        {# ── Verb stack: one grouped control, right gutter ──────────── #}
+        <div class="column is-narrow action-verb-stack">
+          <div class="buttons has-addons is-vertical are-small">
+            {% if action.status == "Not Started" %}
+            {% comment %} Start is the only verb that fires straight away — no dialog,
+               no notes. It also starts the event (see start_action). {% endcomment %}
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="action_id" value="{{ action.pk }}">
+              <button class="button is-info" type="submit" name="action" value="start_action">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">play_arrow</span></span><span>Start</span>
+              </button>
+            </form>
+            {% endif %}
+
+            {% if action.status == "In Progress" %}
+            <button class="button is-success" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="complete_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}"
+                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check_circle</span></span><span>Complete</span>
+            </button>
+            <button class="button is-danger" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="fail_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}"
+                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">cancel</span></span><span>Failed</span>
+            </button>
+            <button class="button is-warning" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="block_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">pause_circle</span></span><span>Blocked</span>
+            </button>
+            <button class="button" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="skip_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">skip_next</span></span><span>Skip</span>
+            </button>
+            {% endif %}
+
+            {% if action.status == "Blocked" %}
+            <button class="button is-info" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="reopen_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">replay</span></span><span>Resume</span>
+            </button>
+            <button class="button" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="skip_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">skip_next</span></span><span>Skip</span>
+            </button>
+            {% endif %}
+
+            {% if action.status == "Complete" or action.status == "Failed" or action.status == "Skipped" %}
+            {% comment %} Legacy's "Change" — the settled outcome was wrong, put the step
+               back in play rather than editing history in place. {% endcomment %}
+            <button class="button" type="button"
+                    commandfor="action-status-dialog" command="show-modal"
+                    onclick="prefillActionStatus(this)"
+                    data-verb="reopen_action"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-current-status="{{ action.status }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">swap_horiz</span></span><span>Change</span>
+            </button>
+            {% endif %}
+
+            <button class="button" type="button"
+                    commandfor="action-edit-dialog" command="show-modal"
+                    onclick="prefillActionEdit(this)"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}"
+                    data-description="{{ action.description }}"
+                    data-instructions="{{ action.instructions }}"
+                    data-safety-notes="{{ action.safety_notes }}"
+                    data-estimated-minutes="{{ action.estimated_duration_minutes|default_if_none:'' }}"
+                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}"
+                    data-completion-notes="{{ action.completion_notes }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span><span>Edit</span>
+            </button>
+            <button class="button" type="button"
+                    commandfor="action-part-dialog" command="show-modal"
+                    onclick="prefillAddPart(this)"
+                    data-action-id="{{ action.pk }}"
+                    data-action-name="{{ action.action_name }}">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">add_circle</span></span><span>Add part</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {% comment %} ── Parts and Tools: full-width materials section ────── {% endcomment %}
+      <div class="action-materials mt-3">
+        <div class="materials-grid">
+          {# Parts Required #}
+          <div class="materials-column">
+            <div class="materials-header">
+              <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+              <span>Parts required</span>
+            </div>
+            <div class="materials-content">
+              {% if action.demand_rows %}
+              <div class="parts-list">
+                {% for link in action.demand_rows %}
+                <div class="part-item">
+                  <div class="part-info">
+                    <div class="part-number">
+                      <a href="{% url 'part_demand_detail' pk=link.part_demand.pk %}">{{ link.part_demand.part.part_number }}</a>
+                      <span class="quantity">×{{ link.part_demand.quantity_requested }}</span>
+                    </div>
+                    <div class="part-name">{{ link.part_demand.part.name|default:"—" }}</div>
+                    {% if link.part_demand.part.description %}<div class="part-description">{{ link.part_demand.part.description }}</div>{% endif %}
+                    <div class="part-meta">
+                      <span class="tag is-light is-small">{{ link.part_demand.get_demand_state_display }}</span>
+                      <span class="tag is-light is-small">{{ link.part_demand.get_issuance_state_display }}</span>
+                      {% if link.part_demand.issued_qty %}<span class="issued-qty">Issued: {{ link.part_demand.issued_qty }}</span>{% endif %}
+                    </div>
+                  </div>
+                  <div class="part-actions">
+                    {% if link.part_demand.issuance_state == "not_issued" and link.part_demand.demand_state != "cancelled" %}
+                    <button class="button is-success is-small" type="button"
+                            commandfor="demand-issue-dialog" command="show-modal"
+                            onclick="prefillIssueDemand(this)"
+                            data-demand-id="{{ link.part_demand.pk }}"
+                            data-part-name="{{ link.part_demand.part.part_number }}"
+                            data-quantity-requested="{{ link.part_demand.quantity_requested }}"
+                            title="Record quantity issued">
+                      <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check</span></span><span>Issue</span>
+                    </button>
+                    {% endif %}
+                    <button class="button is-small" type="button"
+                            commandfor="demand-update-dialog" command="show-modal"
+                            onclick="prefillUpdateDemand(this)"
+                            data-demand-id="{{ link.part_demand.pk }}"
+                            data-part-name="{{ link.part_demand.part.part_number }}"
+                            data-quantity-requested="{{ link.part_demand.quantity_requested }}"
+                            data-priority="{{ link.part_demand.priority }}"
+                            data-issuance-state="{{ link.part_demand.issuance_state }}"
+                            title="Edit quantity, priority, or issuance">
+                      <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">edit</span></span>
+                    </button>
+                    {% if link.part_demand.demand_state != "cancelled" and link.part_demand.demand_state != "completed" %}
+                    <button class="button is-danger is-light is-small" type="button"
+                            commandfor="demand-cancel-dialog" command="show-modal"
+                            onclick="prefillCancelDemand(this)"
+                            data-demand-id="{{ link.part_demand.pk }}"
+                            data-part-name="{{ link.part_demand.part.part_number }}"
+                            data-quantity-requested="{{ link.part_demand.quantity_requested }}">
+                      <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">close</span></span>
+                    </button>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="has-text-grey is-size-7 empty-state">No parts required for this step.</p>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Tools Required #}
+          <div class="materials-column">
+            <div class="materials-header">
+              <span class="icon"><span class="material-icons" aria-hidden="true">handyman</span></span>
+              <span>Tools required</span>
+            </div>
+            <div class="materials-content">
+              {% if action.tool_rows %}
+              <div class="tools-list">
+                {% for tool in action.tool_rows %}
+                <div class="tool-item">
+                  <span class="tool-badge">{{ tool.tool_name|default:tool.tool }}</span>
+                  <span class="tool-quantity">×{{ tool.quantity_required }}</span>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p class="has-text-grey is-size-7 empty-state">No tools required for this step.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    {% empty %}
+    <p class="has-text-grey is-size-7">
+      This event has no action steps. Add them from the
+      <a href="{% url 'maintenance_edit' pk=detail.pk %}">edit portal</a>.
+    </p>
+    {% endfor %}
+  </div>
+</div>

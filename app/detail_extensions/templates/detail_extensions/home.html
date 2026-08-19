@@ -1,0 +1,187 @@
+{% extends "detail_extensions/base.html" %}
+
+{% block title %}Detail Extensions — Overview{% endblock %}
+{% block nav_home %}is-active{% endblock %}
+
+{% block breadcrumb %}
+  <li class="is-active"><a href="{% url 'extension_home' %}" aria-current="page">Overview</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div style="font-size: 2rem; margin-right: 0.5rem; color: var(--bulma-primary);">⬡</div>
+      <div>
+        <h1 class="page-title">Detail Extensions</h1>
+        <p class="page-subtitle">Extending Assets and Models with dynamic, policy-driven custom tables.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'extension_config_landing' %}" class="button is-primary is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+        <span>Configure Policies</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-multiline">
+  <!-- Architecture / Trigger Explanation -->
+  <div class="column is-7">
+    <div class="card mb-5">
+      <div class="card-header">
+        <span class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">settings_input_component</span></span>
+          Creation-Time Provisioning Workflow
+        </span>
+      </div>
+      <div class="card-content">
+        <div class="content">
+          <p>
+            Detail Extensions are not rigid columns on core tables. Instead, they are modular tables mapped via a <strong>policy-driven enablement registry</strong>. They are provisioned dynamically when assets or models are created.
+          </p>
+
+          <h3 class="title is-6 mb-2">How It Triggers:</h3>
+          <ol>
+            <li>
+              <strong>Signal Emission:</strong> When a new <code>Asset</code> or <code>AssetModel</code> is successfully saved, a creation signal (<code>asset_created</code> or <code>asset_model_created</code>) is dispatched.
+            </li>
+            <li>
+              <strong>Orchestration Fan-In:</strong> The <code>DetailExtensionCreationOrchestrator</code> listens to these signals and schedules a post-commit transaction hook using <code>transaction.on_commit()</code>.
+            </li>
+            <li>
+              <strong>Post-Commit Provisioning:</strong> Once the parent transaction commits, the <code>AssetExtensionProvisioner</code> or <code>ModelExtensionProvisioner</code> runs in its own transaction context.
+            </li>
+            <li>
+              <strong>Isolated Factory Creation:</strong> The provisioner queries the active configuration policies (assigned asset classes/models) and runs the corresponding extension factory to instantiate blank extension rows. Failed extensions are logged and skipped, preventing one bad extension from breaking core creation flows.
+            </li>
+          </ol>
+
+          <div class="notification is-info is-light" style="border-left: 4px solid var(--bulma-info);">
+            <p class="is-size-7 mb-0">
+              <strong>Note:</strong> Idempotency is tracked in <code>AssetExtensionProvisioningState</code>. Extensions are only created once per key, supporting safe future backfills or manual enablement.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span>
+          Configuration Instructions
+        </span>
+      </div>
+      <div class="card-content">
+        <div class="content">
+          <p>
+            To control which assets or models receive which detail extensions, you manage assignment policies in the <strong>Configuration Portal</strong>:
+          </p>
+          <ol>
+            <li>Navigate to the <a href="{% url 'extension_config_landing' %}"><strong>Configuration Landing Page</strong></a>.</li>
+            <li>Review the registered extensions in the catalog (e.g. <em>Purchase Information</em>, <em>Vehicle Registration</em>, <em>Emissions Specifications</em>).</li>
+            <li>Click <strong>Configure</strong> on the target extension to open its Assignment Editor.</li>
+            <li>Enable or disable the extension for specific <strong>Asset Classes</strong> or individual <strong>Asset Models</strong> using the in-page assignment matrices.</li>
+            <li>Click <strong>Save Assignments</strong>. All newly created assets or models under those scopes will automatically trigger provisioning.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Access / Sidebar Links Summary -->
+  <div class="column is-5">
+    <div class="card mb-5">
+      <div class="card-header">
+        <span class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+          Asset Extensions
+        </span>
+      </div>
+      <div class="card-content">
+        <div class="menu">
+          <ul class="menu-list">
+            <li>
+              <a href="{% url 'extension_summary' 'purchase_info' %}" class="is-flex is-align-items-center">
+                <span class="icon mr-2"><span class="material-icons">receipt</span></span>
+                <div>
+                  <strong>Purchase Information</strong>
+                  <br><span class="is-size-7 has-text-grey">Track acquisition cost, vendor, warranty dates, and salvage values.</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'extension_summary' 'vehicle_registration' %}" class="is-flex is-align-items-center">
+                <span class="icon mr-2"><span class="material-icons">badge</span></span>
+                <div>
+                  <strong>Vehicle Registration</strong>
+                  <br><span class="is-size-7 has-text-grey">Track license plate, state registration, VIN, and expiration dates.</span>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'extension_summary' 'smog_record' %}" class="is-flex is-align-items-center">
+                <span class="icon mr-2"><span class="material-icons">analytics</span></span>
+                <div>
+                  <strong>Smog History</strong>
+                  <br><span class="is-size-7 has-text-grey">Keep a chronological log of emissions test results and certifications.</span>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-header">
+        <span class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+          Model Extensions
+        </span>
+      </div>
+      <div class="card-content">
+        <div class="menu">
+          <ul class="menu-list">
+            <li>
+              <a href="{% url 'extension_summary' 'emissions_info' %}" class="is-flex is-align-items-center">
+                <span class="icon mr-2"><span class="material-icons">co2</span></span>
+                <div>
+                  <strong>Emissions Specifications</strong>
+                  <br><span class="is-size-7 has-text-grey">Define manufacturer standards for exhaust limits, engine families, and CARB compliance.</span>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span>
+          Serial Number Systems
+        </span>
+      </div>
+      <div class="card-content">
+        <div class="menu">
+          <ul class="menu-list">
+            <li>
+              <a href="{% url 'extension_serial_number_templates' %}" class="is-flex is-align-items-center">
+                <span class="icon mr-2"><span class="material-icons">qr_code_scanner</span></span>
+                <div>
+                  <strong>Serial Templates &amp; Tracking</strong>
+                  <br><span class="is-size-7 has-text-grey">Format templates, validation rules, and tracking definitions for serials.</span>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "maintenance/base.html" %}
+{% load static %}
+{% block title %}Create &amp; Assign{% endblock %}
+{% block nav_create_assign %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Create &amp; Assign</a></li>{% endblock %}
+
+{% block extra_head %}
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">person_add</span></div>
+      <div>
+        <h1 class="page-title">Create &amp; Assign</h1>
+        <p class="page-subtitle">Create maintenance events from templates and assign them to assets and technicians.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'unassigned_events' %}" class="button is-small is-warning">
+        Unassigned events ({{ unassigned_count }})
+      </a>
+      <a href="{% url 'maintenance_hub' %}" class="button is-small">Back to hub</a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="columns is-variable is-4">
+
+    {# ── Left: the one create card, three stacked pickers ─────────────── #}
+    <div class="column is-8">
+      <form method="post">
+        {% csrf_token %}
+        <div class="card">
+          <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>Create maintenance event</div></div>
+          <div class="card-content">
+
+            <div class="box p-3 mb-3">
+              <div class="is-flex is-justify-content-space-between mb-2">
+                <p class="heading is-size-7 has-text-grey">1 · Select template</p>
+                <a class="is-size-7" href="{% url 'template_index' %}">View all templates</a>
+              </div>
+              <search-dropdown name="template_action_set_id" placeholder="search templates…"
+                               {% if initial_template %}value="{{ initial_template.pk }}" value-label="{{ initial_template.task_name }}"{% endif %}
+                               hx-get="{% url 'create_assign' %}?format=htmx-templates"
+                               hx-on::after-request="htmx.ajax('GET', '{% url 'create_assign' %}?format=htmx-template-summary&amp;template_action_set_id=' + (this.value||''), '#template-preview')"></search-dropdown>
+              <p class="help">Required. The template's steps, parts, and tools are expanded onto the new event.</p>
+            </div>
+
+            <div class="box p-3 mb-3">
+              <p class="heading is-size-7 has-text-grey mb-2">2 · Select asset</p>
+              <search-dropdown name="asset_id" placeholder="search assets by name or serial…"
+                               hx-get="{% url 'create_assign' %}?format=htmx-assets"></search-dropdown>
+            </div>
+
+            <div class="box p-3 mb-3">
+              <p class="heading is-size-7 has-text-grey mb-2">3 · Assign technician <span class="has-text-weight-normal">(optional)</span></p>
+              <search-dropdown name="assigned_user_id" placeholder="search technicians…"
+                               hx-get="{% url 'create_assign' %}?format=htmx-technicians"></search-dropdown>
+              <p class="help">Each candidate shows their current open workload. Leave blank to send the event to the unassigned queue.</p>
+            </div>
+
+            <div class="columns is-multiline is-variable is-3">
+              {% if show_domain_picker %}
+              <div class="column is-4">
+                <label class="label is-small">Domain</label>
+                <div class="select is-small is-fullwidth">
+                  <select name="domain_id">
+                    {% for domain in domains %}<option value="{{ domain.pk }}">{{ domain.name }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+              {% else %}
+              <input type="hidden" name="domain_id" value="{{ single_domain.pk }}">
+              {% endif %}
+              <div class="column is-4">
+                <label class="label is-small">Title <span class="has-text-grey has-text-weight-normal">(defaults to the template name)</span></label>
+                <input class="input is-small" type="text" name="title" placeholder="optional">
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">Work order reference</label>
+                <input class="input is-small" type="text" name="work_order_reference" placeholder="optional">
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">Planned start</label>
+                <input class="input is-small" type="datetime-local" name="event_start" value="{{ default_event_start }}">
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">Maintenance type</label>
+                <div class="select is-small is-fullwidth">
+                  <select name="maintenance_type">
+                    <option value="">—</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="reactive">Reactive</option>
+                    <option value="inspection">Inspection</option>
+                    <option value="preventive">Preventive</option>
+                  </select>
+                </div>
+              </div>
+              <div class="column is-4">
+                <label class="label is-small">Priority</label>
+                <div class="select is-small is-fullwidth">
+                  <select name="priority">
+                    <option value="">—</option>
+                    {% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="card-footer" style="padding:0.75rem 1rem; justify-content:space-between;">
+            <a href="{% url 'maintenance_hub' %}" class="button is-small">Cancel</a>
+            <button class="button is-small is-link" type="submit">Create &amp; assign event</button>
+          </footer>
+        </div>
+      </form>
+    </div>
+
+    {# ── Right: preview, quick actions, help ──────────────────────────── #}
+    <div class="column is-4">
+      <div class="card">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span>Template preview</div></div>
+        <div class="card-content is-size-7" id="template-preview">
+          {% include "maintenance/create_assign/_template_summary.html" with template=initial_template items=initial_items %}
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Quick actions</div></div>
+        <div class="card-content">
+          <div class="buttons are-small">
+            <a href="{% url 'unassigned_events' %}" class="button is-warning is-fullwidth">Unassigned events ({{ unassigned_count }})</a>
+            <a href="{% url 'maintenance_index' %}" class="button is-fullwidth">All events</a>
+            <a href="{% url 'template_index' %}" class="button is-fullwidth">Template library</a>
+            <a href="{% url 'template_index' %}?preview=1" class="button is-fullwidth">Build templates</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">help</span></span>Help</div></div>
+        <div class="card-content is-size-7">
+          <p class="mb-2"><strong>Creating events:</strong> pick a template and an asset. Assigning a technician here is optional.</p>
+          <p class="mb-2"><strong>Unassigned events:</strong> anything created without a technician waits in the unassigned queue, where you can assign many at once.</p>
+          <p><strong>Reassigning:</strong> use an event's own assign page to move it to a different technician.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

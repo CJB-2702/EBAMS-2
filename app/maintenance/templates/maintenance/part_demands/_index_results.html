@@ -1,0 +1,160 @@
+{# The bulk-action POST form wraps the table, so the row checkboxes and the
+   bulk controls are one form. It is a sibling of the filter GET form, never
+   nested inside it. Both live in the swapped region so an htmx refresh keeps
+   them together.
+
+   Per-row Approve/Reject post `single_id`, which the view prefers over the
+   checkbox set — a row button acts on its own row regardless of what is
+   checked, with no JavaScript involved. #}
+<form method="post" action="{% url 'part_demand_index' %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+        Part Demands ({{ page.paginator.count }})
+      </div>
+    </div>
+    <div class="card-content is-flush pb-3" style="overflow-x:auto;">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th style="width:2.5rem;">
+              {% if can_manage %}
+              <input type="checkbox" data-demand-select-all aria-label="Select all demands on this page">
+              {% endif %}
+            </th>
+            <th>ID</th>
+            <th>Part</th>
+            <th class="has-text-right">Qty</th>
+            <th class="has-text-right">Cost</th>
+            <th>Approval</th>
+            <th>Issue</th>
+            <th>Priority</th>
+            <th>Maintenance event</th>
+            <th>Asset</th>
+            <th>Assigned to</th>
+            <th>Requested by</th>
+            <th class="has-text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for demand in demands %}
+          <tr>
+            <td>
+              {% if can_manage %}
+              <input type="checkbox" name="demand_ids" value="{{ demand.pk }}" data-demand-checkbox
+                     aria-label="Select demand {{ demand.pk }}">
+              {% endif %}
+            </td>
+            <td class="is-family-monospace">{{ demand.pk }}</td>
+            <td>
+              <strong>{{ demand.part.part_number }}</strong>
+              <p class="has-text-grey">{{ demand.part.name|default:"—" }}</p>
+            </td>
+            <td class="has-text-right is-family-monospace">{{ demand.quantity_requested }}</td>
+            <td class="has-text-right is-family-monospace">
+              {% if demand.expected_cost %}{{ demand.expected_cost }}{% else %}<span class="has-text-grey">—</span>{% endif %}
+            </td>
+            <td><span class="tag is-light">{{ demand.get_demand_state_display }}</span></td>
+            <td><span class="tag is-light">{{ demand.get_issuance_state_display }}</span></td>
+            <td>{{ demand.get_priority_display }}</td>
+            <td>
+              {% if demand.maintenance_row.event %}
+                <a href="{% url 'maintenance_detail' pk=demand.maintenance_row.event.pk %}">Event #{{ demand.maintenance_row.event.pk }}</a>
+                <p class="has-text-grey">{{ demand.maintenance_row.event.title|default:"—" }}</p>
+                {% if demand.maintenance_row.action %}
+                <p class="has-text-grey">Step: {{ demand.maintenance_row.action.action_name }}</p>
+                {% endif %}
+              {% else %}
+                <span class="has-text-grey">Not maintenance-linked</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if demand.maintenance_row.asset %}{{ demand.maintenance_row.asset }}
+              {% else %}<span class="has-text-grey">—</span>{% endif %}
+            </td>
+            <td>
+              {% if demand.maintenance_row.event.assigned_user %}{{ demand.maintenance_row.event.assigned_user }}
+              {% else %}<span class="has-text-grey">Unassigned</span>{% endif %}
+            </td>
+            <td>{{ demand.requested_by|default:"—" }}</td>
+            <td class="has-text-right" style="white-space:nowrap;">
+              <a href="{% url 'part_demand_detail' pk=demand.pk %}"
+                 class="button is-small is-info is-light" title="View demand {{ demand.pk }}">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">visibility</span></span>
+              </a>
+              {% if can_manage %}
+              <button type="submit" name="row_action" value="bulk_approve:{{ demand.pk }}"
+                      class="button is-small is-success is-light"
+                      title="Approve demand {{ demand.pk }}">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check</span></span>
+              </button>
+              <button type="submit" name="row_action" value="bulk_reject:{{ demand.pk }}"
+                      class="button is-small is-danger is-light"
+                      title="Reject demand {{ demand.pk }}">
+                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">close</span></span>
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="13" class="has-text-grey has-text-centered py-4">No part demands match these filters.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page.paginator.num_pages > 1 %}
+    <footer class="card-footer" style="padding:0.5rem 1rem;">
+      <span class="is-size-7 has-text-grey">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} demands</span>
+    </footer>
+    {% endif %}
+  </div>
+
+  {# Rule #5: the bulk card always renders, with an explicit disabled state
+     rather than being hidden when nothing is checked. #}
+  <div class="card mt-4">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+        Bulk actions · <span data-demand-selected-count>0</span> selected
+      </div>
+    </div>
+    <div class="card-content">
+      {% if can_manage %}
+      <div class="columns is-variable is-3">
+        <div class="column is-4">
+          <label class="label is-small" for="bulk-notes">Notes (optional, applied to every selected demand)</label>
+          <input class="input is-small" type="text" id="bulk-notes" name="notes" placeholder="e.g. approved against WO-1002">
+        </div>
+        <div class="column is-4">
+          <label class="label is-small">Replacement part (for “Substitute part”)</label>
+          <search-dropdown name="new_part_id" placeholder="search part number or name…"
+                           hx-get="{% url 'part_demand_index' %}?format=htmx-part-search"></search-dropdown>
+          <p class="help">Only demands with no purchasing or issuance activity can be substituted; the rest are skipped and named.</p>
+        </div>
+        <div class="column is-4 is-flex is-align-items-flex-end is-justify-content-flex-end">
+          <div class="buttons are-small">
+            <button type="submit" name="action" value="bulk_approve" class="button is-success" data-demand-bulk-submit disabled>
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check</span></span><span>Approve</span>
+            </button>
+            <button type="submit" name="action" value="bulk_reject" class="button is-danger" data-demand-bulk-submit disabled>
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">close</span></span><span>Reject</span>
+            </button>
+            <button type="submit" name="action" value="bulk_substitute_part" class="button is-warning" data-demand-bulk-submit disabled>
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">swap_horiz</span></span><span>Substitute part</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p class="has-text-grey is-size-7">
+        Approving, rejecting, and substituting parts requires the
+        <code>demand_manage</code> permission. You can still open any demand to read it.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</form>

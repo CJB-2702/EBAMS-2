@@ -1,0 +1,121 @@
+{% extends "maintenance/base.html" %}
+{% block title %}Technician Dashboard{% endblock %}
+{% block nav_technician_dashboard %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Technician Dashboard</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">engineering</span></div>
+      <div>
+        <h1 class="page-title">Technician Dashboard</h1>
+        <p class="page-subtitle">View assigned work, complete actions, and track your maintenance history.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'maintenance_hub' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to Hub</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  {# ── Stat strip: Assigned Work / In Progress / Completed Today ────────── #}
+  <div class="card">
+    <div class="card-content">
+      <div class="columns has-text-centered">
+        <div class="column">
+          <p class="heading is-size-7 has-text-grey">Assigned work</p>
+          <p class="title is-4 has-text-link">{{ stats.assigned_work }}</p>
+        </div>
+        <div class="column">
+          <p class="heading is-size-7 has-text-grey">In progress</p>
+          <p class="title is-4 has-text-success">{{ stats.in_progress }}</p>
+        </div>
+        <div class="column">
+          <p class="heading is-size-7 has-text-grey">Completed today</p>
+          <p class="title is-4 has-text-warning">{{ stats.completed_today }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Quick Asset Lookup + Event Viewer Dashboard link ─────────────────── #}
+  <div class="columns is-variable is-4">
+    <div class="column is-8">
+      <div class="card" style="height:100%;">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>Quick asset lookup</div>
+        </div>
+        <div class="card-content">
+          <div class="field">
+            <p class="control has-icons-left">
+              <input class="input is-family-monospace" type="search" name="q"
+                     placeholder="search assets by name or serial number..."
+                     autocomplete="off"
+                     hx-get="{% url 'technician_dashboard' %}?format=htmx-asset-lookup"
+                     hx-trigger="keyup changed delay:350ms, search"
+                     hx-target="#asset-lookup-results"
+                     hx-swap="innerHTML">
+              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true">search</span></span>
+            </p>
+          </div>
+          <p class="help">Search for assets to view their maintenance history.</p>
+          <div id="asset-lookup-results"></div>
+        </div>
+      </div>
+    </div>
+    <div class="column is-4">
+      <div class="card" style="height:100%; display:flex; flex-direction:column; justify-content:center;">
+        <div class="card-content has-text-centered">
+          <a href="{% url 'maintenance_index' %}" class="button is-info is-fullwidth">
+            <span class="icon"><span class="material-icons" aria-hidden="true">format_list_bulleted</span></span>
+            <span>Event Viewer Dashboard</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Assigned Events / Recently Interacted With ───────────────────────── #}
+  <div class="columns is-variable is-4">
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span>Assigned events</div>
+          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1">View all</a>
+        </div>
+        <div class="card-content is-flush pb-3">
+          {% include "maintenance/components/_event_mini_list.html" with rows=assigned_events empty_text="Nothing assigned to you right now." %}
+        </div>
+      </div>
+    </div>
+    <div class="column is-6">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">forum</span></span>Recently interacted with</div>
+          <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1">View all</a>
+        </div>
+        <div class="card-content is-flush pb-3">
+          {% include "maintenance/components/_event_mini_list.html" with rows=recently_interacted empty_text="No comments posted yet." %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Planned This Week (full width) ────────────────────────────────────── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">calendar_month</span></span>Planned this week</div>
+      <a class="card-header-icon is-size-7" href="{% url 'maintenance_index' %}?my_work=1&amp;status=planned">View all</a>
+    </div>
+    <div class="card-content is-flush pb-3">
+      {% include "maintenance/components/_event_mini_list.html" with rows=planned_this_week empty_text="Nothing scheduled for you in the next seven days." %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

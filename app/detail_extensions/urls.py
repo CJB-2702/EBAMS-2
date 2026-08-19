@@ -22,8 +22,16 @@ from app.detail_extensions.presentation_layer.entrypoints.extension_router impor
     single_row,
     summary,
 )
+from app.detail_extensions.presentation_layer.entrypoints.home import (
+    home_landing,
+    serial_number_templates,
+)
 
 urlpatterns = [
+    # ── App Home and Custom Placeholders ────────────────────────────────────
+    path("", home_landing, name="extension_home"),
+    path("serial_number_templates/", serial_number_templates, name="extension_serial_number_templates"),
+
     # ── Configuration UI ────────────────────────────────────────────────────
     path("configuration/", landing, name="extension_config_landing"),
     path("configuration/<str:extension_key>/", assign_editor, name="extension_assign_editor"),

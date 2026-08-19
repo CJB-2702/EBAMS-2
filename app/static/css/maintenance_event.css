@@ -1,0 +1,1288 @@
+/* Maintenance Event - Colorful Theme
+   Adds vibrant colors to event detail, work, and edit pages.
+   Supports both light and dark modes.
+   Uses CSS adjacent sibling and nth-child selectors to target specific cards. */
+
+:root {
+  /* Color palette for different card types */
+  --event-details-border: var(--yellow-30);
+  --action-steps-border: var(--cyan-50);
+  --blocker-border: var(--red-60);
+  --limitation-border: var(--red-70);
+  --technician-border: var(--green-60);
+  --part-demand-border: var(--orange-40);
+}
+
+/* ── Event Details Card - First card in main content area ──
+   Base styling only */
+.body-grid > div > .card:nth-of-type(1) {
+  border-left: 5px solid var(--event-details-border);
+}
+
+/* ── Action Steps Card - Second card in main content area ──
+   Cyan/Blue accent */
+.body-grid > div > .card:nth-of-type(2) {
+  border-left: 5px solid var(--action-steps-border);
+}
+
+.body-grid > div > .card:nth-of-type(2) .card-header {
+  border-bottom: 2px solid var(--action-steps-border);
+  font-weight: 700;
+}
+
+.body-grid > div > .card:nth-of-type(2) .card-header-title {
+  color: #0056a3;
+  font-weight: 700;
+}
+
+.body-grid > div > .card:nth-of-type(2) .card-header-title .icon {
+  color: var(--cyan-50);
+}
+
+@media (prefers-color-scheme: light) {
+  .body-grid > div > .card:nth-of-type(2) .card-header {
+    background-color: rgba(17, 146, 255, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .body-grid > div > .card:nth-of-type(2) .card-header {
+    background-color: rgba(17, 146, 255, 0.12);
+  }
+  .body-grid > div > .card:nth-of-type(2) .card-header-title {
+    color: var(--cyan-40);
+  }
+}
+
+/* ── Blockers Card - First card in right rail ──
+   Red accent */
+.body-rail > .mb-4:nth-of-type(1) .card {
+  border-left: 5px solid var(--blocker-border);
+}
+
+.body-rail > .mb-4:nth-of-type(1) .card .card-header {
+  border-bottom: 2px solid var(--blocker-border);
+  font-weight: 700;
+}
+
+.body-rail > .mb-4:nth-of-type(1) .card .card-header-title {
+  color: #8b2e2e;
+  font-weight: 700;
+}
+
+.body-rail > .mb-4:nth-of-type(1) .card .card-header-title .icon {
+  color: var(--red-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
+    background-color: rgba(218, 46, 40, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
+    background-color: rgba(218, 46, 40, 0.12);
+  }
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header-title {
+    color: var(--red-40);
+  }
+}
+
+/* ── Asset Limitations Card - Second card in right rail ──
+   Yellow accent (same as Event Details) */
+.body-rail > .card:nth-of-type(2) {
+  border-left: 5px solid var(--event-details-border);
+}
+
+.body-rail > .card:nth-of-type(2) .card-header {
+  border-bottom: 2px solid var(--event-details-border);
+  font-weight: 700;
+}
+
+.body-rail > .card:nth-of-type(2) .card-header-title {
+  color: #8b6914;
+  font-weight: 700;
+}
+
+.body-rail > .card:nth-of-type(2) .card-header-title .icon {
+  color: var(--yellow-30);
+}
+
+@media (prefers-color-scheme: light) {
+  .body-rail > .card:nth-of-type(2) .card-header {
+    background-color: rgba(241, 194, 27, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .body-rail > .card:nth-of-type(2) .card-header {
+    background-color: rgba(241, 194, 27, 0.12);
+  }
+  .body-rail > .card:nth-of-type(2) .card-header-title {
+    color: var(--yellow-30);
+  }
+}
+
+/* ── Assigned Technicians Card - Third card in right rail ──
+   Base styling only */
+.body-rail > .mb-4:nth-of-type(3) .card {
+  border-left: 5px solid var(--technician-border);
+}
+
+/* ── Part Demand Status Card - Fourth card in right rail ──
+   Color varies by status: not issued (blue), issued without stock (orange), issued (green), rejected/cancelled (red) */
+
+/* Default/Not Issued - Blue */
+.body-rail > .mb-4:nth-of-type(4) .card,
+.part-demand-card--not-issued {
+  border-left: 5px solid var(--blue-50);
+}
+
+.body-rail > .mb-4:nth-of-type(4) .card .card-header,
+.part-demand-card--not-issued .card-header {
+  border-bottom: 2px solid var(--blue-50);
+  font-weight: 700;
+}
+
+.body-rail > .mb-4:nth-of-type(4) .card .card-header-title,
+.part-demand-card--not-issued .card-header-title {
+  color: #0056a3;
+  font-weight: 700;
+}
+
+.body-rail > .mb-4:nth-of-type(4) .card .card-header-title .icon,
+.part-demand-card--not-issued .card-header-title .icon {
+  color: var(--blue-50);
+}
+
+@media (prefers-color-scheme: light) {
+  .body-rail > .mb-4:nth-of-type(4) .card .card-header,
+  .part-demand-card--not-issued .card-header {
+    background-color: rgba(15, 98, 254, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .body-rail > .mb-4:nth-of-type(4) .card .card-header,
+  .part-demand-card--not-issued .card-header {
+    background-color: rgba(15, 98, 254, 0.12);
+  }
+  .body-rail > .mb-4:nth-of-type(4) .card .card-header-title,
+  .part-demand-card--not-issued .card-header-title {
+    color: var(--blue-40);
+  }
+}
+
+/* Issued Without Stock Movement - Orange */
+.part-demand-card--issued-no-stock {
+  border-left: 5px solid var(--part-demand-border);
+}
+
+.part-demand-card--issued-no-stock .card-header {
+  border-bottom: 2px solid var(--part-demand-border);
+  font-weight: 700;
+}
+
+.part-demand-card--issued-no-stock .card-header-title {
+  color: #b84e00;
+  font-weight: 700;
+}
+
+.part-demand-card--issued-no-stock .card-header-title .icon {
+  color: var(--orange-40);
+}
+
+@media (prefers-color-scheme: light) {
+  .part-demand-card--issued-no-stock .card-header {
+    background-color: rgba(255, 131, 43, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-demand-card--issued-no-stock .card-header {
+    background-color: rgba(255, 131, 43, 0.12);
+  }
+  .part-demand-card--issued-no-stock .card-header-title {
+    color: var(--orange-40);
+  }
+}
+
+/* Issued - Green */
+.part-demand-card--issued {
+  border-left: 5px solid var(--green-60);
+}
+
+.part-demand-card--issued .card-header {
+  border-bottom: 2px solid var(--green-60);
+  font-weight: 700;
+}
+
+.part-demand-card--issued .card-header-title {
+  color: #1a5a2e;
+  font-weight: 700;
+}
+
+.part-demand-card--issued .card-header-title .icon {
+  color: var(--green-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .part-demand-card--issued .card-header {
+    background-color: rgba(25, 128, 56, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-demand-card--issued .card-header {
+    background-color: rgba(25, 128, 56, 0.12);
+  }
+  .part-demand-card--issued .card-header-title {
+    color: var(--green-30);
+  }
+}
+
+/* Rejected or Cancelled - Red */
+.part-demand-card--rejected,
+.part-demand-card--cancelled {
+  border-left: 5px solid var(--red-60);
+}
+
+.part-demand-card--rejected .card-header,
+.part-demand-card--cancelled .card-header {
+  border-bottom: 2px solid var(--red-60);
+  font-weight: 700;
+}
+
+.part-demand-card--rejected .card-header-title,
+.part-demand-card--cancelled .card-header-title {
+  color: #8b2e2e;
+  font-weight: 700;
+}
+
+.part-demand-card--rejected .card-header-title .icon,
+.part-demand-card--cancelled .card-header-title .icon {
+  color: var(--red-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .part-demand-card--rejected .card-header,
+  .part-demand-card--cancelled .card-header {
+    background-color: rgba(218, 46, 40, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-demand-card--rejected .card-header,
+  .part-demand-card--cancelled .card-header {
+    background-color: rgba(218, 46, 40, 0.12);
+  }
+  .part-demand-card--rejected .card-header-title,
+  .part-demand-card--cancelled .card-header-title {
+    color: var(--red-40);
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   "Not Yet Completable" Alert Notification
+
+   Special styling for the blocking alert that indicates something
+   preventing completion. This is the first priority item that needs
+   to be resolved, so it gets prominent styling.
+   ────────────────────────────────────────────────────────────── */
+
+#action-list .notification.is-warning.is-light {
+  border-left: 5px solid var(--red-50);
+  border-top: 2px solid var(--red-50);
+  border-right: 1px solid var(--red-50);
+  border-bottom: 1px solid var(--red-50);
+  font-weight: 600;
+  padding: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-color-scheme: light) {
+  #action-list .notification.is-warning.is-light {
+    background-color: rgba(250, 77, 86, 0.12);
+    box-shadow: 0 2px 8px rgba(250, 77, 86, 0.15);
+    color: #333;
+  }
+  #action-list .notification.is-warning.is-light strong {
+    color: #8b2e2e;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #action-list .notification.is-warning.is-light {
+    background-color: rgba(250, 77, 86, 0.15);
+    box-shadow: 0 2px 8px rgba(250, 77, 86, 0.25);
+    color: var(--red-20);
+  }
+  #action-list .notification.is-warning.is-light strong {
+    color: var(--red-30);
+  }
+}
+
+/* Emphasize the strong text inside the alert */
+#action-list .notification.is-warning.is-light strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+
+#action-list .notification.is-warning.is-light ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+}
+
+#action-list .notification.is-warning.is-light li {
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+
+/* ── Individual Action Step Cards - Enhanced Styling ──
+   Subtle left border and hover effects */
+
+#action-list .card.depth-2 {
+  border-left: 3px solid var(--action-steps-border);
+  transition: all 0.2s ease;
+}
+
+#action-list .card.depth-2:hover {
+  border-left-width: 5px;
+}
+
+@media (prefers-color-scheme: light) {
+  #action-list .card.depth-2:hover {
+    box-shadow: 0 2px 6px rgba(17, 146, 255, 0.15);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #action-list .card.depth-2:hover {
+    box-shadow: 0 2px 6px rgba(17, 146, 255, 0.25);
+  }
+}
+
+/* Action status tags get enhanced styling */
+#action-list .card.depth-2 .tag {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+/* ── Progress Stack Segments ──────────────────────────────────────────────
+   Color-coded segments showing completion status distribution:
+   Blue for in progress, green for complete, red for failed, grey for skipped. */
+
+.progress-stack-seg {
+  height: 100%;
+  display: inline-block;
+}
+
+.progress-stack-seg.is-in-progress {
+  background-color: var(--bulma-info, #3e8ed0);
+}
+
+.progress-stack-seg.is-complete {
+  background-color: var(--bulma-success, #48c78e);
+}
+
+.progress-stack-seg.is-failed {
+  background-color: var(--bulma-danger, #f14668);
+}
+
+.progress-stack-seg.is-skipped {
+  background-color: var(--bulma-grey-light, #b5b5b5);
+}
+
+/* ── Page Hero Enhancement ──
+   Bottom and left borders only */
+
+.page-hero {
+  border-bottom: 2px solid var(--action-steps-border);
+  border-left: 5px solid var(--action-steps-border);
+}
+
+/* ── Billable Hours Inline Card Enhancement ──
+   The nested card inside Event Details card - base styling only */
+
+.card-content .card[style*="border: 1px solid"] {
+  border-left: 3px solid var(--bulma-border, #dbdbdb) !important;
+}
+
+/* ── Maintenance Actions Card — Cyan/Blue accent ── */
+#work-action-region > .card {
+  border-left: 5px solid var(--action-steps-border);
+}
+
+#work-action-region > .card > .card-header {
+  border-bottom: 2px solid var(--action-steps-border);
+  font-weight: 700;
+}
+
+#work-action-region > .card > .card-header .card-header-title {
+  color: #0056a3;
+  font-weight: 700;
+}
+
+#work-action-region > .card > .card-header .card-header-title .icon {
+  color: var(--action-steps-border);
+}
+
+@media (prefers-color-scheme: light) {
+  #work-action-region > .card > .card-header {
+    background-color: rgba(17, 146, 255, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  #work-action-region > .card > .card-header {
+    background-color: rgba(17, 146, 255, 0.12);
+  }
+  #work-action-region > .card > .card-header .card-header-title {
+    color: var(--cyan-40);
+  }
+}
+
+
+/* ── Vertical button addons ─────────────────────────────────────────────
+   The work portal's per-step verb stack. Bulma's `.buttons.has-addons`
+   only knows how to run horizontally; the work list needs the same
+   seam-collapsed grouping running down the right-hand gutter, because
+   the verbs belong to one decision ("how did this step end?") and should
+   read as one control, not four loose buttons. */
+.buttons.has-addons.is-vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.buttons.has-addons.is-vertical .button {
+  width: 100%;
+  margin-right: 0;
+  justify-content: flex-start;
+}
+
+.buttons.has-addons.is-vertical .button:not(:last-child) {
+  margin-bottom: -1px;
+}
+
+.buttons.has-addons.is-vertical .button:hover,
+.buttons.has-addons.is-vertical .button:focus {
+  z-index: 2;
+}
+
+/* The stack sits in a narrow right-hand column; keep it from collapsing
+   below a readable width when a step's text is long. */
+.action-verb-stack {
+  min-width: 11rem;
+}
+
+/* ── Per-step status accent ─────────────────────────────────────────────
+   Legacy coloured each action card's left border by status. Same signal,
+   this app's flat geometry.
+
+   The step IS a nested card, and custom_css.css zeroes borders on nested
+   cards so three concentric hairlines don't box the innermost panel in.
+   That rule would take this accent with it, so restate the left edge at
+   matching specificity — this one border is carrying information, not
+   drawing a container. */
+.card .card.action-step,
+.action-step {
+  border: 0;
+  border-left: 4px solid var(--bulma-border, #dbdbdb);
+}
+.action-step.is-in-progress { border-left-color: var(--bulma-info, #3e8ed0); }
+.action-step.is-complete    { border-left-color: var(--bulma-success, #48c78e); }
+.action-step.is-failed      { border-left-color: var(--bulma-danger, #f14668); }
+.action-step.is-blocked     { border-left-color: var(--bulma-warning, #ffe08a); }
+.action-step.is-skipped     { border-left-color: var(--bulma-grey-light, #b5b5b5); }
+
+/* Square off the two left corners so the 4px accent keeps a crisp edge —
+   same asymmetric-bevel trick .page-hero uses. Order: TL TR BR BL. */
+@supports (corner-shape: bevel) {
+  .card .card.action-step {
+    border-radius: 0 var(--app-chamfer-nested) var(--app-chamfer-nested) 0;
+  }
+}
+
+/* ── Nested Parts / Tools panels ────────────────────────────────────────
+   Legacy boxed "Parts Required" in its own cyan-headed card inside the
+   action row. Same idea: a soft info tint on the panel header so the
+   material list reads as its own thing, without competing with the
+   actions card's own heavier accent above it. */
+.nested-panel > .card-header {
+  background-color: rgba(17, 146, 255, 0.08);
+  border-bottom: 1px solid var(--action-steps-border);
+}
+
+.nested-panel > .card-header .card-header-title {
+  color: #0056a3;
+}
+
+.nested-panel > .card-header .card-header-title .icon {
+  color: var(--action-steps-border);
+}
+
+@media (prefers-color-scheme: dark) {
+  .nested-panel > .card-header {
+    background-color: rgba(17, 146, 255, 0.12);
+  }
+  .nested-panel > .card-header .card-header-title {
+    color: var(--cyan-40);
+  }
+}
+
+/* ── Action Materials Section (Parts and Tools) ────────────────────────────
+   Full-width materials grid below the action step, cleaner layout for
+   better readability and visual hierarchy. */
+
+.action-materials {
+  background: transparent;
+  border-top: 1px solid var(--bulma-border, #dbdbdb);
+  padding-top: 1rem;
+}
+
+.materials-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .materials-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+/* ── Materials Column (Parts or Tools) ── */
+.materials-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.materials-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--action-steps-border);
+}
+
+.materials-header .icon {
+  color: var(--action-steps-border);
+  display: flex;
+  align-items: center;
+}
+
+.materials-header .material-icons {
+  font-size: 1rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .materials-header {
+    color: #0056a3;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .materials-header {
+    color: var(--cyan-40);
+  }
+}
+
+/* ── Materials Content ── */
+.materials-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+  opacity: 0.7;
+}
+
+/* ── Parts List ── */
+.parts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.part-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.875rem;
+  background: transparent;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .part-item {
+    background-color: rgba(17, 146, 255, 0.04);
+  }
+  .part-item:hover {
+    background-color: rgba(17, 146, 255, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-item {
+    background-color: rgba(17, 146, 255, 0.06);
+  }
+  .part-item:hover {
+    background-color: rgba(17, 146, 255, 0.1);
+  }
+}
+
+.part-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.part-number {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+}
+
+.part-number a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.part-number a:hover {
+  text-decoration: underline;
+}
+
+.part-number .quantity {
+  font-size: 0.875rem;
+  opacity: 0.7;
+  font-weight: normal;
+}
+
+.part-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.part-description {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.part-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+}
+
+.part-meta .tag {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.issued-qty {
+  color: var(--bulma-success, #48c78e);
+  font-weight: 600;
+}
+
+.part-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.part-actions .button {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.75rem;
+}
+
+/* ── Tools List ── */
+.tools-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tool-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .tool-item {
+    background-color: rgba(17, 146, 255, 0.08);
+    border: 1px solid rgba(17, 146, 255, 0.2);
+  }
+  .tool-item:hover {
+    background-color: rgba(17, 146, 255, 0.12);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .tool-item {
+    background-color: rgba(17, 146, 255, 0.12);
+    border: 1px solid rgba(17, 146, 255, 0.3);
+  }
+  .tool-item:hover {
+    background-color: rgba(17, 146, 255, 0.16);
+  }
+}
+
+.tool-badge {
+  font-weight: 600;
+  color: #0056a3;
+}
+
+@media (prefers-color-scheme: dark) {
+  .tool-badge {
+    color: var(--cyan-30);
+  }
+}
+
+.tool-quantity {
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+/* ── Part Demand Approval Cards ─────────────────────────────────────────────
+   Preview-style cards for pending part demand approvals. Each card shows
+   part info, action context, status, and metrics in a compact preview format. */
+
+.approval-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.approval-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  border-left: 4px solid var(--blue-50);
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .approval-card {
+    background-color: rgba(15, 98, 254, 0.04);
+    border-color: var(--blue-50);
+  }
+  .approval-card:hover {
+    background-color: rgba(15, 98, 254, 0.08);
+    box-shadow: 0 1px 4px rgba(15, 98, 254, 0.15);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .approval-card {
+    background-color: rgba(15, 98, 254, 0.08);
+    border-color: var(--blue-40);
+  }
+  .approval-card:hover {
+    background-color: rgba(15, 98, 254, 0.12);
+    box-shadow: 0 1px 4px rgba(15, 98, 254, 0.25);
+  }
+}
+
+/* ── Card Header: Part Info ── */
+.approval-card-header {
+  border-bottom: 1px solid var(--bulma-border, #dbdbdb);
+  padding-bottom: 0.75rem;
+}
+
+.approval-card-part {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.approval-part-number-line {
+  margin-bottom: 0.25rem;
+}
+
+.approval-part-number {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: inherit;
+  font-family: var(--family-monospace);
+}
+
+.approval-part-number:hover {
+  text-decoration: underline;
+}
+
+.approval-part-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.approval-part-desc {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* ── Card Body: Action and Status ── */
+.approval-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.approval-action-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.approval-action-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  font-weight: 600;
+}
+
+.approval-action-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.approval-status-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.approval-status-tags .tag {
+  font-size: 0.65rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0;
+}
+
+/* ── Metrics Grid ── */
+.approval-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  text-align: center;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--bulma-border, #dbdbdb);
+  border-bottom: 1px solid var(--bulma-border, #dbdbdb);
+}
+
+.metric-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 0.875rem;
+  font-family: var(--family-monospace);
+  font-weight: 600;
+}
+
+/* ── Card Footer: Actions ── */
+.approval-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.approval-card-footer .button {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  justify-content: center;
+}
+
+.approval-card-footer .button.is-success {
+  font-weight: 600;
+}
+
+/* ── Empty State ── */
+.approval-empty-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* ── Blockers Card: Conditional Red Styling ────────────────────────────────
+   When there are active blockers, style the card with a red accent to
+   immediately draw attention to work stoppages. */
+
+.blockers-card-active {
+  border-left: 5px solid var(--red-60);
+}
+
+.blockers-card-active > .card-header {
+  border-bottom: 2px solid var(--red-60);
+  font-weight: 700;
+}
+
+.blockers-card-active > .card-header .card-header-title {
+  color: #8b2e2e;
+  font-weight: 700;
+}
+
+.blockers-card-active > .card-header .card-header-title .icon {
+  color: var(--red-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .blockers-card-active > .card-header {
+    background-color: rgba(218, 46, 40, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .blockers-card-active > .card-header {
+    background-color: rgba(218, 46, 40, 0.12);
+  }
+  .blockers-card-active > .card-header .card-header-title {
+    color: var(--red-40);
+  }
+}
+
+/* ── Capability Limitations Card: Conditional Yellow Styling ─────────────────
+   When there are active capability limitations, style the card with a yellow
+   accent to highlight reduced asset functionality. */
+
+.limitations-card-active {
+  border-left: 5px solid var(--yellow-30);
+}
+
+.limitations-card-active > .card-header {
+  border-bottom: 2px solid var(--yellow-30);
+  font-weight: 700;
+}
+
+.limitations-card-active > .card-header .card-header-title {
+  color: #8b6914;
+  font-weight: 700;
+}
+
+.limitations-card-active > .card-header .card-header-title .icon {
+  color: var(--yellow-30);
+}
+
+@media (prefers-color-scheme: light) {
+  .limitations-card-active > .card-header {
+    background-color: rgba(241, 194, 27, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .limitations-card-active > .card-header {
+    background-color: rgba(241, 194, 27, 0.12);
+  }
+  .limitations-card-active > .card-header .card-header-title {
+    color: var(--yellow-30);
+  }
+}
+
+/* ── Assigned Staff Card ────────────────────────────────────────────────────
+   Display the technician/staff member assigned to the event with their
+   name, email, and a visual avatar. */
+
+.assigned-staff-display {
+  display: flex;
+  flex-direction: column;
+}
+
+.staff-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  background: transparent;
+}
+
+@media (prefers-color-scheme: light) {
+  .staff-item {
+    background-color: rgba(15, 98, 254, 0.05);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .staff-item {
+    background-color: rgba(15, 98, 254, 0.08);
+  }
+}
+
+.staff-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-50), var(--cyan-50));
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.staff-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.staff-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.staff-email {
+  font-size: 0.75rem;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Blockers List ── */
+.blockers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.blocker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--blocker-border);
+  border-radius: 0.25rem;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.blocker-item.is-resolved {
+  opacity: 0.65;
+  border-color: var(--gray-40);
+}
+
+.blocker-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.blocker-reason {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.blocker-priority {
+  flex-shrink: 0;
+}
+
+.blocker-notes {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  padding: 0.5rem;
+  background: transparent;
+  border-radius: 0.25rem;
+}
+
+.blocker-timeline {
+  font-size: 0.75rem;
+  color: inherit; opacity: 0.7;
+  line-height: 1.6;
+}
+
+.blocker-date {
+  margin: 0;
+}
+
+.blocker-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metric-label {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.metric-value {
+  font-weight: 500;
+}
+
+.blocker-resolution {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.blocker-resolution p {
+  margin: 0;
+}
+
+.blocker-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.blockers-empty-state {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+/* ── Limitations List ── */
+.limitations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.limitation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--limitation-border);
+  border-radius: 0.25rem;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.limitation-item.is-closed {
+  opacity: 0.65;
+  border-color: var(--gray-40);
+}
+
+.limitation-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.limitation-status {
+  flex-shrink: 0;
+}
+
+.limitation-blocker-link {
+  flex-shrink: 0;
+}
+
+.limitation-description {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.limitation-compensation {
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  background: transparent;
+  border-left: 3px solid var(--yellow-50);
+}
+
+.compensation-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 0.25rem;
+}
+
+.compensation-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.limitation-timeline {
+  font-size: 0.75rem;
+  color: inherit; opacity: 0.7;
+  line-height: 1.6;
+}
+
+.limitation-date {
+  margin: 0;
+}
+
+.limitation-resolution {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.limitation-resolution p {
+  margin: 0;
+}
+
+.limitation-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.limitations-empty-state {
+  padding: 2rem 1rem;
+  text-align: center;
+}
