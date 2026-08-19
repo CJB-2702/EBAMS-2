@@ -1286,3 +1286,196 @@
   padding: 2rem 1rem;
   text-align: center;
 }
+
+/* ── Action Editor Panel: New Improved Layout ──────────────────────────────
+   Dark mode compliant styling for the action editor panel's three-column layout. */
+
+/* Action Details Column - Card Items */
+.action-detail-card {
+  padding: 0.75rem;
+  border: 1px solid var(--bulma-border-weak);
+  background-color: var(--bulma-white-bis);
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .action-detail-card {
+    background-color: var(--bulma-white-bis);
+    border-color: var(--bulma-border-weak);
+  }
+  .action-detail-card:hover {
+    background-color: var(--bulma-white);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .action-detail-card {
+    background-color: var(--bulma-scheme-main-bis);
+    border-color: var(--bulma-border-weak);
+  }
+  .action-detail-card:hover {
+    background-color: rgba(17, 146, 255, 0.06);
+    border-color: var(--action-steps-border);
+  }
+}
+
+.action-detail-card.is-selected {
+  background-color: var(--bulma-info-light);
+  border-color: var(--bulma-info);
+}
+
+@media (prefers-color-scheme: dark) {
+  .action-detail-card.is-selected {
+    background-color: rgba(17, 146, 255, 0.15);
+    border-color: var(--cyan-40);
+  }
+}
+
+.action-detail-card a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.action-detail-card p {
+  margin: 0;
+}
+
+/* Part Demands & Tools Column - Container and Items */
+.demand-tools-container {
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .demand-tools-container {
+    background-color: var(--bulma-white-bis);
+    border-color: var(--bulma-border-weak);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .demand-tools-container {
+    background-color: var(--bulma-scheme-main-bis);
+    border-color: var(--bulma-border-weak);
+  }
+}
+
+.part-tool-item {
+  padding: 0.75rem;
+  border: 1px solid var(--bulma-border-weak);
+  background-color: var(--bulma-white-bis);
+  transition: all 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .part-tool-item {
+    background-color: var(--bulma-white-bis);
+    border-color: var(--bulma-border-weak);
+  }
+  .part-tool-item:hover {
+    background-color: var(--bulma-white);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .part-tool-item {
+    background-color: var(--bulma-scheme-main-bis);
+    border-color: var(--bulma-border-weak);
+  }
+  .part-tool-item:hover {
+    background-color: rgba(17, 146, 255, 0.06);
+    border-color: var(--action-steps-border);
+  }
+}
+
+/* Add Part/Tool Section Headers */
+.add-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .add-section-header {
+    color: #0056a3;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .add-section-header {
+    color: var(--cyan-40);
+  }
+}
+
+/* Searchable Dropdown Results */
+.search-results-dropdown {
+  display: none;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: 2px;
+  margin-top: 0.5rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .search-results-dropdown {
+    background-color: var(--bulma-white);
+    border-color: var(--bulma-border);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-results-dropdown {
+    background-color: var(--bulma-scheme-main);
+    border-color: var(--bulma-border-weak);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.search-result-item {
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bulma-border-weak);
+  font-size: 0.875rem;
+  transition: background-color 0.15s ease;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+@media (prefers-color-scheme: light) {
+  .search-result-item {
+    color: var(--bulma-text);
+  }
+  .search-result-item:hover {
+    background-color: var(--bulma-info-light);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-result-item {
+    color: var(--bulma-text);
+  }
+  .search-result-item:hover {
+    background-color: rgba(17, 146, 255, 0.15);
+  }
+}
+
+.search-result-item.no-results {
+  padding: 0.5rem;
+  text-align: center;
+  font-style: italic;
+  cursor: default;
+}
+
+@media (prefers-color-scheme: dark) {
+  .search-result-item.no-results {
+    color: var(--bulma-text-weak);
+  }
+}

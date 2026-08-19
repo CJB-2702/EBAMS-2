@@ -463,8 +463,8 @@
           <p class="heading is-size-7 has-text-grey mb-3">Action details ({{ actions|length }})</p>
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             {% for action in actions %}
-            <div style="padding: 0.75rem; border: 1px solid var(--bulma-border-weak); {% if selected_action and selected_action.pk == action.pk %}background-color: var(--bulma-info-light); border-color: var(--bulma-info);{% endif %}">
-              <a href="?selected={{ action.pk }}" style="text-decoration: none; color: inherit;">
+            <div class="action-detail-card {% if selected_action and selected_action.pk == action.pk %}is-selected{% endif %}">
+              <a href="?selected={{ action.pk }}">
                 <p style="font-weight: 500; margin-bottom: 0.25rem;">
                   <span class="tag is-dark is-family-monospace">#{{ action.sequence_order }}</span>
                   {{ action.action_name }}
@@ -597,7 +597,7 @@
           <p class="heading is-size-7 has-text-grey mb-3">Part demands</p>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
             {% for link in selected_action.demand_rows %}
-            <div style="padding: 0.75rem; border: 1px solid var(--bulma-border-weak); background-color: var(--bulma-white-bis);">
+            <div class="part-tool-item">
               <p class="is-size-7 mb-2">
                 <strong>{{ link.part_demand.part }}</strong> × {{ link.part_demand.quantity_requested }}
               </p>
@@ -623,8 +623,8 @@
             {% endfor %}
           </div>
 
-          <div class="mb-4" style="border: 1px solid var(--bulma-border-weak); border-radius: 4px; padding: 0.75rem; background-color: var(--bulma-white-bis);">
-            <p class="is-size-7 has-text-weight-semibold mb-2" style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="mb-4 demand-tools-container">
+            <p class="is-size-7 has-text-weight-semibold mb-2 add-section-header">
               <span class="icon is-small"><span class="material-icons" style="font-size: 1.1rem;">inventory_2</span></span>
               Add part demand
             </p>
@@ -640,7 +640,7 @@
                   <option value="{{ part.pk }}" data-search="{{ part.part_number|lower }} {{ part.name|lower }}">{{ part.part_number }} — {{ part.name }}</option>
                   {% endfor %}
                 </select>
-                <div class="select is-small is-fullwidth" id="part_results_{{ selected_action.pk }}" style="margin-top: 0.5rem; display: none; max-height: 200px; overflow-y: auto; border: 1px solid var(--bulma-border-weak);"></div>
+                <div class="search-results-dropdown" id="part_results_{{ selected_action.pk }}"></div>
               </div>
               <div class="field mb-2">
                 <input class="input is-small" type="number" step="0.001" min="0.001" name="quantity" placeholder="Quantity" value="1" required>
@@ -661,7 +661,7 @@
           <p class="heading is-size-7 has-text-grey mb-3">Tools</p>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
             {% for tool in selected_action.tool_rows %}
-            <div style="padding: 0.75rem; border: 1px solid var(--bulma-border-weak); background-color: var(--bulma-white-bis);">
+            <div class="part-tool-item">
               <p class="is-size-7 mb-2">
                 <strong>{{ tool.tool.name|default:tool.tool_name }}</strong> × {{ tool.quantity_required }}
               </p>
@@ -702,8 +702,8 @@
             {% endfor %}
           </div>
 
-          <div style="border: 1px solid var(--bulma-border-weak); border-radius: 4px; padding: 0.75rem; background-color: var(--bulma-white-bis);">
-            <p class="is-size-7 has-text-weight-semibold mb-2" style="display: flex; align-items: center; gap: 0.5rem;">
+          <div class="demand-tools-container">
+            <p class="is-size-7 has-text-weight-semibold mb-2 add-section-header">
               <span class="icon is-small"><span class="material-icons" style="font-size: 1.1rem;">build</span></span>
               Add tool
             </p>
@@ -719,7 +719,7 @@
                   <option value="{{ tool.pk }}" data-search="{{ tool.name|lower }}">{{ tool.name }}</option>
                   {% endfor %}
                 </select>
-                <div class="select is-small is-fullwidth" id="tool_results_{{ selected_action.pk }}" style="margin-top: 0.5rem; display: none; max-height: 200px; overflow-y: auto; border: 1px solid var(--bulma-border-weak);"></div>
+                <div class="search-results-dropdown" id="tool_results_{{ selected_action.pk }}"></div>
               </div>
               <div class="field mb-2">
                 <input class="input is-small" type="text" name="tool_name" placeholder="Ad-hoc tool name (if not in catalog)">
