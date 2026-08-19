@@ -910,7 +910,9 @@ def _creator_tab_context(request: HttpRequest, detail: MaintenanceDetail, *, tab
     if tab == "template_set":
         qs = TemplateActionSet.objects.filter(
             domain_id__in=domain_ids, deleted_at__isnull=True, is_active=True
-        ).annotate(action_count=Count("template_action_items"))
+        ).annotate(action_count=Count("template_action_items")).prefetch_related(
+            "template_action_items"
+        )
         if q:
             qs = qs.filter(Q(task_name__icontains=q) | Q(description__icontains=q))
             context["template_sets"] = qs.order_by("task_name")[:_CREATOR_SEARCH_LIMIT]

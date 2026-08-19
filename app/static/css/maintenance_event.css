@@ -1479,3 +1479,65 @@
     color: var(--bulma-text-weak);
   }
 }
+
+/* ── Template Action Details ────────────────────────────────────────────────
+   Collapsible template action sets with individual action items. */
+
+.template-action-set-details {
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: 4px;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.template-action-set-details summary {
+  padding: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bulma-white-bis);
+  transition: background-color 0.2s ease;
+}
+
+.template-action-set-details summary:hover {
+  background-color: var(--bulma-white);
+}
+
+@media (prefers-color-scheme: dark) {
+  .template-action-set-details summary {
+    background-color: var(--bulma-scheme-main-bis);
+  }
+  .template-action-set-details summary:hover {
+    background-color: rgba(17, 146, 255, 0.06);
+  }
+}
+
+.template-action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+@media (prefers-color-scheme: light) {
+  .template-action-item {
+    background-color: var(--bulma-white);
+  }
+  .template-action-item:hover {
+    background-color: rgba(17, 146, 255, 0.04);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .template-action-item {
+    background-color: var(--bulma-scheme-main);
+  }
+  .template-action-item:hover {
+    background-color: rgba(17, 146, 255, 0.08);
+  }
+}
