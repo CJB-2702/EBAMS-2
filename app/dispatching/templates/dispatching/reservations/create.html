@@ -1,0 +1,249 @@
+{% extends "dispatching/base.html" %}
+{% block title %}New Reservation{% endblock %}
+{% block nav_reservation_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_reservation_index' %}">Reservations</a></li>
+<li class="is-active"><a href="#" aria-current="page">New</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_available</span></div>
+      <div>
+        <h1 class="page-title">New Reservation</h1>
+        <p class="page-subtitle">One asset, one window, one accountable person. Always lands tentative — a dispatcher promotes it to confirmed.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_reservation_index' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>All Reservations</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+
+  <form method="post" id="reservation-form">
+    {% csrf_token %}
+
+    {# ── 1. Booking Details ── #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">schedule</span></span>Booking Details</div>
+      </div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Scheduled start <span class="has-text-danger">*</span></label>
+            <input class="input is-small" type="datetime-local" name="scheduled_start" id="scheduled-start"
+                   value="{{ form.scheduled_start|default:'' }}" required>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Scheduled end <span class="has-text-danger">*</span></label>
+            <input class="input is-small" type="datetime-local" name="scheduled_end" id="scheduled-end"
+                   value="{{ form.scheduled_end|default:'' }}" required>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Reservation type <span class="has-text-danger">*</span></label>
+            <div class="select is-small is-fullwidth"><select name="reservation_type" required>
+              {% for value, label in reservation_types %}
+              <option value="{{ value }}" {% if form.reservation_type == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select></div>
+            <p class="help is-size-7">A rough consumer label, never a counterparty record.</p>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Accountable person <span class="has-text-danger">*</span></label>
+            <div class="select is-small is-fullwidth"><select name="accountable_person_id" required>
+              <option value="">Choose…</option>
+              {% for p in people %}
+              <option value="{{ p.id }}" {% if form.accountable_person_id == p.id|stringformat:'s' %}selected{% elif not form and p.id == request.user.id %}selected{% endif %}>{{ p.username }}</option>
+              {% endfor %}
+            </select></div>
+            <p class="help is-size-7">Exactly one. Crew belongs to a dispatch, not a reservation.</p>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Title</label>
+            <input class="input is-small" type="text" name="title" value="{{ form.title|default:'' }}" placeholder="Left blank: "Reservation — &lt;asset name&gt;"">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Origin</label>
+            <input class="input is-small" type="text" name="origin" value="{{ form.origin|default:'' }}" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Destination</label>
+            <input class="input is-small" type="text" name="destination" value="{{ form.destination|default:'' }}" autocomplete="off">
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Description</label>
+            <textarea class="textarea is-small" name="description" rows="3">{{ form.description|default:'' }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {# ── 2. Asset picker — filter card + results, its own GET form ── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">manage_search</span></span>Choose an Asset</div>
+    </div>
+    <div class="card-content">
+      <form method="get"
+            hx-get="{% url 'dispatching_reservation_asset_search' %}"
+            hx-target="#asset-picker-results"
+            hx-swap="outerHTML"
+            hx-trigger="change, search, submit">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ picker_q }}" placeholder="Name or serial…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Asset Class</label>
+            <div class="select is-small is-fullwidth"><select name="asset_class">
+              <option value="">All classes</option>
+              {% for c in asset_classes %}<option value="{{ c.id }}" {% if picker_asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Model</label>
+            <div class="select is-small is-fullwidth"><select name="model">
+              <option value="">All models</option>
+              {% for m in models %}<option value="{{ m.id }}" {% if picker_model == m.id|stringformat:'s' %}selected{% endif %}>{{ m.model_name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Manufacturer</label>
+            <div class="select is-small is-fullwidth"><select name="manufacturer">
+              <option value="">All manufacturers</option>
+              {% for m in manufacturers %}<option value="{{ m.id }}" {% if picker_manufacturer == m.id|stringformat:'s' %}selected{% endif %}>{{ m.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Data Domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain">
+              <option value="">All my domains</option>
+              {% for d in domains %}<option value="{{ d.id }}" {% if picker_domain == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Asset Status</label>
+            <input class="input is-small" type="search" name="status" value="{{ picker_status }}" placeholder="e.g. Active" autocomplete="off">
+          </div>
+          <div class="column is-6">
+            <label class="checkbox is-size-7 mt-4">
+              <input type="checkbox" name="only_available" value="1" {% if only_available %}checked{% endif %}>
+              Hide assets already claimed for the window below
+            </label>
+          </div>
+        </div>
+
+        {# Mirrors of the window fields above, so the availability column can be computed without submitting the reservation form itself. #}
+        <input type="hidden" name="scheduled_start" id="picker-start-mirror" value="{{ form.scheduled_start|default:'' }}">
+        <input type="hidden" name="scheduled_end" id="picker-end-mirror" value="{{ form.scheduled_end|default:'' }}">
+
+        <noscript>
+          <button class="button is-small is-info" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span><span>Apply filters</span>
+          </button>
+        </noscript>
+      </form>
+    </div>
+    <div class="card-content is-flush">
+      {% include "dispatching/reservations/_asset_picker_results.html" %}
+    </div>
+  </div>
+
+    {# ── 3. Summary and submit ── #}
+    <div class="card">
+      <div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>Review &amp; Submit</div>
+      </div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Scheduled start</label>
+            <p class="heading is-size-6" id="summary-start">—</p>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Scheduled end</label>
+            <p class="heading is-size-6" id="summary-end">—</p>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Selected asset</label>
+            <p class="heading is-size-6" id="summary-asset">—</p>
+          </div>
+        </div>
+      </div>
+      <div class="card-content" style="border-top:1px solid var(--bulma-border-weak);">
+        <div class="buttons">
+          <button class="button is-small is-link" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Create Tentative Booking</span>
+          </button>
+          <a class="button is-small" href="{% url 'dispatching_reservation_index' %}">Cancel</a>
+        </div>
+        <p class="help is-size-7">
+          An overlapping window does not block this — a tentative claim never blocks anything.
+          Confirming it later will require a dispatcher to acknowledge the conflict.
+        </p>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+  (function () {
+    var start = document.getElementById('scheduled-start');
+    var end = document.getElementById('scheduled-end');
+    var startMirror = document.getElementById('picker-start-mirror');
+    var endMirror = document.getElementById('picker-end-mirror');
+    var summaryStart = document.getElementById('summary-start');
+    var summaryEnd = document.getElementById('summary-end');
+
+    if (!start || !end || !startMirror || !endMirror) return;
+
+    function formatDateTime(isoString) {
+      if (!isoString) return '—';
+      var date = new Date(isoString + 'Z');
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    function sync() {
+      startMirror.value = start.value;
+      endMirror.value = end.value;
+      if (summaryStart) summaryStart.textContent = formatDateTime(start.value);
+      if (summaryEnd) summaryEnd.textContent = formatDateTime(end.value);
+      if (start.value && end.value) {
+        htmx.trigger(startMirror.form, 'change');
+      }
+    }
+
+    start.addEventListener('change', sync);
+    end.addEventListener('change', sync);
+
+    // Listen for asset selection via data attribute on the form
+    document.addEventListener('assetSelected', function(e) {
+      var summaryAsset = document.getElementById('summary-asset');
+      if (summaryAsset && e.detail && e.detail.asset_name) {
+        summaryAsset.textContent = e.detail.asset_name;
+      }
+    });
+
+    // Initialize summary on page load
+    if (start.value) summaryStart.textContent = formatDateTime(start.value);
+    if (end.value) summaryEnd.textContent = formatDateTime(end.value);
+  })();
+</script>
+{% endblock %}

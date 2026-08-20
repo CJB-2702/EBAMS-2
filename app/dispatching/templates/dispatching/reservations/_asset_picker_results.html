@@ -1,0 +1,53 @@
+{% comment %}
+Asset picker results. Swapped on its own by the filter card above, so
+re-filtering never disturbs the reservation form the user is part-way through
+filling in. The radios carry form="reservation-form" precisely because they
+live outside that form's element.
+{% endcomment %}
+<div id="asset-picker-results">
+  {% if asset_rows %}
+  <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <thead>
+      <tr>
+        <th style="width:2.5rem;"></th>
+        <th>Asset</th><th>Class</th><th>Model</th><th>Domain</th><th>Status</th>
+        <th>{% if window_checked %}Availability{% endif %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in asset_rows %}
+      <tr>
+        <td>
+          <input type="radio" name="asset_id" value="{{ row.asset.id }}" form="reservation-form"
+                 {% if selected_asset_id == row.asset.id|stringformat:'s' %}checked{% endif %}
+                 {% if row.available is False %}title="This window is already claimed — the booking will still be created as tentative."{% endif %}
+                 data-asset-name="{{ row.asset.name }}"
+                 onchange="document.dispatchEvent(new CustomEvent('assetSelected', {detail: {asset_id: this.value, asset_name: this.getAttribute('data-asset-name')}}))">
+        </td>
+        <td>
+          <strong>{{ row.asset.name }}</strong>
+          {% if row.asset.serial_number %}<br><span class="has-text-grey is-family-monospace" style="font-size:0.65rem;">{{ row.asset.serial_number }}</span>{% endif %}
+        </td>
+        <td class="has-text-grey">{{ row.asset.asset_class.name|default:"—" }}</td>
+        <td class="has-text-grey">{{ row.asset.model.model_name|default:"—" }}</td>
+        <td class="has-text-grey">{{ row.asset.domain.name }}</td>
+        <td><span class="tag is-small is-light">{{ row.asset.status }}</span></td>
+        <td>
+          {% if row.available is None %}
+            <span class="has-text-grey">Set a window to check</span>
+          {% elif row.available %}
+            <span class="tag is-small is-success is-light">Free</span>
+          {% else %}
+            <span class="tag is-small is-warning is-light">{{ row.conflicts|length }} overlap{{ row.conflicts|pluralize }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="p-5 has-text-centered">
+    <p class="has-text-grey is-size-7">No assets match these filters.</p>
+  </div>
+  {% endif %}
+</div>
