@@ -220,18 +220,31 @@
       });
     }
 
-    function sync() {
+    var debounceTimer;
+    function sync(isImmediate) {
       startMirror.value = start.value;
       endMirror.value = end.value;
       if (summaryStart) summaryStart.textContent = formatDateTime(start.value);
       if (summaryEnd) summaryEnd.textContent = formatDateTime(end.value);
-      if (start.value && end.value) {
-        htmx.trigger(startMirror.form, 'change');
+
+      if (isImmediate) {
+        if (start.value && end.value) {
+          htmx.trigger(startMirror.form, 'change');
+        }
+      } else {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(function() {
+          if (start.value && end.value) {
+            htmx.trigger(startMirror.form, 'change');
+          }
+        }, 500);
       }
     }
 
-    start.addEventListener('change', sync);
-    end.addEventListener('change', sync);
+    start.addEventListener('change', function() { sync(true); });
+    end.addEventListener('change', function() { sync(true); });
+    start.addEventListener('input', function() { sync(false); });
+    end.addEventListener('input', function() { sync(false); });
 
     // Listen for asset selection via data attribute on the form
     document.addEventListener('assetSelected', function(e) {
