@@ -1,10 +1,10 @@
 {% extends "pub_base.html" %}
-{% block title %}Get Started - EBAMS{% endblock %}
+{% block title %}Get Started - CJB-DIODE{% endblock %}
 {% block container_max_width %}100%{% endblock %}
 
 {% block content %}
 <section class="pub-page-hero">
-  <h1>Get Started with EBAMS</h1>
+  <h1>Get Started with CJB-DIODE</h1>
   <p>Quick start guide to begin managing your assets</p>
 </section>
 
@@ -90,7 +90,7 @@ python manage.py runserver</div>
 
     <h2 class="pub-section-headline" style="text-align:left;">Full database reset</h2>
     <div class="pub-step-card">
-      <p style="margin-bottom: 0.75rem; color: var(--bulma-text-weak); font-size: 0.85rem;">After any schema change, EBAMS uses a full reset rather than incremental migrations:</p>
+      <p style="margin-bottom: 0.75rem; color: var(--bulma-text-weak); font-size: 0.85rem;">After any schema change, CJB-DIODE uses a full reset rather than incremental migrations:</p>
       <div class="pub-code-block">python dev_tools/delete_database_rebuild_models.py --seed</div>
     </div>
 
@@ -99,7 +99,7 @@ python manage.py runserver</div>
       <div class="pub-next-step-card">
         <span class="material-icons" aria-hidden="true">menu_book</span>
         <h4>Explore Features</h4>
-        <p>Learn about all the capabilities EBAMS offers</p>
+        <p>Learn about all the capabilities CJB-DIODE offers</p>
         <a href="{% url 'public_features' %}" class="button is-small is-info is-light">View Features</a>
       </div>
       <div class="pub-next-step-card">
@@ -118,7 +118,7 @@ python manage.py runserver</div>
 
     <div class="pub-cta-banner pub-cta-banner--light" style="text-align:center;">
       <h2>Ready to Login?</h2>
-      <p style="margin: 0 auto 1.25rem;">Start managing your assets with EBAMS</p>
+      <p style="margin: 0 auto 1.25rem;">Start managing your assets with CJB-DIODE</p>
       <button type="button" class="button is-primary is-medium" commandfor="public-login-modal" command="show-modal">
         <span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>
         <span>Go to Login</span>

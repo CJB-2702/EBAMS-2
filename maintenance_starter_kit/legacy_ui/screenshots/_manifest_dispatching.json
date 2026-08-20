@@ -1,0 +1,57 @@
+{
+  "status": "pending",
+  "note": "Screenshot capture automation needs to be completed. These pages should be captured manually or via playwright script once the Flask app login automation is debugged.",
+  "pending_screenshots": [
+    {
+      "slug": "00_dispatching_index",
+      "path": "/dispatching/",
+      "description": "Dispatching module landing page with navigation links"
+    },
+    {
+      "slug": "01_dispatching_my_requests",
+      "path": "/dispatching/my-requests",
+      "description": "User's own dispatch requests with filters and pagination"
+    },
+    {
+      "slug": "02_dispatching_my_asset_checkouts",
+      "path": "/dispatching/my-asset-checkouts",
+      "description": "User's asset checkouts/planned assets"
+    },
+    {
+      "slug": "03_dispatching_dispatcher_portal",
+      "path": "/dispatching/dispatcher-portal",
+      "description": "Dispatcher dashboard with queue, metrics, recent activity"
+    },
+    {
+      "slug": "04_dispatching_requests_list",
+      "path": "/dispatching/requests",
+      "description": "Dispatcher view of all requests, fully filterable"
+    },
+    {
+      "slug": "05_dispatching_request_1_view",
+      "path": "/dispatching/requests/1",
+      "description": "Single request detail view with active outcome"
+    },
+    {
+      "slug": "06_dispatching_dispatch_create",
+      "path": "/dispatching/requests/1/outcome/dispatch",
+      "description": "Dispatch creation/edit form with resource allocation"
+    },
+    {
+      "slug": "07_dispatching_contract_list",
+      "path": "/dispatching/outcomes/contracts",
+      "description": "List of contract alternative outcomes"
+    },
+    {
+      "slug": "08_dispatching_reimbursement_list",
+      "path": "/dispatching/outcomes/reimbursements",
+      "description": "List of reimbursement alternative outcomes"
+    },
+    {
+      "slug": "09_dispatching_reject_list",
+      "path": "/dispatching/outcomes/rejects",
+      "description": "List of reject alternative outcomes"
+    }
+  ],
+  "instructions": "To capture these screenshots:\n\n1. Back up the legacy DB: cp ~/REPOS/asset_management/instance/asset_management.db /tmp/old_db_backup.db\n2. Start legacy Flask app: cd ~/REPOS/asset_management && nohup ./venv/bin/python3 app.py > /tmp/oldapp.log 2>&1 &\n3. Use the capture_screenshots.py script (from maintenance kit) as a template\n4. Log in as admin / admin987654321!\n5. Navigate to each URL above and take full-page screenshots\n6. Save with matching filenames (00_dispatching_index.png, etc.)\n7. Update this manifest with captured status"
+}

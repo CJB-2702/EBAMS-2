@@ -1,0 +1,179 @@
+{% comment %}
+Reusable destination picker card fragment — room -> location selection,
+read-only display of the warehouse tier (the Quick Destination Picker bar
+above owns the Warehouse control; this fragment doesn't repeat it, so
+there is exactly one input per piece of state). Used by putaway_worklist.
+
+State contract:
+  - All selection state lives in the warehouse_id / room_id / sloc query
+    params (F5-safe). No JS, no HTMX — every control here is a plain link
+    that does a full page reload, so this card always renders in sync with
+    whatever the URL says.
+{% endcomment %}
+
+<div id="destination-card" class="card">
+
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Destination
+  </div></div>
+
+  <div class="card-content">
+    {% if not selected_room %}
+    {# Tier 1: room grid (warehouse is chosen via the Quick Destination Picker bar above) #}
+    {% if not selected_warehouse %}
+    <p class="has-text-grey is-size-7">Select a warehouse above to see rooms.</p>
+    {% elif rooms %}
+    <div class="columns is-multiline is-variable is-2 mb-0">
+      {% for room in rooms %}
+      <div class="column is-one-third-tablet is-one-quarter-desktop">
+        <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room.pk }}"
+           class="box has-text-centered p-3 room-picker-card"
+           title="{{ room.room_name }}">
+          {% if room.thumbnail_svg %}
+          <div class="room-thumbnail mb-2" style="max-height:80px; overflow:hidden;">
+            {{ room.thumbnail_svg|safe }}
+          </div>
+          {% else %}
+          <span class="icon is-large">
+            <span class="material-icons" aria-hidden="true" style="font-size:2rem;">meeting_room</span>
+          </span>
+          {% endif %}
+          <p class="has-text-weight-medium is-size-7">{{ room.room_name }}</p>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="has-text-grey is-size-7">No rooms in this warehouse.</p>
+    {% endif %}
+
+    {% else %}
+    {# Tier 2 onwards: Room selected, show location picker #}
+
+    {# Breadcrumbs showing current selection path #}
+    <div class="mb-3">
+      <nav class="breadcrumb is-small" aria-label="breadcrumbs">
+        <ul>
+          <li><a href="?warehouse_id={{ warehouse_id }}">{{ selected_warehouse.code }}</a></li>
+          <li><a href="?warehouse_id={{ warehouse_id }}&room_id={{ selected_room.pk }}">{{ selected_room.room_name }}</a></li>
+          {% if selected_storage_location %}
+          <li class="is-active"><a href="#" aria-current="page">{{ selected_storage_location.display_code }}</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+
+    {# SVG map (if available) — visual reference only #}
+    {% if map_svg %}
+    <div class="mb-4">
+      <label class="label is-small">Room Layout</label>
+      <div id="room-svg-map" class="mb-3">
+        {{ map_svg|safe }}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+      <label class="label is-small mb-0">
+        Location Directory
+        <span id="loc-filter-chip" class="tag is-info is-light is-family-monospace ml-2" style="{% if not loc %}display:none;{% endif %}">
+          <span id="loc-filter-chip-text">{{ loc }}</span>
+          <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}{% if sloc %}&sloc={{ sloc }}{% endif %}" class="ml-1" title="Clear filter" onclick="return clearLocationDirectoryFilter(event)">×</a>
+        </span>
+      </label>
+      <a href="?warehouse_id={{ warehouse_id }}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">arrow_back</span></span>
+        <span>Back to rooms</span>
+      </a>
+    </div>
+
+    {# Location table — filtered to the clicked Map Area (XY) group when `loc` is set. #}
+    <div class="table-container" style="max-height: 420px; overflow-y: auto;">
+      <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7 mb-0">
+        <thead>
+          <tr style="position: sticky; top: 0; background: var(--bulma-card-background-color, #ffffff); z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+            <th>Location Code</th>
+            <th>Map Area (XY)</th>
+            <th>Major (X)</th>
+            <th>Minor (Y)</th>
+            <th>Shelf (Z)</th>
+            <th class="has-text-centered">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rl in room_locations %}
+          {% if not loc or rl.display_code == loc %}
+          {% for sl in rl.storage_locations.all %}
+          {% if sl.is_active %}
+          <tr class="picker-location-row" data-loc="{{ rl.display_code }}">
+            <td class="is-family-monospace has-text-weight-semibold">{{ sl.display_code }}</td>
+            <td class="is-family-monospace">
+              <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}{% if sloc %}&sloc={{ sloc }}{% endif %}&loc={{ rl.display_code }}">{{ rl.display_code }}</a>
+            </td>
+            <td class="is-family-monospace">{{ rl.major_coord }}</td>
+            <td class="is-family-monospace">{{ rl.minor_coord }}</td>
+            <td class="is-family-monospace">{{ sl.atomic_coord }}</td>
+            <td class="has-text-centered">
+              <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}&sloc={{ sl.pk }}"
+                 class="button is-small {% if selected_storage_location.pk == sl.pk %}is-primary{% else %}is-primary is-outlined{% endif %}">
+                {% if selected_storage_location.pk == sl.pk %}Selected{% else %}Select{% endif %}
+              </a>
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% empty %}
+          <tr><td colspan="6" class="has-text-grey has-text-centered py-4">This room has no storage locations yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% comment %}
+Client-side-only exception to this fragment's no-JS rule: the SVG map's
+shapes aren't real links (an SVG <a> wrap around each shape proved
+unreliable across browsers), so clicking one can't do a plain page
+navigation. Filtering the already-rendered Location Directory rows by
+data-loc match is the only way to make that click do anything, so it's
+JS. The Map Area (XY) links and the clear-filter link below stay real
+hrefs (?loc=...), which is why the JS toggles inline display only and
+never touches the URL.
+{% endcomment %}
+<script>
+(function () {
+  function filterLocationDirectory(locCode) {
+    document.querySelectorAll('.picker-location-row').forEach(function (row) {
+      row.style.display = (row.getAttribute('data-loc') === locCode) ? '' : 'none';
+    });
+    var chip = document.getElementById('loc-filter-chip');
+    var chipText = document.getElementById('loc-filter-chip-text');
+    if (chip && chipText) {
+      chipText.textContent = locCode;
+      chip.style.display = '';
+    }
+  }
+
+  window.clearLocationDirectoryFilter = function (evt) {
+    if (evt) evt.preventDefault();
+    document.querySelectorAll('.picker-location-row').forEach(function (row) {
+      row.style.display = '';
+    });
+    var chip = document.getElementById('loc-filter-chip');
+    if (chip) chip.style.display = 'none';
+    return false;
+  };
+
+  var svgMap = document.getElementById('room-svg-map');
+  if (svgMap) {
+    svgMap.addEventListener('click', function (evt) {
+      var shape = evt.target.closest('[data-loc-code]');
+      if (!shape) return;
+      filterLocationDirectory(shape.getAttribute('data-loc-code'));
+    });
+  }
+})();
+</script>

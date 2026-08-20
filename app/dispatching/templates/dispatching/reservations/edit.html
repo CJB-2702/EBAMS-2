@@ -1,0 +1,247 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Edit Reservation #{{ reservation.pk }}{% endblock %}
+{% block nav_reservation_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_reservation_index' %}">Reservations</a></li>
+<li><a href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}">#{{ reservation.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit_note</span></div>
+      <div>
+        <h1 class="page-title">Edit Reservation #{{ reservation.pk }}</h1>
+        <p class="page-subtitle">Every field, written directly. Dispatch managers only.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span><span>View</span>
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<div class="notification is-warning is-light is-size-7 mb-4">
+  <span class="icon is-small"><span class="material-icons" aria-hidden="true">construction</span></span>
+  This is a correction screen, not a workflow. It writes fields directly and does
+  <strong>not</strong> narrate, write a change-log row, or run the transition guard.
+  <strong>Status is deliberately absent</strong> — move a booking through its lifecycle on
+  the <a href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}">reservation page</a>, so the guard,
+  the log, and the timeline all still run. Database constraints still apply here and will refuse
+  an out-of-order window or handover.
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="body-grid full-width">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Core</div></div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Title</label>
+            <input class="input is-small" type="text" name="title" value="{{ reservation.title }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Reservation type</label>
+            <div class="select is-small is-fullwidth"><select name="reservation_type">
+              {% for value, label in reservation_types %}<option value="{{ value }}" {% if reservation.reservation_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Current status <span class="has-text-grey">(read-only)</span></label>
+            <input class="input is-small" type="text" value="{{ reservation.get_reservation_status_display }}" disabled>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Asset</label>
+            <div class="select is-small is-fullwidth"><select name="asset_id">
+              {% for a in assets %}<option value="{{ a.id }}" {% if reservation.asset_id == a.id %}selected{% endif %}>{{ a.name }}{% if a.serial_number %} · {{ a.serial_number }}{% endif %}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Accountable person</label>
+            <div class="select is-small is-fullwidth"><select name="accountable_person_id">
+              {% for p in people %}<option value="{{ p.id }}" {% if reservation.accountable_person_id == p.id %}selected{% endif %}>{{ p.username }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-4">
+            <label class="label is-small">Data domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain_id">
+              {% for d in domains %}<option value="{{ d.id }}" {% if reservation.domain_id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Origin</label>
+            <input class="input is-small" type="text" name="origin" value="{{ reservation.origin }}">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Destination</label>
+            <input class="input is-small" type="text" name="destination" value="{{ reservation.destination }}">
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Description</label>
+            <textarea class="textarea is-small" name="description" rows="3">{{ reservation.description }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">schedule</span></span>Windows</div></div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Scheduled start <span class="has-text-danger">*</span></label>
+            <input class="input is-small" type="datetime-local" name="scheduled_start" value="{{ reservation.scheduled_start|date:'Y-m-d\TH:i' }}" required>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Scheduled end <span class="has-text-danger">*</span></label>
+            <input class="input is-small" type="datetime-local" name="scheduled_end" value="{{ reservation.scheduled_end|date:'Y-m-d\TH:i' }}" required>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Actual start</label>
+            <input class="input is-small" type="datetime-local" name="actual_start" value="{{ reservation.actual_start|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Actual end</label>
+            <input class="input is-small" type="datetime-local" name="actual_end" value="{{ reservation.actual_end|date:'Y-m-d\TH:i' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-grid even">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">logout</span></span>User Track</div></div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Checkout submitted at</label>
+            <input class="input is-small" type="datetime-local" name="user_checkout_submitted_at" value="{{ reservation.user_checkout_submitted_at|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Check-in submitted at</label>
+            <input class="input is-small" type="datetime-local" name="user_checkin_submitted_at" value="{{ reservation.user_checkin_submitted_at|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Reported condition out</label>
+            <div class="select is-small is-fullwidth"><select name="user_reported_condition_out">
+              <option value="">Not stated</option>
+              {% for value, label in condition_ratings %}<option value="{{ value }}" {% if reservation.user_reported_condition_out == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Reported condition in</label>
+            <div class="select is-small is-fullwidth"><select name="user_reported_condition_in">
+              <option value="">Not stated</option>
+              {% for value, label in condition_ratings %}<option value="{{ value }}" {% if reservation.user_reported_condition_in == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Meter one (out)</label>
+            <input class="input is-small" type="number" step="any" name="user_meter1_out" value="{{ reservation.user_meter1_out|default_if_none:'' }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Meter two (out)</label>
+            <input class="input is-small" type="number" step="any" name="user_meter2_out" value="{{ reservation.user_meter2_out|default_if_none:'' }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Meter one (in)</label>
+            <input class="input is-small" type="number" step="any" name="user_meter1_in" value="{{ reservation.user_meter1_in|default_if_none:'' }}">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Meter two (in)</label>
+            <input class="input is-small" type="number" step="any" name="user_meter2_in" value="{{ reservation.user_meter2_in|default_if_none:'' }}">
+          </div>
+          <div class="column is-12">
+            <p class="help is-size-7">
+              Reported meters are reference information and are correctable here. The asset's
+              <strong>official</strong> readings are meter-history rows and are deliberately not
+              editable from a reservation screen.
+            </p>
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Notes (out)</label>
+            <textarea class="textarea is-small" name="user_checkout_notes" rows="2">{{ reservation.user_checkout_notes }}</textarea>
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Notes (in)</label>
+            <textarea class="textarea is-small" name="user_checkin_notes" rows="2">{{ reservation.user_checkin_notes }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Dispatcher Track</div></div>
+      <div class="card-content">
+        <div class="columns is-multiline is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Physical checkout at</label>
+            <input class="input is-small" type="datetime-local" name="physical_checkout_at" value="{{ reservation.physical_checkout_at|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Physical check-in at</label>
+            <input class="input is-small" type="datetime-local" name="physical_checkin_at" value="{{ reservation.physical_checkin_at|date:'Y-m-d\TH:i' }}">
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Condition out</label>
+            <div class="select is-small is-fullwidth"><select name="condition_out">
+              <option value="">Not stated</option>
+              {% for value, label in condition_ratings %}<option value="{{ value }}" {% if reservation.condition_out == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Condition in</label>
+            <div class="select is-small is-fullwidth"><select name="condition_in">
+              <option value="">Not stated</option>
+              {% for value, label in condition_ratings %}<option value="{{ value }}" {% if reservation.condition_in == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Notes out</label>
+            <textarea class="textarea is-small" name="dispatcher_checkout_notes" rows="2">{{ reservation.dispatcher_checkout_notes }}</textarea>
+          </div>
+          <div class="column is-12">
+            <label class="label is-small">Notes in</label>
+            <textarea class="textarea is-small" name="dispatcher_checkin_notes" rows="2">{{ reservation.dispatcher_checkin_notes }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-grid full-width">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">gavel</span></span>Exceptions</div></div>
+      <div class="card-content">
+        <div class="columns is-variable is-3">
+          <div class="column is-6">
+            <label class="label is-small">Cancellation reason</label>
+            <textarea class="textarea is-small" name="cancellation_reason" rows="2">{{ reservation.cancellation_reason }}</textarea>
+          </div>
+          <div class="column is-6">
+            <label class="label is-small">Conflict acknowledgement reason</label>
+            <textarea class="textarea is-small" name="conflict_acknowledgement_reason" rows="2">{{ reservation.conflict_acknowledgement_reason }}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="card-content" style="border-top:1px solid var(--bulma-border-weak);">
+        <div class="buttons">
+          <button class="button is-small is-link" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Changes</span>
+          </button>
+          <a class="button is-small" href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}">Cancel</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

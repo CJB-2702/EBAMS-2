@@ -3,6 +3,10 @@ Asset picker results. Swapped on its own by the filter card above, so
 re-filtering never disturbs the reservation form the user is part-way through
 filling in. The radios carry form="reservation-form" precisely because they
 live outside that form's element.
+
+Whole rows are clickable (not just the radio) — the row's onclick checks the
+radio and fires its change handler, except when the click landed on the radio
+itself, which already does that natively.
 {% endcomment %}
 <div id="asset-picker-results">
   {% if asset_rows %}
@@ -16,7 +20,8 @@ live outside that form's element.
     </thead>
     <tbody>
       {% for row in asset_rows %}
-      <tr>
+      <tr class="asset-row" style="cursor:pointer;"
+          onclick="if (event.target.tagName !== 'INPUT') { var r = this.querySelector('input[type=radio]'); r.checked = true; r.dispatchEvent(new Event('change', {bubbles: true})); }">
         <td>
           <input type="radio" name="asset_id" value="{{ row.asset.id }}" form="reservation-form"
                  {% if selected_asset_id == row.asset.id|stringformat:'s' %}checked{% endif %}

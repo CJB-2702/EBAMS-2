@@ -1,0 +1,49 @@
+{% extends "dispatching/base.html" %}
+{% block title %}{% if skill %}Edit Skill{% else %}New Skill{% endif %}{% endblock %}
+{% block nav_skill_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_skill_index' %}">Skills Catalogue</a></li>
+{% if skill %}<li><a href="{% url 'dispatching_skill_detail' skill.pk %}">{{ skill.name }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% else %}<li class="is-active"><a href="#" aria-current="page">New Skill</a></li>{% endif %}
+{% endblock %}
+
+{% block content %}
+{% with data=form_data|default:skill %}
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span>{% if skill %}Edit '{{ skill.name }}'{% else %}New Skill{% endif %}</div></div>
+  <div class="card-content">
+    <form method="post">
+      {% csrf_token %}
+      <div class="columns is-multiline is-variable is-3">
+        <div class="column is-6">
+          <label class="label is-small">Name</label>
+          <input class="input is-small" type="text" name="name" value="{{ data.name }}" required>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small">Code <span class="has-text-grey">(optional)</span></label>
+          <input class="input is-small" type="text" name="code" value="{{ data.code|default:"" }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small">Description</label>
+          <textarea class="textarea is-small" name="description" rows="3">{{ data.description|default:"" }}</textarea>
+        </div>
+        <div class="column is-12">
+          <label class="checkbox is-size-7">
+            <input type="checkbox" name="requires_expiry" {% if data.requires_expiry %}checked{% endif %}>
+            Requires an expiry date at certification — a lapsed certificate is a real fact for this skill (e.g. a CDL)
+          </label>
+        </div>
+      </div>
+
+      <footer class="card-footer custom-card-footer mt-4">
+        <div class="card-footer-secondaries">
+          <a href="{% if skill %}{% url 'dispatching_skill_detail' skill.pk %}{% else %}{% url 'dispatching_skill_index' %}{% endif %}" class="button is-small is-light">Cancel</a>
+        </div>
+        <button type="submit" class="button is-primary card-footer-primary">{% if skill %}Save Changes{% else %}Create Skill{% endif %}</button>
+      </footer>
+    </form>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

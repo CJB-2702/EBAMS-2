@@ -1,0 +1,379 @@
+{% extends "dispatching/base.html" %}
+{% load static %}
+{% block title %}Template Draft{% endblock %}
+{% block nav_template_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_template_index' %}">Template Library</a></li>
+<li class="is-active"><a href="#" aria-current="page">Working Draft</a></li>
+{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/dispatching.css' %}">{% endblock %}
+
+{% block content %}
+<div class="notification is-warning is-light">
+  <strong>Unsaved draft.</strong> Everything here lives in your session — nothing is written to the database until you commit.
+  {% if draft.template_id %}Editing toward a new revision of an existing template.{% elif draft.copied_from_revision_id %}Committing will create a new, independent template.{% else %}Creating a new template.{% endif %}
+  <form method="post" action="{% url 'dispatching_template_draft_update' %}" style="display:inline;">
+    {% csrf_token %}<input type="hidden" name="action" value="clear">
+    <button type="submit" class="button is-small is-light ml-2" onclick="return confirm('Discard this draft? Nothing was saved.');">Discard Draft</button>
+  </form>
+</div>
+
+{% if editing_template %}
+<div class="card mb-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Template Info <span class="tag is-light ml-2">reference only</span></div></div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7 mb-2">This is the lineage your commit will attach to. It is not part of the draft — nothing here is editable.</p>
+    <dl class="kv">
+      <dt>Template ID</dt><dd>{{ editing_template.pk }}</dd>
+      <dt>Domain</dt><dd>{{ editing_template.domain.name }}</dd>
+      <dt>Editing from Revision</dt><dd>{% if editing_template.head_revision %}#{{ editing_template.head_revision.revision_number }}{% else %}—{% endif %}</dd>
+      <dt>That Revision's Author</dt><dd>{% if editing_template.head_revision %}{{ editing_template.head_revision.created_by.username|default:"—" }} on {{ editing_template.head_revision.created_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
+    </dl>
+  </div>
+</div>
+{% elif copied_from_revision %}
+<div class="card mb-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Copied From <span class="tag is-light ml-2">reference only</span></div></div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7 mb-2">Committing this draft creates a brand-new, independent template — this is provenance, not an ongoing link.</p>
+    <dl class="kv">
+      <dt>Source Template</dt><dd>{{ copied_from_revision.template_id }} ({{ copied_from_revision.template.domain.name }})</dd>
+      <dt>Source Revision</dt><dd>#{{ copied_from_revision.revision_number }} — {{ copied_from_revision.title }}</dd>
+      <dt>Source Author</dt><dd>{{ copied_from_revision.created_by.username|default:"—" }} on {{ copied_from_revision.created_at|date:"Y-m-d H:i" }}</dd>
+    </dl>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Template Information</div></div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_template_draft_update' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="set_metadata">
+      <div class="columns is-multiline is-variable is-3">
+        <div class="column is-6">
+          <label class="label is-small">Title</label>
+          <input class="input is-small" type="text" name="title" value="{{ draft.title }}" required>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small">Asset Class</label>
+          <div class="select is-small is-fullwidth">
+            <select name="asset_class_id">
+              <option value="">—</option>
+              {% for asset_class in asset_classes %}
+              <option value="{{ asset_class.pk }}" {% if draft.asset_class_id == asset_class.pk %}selected{% endif %}>{{ asset_class.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small">Asset Subclass <span class="has-text-grey">(free text)</span></label>
+          <input class="input is-small" type="text" name="asset_subclass_text" value="{{ draft.asset_subclass_text }}">
+        </div>
+        <div class="column is-6">
+          <label class="label is-small">Dispatch Scope</label>
+          <div class="select is-small is-fullwidth">
+            <select name="dispatch_scope">
+              <option value="">—</option>
+              {% for value, label in dispatch_scope_choices %}
+              <option value="{{ value }}" {% if draft.dispatch_scope == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label is-small">Activity Location</label>
+          <input class="input is-small" type="text" name="activity_location" value="{{ draft.activity_location }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Est. Meter Usage</label>
+          <input class="input is-small" type="number" step="any" name="estimated_meter_usage" value="{{ draft.estimated_meter_usage|default:"" }}">
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Headcount</label>
+          <input class="input is-small" type="number" min="0" name="headcount" value="{{ draft.headcount|default:"" }}">
+        </div>
+        <div class="column is-12">
+          <label class="label is-small">Notes</label>
+          <textarea class="textarea is-small" name="notes" rows="2">{{ draft.notes }}</textarea>
+        </div>
+      </div>
+      <button type="submit" class="button is-small is-info is-light mt-2">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save Pre-fill</span>
+      </button>
+    </form>
+
+    <hr>
+
+    <div class="columns is-variable is-4">
+
+      {# Skill Requirements #}
+      <div class="column is-4">
+        <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">verified</span></span>Skill Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.skill|length }}</span></p>
+        <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="skill">
+          <search-dropdown name="picked_id" placeholder="search skills…" class="mb-1"
+              hx-get="{% url 'dispatching_skill_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <div class="columns is-mobile is-variable is-1 mb-1">
+            <div class="column"><input class="input is-small" type="number" min="1" name="quantity" value="1" placeholder="Qty"></div>
+            <div class="column"><input class="input is-small" type="number" min="1" max="5" name="minimum_level" placeholder="Min lvl"></div>
+          </div>
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.skill %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.skill %}
+          <div class="card dispatching-req-tile is-skill">
+            <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="dispatching-remove-form">
+              {% csrf_token %}<input type="hidden" name="action" value="remove_requirement"><input type="hidden" name="kind" value="skill"><input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove skill requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong><br>
+              <span class="has-text-grey-dark is-size-8">Qty: {{ row.quantity }}{% if row.minimum_level %} · Min L{{ row.minimum_level }}{% endif %}</span>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Capability Requirements #}
+      <div class="column is-4">
+        <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">checklist</span></span>Capability Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.capability|length }}</span></p>
+        <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="capability">
+          <search-dropdown name="picked_id" placeholder="search capabilities…" class="mb-1"
+              hx-get="{% url 'dispatching_capability_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.capability %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.capability %}
+          <div class="card dispatching-req-tile is-capability">
+            <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="dispatching-remove-form">
+              {% csrf_token %}<input type="hidden" name="action" value="remove_requirement"><input type="hidden" name="kind" value="capability"><input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove capability requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if row.notes %}<div class="mt-2 has-text-grey-dark">{{ row.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Modification Requirements #}
+      <div class="column is-4">
+        <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">build</span></span>Modification Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.modification|length }}</span></p>
+        <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="modification">
+          <search-dropdown name="picked_id" placeholder="search modifications…" class="mb-1"
+              hx-get="{% url 'defined_modification_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.modification %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.modification %}
+          <div class="card dispatching-req-tile is-modification">
+            <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="dispatching-remove-form">
+              {% csrf_token %}<input type="hidden" name="action" value="remove_requirement"><input type="hidden" name="kind" value="modification"><input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove modification requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if row.notes %}<div class="mt-2 has-text-grey-dark">{{ row.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{# Model Requirements — its own card; each row optionally names a configuration built for that model #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Model Requirements <span class="tag is-light ml-2">{{ requirement_rows.model|length }}</span></div></div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="mb-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add_requirement">
+      <input type="hidden" name="kind" value="model">
+      <div class="columns is-variable is-2 is-vcentered">
+        <div class="column is-3">
+          <search-dropdown id="draft-model-picker" name="picked_id" placeholder="search models…"
+              hx-get="{% url 'model_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+        </div>
+        <div class="column is-3">
+          <search-dropdown name="configuration_template_id" placeholder="configuration (pick a model first)"
+              hx-get="{% url 'dispatching_configuration_template_pool_search' %}"
+              hx-vals='js:{model_id: document.getElementById("draft-model-picker").value}'
+              hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+        </div>
+        <div class="column is-1"><input class="input is-small" type="number" min="1" name="quantity" value="1" placeholder="Qty"></div>
+        <div class="column is-3"><input class="input is-small" type="text" name="notes" placeholder="Notes"></div>
+        <div class="column is-1"><label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Req'd</label></div>
+        <div class="column is-1"><button type="submit" class="button is-small is-link is-fullwidth">Add</button></div>
+      </div>
+      <p class="has-text-grey is-size-7 mt-2">A configuration is optional, and only ever offered for the model already picked — a configuration means nothing on its own.</p>
+    </form>
+    {% if requirement_rows.model %}
+    <div class="dispatching-model-card-list">
+      {% for row in requirement_rows.model %}
+      <div class="card dispatching-model-card">
+        <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="dispatching-remove-form">
+          {% csrf_token %}<input type="hidden" name="action" value="remove_requirement"><input type="hidden" name="kind" value="model"><input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+          <button type="submit" class="dispatching-remove-btn" aria-label="Remove model requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+        </form>
+        <div class="card-content p-4 pr-5">
+          <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+            <div>
+              <p class="title is-size-6 mb-1">{{ row.object.model_name|default:"(unknown)" }}{% if row.object.version %} — {{ row.object.version }}{% endif %}</p>
+              <div class="dispatching-model-meta">
+                {{ row.object.asset_class.name|default:"—" }}
+                {% with mfrs=row.object.manufacturers.all %}{% if mfrs %} · {% for mf in mfrs %}{{ mf.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}
+              </div>
+              <div class="has-text-grey-dark is-size-8 mt-1">Qty: <strong>{{ row.quantity }}</strong></div>
+            </div>
+            {% if row.is_required %}
+            <span class="tag is-danger is-light">Required</span>
+            {% else %}
+            <span class="tag is-info is-light">Preferred</span>
+            {% endif %}
+          </div>
+          {% if row.configuration_template %}
+          <div class="mt-3 p-3 dispatching-model-config-box">
+            <p class="is-size-7 has-text-grey mb-1"><strong>Configuration</strong></p>
+            <p class="is-size-7"><strong>{{ row.configuration_template.name }}</strong></p>
+          </div>
+          {% endif %}
+          {% if row.notes %}
+          <div class="mt-3 is-size-8 has-text-grey-dark">
+            <p class="has-text-weight-semibold mb-1">Notes</p>
+            {{ row.notes }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+  </div>
+</div>
+
+{# Material Requirements — left-heavy assignment layout (harness/UX_UI/search/list_management_patterns.md §3), adapted to the existing session-draft POST/redirect mechanics rather than client-side JS #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Material Requirements <span class="tag is-light ml-2">{{ material_rows|length }}</span></div></div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7 mb-3">A material requirement raises a real, issuable demand when this template is used — not a wish-list note.</p>
+    <div class="columns is-variable is-4">
+      <div class="column is-8">
+        <form method="post" action="{% url 'dispatching_template_draft_update' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_material_requirement">
+          <div class="field">
+            <label class="label is-small">Part</label>
+            <search-dropdown name="part_id" placeholder="search parts…"
+                hx-get="{% url 'dispatching_material_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          </div>
+          <div class="columns is-variable is-2">
+            <div class="column is-4">
+              <label class="label is-small">Quantity</label>
+              <input class="input is-small" type="number" step="any" min="0" name="quantity" placeholder="Qty" required>
+            </div>
+            <div class="column is-8">
+              <label class="label is-small">Notes</label>
+              <input class="input is-small" type="text" name="notes" placeholder="Notes">
+            </div>
+          </div>
+          <button type="submit" class="button is-small is-link mt-2">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add to List</span>
+          </button>
+        </form>
+      </div>
+      <div class="column is-4">
+        <p class="label is-small">Added Materials</p>
+        {% if material_rows %}
+        <div class="dispatching-material-list">
+          {% for row in material_rows %}
+          <div class="card dispatching-material-row">
+            <form method="post" action="{% url 'dispatching_template_draft_update' %}" class="dispatching-remove-form">
+              {% csrf_token %}<input type="hidden" name="action" value="remove_material_requirement"><input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove material requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-2 pr-5 is-size-7">
+              <strong>{{ row.part.part_number|default:"(unknown)" }}</strong><br>
+              {{ row.part.name }}<br>
+              Qty {{ row.quantity }}{% if row.notes %} — {{ row.notes }}{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Commit #}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">publish</span></span>Commit</div></div>
+  <div class="card-content">
+    {% if can_commit %}
+    <form method="post" action="{% url 'dispatching_template_draft_commit' %}">
+      {% csrf_token %}
+      <label class="label is-small">Change Note <span class="has-text-grey">(required — what changed and why)</span></label>
+      <textarea class="textarea is-small" name="change_note" rows="2" required>{{ draft.change_note }}</textarea>
+      <p class="has-text-grey is-size-7 mt-1">
+        {% if draft.template_id %}This becomes the standard offered to everyone in this domain from now on. The prior revision stays readable — past dispatches keep pointing at it.
+        {% else %}This publishes a new template lineage, revision 1.{% endif %}
+      </p>
+      <footer class="card-footer custom-card-footer mt-3">
+        <div class="card-footer-secondaries"></div>
+        <button type="submit" class="button is-primary card-footer-primary">Commit Revision</button>
+      </footer>
+    </form>
+    {% else %}
+    <p class="has-text-grey is-size-7">Committing a revision requires the Template — Commit permission. You can keep editing this draft — someone with that permission can commit it in the same session.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

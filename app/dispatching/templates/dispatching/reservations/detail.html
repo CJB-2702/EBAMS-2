@@ -1,0 +1,383 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Reservation #{{ reservation.pk }}{% endblock %}
+{% block nav_reservation_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_reservation_index' %}">Reservations</a></li>
+<li class="is-active"><a href="#" aria-current="page">#{{ reservation.pk }}</a></li>
+{% endblock %}
+
+{% block extra_css %}
+  .track-card { border-left: 4px solid var(--bulma-border); }
+  .track-card.is-user { border-left-color: var(--bulma-success); }
+  .track-card.is-dispatcher { border-left-color: var(--bulma-warning); }
+  .track-card.is-user-return { border-left-color: var(--bulma-info); }
+  .dl-row { display: flex; gap: 0.75rem; padding: 0.3rem 0; border-bottom: 1px solid var(--bulma-border-weak); }
+  .dl-row:last-child { border-bottom: none; }
+  .dl-row dt { flex: 0 0 45%; font-size: 0.72rem; font-weight: 600; color: var(--bulma-text-weak); }
+  .dl-row dd { flex: 1 1 auto; font-size: 0.78rem; }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">local_shipping</span></div>
+      <div>
+        <h1 class="page-title">
+          {{ reservation.asset.name }}
+          <span class="tag is-light {{ status_tone }}" style="vertical-align:middle;">{{ reservation.get_reservation_status_display }}</span>
+        </h1>
+        <p class="page-subtitle">
+          Reservation #{{ reservation.pk }} · {{ reservation.scheduled_start|date:"M j, Y H:i" }} → {{ reservation.scheduled_end|date:"M j, Y H:i" }}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      {% if can_edit %}
+      <a href="{% url 'dispatching_reservation_edit' pk=reservation.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span>
+      </a>
+      {% endif %}
+      <a href="{% url 'dispatching_reservation_index' %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>All</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if conflicts %}
+<div class="notification is-warning is-light is-size-7 mb-4">
+  <span class="icon is-small"><span class="material-icons" aria-hidden="true">warning</span></span>
+  This window overlaps {{ conflicts|length }} other booking{{ conflicts|pluralize }} on the same asset:
+  {% for c in conflicts %}<a href="{% url 'dispatching_reservation_detail' pk=c.pk %}">#{{ c.pk }}</a> ({{ c.get_reservation_status_display }}){% if not forloop.last %}, {% endif %}{% endfor %}.
+</div>
+{% endif %}
+
+{# ── Handover: four links out, one page per step ── #}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>Handover Actions</div></div>
+    <div class="card-content">
+      <div class="columns is-variable is-2">
+        <div class="column is-3">
+          {% if can_user_checkout %}
+          <a href="{% url 'dispatching_reservation_user_checkout' pk=reservation.pk %}" class="button is-small is-success is-fullwidth">Check out</a>
+          {% else %}
+          <button class="button is-small is-fullwidth" disabled title="{{ user_checkout_reason }}">Check out</button>
+          {% endif %}
+        </div>
+        <div class="column is-3">
+          {% if can_user_checkin %}
+          <a href="{% url 'dispatching_reservation_user_checkin' pk=reservation.pk %}" class="button is-small is-info is-fullwidth">Check in</a>
+          {% else %}
+          <button class="button is-small is-fullwidth" disabled title="{{ user_checkin_reason }}">Check in</button>
+          {% endif %}
+        </div>
+        <div class="column is-3">
+          {% if can_verify_checkout %}
+          <a href="{% url 'dispatching_reservation_dispatcher_checkout' pk=reservation.pk %}" class="button is-small is-warning is-fullwidth">Verify checkout</a>
+          {% else %}
+          <button class="button is-small is-fullwidth" disabled title="{{ verify_checkout_reason }}">Verify checkout</button>
+          {% endif %}
+        </div>
+        <div class="column is-3">
+          {% if can_verify_return %}
+          <a href="{% url 'dispatching_reservation_dispatcher_checkin' pk=reservation.pk %}" class="button is-small is-warning is-fullwidth">Verify return</a>
+          {% else %}
+          <button class="button is-small is-fullwidth" disabled title="{{ verify_return_reason }}">Verify return</button>
+          {% endif %}
+        </div>
+      </div>
+      <p class="help is-size-7 mt-2">
+        The two tracks are independent: a dispatcher may verify without a preceding self-service step,
+        and neither track ever overwrites the other. The same person may not do both sides.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+DELIBERATE ANTI-PATTERN: write controls on a page called "view". Accepted
+knowingly — a dispatcher clearing a queue should not have to navigate away to
+confirm the booking already in front of them. Contained two ways: the forms
+POST to dispatching_reservation_lifecycle, never to this URL, so the detail
+route itself stays GET-only; and the whole card renders only for a holder of
+Reservation — Confirm, so what a requester sees is unchanged.
+{% endcomment %}
+{% if show_lifecycle %}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span>Lifecycle</div></div>
+    <div class="card-content">
+      <div class="columns is-multiline is-variable is-3">
+        <div class="column is-4">
+          <p class="label is-small">Confirm</p>
+          {% if can_confirm %}
+          <form method="post" action="{% url 'dispatching_reservation_lifecycle' pk=reservation.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="confirm">
+            {% if conflicts %}
+            <label class="checkbox is-size-7 mb-2">
+              <input type="checkbox" name="acknowledge_conflict"> Acknowledge the overlap and confirm anyway
+            </label>
+            <input class="input is-small mb-2" type="text" name="conflict_reason" placeholder="Why the overlap is acceptable…">
+            {% endif %}
+            <button class="button is-small is-link" type="submit">Confirm booking</button>
+          </form>
+          <p class="help is-size-7">Commits capacity. Blocked by an overlapping confirmed booking unless acknowledged.</p>
+          {% else %}
+          <p class="has-text-grey is-size-7">Only a tentative booking can be confirmed.</p>
+          {% endif %}
+        </div>
+
+        <div class="column is-4">
+          <p class="label is-small">Cancel</p>
+          {% if can_cancel %}
+          <form method="post" action="{% url 'dispatching_reservation_lifecycle' pk=reservation.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel">
+            <input class="input is-small mb-2" type="text" name="reason" placeholder="Reason (required)…" required>
+            <button class="button is-small is-danger is-light" type="submit">Cancel booking</button>
+          </form>
+          <p class="help is-size-7">Terminal. A reason is required and is written to the change log.</p>
+          {% else %}
+          <p class="has-text-grey is-size-7">Not available in this state.</p>
+          {% endif %}
+        </div>
+
+        <div class="column is-4">
+          <p class="label is-small">No show</p>
+          {% if can_no_show %}
+          <form method="post" action="{% url 'dispatching_reservation_lifecycle' pk=reservation.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="no_show">
+            <button class="button is-small is-danger is-light" type="submit">Mark as no-show</button>
+          </form>
+          <p class="help is-size-7">A confirmed booking nobody collected. Judgement call — nothing sets this automatically.</p>
+          {% else %}
+          <p class="has-text-grey is-size-7">Only a confirmed booking can be marked a no-show.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ── Meta (3/4) beside the asset (1/4) — legacy's Meta | Event row ── #}
+<div class="body-grid has-rail">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Meta</div></div>
+    <div class="card-content">
+      <div class="columns is-multiline is-size-7">
+        <div class="column is-6">
+          <dl>
+            <div class="dl-row"><dt>Record</dt><dd class="is-family-monospace">#{{ reservation.pk }}</dd></div>
+            <div class="dl-row"><dt>Title</dt><dd>{{ reservation.title }}</dd></div>
+            <div class="dl-row"><dt>Type</dt><dd><span class="tag is-small is-light">{{ reservation.get_reservation_type_display }}</span></dd></div>
+            <div class="dl-row"><dt>Status</dt><dd><span class="tag is-small is-light {{ status_tone }}">{{ reservation.get_reservation_status_display }}</span></dd></div>
+            <div class="dl-row"><dt>Data domain</dt><dd>{{ reservation.domain.name }}</dd></div>
+            <div class="dl-row"><dt>Accountable person</dt><dd>{{ reservation.accountable_person.username }}</dd></div>
+            <div class="dl-row">
+              <dt>Dispatch</dt>
+              <dd>{% if reservation.dispatch_id %}Dispatch #{{ reservation.dispatch_id }}{% else %}<span class="has-text-grey">Standalone — not attached to a dispatch.</span>{% endif %}</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="column is-6">
+          <dl>
+            <div class="dl-row"><dt>Scheduled start</dt><dd class="is-family-monospace">{{ reservation.scheduled_start|date:"Y-m-d H:i" }}</dd></div>
+            <div class="dl-row"><dt>Scheduled end</dt><dd class="is-family-monospace">{{ reservation.scheduled_end|date:"Y-m-d H:i" }}</dd></div>
+            <div class="dl-row"><dt>Actual start</dt><dd class="is-family-monospace">{{ reservation.actual_start|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+            <div class="dl-row"><dt>Actual end</dt><dd class="is-family-monospace">{{ reservation.actual_end|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+            <div class="dl-row"><dt>Origin</dt><dd>{{ reservation.origin|default:"—" }}</dd></div>
+            <div class="dl-row"><dt>Destination</dt><dd>{{ reservation.destination|default:"—" }}</dd></div>
+            <div class="dl-row"><dt>Created</dt><dd class="is-family-monospace">{{ reservation.created_at|date:"Y-m-d H:i" }} · {{ reservation.created_by }}</dd></div>
+          </dl>
+        </div>
+      </div>
+      {% if reservation.description %}
+      <div class="depth-2 p-3 mt-2 is-size-7" style="white-space:pre-wrap;">{{ reservation.description }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">precision_manufacturing</span></span>Asset</div></div>
+    <div class="card-content">
+      <dl class="is-size-7">
+        <div class="dl-row"><dt>Name</dt><dd><a href="{% url 'asset_detail' asset_id=reservation.asset_id %}">{{ reservation.asset.name }}</a></dd></div>
+        <div class="dl-row"><dt>Serial</dt><dd class="is-family-monospace">{{ reservation.asset.serial_number|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Class</dt><dd>{{ reservation.asset.asset_class.name|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Model</dt><dd>{{ reservation.asset.model.model_name|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Status</dt><dd><span class="tag is-small is-light">{{ reservation.asset.status }}</span></dd></div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+{# ── Current asset meters — always renders, even with no units defined ── #}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span>Current Asset Meters</div></div>
+    <div class="card-content">
+      {% if meters %}
+      <div class="stat-grid">
+        {% for m in meters %}
+        <div class="stat-tile">
+          <div class="stat-value">{{ m.value|default:"—" }}</div>
+          <div class="stat-label">{{ m.unit }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="has-text-grey is-size-7">This asset's model defines no meter units.</p>
+      {% endif %}
+      <div class="columns is-size-7 mt-3">
+        <div class="column is-6">
+          <dl>
+            <div class="dl-row">
+              <dt>Initial read (this booking)</dt>
+              <dd>{% if reservation.initial_meter_read %}{{ reservation.initial_meter_read.value }} · meter {{ reservation.initial_meter_read.meter_index }} · {{ reservation.initial_meter_read.recorded_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="column is-6">
+          <dl>
+            <div class="dl-row">
+              <dt>Final read (this booking)</dt>
+              <dd>{% if reservation.final_meter_read %}{{ reservation.final_meter_read.value }} · meter {{ reservation.final_meter_read.meter_index }} · {{ reservation.final_meter_read.recorded_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── The two handover tracks, side by side, exactly as legacy laid them out ── #}
+<div class="body-grid even">
+  <div class="card track-card is-user">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">logout</span></span>User checkout</div></div>
+    <div class="card-content">
+      <dl>
+        <div class="dl-row"><dt>Checked out at</dt><dd class="is-family-monospace">{{ reservation.user_checkout_submitted_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Checked out by</dt><dd>{{ reservation.user_checked_out_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition (reported)</dt><dd>{{ reservation.get_user_reported_condition_out_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter one (reported)</dt><dd>{{ reservation.user_meter1_out|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter two (reported)</dt><dd>{{ reservation.user_meter2_out|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Notes (out)</dt><dd>{{ reservation.user_checkout_notes|default:"—" }}</dd></div>
+      </dl>
+      <p class="help is-size-7 mt-2">Reported meters are reference information — they are not the asset's readings.</p>
+    </div>
+  </div>
+
+  <div class="card track-card is-dispatcher">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Dispatcher checkout</div></div>
+    <div class="card-content">
+      <dl>
+        <div class="dl-row"><dt>Verified at</dt><dd class="is-family-monospace">{{ reservation.checkout_verified_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Verified by</dt><dd>{{ reservation.checkout_verified_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Official checkout time</dt><dd class="is-family-monospace">{{ reservation.physical_checkout_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition out</dt><dd>{{ reservation.get_condition_out_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Notes out</dt><dd>{{ reservation.dispatcher_checkout_notes|default:"—" }}</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card track-card is-user-return">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">login</span></span>User return</div></div>
+    <div class="card-content">
+      <dl>
+        <div class="dl-row"><dt>Checked in at</dt><dd class="is-family-monospace">{{ reservation.user_checkin_submitted_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Checked in by</dt><dd>{{ reservation.user_checked_in_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition (reported)</dt><dd>{{ reservation.get_user_reported_condition_in_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter one (reported)</dt><dd>{{ reservation.user_meter1_in|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter two (reported)</dt><dd>{{ reservation.user_meter2_in|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Notes (in)</dt><dd>{{ reservation.user_checkin_notes|default:"—" }}</dd></div>
+      </dl>
+      <p class="help is-size-7 mt-2">Reported meters are reference information — they are not the asset's readings.</p>
+    </div>
+  </div>
+
+  <div class="card track-card is-dispatcher">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Dispatcher return</div></div>
+    <div class="card-content">
+      <dl>
+        <div class="dl-row"><dt>Verified at</dt><dd class="is-family-monospace">{{ reservation.return_verified_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Verified by</dt><dd>{{ reservation.return_verified_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Official check-in time</dt><dd class="is-family-monospace">{{ reservation.physical_checkin_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition in</dt><dd>{{ reservation.get_condition_in_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Notes in</dt><dd>{{ reservation.dispatcher_checkin_notes|default:"—" }}</dd></div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+{# ── Exceptions: conflict acknowledgement and cancellation ── #}
+<div class="body-grid even">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>Conflict Acknowledgement</div></div>
+    <div class="card-content">
+      {% if reservation.conflict_acknowledged_at %}
+      <dl>
+        <div class="dl-row"><dt>Acknowledged by</dt><dd>{{ reservation.conflict_acknowledged_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Acknowledged at</dt><dd class="is-family-monospace">{{ reservation.conflict_acknowledged_at|date:"Y-m-d H:i" }}</dd></div>
+        <div class="dl-row"><dt>Reason</dt><dd>{{ reservation.conflict_acknowledgement_reason|default:"—" }}</dd></div>
+      </dl>
+      {% else %}
+      <p class="has-text-grey is-size-7">None. This booking was confirmed without overlapping another confirmed one.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span>Cancellation</div></div>
+    <div class="card-content">
+      {% if reservation.cancelled_at %}
+      <dl>
+        <div class="dl-row"><dt>Cancelled by</dt><dd>{{ reservation.cancelled_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Cancelled at</dt><dd class="is-family-monospace">{{ reservation.cancelled_at|date:"Y-m-d H:i" }}</dd></div>
+        <div class="dl-row"><dt>Reason</dt><dd>{{ reservation.cancellation_reason|default:"—" }}</dd></div>
+      </dl>
+      {% else %}
+      <p class="has-text-grey is-size-7">None.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Typed change log ── #}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Change Log ({{ updates|length }})</div></div>
+    <div class="card-content is-flush">
+      {% if updates %}
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead>
+          <tr><th>When</th><th>Change</th><th>Field</th><th>From</th><th>To</th><th>Actor</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+          {% for u in updates %}
+          <tr>
+            <td class="is-family-monospace">{{ u.created_at|date:"Y-m-d H:i" }}</td>
+            <td><span class="tag is-small is-light">{{ u.get_change_type_display }}</span></td>
+            <td class="has-text-grey">{{ u.field_changed|default:"—" }}</td>
+            <td class="has-text-grey">{{ u.previous_value|default:"—" }}</td>
+            <td>{{ u.new_value|default:"—" }}</td>
+            <td>{{ u.actor.username|default:"system" }}</td>
+            <td class="has-text-grey">{{ u.reason|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-4"><p class="has-text-grey is-size-7">No changes recorded yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Event activity — the reservation IS an event (decision 10) ── #}
+  {% include "events/fragments/event_card.html" with card=activity_card next=request.path %}
+</div>
+{% endblock %}

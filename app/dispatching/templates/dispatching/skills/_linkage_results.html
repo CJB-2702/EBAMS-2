@@ -1,0 +1,15 @@
+<table class="table is-fullwidth is-hoverable is-size-7">
+  <thead><tr><th>Username</th><th>Email</th><th class="has-text-right">Certifications</th><th></th></tr></thead>
+  <tbody>
+    {% for person in people %}
+    <tr>
+      <td>{{ person.username }}</td>
+      <td>{{ person.email|default:"—" }}</td>
+      <td class="has-text-right has-text-weight-medium">{{ person.cert_count }}</td>
+      <td><a href="{% url 'dispatching_user_skills' person.pk %}" class="has-text-grey">View →</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="has-text-grey has-text-centered py-4">No matches.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>

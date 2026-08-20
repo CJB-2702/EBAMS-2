@@ -16,20 +16,17 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Sum
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from app.inventory.control_layer.adapters.room_svg_adapter import RoomSvgAdapter
-from app.inventory.control_layer.constants import ROOM_SVG_GROUP_LABEL
+from app.inventory.control_layer.destination_picker import DestinationPickerContext
 from app.inventory.control_layer.errors import InventoryValidationError
 from app.inventory.control_layer.movement_context import MovementContext
 from app.inventory.models.movements.enums import MovementType
 from app.inventory.models.movements.part_movement import PartMovement
 from app.inventory.models.stock.active_inventory import ActiveInventory
-from app.inventory.models.topography.room import Room
 from app.inventory.models.topography.warehouse import Warehouse
 from app.inventory.presentation_layer.search.movement_search import MovementSearch
 from app.inventory.presentation_layer.tools.inventory_access import (
@@ -61,140 +58,6 @@ def _report(request: HttpRequest, exc: InventoryValidationError) -> None:
         messages.error(request, error)
 
 
-# --------------------------------------------------------------------------- #
-# Destination selector — shared between the movement portal and the putaway
-# worklist template fragments.
-# --------------------------------------------------------------------------- #
-
-
-def _destination_state(
-    request: HttpRequest, *, source_warehouse_id: int, part_id: int | None = None
-) -> dict:
-    warehouse_id = _int_or_none(request.GET.get("warehouse_id", ""))
-    room_id = _int_or_none(request.GET.get("room_id", ""))
-    loc = request.GET.get("loc", "").strip()
-    sloc = _int_or_none(request.GET.get("sloc", ""))
-
-    warehouses = Warehouse.objects.filter(is_active=True).order_by("name")
-    selected_warehouse = warehouses.filter(pk=warehouse_id).first() if warehouse_id else None
-    crosses_warehouse = bool(
-        selected_warehouse and selected_warehouse.pk != source_warehouse_id
-    )
-
-    rooms = []
-    selected_room = None
-    room_locations = []
-    map_svg = None
-    selected_storage_location = None
-
-    if selected_warehouse and not crosses_warehouse:
-        rooms = list(
-            Room.objects.filter(warehouse=selected_warehouse, is_active=True)
-            .exclude(is_intake_room=True)
-            .select_related("current_layout")
-            .order_by("room_name")
-        )
-        for room in rooms:
-            if room.current_layout_id is not None:
-                raw_svg = RoomSvgAdapter.read_svg_from_attachment(room.current_layout)
-                room.thumbnail_svg = (
-                    RoomSvgAdapter.normalize_viewbox(raw_svg) if raw_svg else None
-                )
-            else:
-                room.thumbnail_svg = None
-
-        if room_id:
-            selected_room = next((r for r in rooms if r.pk == room_id), None)
-        if selected_room is not None:
-            room_locations = list(
-                selected_room.room_locations.filter(is_active=True)
-                .prefetch_related("storage_locations")
-                .order_by("display_code")
-            )
-            stock_map: dict[int, Decimal] = {}
-            if part_id:
-                stock_qs = (
-                    ActiveInventory.objects.filter(
-                        room=selected_room,
-                        part_id=part_id,
-                        storage_location_id__isnull=False,
-                    )
-                    .values("storage_location_id")
-                    .annotate(total_qty=Sum("quantity_on_hand"))
-                )
-                stock_map = {
-                    item["storage_location_id"]: item["total_qty"] for item in stock_qs
-                }
-            for rl in room_locations:
-                for sl in rl.storage_locations.all():
-                    sl.part_stock_qty = stock_map.get(sl.pk, Decimal("0"))
-
-            raw_svg = RoomSvgAdapter.read_svg_from_attachment(selected_room.current_layout)
-            if raw_svg is not None:
-                shape_targets = {
-                    rl.display_code: rl.display_code
-                    for rl in room_locations
-                    if rl.storage_locations.filter(is_active=True).exists()
-                }
-                clean_get = request.GET.copy()
-                clean_get.pop("format", None)
-                clean_get.pop("loc", None)
-                qs = clean_get.urlencode()
-                canonical_url = f"{request.path}?{qs}" if qs else request.path
-
-                map_svg = RoomSvgAdapter.render_interactive_svg(
-                    raw_svg,
-                    group_label=ROOM_SVG_GROUP_LABEL,
-                    shape_targets=shape_targets,
-                    canonical_url="",
-                    format_param="",
-                    drawer_target="",
-                )
-            if sloc:
-                for rl in room_locations:
-                    match = next(
-                        (s for s in rl.storage_locations.all() if s.pk == sloc), None
-                    )
-                    if match is not None:
-                        selected_storage_location = match
-                        break
-
-    return {
-        "warehouses": warehouses,
-        "warehouse_id": warehouse_id,
-        "selected_warehouse": selected_warehouse,
-        "crosses_warehouse": crosses_warehouse,
-        "rooms": rooms,
-        "room_id": room_id,
-        "selected_room": selected_room,
-        "room_locations": room_locations,
-        "map_svg": map_svg,
-        "loc": loc,
-        "sloc": sloc,
-        "selected_storage_location": selected_storage_location,
-    }
-
-
-def _destination_target_fragment(request: HttpRequest, *, room_locations, loc: str) -> HttpResponse:
-    room_location = next((rl for rl in room_locations if rl.display_code == loc), None)
-    storage_locations = (
-        list(room_location.storage_locations.filter(is_active=True))
-        if room_location is not None
-        else []
-    )
-    clean_get = request.GET.copy()
-    clean_get.pop("format", None)
-    clean_get.pop("sloc", None)
-    base_qs = clean_get.urlencode()
-    return render(
-        request,
-        f"{TEMPLATE_DIR}/_destination_target.html",
-        {
-            "room_location": room_location,
-            "storage_locations": storage_locations,
-            "base_qs": base_qs,
-        },
-    )
 
 
 # --------------------------------------------------------------------------- #
@@ -240,13 +103,18 @@ def movement_portal(request: HttpRequest) -> HttpResponse:
             messages.error(request, str(exc))
         return redirect(f"{reverse('inventory_movement_portal')}?stock={stock_id}")
 
-    destination = _destination_state(
+    destination = DestinationPickerContext.build_state(
         request, source_warehouse_id=balance.warehouse_id, part_id=balance.part_id
     )
 
     if request.GET.get("format") == "htmx-putaway-target":
-        return _destination_target_fragment(
+        fragment_state = DestinationPickerContext.build_location_table_fragment(
             request, room_locations=destination["room_locations"], loc=destination["loc"]
+        )
+        return render(
+            request,
+            f"{TEMPLATE_DIR}/_destination_target.html",
+            fragment_state,
         )
 
     context = {"stock_id": stock_id, "balance": balance, "can_move": can_move(request)}
@@ -256,7 +124,19 @@ def movement_portal(request: HttpRequest) -> HttpResponse:
 
 # --------------------------------------------------------------------------- #
 # Putaway worklist — batch relocation of unassigned Intake Room stock.
+#
+# Entirely static-reload driven (no HTMX, no client-side state sync): every
+# control is a plain link or an auto-submitting <select>, and warehouse_id /
+# room_id / sloc GET params are the single source of truth rendered into
+# every control on the page each request. Checked stock rows would normally
+# be lost across those reloads, so they're mirrored into the session instead
+# — the browse form re-syncs the session on every explicit checkbox/selector
+# submission (`sync=1`), while pure destination-card link navigation leaves
+# the session (and therefore the checked rows) untouched.
 # --------------------------------------------------------------------------- #
+
+SESSION_SELECTED_ROWS_KEY = "putaway_selected_row_ids"
+SESSION_SELECTED_WAREHOUSE_KEY = "putaway_selected_rows_warehouse_id"
 
 
 @require_http_methods(["GET", "POST"])
@@ -271,9 +151,11 @@ def putaway_worklist(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         if not can_move(request):
             messages.error(request, "You do not have permission to move stock.")
+            warehouse_id = _int_or_none(request.POST.get("warehouse_id", ""))
             return redirect(f"{reverse('inventory_putaway_worklist')}?warehouse_id={warehouse_id or ''}")
         row_ids = request.POST.getlist("row_id")
         sloc = _int_or_none(request.POST.get("storage_location_id", ""))
+        warehouse_id = _int_or_none(request.POST.get("warehouse_id", ""))
         moved = 0
         errors = []
         for row_id in row_ids:
@@ -290,7 +172,38 @@ def putaway_worklist(request: HttpRequest) -> HttpResponse:
             messages.success(request, f"Put away {moved} row(s).")
         for error in errors:
             messages.error(request, error)
-        return redirect(f"{reverse('inventory_putaway_worklist')}?warehouse_id={warehouse_id or ''}")
+
+        # Moved rows are no longer unassigned — drop the stale session selection.
+        request.session[SESSION_SELECTED_ROWS_KEY] = []
+
+        # Preserve destination selection state on redirect for "continue putting away"
+        redirect_url = f"{reverse('inventory_putaway_worklist')}?warehouse_id={warehouse_id or ''}"
+        room_id = _int_or_none(request.POST.get("room_id", ""))
+        if room_id:
+            redirect_url += f"&room_id={room_id}"
+        if sloc:
+            redirect_url += f"&sloc={sloc}"
+        return redirect(redirect_url)
+
+    # GET — reconcile the session-backed row selection against the current
+    # warehouse. A warehouse switch invalidates it outright (the checked
+    # pks belong to a different unassigned-stock list); an explicit
+    # `sync=1` submission (the browse form, on any checkbox/selector
+    # change) replaces it with whatever was just checked; anything else
+    # (a plain destination-card link click) leaves it alone.
+    if selected_warehouse is None:
+        request.session.pop(SESSION_SELECTED_ROWS_KEY, None)
+        request.session.pop(SESSION_SELECTED_WAREHOUSE_KEY, None)
+        selected_row_ids: set[int] = set()
+    else:
+        if request.session.get(SESSION_SELECTED_WAREHOUSE_KEY) != selected_warehouse.pk:
+            request.session[SESSION_SELECTED_WAREHOUSE_KEY] = selected_warehouse.pk
+            request.session[SESSION_SELECTED_ROWS_KEY] = []
+        elif "sync" in request.GET:
+            request.session[SESSION_SELECTED_ROWS_KEY] = [
+                int(v) for v in request.GET.getlist("row_id") if v.isdigit()
+            ]
+        selected_row_ids = set(request.session.get(SESSION_SELECTED_ROWS_KEY, []))
 
     unassigned_rows = []
     if selected_warehouse is not None:
@@ -301,28 +214,36 @@ def putaway_worklist(request: HttpRequest) -> HttpResponse:
             .select_related("part")
             .order_by("part__part_number")
         )
+        selected_row_ids &= {row.pk for row in unassigned_rows}
+        request.session[SESSION_SELECTED_ROWS_KEY] = sorted(selected_row_ids)
+        for row in unassigned_rows:
+            row.is_checked = row.pk in selected_row_ids
 
     destination = (
-        _destination_state(request, source_warehouse_id=selected_warehouse.pk)
+        DestinationPickerContext.build_state(request, source_warehouse_id=selected_warehouse.pk)
         if selected_warehouse is not None
         else {
-            "rooms": [], "room_id": None, "selected_room": None,
-            "room_locations": [], "map_svg": None, "loc": "", "sloc": None,
+            "warehouses": warehouses,
+            "warehouse_id": warehouse_id,
+            "selected_warehouse": None,
+            "crosses_warehouse": False,
+            "rooms": [],
+            "room_id": None,
+            "selected_room": None,
+            "room_locations": [],
+            "map_svg": None,
+            "loc": "",
+            "sloc": None,
             "selected_storage_location": None,
         }
     )
-
-    if request.GET.get("format") == "htmx-putaway-target":
-        return _destination_target_fragment(
-            request, room_locations=destination.get("room_locations", []),
-            loc=destination.get("loc", ""),
-        )
 
     context = {
         "warehouses": warehouses,
         "warehouse_id": warehouse_id,
         "selected_warehouse": selected_warehouse,
         "unassigned_rows": unassigned_rows,
+        "selected_row_ids": sorted(selected_row_ids),
         "can_move": can_move(request),
     }
     context.update(destination)

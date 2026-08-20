@@ -1,0 +1,47 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Certifications by Person{% endblock %}
+{% block nav_linkage_portal %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Certifications by Person</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">Certifications by Person</h1>
+        <p class="page-subtitle">Find a person to view or record their skill certifications.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-content">
+    <div class="columns is-multiline">
+      <div class="column is-6-desktop is-12-tablet">
+        <div class="control has-icons-left">
+          <input type="search" class="input is-small" name="q" value="{{ q }}" placeholder="Search by username…"
+                 hx-get="{% url 'dispatching_skills_linkage_portal' %}?format=htmx-search-results"
+                 hx-trigger="keyup changed delay:300ms, search"
+                 hx-target="#people-results" hx-swap="innerHTML" hx-include="[name='q'], [name='cert_name']">
+          <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true">search</span></span>
+        </div>
+      </div>
+      <div class="column is-6-desktop is-12-tablet">
+        <div class="control has-icons-left">
+          <input type="search" class="input is-small" name="cert_name" value="{{ cert_name }}" placeholder="Filter by certification…"
+                 hx-get="{% url 'dispatching_skills_linkage_portal' %}?format=htmx-search-results"
+                 hx-trigger="keyup changed delay:300ms, search"
+                 hx-target="#people-results" hx-swap="innerHTML" hx-include="[name='q'], [name='cert_name']">
+          <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true">badge</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="people-results">
+      {% include "dispatching/skills/_linkage_results.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

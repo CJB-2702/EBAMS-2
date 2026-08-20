@@ -26,6 +26,7 @@
   color: var(--bulma-text-strong);
   line-height: 1.15; margin-bottom: 0.75rem;
 }
+.pub-hero-acronym { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bulma-text-weak); margin-bottom: 0.75rem; }
 .pub-hero-lead { font-size: 1.15rem; font-weight: 600; color: var(--bulma-text-strong); margin-bottom: 0.5rem; }
 .pub-hero-sub { font-size: 0.95rem; color: var(--bulma-text-weak); margin-bottom: 1.5rem; line-height: 1.6; }
 .pub-hero-btns { margin-bottom: 1rem; }

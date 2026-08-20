@@ -7,7 +7,19 @@
 One page, one sitting (FD-19): warehouse pick, then unassigned Intake Room
 stock (left) + destination selector (right), one batch submit — every
 checked row becomes its own PUTAWAY PartMovement targeting the same
-storage location. Selection state is GET params, so F5 reproduces it.
+storage location.
+
+Entirely static-reload driven — no HTMX, no client-side state sync JS.
+Destination selection state (warehouse_id, room_id, sloc) lives in GET
+params, so F5 reproduces it and the Quick Destination Picker bar below is
+always rendered from the exact same context as the destination card, which
+keeps the two in sync by construction rather than by JS.
+
+Checked stock rows would normally be lost across those reloads, so they're
+mirrored into the session (see putaway_worklist in movements.py) — the
+"Unassigned stock" form below re-syncs the session on every checkbox
+change, while clicking a room/location link in the destination card does
+not touch it, so previously checked rows survive picking a destination.
 {% endcomment %}
 
 {% block content %}
@@ -30,28 +42,107 @@ storage location. Selection state is GET params, so F5 reproduces it.
 </div>
 {% endif %}
 
+{% comment %}
+Quick Destination Picker — one <select> per piece of state, each a plain
+full-page reload on change. No JS state sync: the destination card below
+is rendered from these same warehouse_id/room_id/sloc GET params, so the
+two are always in sync.
+{% endcomment %}
 <div class="card mb-4">
+  <div class="card-header"><div class="card-header-title">
+    <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>Quick Destination Picker
+  </div></div>
   <div class="card-content">
-    <label class="label is-small" for="pw-warehouse">Warehouse</label>
-    <div class="select is-small">
-      <select id="pw-warehouse" onchange="window.location='?warehouse_id='+this.value">
-        <option value="">— select —</option>
-        {% for wh in warehouses %}
-        <option value="{{ wh.pk }}" {% if wh.pk == warehouse_id %}selected{% endif %}>{{ wh.code }} — {{ wh.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
+    <form method="get" action="{% url 'inventory_putaway_worklist' %}">
+      <div class="columns is-variable is-2 is-multiline">
+        <div class="column is-4">
+          <label class="label is-small" for="qp-warehouse">Warehouse</label>
+          <div class="select is-small is-fullwidth">
+            <select id="qp-warehouse" name="warehouse_id" onchange="this.form.submit()">
+              <option value="">— select —</option>
+              {% for wh in warehouses %}
+              <option value="{{ wh.pk }}" {% if wh.pk == warehouse_id %}selected{% endif %}>
+                {{ wh.code }} — {{ wh.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="column is-4">
+          <label class="label is-small" for="qp-room">Room</label>
+          <div class="select is-small is-fullwidth">
+            <select id="qp-room" name="room_id" onchange="this.form.submit()" {% if not selected_warehouse %}disabled{% endif %}>
+              <option value="">— select —</option>
+              {% for room in rooms %}
+              <option value="{{ room.pk }}" {% if room.pk == room_id %}selected{% endif %}>
+                {{ room.room_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        {# Matches the full X-Y-Z display_code, so one field covers major/minor/atomic. #}
+        <div class="column is-4">
+          <label class="label is-small" for="qp-location">Location</label>
+          <div class="select is-small is-fullwidth">
+            <select id="qp-location" name="sloc" onchange="this.form.submit()" {% if not selected_room %}disabled{% endif %}>
+              <option value="">— select —</option>
+              {% for rl in room_locations %}
+              {% for sl in rl.storage_locations.all %}
+              {% if sl.is_active %}
+              <option value="{{ sl.pk }}" {% if sl.pk == sloc %}selected{% endif %}>{{ sl.display_code }}</option>
+              {% endif %}
+              {% endfor %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <noscript><button type="submit" class="button is-small">Go</button></noscript>
+    </form>
   </div>
+
+  <form method="post" action="{% url 'inventory_putaway_worklist' %}?warehouse_id={{ warehouse_id|default:'' }}">
+    {% csrf_token %}
+    <input type="hidden" name="warehouse_id" value="{{ warehouse_id|default:'' }}">
+    <input type="hidden" name="room_id" value="{{ room_id|default:'' }}">
+    <input type="hidden" name="storage_location_id" value="{{ sloc|default:'' }}">
+    {% for rid in selected_row_ids %}
+    <input type="hidden" name="row_id" value="{{ rid }}">
+    {% endfor %}
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-item" style="justify-content:flex-start;">
+        {% if selected_storage_location %}
+        <p class="is-size-7">
+          <strong>Destination:</strong>
+          <span class="is-family-monospace">{{ selected_room.room_name }} / {{ selected_storage_location.display_code }}</span>
+          — {{ selected_row_ids|length }} row(s) selected.
+        </p>
+        {% elif selected_warehouse %}
+        <p class="has-text-grey is-size-7">Check rows below and choose a destination location before submitting.</p>
+        {% else %}
+        <p class="has-text-grey is-size-7">Select a warehouse to begin.</p>
+        {% endif %}
+      </div>
+      {% if can_move %}
+      <button class="button is-primary card-footer-item" type="submit" {% if not selected_storage_location or not selected_row_ids %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Put away selected</span>
+      </button>
+      {% endif %}
+    </footer>
+  </form>
 </div>
 
 {% if selected_warehouse %}
-<form method="post" action="{% url 'inventory_putaway_worklist' %}?warehouse_id={{ warehouse_id }}">
-  {% csrf_token %}
-  <input type="hidden" name="warehouse_id" value="{{ warehouse_id }}">
-  <input type="hidden" name="storage_location_id" value="{{ sloc|default:'' }}">
-
-  <div class="columns is-variable is-4">
-    <div class="column is-6">
+<div class="columns is-variable is-4">
+  <div class="column is-6">
+    <form method="get" action="{% url 'inventory_putaway_worklist' %}">
+      <input type="hidden" name="sync" value="1">
+      <input type="hidden" name="warehouse_id" value="{{ warehouse_id }}">
+      <input type="hidden" name="room_id" value="{{ room_id|default:'' }}">
+      <input type="hidden" name="sloc" value="{{ sloc|default:'' }}">
       <div class="card">
         <div class="card-header"><div class="card-header-title">
           <span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span>Unassigned stock ({{ unassigned_rows|length }})
@@ -62,7 +153,7 @@ storage location. Selection state is GET params, so F5 reproduces it.
             <tbody>
               {% for row in unassigned_rows %}
               <tr>
-                <td><input type="checkbox" name="row_id" value="{{ row.pk }}"></td>
+                <td><input type="checkbox" name="row_id" value="{{ row.pk }}" onchange="this.form.submit()" {% if row.is_checked %}checked{% endif %}></td>
                 <td class="is-family-monospace">{{ row.part.part_number }}</td>
                 <td class="is-family-monospace">{{ row.serial_number|default:"—" }}</td>
                 <td class="has-text-right is-family-monospace">{{ row.quantity_on_hand }}</td>
@@ -73,146 +164,19 @@ storage location. Selection state is GET params, so F5 reproduces it.
             </tbody>
           </table>
         </div>
+        <footer class="card-footer custom-card-footer">
+          <p class="is-size-7 has-text-grey card-footer-item" style="justify-content:flex-start;">
+            {{ selected_row_ids|length }} selected
+          </p>
+          <noscript><button type="submit" class="button is-small card-footer-item">Update selection</button></noscript>
+        </footer>
       </div>
-    </div>
-
-    <div class="column is-6">
-      <div id="destination-card" class="card">
-        <div class="card-header"><div class="card-header-title">
-          <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>Destination
-        </div></div>
-        <div class="card-content">
-          {% if not selected_room %}
-          <div class="columns is-multiline">
-            {% for room in rooms %}
-            <div class="column is-4">
-              <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room.pk }}#destination-card" class="box has-text-centered p-3">
-                {% if room.thumbnail_svg %}
-                <div class="room-thumbnail mb-2" style="max-height:80px; overflow:hidden;">
-                  {{ room.thumbnail_svg|safe }}
-                </div>
-                {% else %}
-                <span class="icon is-large"><span class="material-icons" aria-hidden="true" style="font-size:2rem;">meeting_room</span></span>
-                {% endif %}
-                <p class="has-text-weight-medium is-size-7">{{ room.room_name }}</p>
-              </a>
-            </div>
-            {% empty %}
-            <p class="has-text-grey is-size-7">No destination rooms in this warehouse.</p>
-            {% endfor %}
-          </div>
-          {% else %}
-          {% if map_svg %}
-          <div class="mb-4">{{ map_svg|safe }}</div>
-          {% endif %}
-          <div class="field mt-4 mb-2">
-            <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-              <label class="label is-small mb-0">Location Directory</label>
-              <button id="deselect-area-btn" type="button" class="button is-small is-light" style="display:none;" onclick="clearLocSelection(event)">
-                <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">clear</span></span>
-                <span id="deselect-area-label">Deselect map area</span>
-              </button>
-            </div>
-            <p class="control has-icons-left">
-              <input id="loc-search-input" class="input is-small" type="search"
-                     placeholder="Filter locations by code, shelf, or coordinate (e.g. 0005, 0001)..."
-                     autocomplete="off"
-                     onkeyup="filterLocationTable(this.value)">
-              <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">search</span></span>
-            </p>
-          </div>
-
-          <div class="table-container" style="max-height: 420px; overflow-y: auto;">
-            <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7 mb-0">
-              <thead>
-                <tr style="position: sticky; top: 0; background: var(--bulma-card-background-color, #ffffff); z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
-                  <th>Location Code</th>
-                  <th>Map Area (XY)</th>
-                  <th>Major (X)</th>
-                  <th>Minor (Y)</th>
-                  <th>Shelf (Z)</th>
-                  <th class="has-text-centered">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for rl in room_locations %}
-                {% for sl in rl.storage_locations.all %}
-                {% if sl.is_active %}
-                <tr class="loc-table-row" data-loc="{{ rl.display_code }}" data-search="{{ sl.display_code }} {{ rl.display_code }} {{ rl.major_coord }} {{ rl.minor_coord }} {{ sl.atomic_coord }}">
-                  <td class="is-family-monospace has-text-weight-semibold">{{ sl.display_code }}</td>
-                  <td class="is-family-monospace">{{ rl.display_code }}</td>
-                  <td class="is-family-monospace">{{ rl.major_coord }}</td>
-                  <td class="is-family-monospace">{{ rl.minor_coord }}</td>
-                  <td class="is-family-monospace">{{ sl.atomic_coord }}</td>
-                  <td class="has-text-centered">
-                    <a href="?warehouse_id={{ warehouse_id }}&room_id={{ room_id }}&loc={{ rl.display_code }}&sloc={{ sl.pk }}#putaway-submit-card"
-                       class="button is-small {% if selected_storage_location.pk == sl.pk %}is-primary{% else %}is-primary is-outlined{% endif %}">
-                      {% if selected_storage_location.pk == sl.pk %}Selected{% else %}Select{% endif %}
-                    </a>
-                  </td>
-                </tr>
-                {% endif %}
-                {% endfor %}
-                {% empty %}
-                <tr><td colspan="6" class="has-text-grey has-text-centered py-4">This room has no storage locations yet.</td></tr>
-                {% endfor %}
-                <tr id="loc-table-no-match" style="display:none;">
-                  <td colspan="6" class="has-text-grey has-text-centered py-3">No matching storage locations found.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
+    </form>
   </div>
 
-  <div id="putaway-submit-card" class="card mt-4">
-    <div class="card-content">
-      {% if selected_storage_location %}
-      <p class="is-size-7">Destination: <span class="is-family-monospace">{{ selected_room.room_name }} / {{ selected_storage_location.display_code }}</span></p>
-      {% else %}
-      <p class="has-text-grey is-size-7">Check rows above and choose a destination location before submitting.</p>
-      {% endif %}
-    </div>
-    {% if can_move %}
-    <footer class="card-footer custom-card-footer">
-      <button class="button is-primary card-footer-primary" type="submit" {% if not selected_storage_location %}disabled{% endif %}>
-        <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Put away selected</span>
-      </button>
-    </footer>
-    {% endif %}
+  <div class="column is-6">
+    {% include "inventory/movements/_destination_picker.html" %}
   </div>
-</form>
+</div>
 {% endif %}
-{% endblock %}
-
-{% block body_scripts %}
-<script>
-document.addEventListener('htmx:afterSwap', function(evt) {
-  if (evt.detail.target && evt.detail.target.id === 'destination-target') {
-    evt.detail.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
-
-function filterLocationTable(query) {
-  const q = (query || '').toLowerCase().trim();
-  const rows = document.querySelectorAll('.loc-table-row');
-  let visibleCount = 0;
-  rows.forEach(row => {
-    const searchData = row.getAttribute('data-search') || '';
-    if (!q || searchData.toLowerCase().includes(q)) {
-      row.style.display = '';
-      visibleCount++;
-    } else {
-      row.style.display = 'none';
-    }
-  });
-  const noMatchRow = document.getElementById('loc-table-no-match');
-  if (noMatchRow) {
-    noMatchRow.style.display = (visibleCount === 0 && q) ? '' : 'none';
-  }
-}
-</script>
 {% endblock %}

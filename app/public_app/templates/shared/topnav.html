@@ -1,6 +1,6 @@
 {% load svg_tags %}
 <nav class="app-topnav" role="navigation" aria-label="Primary" {% if current_app_group %}current-application-group="{{ current_app_group }}" data-current-application-group="{{ current_app_group }}"{% endif %}>
-  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS2</a>
+  <a href="{% url 'public_home' %}" class="app-topnav-brand" title="CJB-DIODE — Configuration · Jobs · Buying · Dispatching · Inventory · Ownership · Details · Events">CJB-DIODE</a>
 
   {% if request.user.is_authenticated or user.is_authenticated %}
   <div class="tabs app-portals" role="tablist">
@@ -14,6 +14,36 @@
           <div class="portal-dropdown-inner">
             <a href="{% url 'event_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
             <a href="{% url 'event_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Dispatching">
+        <button class="portal-tab-btn" commandfor="portal-dispatching" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">directions_car</span></span> Dispatching <span class="portal-tab-chevron">▾</span>
+        </button>
+        <div id="portal-dispatching" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Home</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'dispatching_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Hub</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Templates</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'dispatching_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Template Library</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Skills</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'dispatching_skill_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span> Skills Catalogue</a>
+                <a href="{% url 'dispatching_skills_linkage_portal' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Certifications by Person</a>
+                <a href="{% url 'dispatching_my_certifications' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Certifications</a>
+              </div>
+            </div>
           </div>
         </div>
       </li>

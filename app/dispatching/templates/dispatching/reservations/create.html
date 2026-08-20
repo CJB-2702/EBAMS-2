@@ -1,5 +1,7 @@
 {% extends "dispatching/base.html" %}
+{% load static %}
 {% block title %}New Reservation{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/dispatching.css' %}">{% endblock %}
 {% block nav_reservation_index %}is-active{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'dispatching_reservation_index' %}">Reservations</a></li>
@@ -84,8 +86,15 @@
         </div>
       </div>
     </div>
+  </form>
 
   {# ── 2. Asset picker — filter card + results, its own GET form ── #}
+  {# Deliberately NOT nested inside #reservation-form: a <form> inside a <form> is #}
+  {# invalid HTML, and browsers handle it by dropping the inner form's start tag and #}
+  {# closing the outer form early at the inner form's closing tag — which silently #}
+  {# broke the picker's hx-get/hx-trigger AND left the submit button outside any form. #}
+  {# The asset radios and the submit button instead reference form="reservation-form" #}
+  {# explicitly, which works regardless of DOM position. #}
   <div class="card">
     <div class="card-header">
       <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">manage_search</span></span>Choose an Asset</div>
@@ -180,7 +189,7 @@
       </div>
       <div class="card-content" style="border-top:1px solid var(--bulma-border-weak);">
         <div class="buttons">
-          <button class="button is-small is-link" type="submit">
+          <button class="button is-small is-link" type="submit" form="reservation-form">
             <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span><span>Create Tentative Booking</span>
           </button>
           <a class="button is-small" href="{% url 'dispatching_reservation_index' %}">Cancel</a>
@@ -191,7 +200,6 @@
         </p>
       </div>
     </div>
-  </form>
 </div>
 {% endblock %}
 
@@ -220,12 +228,24 @@
       });
     }
 
+    // A previously selected asset was checked against the OLD window — once
+    // the dates move, that pick is stale until availability is recomputed and
+    // the user re-selects a row. Clear it immediately (don't wait on the
+    // debounced/htmx round trip) so the summary never shows a phantom pick.
+    function clearAssetSelection() {
+      var checked = document.querySelector('#asset-picker-results input[type=radio]:checked');
+      if (checked) checked.checked = false;
+      var summaryAsset = document.getElementById('summary-asset');
+      if (summaryAsset) summaryAsset.textContent = '—';
+    }
+
     var debounceTimer;
     function sync(isImmediate) {
       startMirror.value = start.value;
       endMirror.value = end.value;
       if (summaryStart) summaryStart.textContent = formatDateTime(start.value);
       if (summaryEnd) summaryEnd.textContent = formatDateTime(end.value);
+      clearAssetSelection();
 
       if (isImmediate) {
         if (start.value && end.value) {

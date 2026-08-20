@@ -1,0 +1,222 @@
+{% extends "dispatching/base.html" %}
+{% load static %}
+{% block nav_reservation_index %}is-active{% endblock %}
+
+{% comment %}
+One template, four routes: user/dispatcher x checkout/return. They differ in
+which fields they collect and in what recording a meter *means*, not in shape.
+
+The single difference that carries weight: on the dispatcher track the meter
+boxes write MeterHistory and move the asset's own readings; on the user track
+they are stored on the reservation as reference information and go no further.
+The page says so, in both cases, right next to the boxes.
+{% endcomment %}
+
+{% block title %}
+{% if is_dispatcher_track %}{% if is_return %}Verify Return{% else %}Verify Checkout{% endif %}{% else %}{% if is_return %}Check In{% else %}Check Out{% endif %}{% endif %} — Reservation #{{ reservation.pk }}
+{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_reservation_index' %}">Reservations</a></li>
+<li><a href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}">#{{ reservation.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">
+  {% if is_dispatcher_track %}{% if is_return %}Verify return{% else %}Verify checkout{% endif %}{% else %}{% if is_return %}Check in{% else %}Check out{% endif %}{% endif %}
+</a></li>
+{% endblock %}
+
+{% block extra_css %}
+  .track-card { border-left: 4px solid var(--bulma-border); }
+  .track-card.is-user { border-left-color: var(--bulma-success); }
+  .track-card.is-dispatcher { border-left-color: var(--bulma-warning); }
+  .dl-row { display: flex; gap: 0.75rem; padding: 0.3rem 0; border-bottom: 1px solid var(--bulma-border-weak); }
+  .dl-row:last-child { border-bottom: none; }
+  .dl-row dt { flex: 0 0 45%; font-size: 0.72rem; font-weight: 600; color: var(--bulma-text-weak); }
+  .dl-row dd { flex: 1 1 auto; font-size: 0.78rem; }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon">
+        <span class="material-icons" aria-hidden="true">{% if is_dispatcher_track %}badge{% elif is_return %}login{% else %}logout{% endif %}</span>
+      </div>
+      <div>
+        <h1 class="page-title">
+          {% if is_dispatcher_track %}{% if is_return %}Verify Return{% else %}Verify Checkout{% endif %}{% else %}{% if is_return %}Check In{% else %}Check Out{% endif %}{% endif %}
+          <span class="tag is-light {{ status_tone }}" style="vertical-align:middle;">{{ reservation.get_reservation_status_display }}</span>
+        </h1>
+        <p class="page-subtitle">
+          {{ reservation.asset.name }}{% if reservation.asset.serial_number %} · {{ reservation.asset.serial_number }}{% endif %}
+          · {{ reservation.accountable_person.username }}
+          · {{ reservation.scheduled_start|date:"M j, H:i" }} → {{ reservation.scheduled_end|date:"M j, H:i" }}
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}" class="button is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span><span>Back to Reservation</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if acting_on_behalf and not is_dispatcher_track %}
+<div class="notification is-warning is-light is-size-7 mb-4">
+  <span class="icon is-small"><span class="material-icons" aria-hidden="true">supervisor_account</span></span>
+  You are not the accountable person. This will be recorded on their behalf, under
+  <strong>your</strong> name — and you will then not be allowed to verify it yourself.
+</div>
+{% endif %}
+
+<div class="body-grid has-rail">
+
+  {# ── The form ── #}
+  <div class="card track-card {% if is_dispatcher_track %}is-dispatcher{% else %}is-user{% endif %}">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>
+        {% if is_dispatcher_track %}Dispatcher record{% else %}What you observed{% endif %}
+      </div>
+    </div>
+    <div class="card-content">
+      {% if is_dispatcher_track %}
+      <p class="has-text-grey is-size-7 mb-4">
+        This is the authoritative side of the handover. It never overwrites what the user
+        reported — both are kept, and a difference between them is the finding.
+      </p>
+      {% else %}
+      <p class="has-text-grey is-size-7 mb-4">
+        Your own account of the asset at this moment. A dispatcher verifies separately;
+        nothing you enter here is overwritten by them.
+      </p>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+
+        {% if is_dispatcher_track %}
+        <div class="field">
+          <label class="label is-small">
+            Official {% if is_return %}check-in{% else %}checkout{% endif %} time
+          </label>
+          <input class="input is-small" type="datetime-local"
+                 name="{% if is_return %}checked_in_at{% else %}checked_out_at{% endif %}">
+          <p class="help is-size-7">
+            When the asset physically {% if is_return %}came back{% else %}left{% endif %} —
+            not when this form was filled in. Leave blank to use now.
+          </p>
+        </div>
+        {% endif %}
+
+        <div class="field">
+          <label class="label is-small">Condition</label>
+          <div class="select is-small is-fullwidth">
+            <select name="condition">
+              <option value="">Not stated</option>
+              {% for value, label in condition_ratings %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+
+        {# ── Meters. The one place the two tracks genuinely diverge. ── #}
+        <div class="field">
+          <label class="label is-small">Meter readings</label>
+          {% if capturable_meters %}
+          <div class="columns is-variable is-2 mb-0">
+            {% for m in capturable_meters %}
+            <div class="column is-6">
+              <label class="label is-small has-text-weight-normal">{{ m.unit }}</label>
+              <input class="input is-small" type="number" step="any" name="meter{{ m.index }}"
+                     placeholder="{{ m.value|default_if_none:'—' }}">
+              <p class="help is-size-7">Current: {{ m.value|default_if_none:"—" }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% if is_dispatcher_track %}
+          <p class="help is-size-7 has-text-warning-dark">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true">published_with_changes</span></span>
+            <strong>These become the asset's official readings.</strong> Saving writes a meter-history
+            entry and updates the asset itself.
+          </p>
+          {% else %}
+          <p class="help is-size-7">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true">info</span></span>
+            Reference information only — kept against this booking. The asset's official readings
+            are set by a dispatcher.
+          </p>
+          {% endif %}
+          {% else %}
+          <p class="has-text-grey is-size-7">This asset's model defines no meter units.</p>
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label is-small">Notes</label>
+          <textarea class="textarea is-small" name="notes" rows="3"
+                    placeholder="Anything worth recording about the asset's state…"></textarea>
+        </div>
+
+        <div class="buttons">
+          <button class="button is-small {% if is_dispatcher_track %}is-warning{% elif is_return %}is-info{% else %}is-success{% endif %}" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+            <span>
+              {% if is_dispatcher_track %}{% if is_return %}Verify return{% else %}Verify checkout{% endif %}
+              {% else %}{% if is_return %}Record check in{% else %}Record check out{% endif %}{% endif %}
+            </span>
+          </button>
+          <a class="button is-small" href="{% url 'dispatching_reservation_detail' pk=reservation.pk %}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── What is already on record ── #}
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Already on Record</div></div>
+    <div class="card-content">
+      <p class="label is-small mb-1">User track</p>
+      <dl class="mb-3">
+        {% if is_return %}
+        <div class="dl-row"><dt>Checked in at</dt><dd class="is-family-monospace">{{ reservation.user_checkin_submitted_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>By</dt><dd>{{ reservation.user_checked_in_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition</dt><dd>{{ reservation.get_user_reported_condition_in_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter one</dt><dd>{{ reservation.user_meter1_in|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter two</dt><dd>{{ reservation.user_meter2_in|default_if_none:"—" }}</dd></div>
+        {% else %}
+        <div class="dl-row"><dt>Checked out at</dt><dd class="is-family-monospace">{{ reservation.user_checkout_submitted_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>By</dt><dd>{{ reservation.user_checked_out_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition</dt><dd>{{ reservation.get_user_reported_condition_out_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter one</dt><dd>{{ reservation.user_meter1_out|default_if_none:"—" }}</dd></div>
+        <div class="dl-row"><dt>Meter two</dt><dd>{{ reservation.user_meter2_out|default_if_none:"—" }}</dd></div>
+        {% endif %}
+      </dl>
+
+      <p class="label is-small mb-1">Dispatcher track</p>
+      <dl>
+        {% if is_return %}
+        <div class="dl-row"><dt>Verified at</dt><dd class="is-family-monospace">{{ reservation.return_verified_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>By</dt><dd>{{ reservation.return_verified_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition</dt><dd>{{ reservation.get_condition_in_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Official reading</dt><dd>{% if reservation.final_meter_read %}{{ reservation.final_meter_read.value }} (meter {{ reservation.final_meter_read.meter_index }}){% else %}—{% endif %}</dd></div>
+        {% else %}
+        <div class="dl-row"><dt>Verified at</dt><dd class="is-family-monospace">{{ reservation.checkout_verified_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>By</dt><dd>{{ reservation.checkout_verified_by.username|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Condition</dt><dd>{{ reservation.get_condition_out_display|default:"—" }}</dd></div>
+        <div class="dl-row"><dt>Official reading</dt><dd>{% if reservation.initial_meter_read %}{{ reservation.initial_meter_read.value }} (meter {{ reservation.initial_meter_read.meter_index }}){% else %}—{% endif %}</dd></div>
+        {% endif %}
+      </dl>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+The booking's own event thread — comments and file uploads. Same thread the
+detail page shows, so a photo attached here during checkout is on the record
+wherever the booking is opened next. `next` brings a non-HTMX post back to
+this page rather than bouncing to the generic event detail.
+{% endcomment %}
+<div class="body-grid full-width">
+  {% include "events/fragments/event_card.html" with card=activity_card next=request.path %}
+</div>
+{% endblock %}

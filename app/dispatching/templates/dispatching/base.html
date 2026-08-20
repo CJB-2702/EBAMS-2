@@ -1,0 +1,83 @@
+{% load static svg_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dispatching{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script src="{% static 'web_components/info_popover.js' %}"></script>
+  <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+  <style>
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% include "shared/topnav.html" with current_app_group="Dispatching" %}
+
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav hx-boost="true" hx-target="#dispatching-main-content" hx-select="#dispatching-main-content" hx-push-url="true">
+      <p class="sidebar-section-label">Dispatching</p>
+      <a href="{% url 'dispatching_hub' %}" class="sidebar-link {% block nav_hub %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Hub</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Reservations</p>
+      <a href="{% url 'dispatching_reservation_index' %}" class="sidebar-link {% block nav_reservation_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span> Reservations</a>
+      <a href="{% url 'dispatching_reservation_create' %}" class="sidebar-link {% block nav_reservation_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> New Reservation</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Templates</p>
+      <a href="{% url 'dispatching_template_index' %}" class="sidebar-link {% block nav_template_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Template Library</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Skills</p>
+      <a href="{% url 'dispatching_skill_index' %}" class="sidebar-link {% block nav_skill_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span> Skills Catalogue</a>
+      <a href="{% url 'dispatching_skills_linkage_portal' %}" class="sidebar-link {% block nav_linkage_portal %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Certifications by Person</a>
+      <a href="{% url 'dispatching_my_certifications' %}" class="sidebar-link {% block nav_my_certifications %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Certifications</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="dispatching-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'public_home' %}">Home</a></li>
+            <li><a href="{% url 'dispatching_hub' %}">Dispatching</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

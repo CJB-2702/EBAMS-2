@@ -5,9 +5,12 @@ from app.events.models.details import (
     AdministrationDetail,
     AssetManagementDetail,
     DispatchingDetail,
+    DispatchScope,
+    DispatchWorkflowStatus,
     GenericDetail,
     InventoryDetail,
     MaintenanceDetail,
+    RejectionCategory,
     SystemDetail,
 )
 from app.events.models.event import (
@@ -31,6 +34,8 @@ __all__ = [
     "AttachmentType",
     "Comment",
     "DispatchingDetail",
+    "DispatchScope",
+    "DispatchWorkflowStatus",
     "Event",
     "EventPriority",
     "EventStatus",
@@ -42,5 +47,6 @@ __all__ = [
     "MaintenanceDetail",
     "MAX_FILE_SIZE_BYTES",
     "PRIORITY_CLEARING_STATUSES",
+    "RejectionCategory",
     "SystemDetail",
 ]

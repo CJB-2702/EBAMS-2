@@ -55,7 +55,7 @@ class InventoryDetailAdmin(admin.ModelAdmin):
 
 @admin.register(DispatchingDetail)
 class DispatchingDetailAdmin(admin.ModelAdmin):
-    list_display = ("title", "destination", "resource_reference", "status")
+    list_display = ("title", "workflow_status", "requested_for", "dispatch_scope")
     readonly_fields = ("created_at", "updated_at", "created_by", "updated_by")
 
 

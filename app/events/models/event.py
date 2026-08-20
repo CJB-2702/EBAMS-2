@@ -39,6 +39,7 @@ class EventType(models.TextChoices):
     INVENTORY = "inventory", "Inventory"
     DISPATCHING = "dispatching", "Dispatching"
     MAINTENANCE = "maintenance", "Maintenance"
+    RESERVATION = "reservation", "Reservation"
 
 
 class EventStatus(models.TextChoices):

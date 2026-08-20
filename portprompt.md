@@ -1,3 +1,11 @@
+# Port prompt template
+
+**For dispatching pages:** Use [DISPATCHING_PORT_PROMPT.md](maintenance_starter_kit/legacy_ui/DISPATCHING_PORT_PROMPT.md) instead — it includes dispatching-specific constraints and workflow details.
+
+**For maintenance pages:** Use this template.
+
+---
+
 Port one page faithfully from the legacy app.
 
   NEW (EBAMS-2):  [NEW_URL]

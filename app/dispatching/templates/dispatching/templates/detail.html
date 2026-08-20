@@ -1,0 +1,317 @@
+{% extends "dispatching/base.html" %}
+{% load static %}
+{% block title %}{{ head.title|default:"Template" }}{% endblock %}
+{% block nav_template_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_template_index' %}">Template Library</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ head.title|default:"Template" }}</a></li>
+{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/dispatching.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+      <div>
+        <h1 class="page-title">{{ head.title|default:"(no head revision)" }}
+          {% if template.is_retired %}<span class="tag is-light ml-2">Retired</span>{% else %}<span class="tag is-success is-light ml-2">Live</span>{% endif %}
+        </h1>
+        <p class="page-subtitle">{{ template.domain.name }} · {% if head %}Head revision #{{ head.revision_number }}{% else %}No revisions yet{% endif %} · Used by {{ usage_count }} dispatch{{ usage_count|pluralize }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if template.is_retired %}
+<div class="notification is-light">
+  <strong>Retired</strong>{% if template.retired_by %} by {{ template.retired_by.username }}{% endif %}{% if template.retired_at %} on {{ template.retired_at|date:"Y-m-d" }}{% endif %}.
+  {% if template.retired_reason %}<br>{{ template.retired_reason }}{% endif %}
+</div>
+{% endif %}
+
+<div class="body-grid has-rail">
+  <div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Template Pre-fill Fields</div></div>
+      <div class="card-content">
+        {% if head %}
+        <table class="table is-fullwidth is-size-7">
+          <tbody>
+            <tr><th>Asset Class</th><td>{{ head.asset_class.name|default:"—" }}</td></tr>
+            <tr><th>Asset Subclass</th><td>{{ head.asset_subclass_text|default:"—" }}</td></tr>
+            <tr><th>Dispatch Scope</th><td>{{ head.get_dispatch_scope_display|default:"—" }}</td></tr>
+            <tr><th>Activity Location</th><td>{{ head.activity_location|default:"—" }}</td></tr>
+            <tr><th>Estimated Meter Usage</th><td>{{ head.estimated_meter_usage|default:"—" }}</td></tr>
+            <tr><th>Expected Number of People</th><td>{{ head.headcount|default:"—" }}</td></tr>
+            <tr><th>Notes</th><td>{{ head.notes|default:"—" }}</td></tr>
+          </tbody>
+        </table>
+        {% else %}
+        <p class="has-text-grey is-size-7">This lineage has no revisions yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Requirements Overview</div></div>
+      <div class="card-content">
+        <div class="columns is-variable is-4">
+
+          {# Skills Column #}
+          <div class="column is-4">
+            <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">verified</span></span>Skills <span class="tag is-light is-small ml-1">{{ manifest.skills|length|default:0 }}</span></p>
+            {% if manifest.skills %}
+            <div class="dispatching-tile-list">
+              {% for r in manifest.skills %}
+              <div class="card dispatching-req-tile is-skill">
+                <div class="card-content p-3 is-size-7">
+                  <div class="mb-2">
+                    <strong>{{ r.skill.name }}</strong>
+                    {% if r.is_required %}
+                    <span class="tag is-danger is-light is-small ml-1">Required</span>
+                    {% else %}
+                    <span class="tag is-info is-light is-small ml-1">Preferred</span>
+                    {% endif %}
+                  </div>
+                  <div class="has-text-grey-dark is-size-8">
+                    {% if r.minimum_level %}<div>Min Level: <strong>{{ r.minimum_level }}</strong></div>{% endif %}
+                    <div>Qty: <strong>{{ r.quantity }}</strong></div>
+                    {% if r.notes %}<div class="mt-2">{{ r.notes }}</div>{% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="has-text-grey is-size-7">None.</p>
+            {% endif %}
+          </div>
+
+          {# Capabilities Column #}
+          <div class="column is-4">
+            <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">checklist</span></span>Capabilities <span class="tag is-light is-small ml-1">{{ manifest.capabilities|length|default:0 }}</span></p>
+            {% if manifest.capabilities %}
+            <div class="dispatching-tile-list">
+              {% for r in manifest.capabilities %}
+              <div class="card dispatching-req-tile is-capability">
+                <div class="card-content p-3 is-size-7">
+                  <div class="mb-2">
+                    <strong>{{ r.capability_definition.name }}</strong>
+                    {% if r.is_required %}
+                    <span class="tag is-danger is-light is-small ml-1">Required</span>
+                    {% else %}
+                    <span class="tag is-info is-light is-small ml-1">Preferred</span>
+                    {% endif %}
+                  </div>
+                  {% if r.notes %}<div class="has-text-grey-dark is-size-8">{{ r.notes }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="has-text-grey is-size-7">None.</p>
+            {% endif %}
+          </div>
+
+          {# Modifications Column #}
+          <div class="column is-4">
+            <p class="label is-small"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">build</span></span>Modifications <span class="tag is-light is-small ml-1">{{ manifest.modifications|length|default:0 }}</span></p>
+            {% if manifest.modifications %}
+            <div class="dispatching-tile-list">
+              {% for r in manifest.modifications %}
+              <div class="card dispatching-req-tile is-modification">
+                <div class="card-content p-3 is-size-7">
+                  <div class="mb-2">
+                    <strong>{{ r.defined_modification.name }}</strong>
+                    {% if r.is_required %}
+                    <span class="tag is-danger is-light is-small ml-1">Required</span>
+                    {% else %}
+                    <span class="tag is-info is-light is-small ml-1">Preferred</span>
+                    {% endif %}
+                  </div>
+                  {% if r.notes %}<div class="has-text-grey-dark is-size-8">{{ r.notes }}</div>{% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="has-text-grey is-size-7">None.</p>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Required Models <span class="tag is-light ml-2">{{ manifest.models|length|default:0 }}</span></div></div>
+      <div class="card-content">
+        {% if manifest.models %}
+        <div class="dispatching-model-card-list">
+          {% for r in manifest.models %}
+          <div class="card dispatching-model-card">
+            <div class="card-content p-4">
+              <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                <div>
+                  <p class="title is-size-6 mb-1">{{ r.model.model_name }}{% if r.model.version %} — {{ r.model.version }}{% endif %}</p>
+                  <div class="dispatching-model-meta">
+                    {{ r.model.asset_class.name|default:"—" }}
+                    {% with mfrs=r.model.manufacturers.all %}{% if mfrs %} · {% for mf in mfrs %}{{ mf.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}
+                  </div>
+                  <div class="has-text-grey-dark is-size-8 mt-1">Qty: <strong>{{ r.quantity }}</strong></div>
+                </div>
+                <div class="has-text-right">
+                  {% if r.is_required %}
+                  <span class="tag is-danger is-light">Required</span>
+                  {% else %}
+                  <span class="tag is-info is-light">Preferred</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% if r.configuration_template %}
+              <div class="mt-3 p-3 dispatching-model-config-box">
+                <p class="is-size-7 has-text-grey mb-1"><strong>Configuration</strong></p>
+                <p class="is-size-7"><strong>{{ r.configuration_template.name }}</strong></p>
+              </div>
+              {% endif %}
+              {% if r.notes %}
+              <div class="mt-2 is-size-8 has-text-grey-dark">
+                <p class="has-text-weight-semibold">Notes</p>
+                {{ r.notes }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">None.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Required Parts/Supplies <span class="tag is-light ml-2">{{ manifest.materials|length|default:0 }}</span></div></div>
+      <div class="card-content">
+        {% if manifest.materials %}
+        <div class="dispatching-material-list">
+          {% for m in manifest.materials %}
+          <div class="card dispatching-material-row">
+            <div class="card-content p-4">
+              <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                <div>
+                  <p class="title is-size-6 mb-1">{{ m.part.part_number }}</p>
+                  <div class="dispatching-model-meta">{{ m.part.name }}</div>
+                  <div class="has-text-grey-dark is-size-8 mt-1">Qty: <strong>{{ m.quantity }}</strong></div>
+                </div>
+              </div>
+              {% if m.notes %}
+              <div class="mt-2 is-size-8 has-text-grey-dark">
+                <p class="has-text-weight-semibold">Usage Notes</p>
+                {{ m.notes }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">None.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="body-rail">
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Template Info</div></div>
+      <div class="card-content"><dl class="kv">
+        <dt>Template ID</dt><dd>{{ template.pk }}</dd>
+        <dt>Revision</dt><dd>{% if head %}{{ head.revision_number }}{% else %}—{% endif %}</dd>
+        <dt>Created</dt><dd>{% if head %}{{ head.created_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</dd>
+        <dt>Created By</dt><dd>{% if head %}{{ head.created_by.username|default:"—" }}{% else %}—{% endif %}</dd>
+        <dt>Status</dt><dd>{% if template.is_retired %}<span class="tag is-light">Retired</span>{% else %}<span class="tag is-success is-light">Live</span>{% endif %}</dd>
+      </dl></div>
+    </div>
+
+    {% if can_author and not template.is_retired %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span>Actions</div></div>
+      <div class="card-content">
+        <div class="buttons">
+          <form method="post" action="{% url 'dispatching_template_draft_start_edit' template.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="button is-small is-link is-fullwidth"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span><span>Create Revision</span></button>
+          </form>
+          <form method="post" action="{% url 'dispatching_template_draft_start_copy' template.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="button is-small is-light is-fullwidth"><span class="icon"><span class="material-icons" aria-hidden="true">content_copy</span></span><span>Copy as Independent Template</span></button>
+          </form>
+        </div>
+        {% if can_commit %}
+        <hr>
+        <p class="has-text-grey is-size-7 mb-3">Retiring withdraws this template from the requester's picker. History stays intact and this is reversible.</p>
+        <form method="post" action="{% url 'dispatching_template_retire' template.pk %}">
+          {% csrf_token %}
+          <div class="field">
+            <input class="input is-small" type="text" name="reason" placeholder="Reason (required)" required>
+          </div>
+          <button type="submit" class="button is-small is-danger is-light is-fullwidth">Mark as Deprecated</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% elif can_commit and template.is_retired %}
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span>Actions</div></div>
+      <div class="card-content">
+        <p class="has-text-grey is-size-7 mb-3">Reinstating makes this template offered to requesters again.</p>
+        <form method="post" action="{% url 'dispatching_template_reinstate' template.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="button is-small is-success is-light is-fullwidth">Reinstate</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span>Summary</div></div>
+      <div class="card-content"><dl class="kv">
+        <dt>Skills</dt><dd><span class="tag is-info is-light">{{ manifest.skills|length|default:0 }}</span></dd>
+        <dt>Capabilities</dt><dd><span class="tag is-info is-light">{{ manifest.capabilities|length|default:0 }}</span></dd>
+        <dt>Parts</dt><dd><span class="tag is-info is-light">{{ manifest.materials|length|default:0 }}</span></dd>
+        <dt>Make/Models</dt><dd><span class="tag is-info is-light">{{ manifest.models|length|default:0 }}</span></dd>
+        <dt>Modifications</dt><dd><span class="tag is-info is-light">{{ manifest.modifications|length|default:0 }}</span></dd>
+      </dl></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Revision History <span class="tag is-light ml-2">{{ revisions|length }}</span></div></div>
+      <div class="card-content is-flush">
+        {% if revisions %}
+        <table class="table is-fullwidth is-size-7" style="margin:0;">
+          <thead><tr><th>#</th><th>Title</th><th>By</th><th>When</th></tr></thead>
+          <tbody>
+            {% for revision in revisions %}
+            <tr {% if revision.pk == template.head_revision_id %}class="has-background-success-light"{% endif %}>
+              <td>{{ revision.revision_number }}{% if revision.pk == template.head_revision_id %} <span class="tag is-success is-small is-light">head</span>{% endif %}</td>
+              <td>{{ revision.title }}</td>
+              <td>{{ revision.created_by.username|default:"—" }}</td>
+              <td>{{ revision.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="has-text-grey is-size-7 p-4">No previous revisions.</p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

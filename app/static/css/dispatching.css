@@ -1,0 +1,223 @@
+/* Dispatching module — template list/detail/draft-editor page-specific styles.
+   Linked only from the pages that use it via {% block extra_head %},
+   matching maintenance_event.css's pattern. Not part of custom_css.css
+   since these classes are not used outside this module.
+
+   Requirement/model/material cards below are hand-rolled, not Bulma `.card`
+   defaults with a color tweak: background, border, shadow, and radius are
+   all owned here. Square corners always (house rule — no rounded cards).
+   Colors are explicit Carbon palette stops (carbon_colors.css), not Bulma's
+   semantic --bulma-*-light variables, with an explicit light block (default)
+   and an explicit dark block — mirroring color_overrides.css's own
+   convention of a @media (prefers-color-scheme: dark) guard plus a matching
+   :root[data-theme="dark"] block for the manual toggle path. */
+
+.dispatching-tile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dispatching-req-tile {
+  position: relative;
+  border-radius: 0;
+  border-left: 4px solid transparent;
+  box-shadow: none;
+}
+
+/* Light mode (default) */
+.dispatching-req-tile.is-skill {
+  background-color: var(--teal-10);
+  border-left-color: var(--teal-60);
+}
+
+.dispatching-req-tile.is-capability {
+  background-color: var(--cyan-10);
+  border-left-color: var(--cyan-70);
+}
+
+.dispatching-req-tile.is-modification {
+  background-color: rgba(255, 131, 43, 0.12);
+  border-left-color: var(--orange-40);
+}
+
+/* Model requirement cards — template detail page and draft editor. */
+.dispatching-model-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Neutral "depth+1" surface — one step lighter than the parent card, same
+   idea as the .depth-* utilities in color_overrides.css, not a colored
+   accent. No left border; it's a plain nested card. */
+.dispatching-model-card {
+  position: relative;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: var(--gray-10);
+  border: 1px solid var(--gray-20);
+}
+
+.dispatching-model-config-box {
+  border-radius: 0;
+  background-color: var(--gray-20);
+}
+
+.dispatching-model-meta {
+  color: var(--gray-60);
+  font-size: 0.78rem;
+}
+
+/* Material requirements — left-heavy assignment layout, draft editor. */
+.dispatching-material-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dispatching-material-row {
+  position: relative;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: var(--white);
+  border: 1px solid var(--gray-20);
+}
+
+/* Corner delete button — replaces Bulma's circular .delete with a square,
+   icon button flush to the card's top-right corner. */
+.dispatching-remove-form {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.dispatching-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--gray-60);
+  cursor: pointer;
+}
+
+.dispatching-remove-btn .material-icons {
+  font-size: 1.1rem;
+}
+
+.dispatching-remove-btn:hover {
+  background-color: var(--red-60);
+  color: var(--white);
+}
+
+/* Reservation-create asset picker — selected row highlight. Whole-row
+   :has(), no JS needed to add/remove a class as the radio changes. */
+#asset-picker-results tr.asset-row:has(input:checked) {
+  background-color: var(--teal-10);
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    .dispatching-req-tile.is-skill {
+      background-color: var(--teal-70);
+      border-left-color: var(--teal-40);
+    }
+
+    .dispatching-req-tile.is-capability {
+      background-color: var(--cyan-90);
+      border-left-color: var(--cyan-40);
+    }
+
+    .dispatching-req-tile.is-modification {
+      background-color: rgba(255, 131, 43, 0.16);
+      border-left-color: var(--orange-40);
+    }
+
+    .dispatching-model-card {
+      background-color: var(--gray-90);
+      border-color: var(--gray-70);
+    }
+
+    .dispatching-model-config-box {
+      background-color: var(--gray-80);
+    }
+
+    .dispatching-model-meta {
+      color: var(--gray-40);
+    }
+
+    .dispatching-material-row {
+      background-color: var(--gray-90);
+      border-color: var(--gray-70);
+    }
+
+    .dispatching-remove-btn {
+      color: var(--gray-30);
+    }
+
+    .dispatching-remove-btn:hover {
+      background-color: var(--red-50);
+      color: var(--white);
+    }
+
+    #asset-picker-results tr.asset-row:has(input:checked) {
+      background-color: var(--teal-90);
+    }
+  }
+}
+
+/* Same overrides for explicit data-theme="dark" (manual toggle path). */
+:root[data-theme="dark"] {
+  .dispatching-req-tile.is-skill {
+    background-color: var(--teal-70);
+    border-left-color: var(--teal-40);
+  }
+
+  .dispatching-req-tile.is-capability {
+    background-color: var(--cyan-90);
+    border-left-color: var(--cyan-40);
+  }
+
+  .dispatching-req-tile.is-modification {
+    background-color: rgba(255, 131, 43, 0.16);
+    border-left-color: var(--orange-40);
+  }
+
+  .dispatching-model-card {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+
+  .dispatching-model-config-box {
+    background-color: var(--gray-80);
+  }
+
+  .dispatching-model-meta {
+    color: var(--gray-40);
+  }
+
+  .dispatching-material-row {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+
+  .dispatching-remove-btn {
+    color: var(--gray-30);
+  }
+
+  .dispatching-remove-btn:hover {
+    background-color: var(--red-50);
+    color: var(--white);
+  }
+
+  #asset-picker-results tr.asset-row:has(input:checked) {
+    background-color: var(--teal-90);
+  }
+}

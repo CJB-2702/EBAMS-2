@@ -1,0 +1,265 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Reservations{% endblock %}
+{% block nav_reservation_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Reservations</a></li>{% endblock %}
+
+{% block extra_css %}
+  .res-calendar { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .res-calendar th {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--bulma-text-weak); font-weight: 600; padding: 0.35rem 0.4rem;
+    text-align: left; border-bottom: 1px solid var(--bulma-border);
+  }
+  .res-calendar td {
+    border: 1px solid var(--bulma-border-weak); vertical-align: top;
+    height: 6.5rem; padding: 0.25rem; overflow: hidden;
+  }
+  .res-calendar td.is-outside { background: var(--bulma-background); opacity: 0.55; }
+  .res-calendar td.is-today { box-shadow: inset 0 0 0 2px var(--bulma-link); }
+  .res-daynum { font-size: 0.7rem; font-weight: 600; color: var(--bulma-text-weak); display: block; margin-bottom: 0.15rem; }
+  .res-chip {
+    display: block; font-size: 0.62rem; line-height: 1.25; padding: 0.1rem 0.25rem;
+    margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .res-chip:hover { text-decoration: underline; }
+  .res-more { font-size: 0.6rem; color: var(--bulma-text-weak); }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event_available</span></div>
+      <div>
+        <h1 class="page-title">Reservations</h1>
+        <p class="page-subtitle">Every asset booking in your data domains — one asset, one window, one accountable person.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      {% if can_book %}
+      <a href="{% url 'dispatching_reservation_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Reservation</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Calendar (3/4) beside the summary rail (1/4) ── #}
+<div class="body-grid has-rail">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">calendar_month</span></span>{{ month_anchor|date:"F Y" }}
+      </div>
+      <div class="buttons are-small" style="margin: 0.35rem 0.75rem 0 0;">
+        <a class="button is-small" href="?{{ querystring_base }}start={{ previous_window.0|date:'Y-m-d' }}&amp;end={{ previous_window.1|date:'Y-m-d' }}">
+          <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+        </a>
+        <a class="button is-small" href="?{{ querystring_base }}start={{ this_window.0|date:'Y-m-d' }}&amp;end={{ this_window.1|date:'Y-m-d' }}">Today</a>
+        <a class="button is-small" href="?{{ querystring_base }}start={{ next_window.0|date:'Y-m-d' }}&amp;end={{ next_window.1|date:'Y-m-d' }}">
+          <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+        </a>
+      </div>
+    </div>
+    <div class="card-content">
+      <table class="res-calendar">
+        <thead>
+          <tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
+        </thead>
+        <tbody>
+          {% for week in weeks %}
+          <tr>
+            {% for cell in week %}
+            <td class="{% if not cell.in_month %}is-outside{% endif %} {% if cell.is_today %}is-today{% endif %}">
+              <span class="res-daynum">{{ cell.day|date:"j" }}</span>
+              {% for r in cell.reservations|slice:":4" %}
+              <a class="tag res-chip is-light {% if r.reservation_status == 'tentative' %}is-warning{% elif r.reservation_status == 'confirmed' %}is-info{% elif r.reservation_status == 'checked_out' %}is-primary{% elif r.reservation_status == 'user_checked_out' %}is-link{% elif r.reservation_status == 'returned' or r.reservation_status == 'user_returned' %}is-success{% elif r.reservation_status == 'cancelled' or r.reservation_status == 'no_show' %}is-danger{% endif %}"
+                 href="{% url 'dispatching_reservation_detail' pk=r.pk %}"
+                 title="{{ r.asset.name }} — {{ r.get_reservation_status_display }} · {{ r.scheduled_start|date:'M j H:i' }} → {{ r.scheduled_end|date:'M j H:i' }}">{{ r.asset.name }}</a>
+              {% endfor %}
+              {% if cell.reservations|length > 4 %}
+              <span class="res-more">+{{ cell.reservations|length|add:"-4" }} more</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="has-text-grey is-size-7 mt-3">
+        Showing every booking that overlaps {{ window_start|date:"M j, Y" }} – {{ window_end|date:"M j, Y" }} — the same set listed below.
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <div class="card mb-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>In Range</div></div>
+      <div class="card-content">
+        <div class="stat-grid">
+          <div class="stat-tile"><div class="stat-value">{{ summary.total }}</div><div class="stat-label">Bookings</div></div>
+          <div class="stat-tile"><div class="stat-value">{{ summary.tentative }}</div><div class="stat-label">Tentative</div></div>
+          <div class="stat-tile"><div class="stat-value">{{ summary.confirmed }}</div><div class="stat-label">Confirmed</div></div>
+          <div class="stat-tile"><div class="stat-value">{{ summary.out }}</div><div class="stat-label">Out Now</div></div>
+        </div>
+        {% if summary.overdue %}
+        <p class="has-text-danger is-size-7 mt-3">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true">warning</span></span>
+          {{ summary.overdue }} past their scheduled end and still out.
+        </p>
+        {% else %}
+        <p class="has-text-grey is-size-7 mt-3">Nothing is out past its scheduled end.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">palette</span></span>Legend</div></div>
+      <div class="card-content">
+        <div class="is-flex is-flex-direction-column" style="gap:0.35rem;">
+          <span><span class="tag is-small is-warning is-light">Tentative</span> <span class="has-text-grey is-size-7">a claim, blocks nothing</span></span>
+          <span><span class="tag is-small is-info is-light">Confirmed</span> <span class="has-text-grey is-size-7">capacity committed</span></span>
+          <span><span class="tag is-small is-link is-light">User Checked Out</span> <span class="has-text-grey is-size-7">self-service, unverified</span></span>
+          <span><span class="tag is-small is-primary is-light">Checked Out</span> <span class="has-text-grey is-size-7">dispatcher verified</span></span>
+          <span><span class="tag is-small is-success is-light">Returned</span></span>
+          <span><span class="tag is-small is-danger is-light">Cancelled / No Show</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Filters ── #}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters &amp; Search</div></div>
+    <div class="card-content">
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Title, asset, serial, origin…" autocomplete="off">
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Asset</label>
+            <div class="select is-small is-fullwidth"><select name="asset">
+              <option value="">All assets</option>
+              {% for a in bookable_assets %}<option value="{{ a.id }}" {% if asset == a.id|stringformat:'s' %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Asset Class</label>
+            <div class="select is-small is-fullwidth"><select name="asset_class">
+              <option value="">All classes</option>
+              {% for c in asset_classes %}<option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth"><select name="status">
+              <option value="">All statuses</option>
+              {% for value, label in reservation_statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Type</label>
+            <div class="select is-small is-fullwidth"><select name="reservation_type">
+              <option value="">All types</option>
+              {% for value, label in reservation_types %}<option value="{{ value }}" {% if reservation_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Accountable Person</label>
+            <div class="select is-small is-fullwidth"><select name="accountable_person">
+              <option value="">Anyone</option>
+              {% for p in people %}<option value="{{ p.id }}" {% if accountable_person == p.id|stringformat:'s' %}selected{% endif %}>{{ p.username }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Data Domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain">
+              <option value="">All domains</option>
+              {% for d in domains %}<option value="{{ d.id }}" {% if domain == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">From</label>
+            <input class="input is-small" type="date" name="start" value="{{ window_start|date:'Y-m-d' }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">To</label>
+            <input class="input is-small" type="date" name="end" value="{{ window_end|date:'Y-m-d' }}">
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <label class="checkbox is-size-7">
+              <input type="checkbox" name="mine" value="1" {% if mine_only %}checked{% endif %}> Only mine
+            </label>
+          </div>
+          <div class="column is-1 is-flex is-align-items-flex-end">
+            <div class="buttons are-small">
+              <button class="button is-small is-info" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span></button>
+              <a class="button is-small" href="{% url 'dispatching_reservation_index' %}" title="Clear filters"><span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span></a>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Results ── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Bookings ({{ reservations|length }})</div>
+    </div>
+    <div class="card-content is-flush">
+      {% if reservations %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>#</th><th>Asset</th><th>Window</th><th>Type</th><th>Accountable</th>
+            <th>Route</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reservations %}
+          <tr>
+            <td class="is-family-monospace">{{ r.pk }}</td>
+            <td>
+              <a href="{% url 'dispatching_reservation_detail' pk=r.pk %}"><strong>{{ r.asset.name }}</strong></a>
+              {% if r.asset.serial_number %}<br><span class="has-text-grey is-family-monospace" style="font-size:0.65rem;">{{ r.asset.serial_number }}</span>{% endif %}
+            </td>
+            <td class="is-family-monospace">
+              {{ r.scheduled_start|date:"M j, H:i" }}<br>
+              <span class="has-text-grey">→ {{ r.scheduled_end|date:"M j, H:i" }}</span>
+            </td>
+            <td><span class="tag is-small is-light">{{ r.get_reservation_type_display }}</span></td>
+            <td>{{ r.accountable_person.username }}</td>
+            <td class="has-text-grey">
+              {% if r.origin or r.destination %}{{ r.origin|default:"—" }} → {{ r.destination|default:"—" }}{% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="tag is-small is-light {% if r.reservation_status == 'tentative' %}is-warning{% elif r.reservation_status == 'confirmed' %}is-info{% elif r.reservation_status == 'checked_out' %}is-primary{% elif r.reservation_status == 'user_checked_out' %}is-link{% elif r.reservation_status == 'returned' or r.reservation_status == 'user_returned' %}is-success{% elif r.reservation_status == 'cancelled' or r.reservation_status == 'no_show' %}is-danger{% endif %}">{{ r.get_reservation_status_display }}</span>
+            </td>
+            <td class="has-text-right">
+              <a class="button is-small is-link is-light" href="{% url 'dispatching_reservation_detail' pk=r.pk %}">Open</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-5 has-text-centered">
+        <span class="material-icons has-text-grey-light" aria-hidden="true" style="font-size:3rem;">event_busy</span>
+        <p class="has-text-grey mt-2">No bookings overlap this range.</p>
+        {% if can_book %}
+        <a href="{% url 'dispatching_reservation_create' %}" class="button is-small is-link mt-3">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Reservation</span>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

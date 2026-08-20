@@ -1,0 +1,69 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Dispatching{% endblock %}
+{% block nav_hub %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Hub</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
+  <div class="page-header-icon" style="margin: 0 auto 0.5rem;"><span class="material-icons" aria-hidden="true" style="font-size: 2.5rem;">directions_car</span></div>
+  <h1 class="page-title">Dispatching</h1>
+  <p class="page-subtitle">Templates and skills are live. The dispatcher queue and dispatch requests are coming in a later pass.</p>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Dispatch Templates</div></div>
+    <div class="card-content">
+      <p class="has-text-grey is-size-7 mb-3">{{ template_count }} active template{{ template_count|pluralize }} in your domains. A template pre-fills a dispatch's requirements so a recurring job doesn't need to be re-derived each time.</p>
+      <div class="buttons">
+        <a href="{% url 'dispatching_template_index' %}" class="button is-small is-link is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span><span>Browse Templates</span>
+        </a>
+        {% if can_author_templates %}
+        <a href="{% url 'dispatching_template_index' %}#new-template" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Template</span></a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span>Skills</div></div>
+    <div class="card-content">
+      <p class="has-text-grey is-size-7 mb-3">{{ skill_count }} active skill{{ skill_count|pluralize }} in the catalogue — operating qualifications like CDL class or radio operator, plus who is certified in each.</p>
+      <div class="buttons">
+        <a href="{% url 'dispatching_skill_index' %}" class="button is-small is-link is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span><span>Skills Catalogue</span>
+        </a>
+        <a href="{% url 'dispatching_my_certifications' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">person</span></span><span>My Certifications</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span>Reservations</div></div>
+    <div class="card-content">
+      <p class="has-text-grey is-size-7 mb-3">One asset, one window, one accountable person. A booking stands on its own — no dispatch required — and carries both handover tracks: what the user reported, and what the dispatcher verified.</p>
+      <div class="buttons">
+        <a href="{% url 'dispatching_reservation_index' %}" class="button is-small is-link is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">calendar_month</span></span><span>Calendar &amp; List</span>
+        </a>
+        <a href="{% url 'dispatching_reservation_create' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Reservation</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>Dispatcher Queue</div></div>
+    <div class="card-content">
+      <p class="has-text-grey is-size-7 mb-3">Raising a dispatch, planning it, assigning crew, and expenses — coming in a later pass. Asset booking and handover are live above.</p>
+      <div class="buttons">
+        <button class="button is-small is-light" disabled><span class="icon"><span class="material-icons" aria-hidden="true">block</span></span><span>Not yet available</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

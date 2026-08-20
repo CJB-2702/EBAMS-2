@@ -1,8 +1,12 @@
 <nav class="app-topnav" role="navigation" aria-label="Public navigation">
-  <a href="{% url 'public_home' %}" class="app-topnav-brand">EBAMS2</a>
+  <a href="{% url 'public_home' %}" class="app-topnav-brand" title="CJB-DIODE — Configuration · Jobs · Buying · Dispatching · Inventory · Ownership · Details · Events">CJB-DIODE</a>
 
   <div class="tabs app-portals" role="tablist">
     <ul>
+
+      <li role="tab">
+        <a href="{% url 'public_home' %}" class="portal-tab-btn"><span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+      </li>
 
       <li role="tab">
         <button class="portal-tab-btn" commandfor="portal-pub-webcomponents" command="toggle-popover">

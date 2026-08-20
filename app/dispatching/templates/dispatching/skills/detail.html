@@ -1,0 +1,83 @@
+{% extends "dispatching/base.html" %}
+{% block title %}{{ skill.name }}{% endblock %}
+{% block nav_skill_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_skill_index' %}">Skills Catalogue</a></li>
+<li class="is-active"><a href="#" aria-current="page">{{ skill.name }}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">verified</span></div>
+      <div>
+        <h1 class="page-title">{{ skill.name }}
+          {% if skill.is_active %}<span class="tag is-success is-light ml-2">Active</span>{% else %}<span class="tag is-light ml-2">Inactive</span>{% endif %}
+        </h1>
+        <p class="page-subtitle">{{ skill.code|default:"No code" }}{% if skill.requires_expiry %} · Requires expiry{% endif %}</p>
+      </div>
+    </div>
+    {% if can_manage %}
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_skill_edit' skill.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span>
+      </a>
+      <form method="post" action="{% url 'dispatching_skill_toggle_active' skill.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="button is-small {% if skill.is_active %}is-danger is-light{% else %}is-success is-light{% endif %}">
+          {% if skill.is_active %}Deactivate{% else %}Reactivate{% endif %}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span>Description</div></div>
+    <div class="card-content">
+      {% if skill.description %}<p>{{ skill.description }}</p>{% else %}<p class="has-text-grey is-size-7">No description.</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Certified People <span class="tag is-light ml-2">{{ certifications|length }}</span></div></div>
+    <div class="card-content">
+      {% if certifications %}
+      <table class="table is-fullwidth is-hoverable is-size-7">
+        <thead><tr><th>Person</th><th>Level</th><th>Expires</th><th></th></tr></thead>
+        <tbody>
+          {% for c in certifications %}
+          <tr>
+            <td>{{ c.user.username }}</td>
+            <td>{{ c.level|default:"—" }}</td>
+            <td>{{ c.expires_at|default:"—" }}</td>
+            <td><a href="{% url 'dispatching_user_skills' c.user_id %}" class="has-text-grey">View →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="has-text-grey is-size-7">No one is currently certified in this skill.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Required By <span class="tag is-light ml-2">{{ required_by_templates|length }}</span></div></div>
+    <div class="card-content">
+      {% if required_by_templates %}
+      <ul class="content">
+        {% for r in required_by_templates %}
+        <li><a href="{% url 'dispatching_template_detail' r.revision.template_id %}">{{ r.revision.title }}</a>{% if r.is_required %} <span class="tag is-small is-light">required</span>{% else %} <span class="tag is-small is-light">preferred</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="has-text-grey is-size-7">No current template requires this skill.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

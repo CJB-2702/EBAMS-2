@@ -32,7 +32,22 @@
         ["can_intake_stock", "inventory", "warehouse"],
         ["can_audit_stock", "inventory", "warehouse"],
         ["can_move_stock", "inventory", "warehouse"],
-        ["can_issue_parts", "inventory", "warehouse"]
+        ["can_issue_parts", "inventory", "warehouse"],
+        ["dispatch_raise", "events", "dispatchingdetail"],
+        ["dispatch_plan", "events", "dispatchingdetail"],
+        ["dispatch_reject", "events", "dispatchingdetail"],
+        ["dispatch_complete", "events", "dispatchingdetail"],
+        ["dispatching_read", "events", "dispatchingdetail"],
+        ["reservation_book", "dispatching", "assetreservation"],
+        ["reservation_confirm", "dispatching", "assetreservation"],
+        ["reservation_self_service", "dispatching", "assetreservation"],
+        ["reservation_verify", "dispatching", "assetreservation"],
+        ["reservation_maintenance_hold", "dispatching", "assetreservation"],
+        ["expense_record", "dispatching", "dispatchexpense"],
+        ["template_author", "dispatching", "dispatchtemplate"],
+        ["template_commit", "dispatching", "dispatchtemplate"],
+        ["skills_catalogue", "dispatching", "dispatchskill"],
+        ["skills_certify", "dispatching", "userdispatchskill"]
       ]
     }
   },

@@ -1,0 +1,112 @@
+{% extends "dispatching/base.html" %}
+{% block title %}{% if is_self %}My Certifications{% else %}{{ target.username }} — Certifications{% endif %}{% endblock %}
+{% block nav_my_certifications %}{% if is_self %}is-active{% endif %}{% endblock %}
+{% block nav_linkage_portal %}{% if not is_self %}is-active{% endif %}{% endblock %}
+{% block breadcrumb %}
+{% if not is_self %}<li><a href="{% url 'dispatching_skills_linkage_portal' %}">Certifications by Person</a></li>{% endif %}
+<li class="is-active"><a href="#" aria-current="page">{% if is_self %}My Certifications{% else %}{{ target.username }}{% endif %}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">badge</span></div>
+      <div>
+        <h1 class="page-title">{% if is_self %}My Certifications{% else %}{{ target.username }}{% endif %}</h1>
+        <p class="page-subtitle">Level, dates, and certificate number for each skill this person is certified in. Expiry is shown, never enforced.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if can_certify %}
+<div class="card mb-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_task</span></span>Certify in a New Skill</div></div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_certification_certify' target.pk %}">
+      {% csrf_token %}
+      <div class="columns is-multiline is-variable is-3">
+        <div class="column is-4">
+          <label class="label is-small">Skill</label>
+          <search-dropdown
+              id="certify-skill-picker" name="skill_id" placeholder="search skills…"
+              hx-get="{% url 'dispatching_skill_index' %}?format=htmx-search-results&exclude_certified_for_user_id={{ target.pk }}"
+              hx-trigger="keyup changed delay:300ms, search, focus">
+          </search-dropdown>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Level (1–5)</label>
+          <input class="input is-small" type="number" min="1" max="5" name="level">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Certified</label>
+          <input class="input is-small" type="date" name="certified_at">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Expires</label>
+          <input class="input is-small" type="date" name="expires_at">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small">Certificate #</label>
+          <input class="input is-small" type="text" name="certificate_number">
+        </div>
+      </div>
+      <footer class="card-footer custom-card-footer mt-2">
+        <div class="card-footer-secondaries"></div>
+        <button type="submit" class="button is-primary card-footer-primary">Certify</button>
+      </footer>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">verified</span></span>Certifications <span class="tag is-light ml-2">{{ certifications|length }}</span></div></div>
+  <div class="card-content">
+    {% if certifications %}
+    <table class="table is-fullwidth is-size-7">
+      <thead><tr><th>Skill</th><th>Level</th><th>Certified</th><th>Expires</th><th>Certificate #</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for c in certifications %}
+        <tr>
+          <td><a href="{% url 'dispatching_skill_detail' c.skill_id %}">{{ c.skill.name }}</a></td>
+          <td>{{ c.level|default:"—" }}</td>
+          <td>{{ c.certified_at|default:"—" }}</td>
+          <td>{{ c.expires_at|default:"—" }}
+            {% if c.is_active and c.expires_at and c.expires_at < today %}<span class="tag is-warning is-light is-small">lapsed</span>{% endif %}
+          </td>
+          <td>{{ c.certificate_number|default:"—" }}</td>
+          <td>{% if c.is_active %}<span class="tag is-success is-light">Active</span>{% else %}<span class="tag is-light">Revoked</span>{% endif %}</td>
+          <td>
+            {% if can_certify %}
+            <details>
+              <summary class="is-size-7 has-text-link" style="cursor:pointer;">{% if c.is_active %}Edit / Revoke{% else %}Recertify{% endif %}</summary>
+              <form method="post" action="{% url 'dispatching_certification_update' c.pk %}" class="mt-2">
+                {% csrf_token %}
+                <div class="columns is-multiline is-variable is-2">
+                  <div class="column is-3"><input class="input is-small" type="number" min="1" max="5" name="level" value="{{ c.level|default:"" }}" placeholder="Level"></div>
+                  <div class="column is-3"><input class="input is-small" type="date" name="certified_at" value="{{ c.certified_at|date:'Y-m-d' }}"></div>
+                  <div class="column is-3"><input class="input is-small" type="date" name="expires_at" value="{{ c.expires_at|date:'Y-m-d' }}"></div>
+                  <div class="column is-3"><input class="input is-small" type="text" name="certificate_number" value="{{ c.certificate_number }}" placeholder="Certificate #"></div>
+                </div>
+                <div class="buttons">
+                  <button type="submit" class="button is-small is-info is-light">{% if c.is_active %}Save{% else %}Recertify{% endif %}</button>
+                  {% if c.is_active %}
+                  <button type="submit" formaction="{% url 'dispatching_certification_revoke' c.pk %}" class="button is-small is-danger is-light">Revoke</button>
+                  {% endif %}
+                </div>
+              </form>
+            </details>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7">No certifications yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

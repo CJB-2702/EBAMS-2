@@ -1,0 +1,86 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Dispatch Templates{% endblock %}
+{% block nav_template_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Template Library</a></li>{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></div>
+      <div>
+        <h1 class="page-title">Dispatch Templates</h1>
+        <p class="page-subtitle">A saved answer to "we run this trip every month" — pre-fills a new dispatch's requirements.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="?show={% if show_all %}head{% else %}all{% endif %}" class="button is-small is-light">
+        {% if show_all %}Head revisions only{% else %}Show superseded &amp; retired{% endif %}
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if has_draft %}
+<div class="notification is-info is-light">
+  You have an unsaved template draft in progress.
+  <a href="{% url 'dispatching_template_draft_editor' %}">Continue editing →</a>
+</div>
+{% endif %}
+
+{% if can_author %}
+<div class="card mb-4" id="new-template">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>New Template</div></div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_template_draft_start_new' %}">
+      {% csrf_token %}
+      <div class="field has-addons">
+        <div class="control is-expanded">
+          <div class="select is-small is-fullwidth">
+            <select name="domain_id" required>
+              <option value="">Choose an owning domain…</option>
+              {% for domain in domains %}
+              <option value="{{ domain.pk }}">{{ domain.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="control">
+          <button type="submit" class="button is-primary is-small">Start Draft</button>
+        </div>
+      </div>
+      <p class="has-text-grey is-size-7 mt-1">Opens a session working draft. Nothing is saved until you commit.</p>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-content">
+    <table class="table is-fullwidth is-hoverable is-size-7">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Domain</th>
+          <th>Head Revision</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for template in templates %}
+        <tr>
+          <td><a href="{% url 'dispatching_template_detail' template.pk %}">{{ template.head_revision.title|default:"(no head revision)" }}</a></td>
+          <td>{{ template.domain.name }}</td>
+          <td>{% if template.head_revision %}#{{ template.head_revision.revision_number }}{% else %}—{% endif %}</td>
+          <td>{% if template.is_retired %}<span class="tag is-light">Retired</span>{% else %}<span class="tag is-success is-light">Live</span>{% endif %}</td>
+          <td><a href="{% url 'dispatching_template_detail' template.pk %}" class="has-text-grey">View →</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No templates yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

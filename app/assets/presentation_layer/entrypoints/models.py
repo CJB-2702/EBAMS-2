@@ -79,7 +79,12 @@ def model_index(request: HttpRequest) -> HttpResponse:
     )
 
     if request.GET.get("format") == "htmx-search-results":
-        results = [f'<li data-value="{m.id}">{m}</li>' for m in models]
+        results = []
+        for m in models:
+            manufacturer_names = ", ".join(mf.name for mf in m.manufacturers.all())
+            detail = " · ".join(filter(None, [m.asset_class.name, manufacturer_names]))
+            detail_html = f' <span class="has-text-grey is-size-7">({detail})</span>' if detail else ""
+            results.append(f'<li data-value="{m.id}">{m}{detail_html}</li>')
         if not results:
             return HttpResponse('<li class="is-disabled">No matches.</li>')
         return HttpResponse("\n".join(results))
