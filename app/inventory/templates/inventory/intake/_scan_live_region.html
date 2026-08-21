@@ -1,6 +1,6 @@
 {% comment %}
 format=htmx-scan-feed fragment — the whole live-scanning picture re-rendered
-after every scan/manual-entry/reassign/split action (Pattern B, htmx_patterns.md
+after every scan/manual-entry/split action (Pattern B, htmx_patterns.md
 §2.B: re-render the entire parent so side effects like line progress and the
 staged pool update automatically together, rather than patching one row).
 Included directly by session_detail.html on full page load too, so F5 always
@@ -58,7 +58,7 @@ truth for everything inside #scan-live-region.
       {% if staged_allocations %}
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
-          <tr><th>Part</th><th class="has-text-right">Qty</th><th>Serial</th><th>Condition</th><th>Reassign to</th><th></th></tr>
+          <tr><th>Part</th><th class="has-text-right">Qty</th><th>Serial</th><th>Condition</th><th>Linked</th><th></th></tr>
         </thead>
         <tbody>
           {% for alloc in staged_allocations %}
@@ -67,26 +67,13 @@ truth for everything inside #scan-live-region.
             <td class="has-text-right is-family-monospace">{{ alloc.quantity }}</td>
             <td class="is-family-monospace">{{ alloc.serial_number|default:"—" }}</td>
             <td>{% if alloc.condition == "good" %}<span class="tag is-small is-success is-light">Good</span>{% else %}<span class="tag is-small is-danger is-light">Rejected</span>{% endif %}</td>
+            {# Linking is read-only here until Phase 2 builds the allocation portal (§7.3). #}
             <td>
-              <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}"
-                    hx-post="{% url 'inventory_intake_session_detail' pk=session.pk %}?format=htmx-scan-feed"
-                    hx-target="#scan-live-region" hx-swap="outerHTML"
-                    class="is-flex" style="gap: 0.25rem;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="reassign">
-                <input type="hidden" name="allocation_id" value="{{ alloc.pk }}">
-                <div class="select is-small">
-                  <select name="target_shipment_line_id">
-                    <option value="">— Quarantine —</option>
-                    {% for line in reassign_targets %}
-                    <option value="{{ line.pk }}">{{ line.part.part_number }} ({{ line.shipment.shipment_number }})</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <button type="submit" class="button is-small is-info is-light">
-                  <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">swap_horiz</span></span>
-                </button>
-              </form>
+              {% if alloc.shipment_line_id %}
+              <span class="tag is-small is-info is-light">{{ alloc.get_link_source_display }}</span>
+              {% else %}
+              <span class="has-text-grey is-size-7">Unlinked</span>
+              {% endif %}
             </td>
             <td>
               <button class="button is-small is-light" type="button" commandfor="split-modal-{{ alloc.pk }}" command="show-modal">

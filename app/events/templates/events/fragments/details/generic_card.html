@@ -1,0 +1,19 @@
+{% comment %}
+Generic detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+{% if card.asset_links %}
+<div class="depth-2 p-3 mb-3" style="background-color:#fafafa; border:1px solid #e2e8f0;">
+  <div class="is-size-7">
+    <p class="has-text-grey" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Linked Equipment / Assets</p>
+    <p style="font-weight:600;">
+      {% for link in card.asset_links %}
+        <a href="{% url 'asset_detail' asset_id=link.asset.id %}" class="has-text-link">
+          <span class="material-icons" style="font-size:12px; vertical-align:middle;">precision_manufacturing</span>
+          {{ link.asset.name }}
+        </a>{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    </p>
+  </div>
+</div>
+{% endif %}

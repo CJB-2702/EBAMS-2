@@ -1,0 +1,27 @@
+<div id="assigned-personnel-container" class="column is-5">
+  <p class="label is-small">Assigned Crew</p>
+  {% if struct.crew %}
+  <div class="dispatching-material-list">
+    {% for person in struct.crew %}
+    <div class="card dispatching-material-row">
+      <form method="post" action="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+            hx-post="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+            hx-target="#personnel-card-container"
+            hx-swap="outerHTML"
+            hx-include="#personnel-search-form"
+            class="dispatching-remove-form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="crew_id" value="{{ person.pk }}">
+        <button type="submit" class="dispatching-remove-btn" aria-label="Remove assigned person"><span class="material-icons" aria-hidden="true">close</span></button>
+      </form>
+      <div class="card-content p-2 pr-5 is-size-7">
+        <strong>{{ person.user.get_full_name|default:person.user.username }}</strong>
+        <span class="tag is-link is-light is-small ml-2">{{ person.get_role_display }}</span><br>
+        {% if person.notes %}<span class="has-text-grey-dark">{{ person.notes }}</span>{% else %}<span class="has-text-grey">No notes</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+</div>

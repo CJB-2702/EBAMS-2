@@ -26,8 +26,8 @@ the real `ShipmentFactory`, received through the real `IntakeContext`/
 `AutoIntakeManager` write path — never a raw `ItemAllocation.objects.create`:
 one fully received (closed pseudo-session -> Intake Room stock), one
 partially received (line split, remaining balance left open), and one
-manual-allocation session carrying an extra unmanifested allocation
-(`has_unlinked_allocations=True`).
+manual-allocation session carrying an extra unlinked allocation
+(`shipment_line=NULL` — excess held in the intake room, a terminal state).
 
 Idempotent: skipped entirely when the marker warehouse code already exists.
 """
@@ -159,7 +159,7 @@ class Command(BaseCommand):
         self._seed_intake_scenarios(
             actor=actor, warehouse=warehouse_a, domain=north_domains[0]
         )
-        self._seed_scan_and_reconciliation_scenarios(
+        self._seed_scan_scenarios(
             actor=actor, warehouse=warehouse_a, domain=north_domains[0]
         )
         self._seed_movements_and_issuance(
@@ -591,42 +591,46 @@ class Command(BaseCommand):
         )
         manual_context.close_session(actor=actor)
 
-    def _seed_scan_and_reconciliation_scenarios(self, *, actor, warehouse, domain) -> None:
-        """Phase 5 dev seed — two scenarios, both through the real
-        `IntakeContext` write path, so the Scan Session portal and
-        Reconciliation Hub are demonstrable after every `refresh_project.py`
-        reset (this whole method only ever runs once — guarded by the
-        top-level `Warehouse.objects.filter(code=WAREHOUSE_A_CODE).exists()`
+    def _seed_scan_scenarios(self, *, actor, warehouse, domain) -> None:
+        """Phase 5 dev seed — two scan sessions, both through the real
+        `IntakeContext` write path, so the intake surfaces are demonstrable
+        after every `refresh_project.py` reset (this whole method only ever
+        runs once — guarded by the top-level
+        `Warehouse.objects.filter(code=WAREHOUSE_A_CODE).exists()`
         short-circuit at the top of `handle`, same as every other `_seed_*`
         method in this file).
 
         Scenario 1 — a mid-flight ACTIVE scan session: one shipment with two
-        lines expecting the SAME part (N-to-M), and a staged
+        lines expecting the SAME part (N-to-M), and an unlinked
         (`shipment_line=NULL`) GOOD allocation for that part too small to
         satisfy either line's expected quantity alone, so
         `IntakeMatchingManager.execute_fifo_cascade` has nothing to do yet —
-        exactly the "staged, ambiguous, cascade hasn't fired" state the Scan
-        Session portal's staged/unmanifested card should show.
+        exactly the "staged, ambiguous, cascade hasn't fired" state the scan
+        portal's unlinked card should show.
 
-        Scenario 2 — a RECONCILING session: one shortage `PartReconciliationSession`
-        (2 child lines, both under-received) and one overage parent (a line
-        over-received relative to its expected quantity). The shortage part
-        is deliberately the SAME part staged in Scenario 1's session, so the
-        Hub's cross-session excess-pull card (FD-26) has something real to
-        find and pull from.
+        Scenario 2 — a short receipt plus unlinked excess. Three lines are
+        under-received and a fourth part arrives with no manifest line at
+        all. Nothing is reconciled, approved, or closed, because there is no
+        such act any more (intake_portal_workflow.md §7.1): a discrepancy is
+        derived live from the numbers, and unlinked excess is a terminal
+        state, not a pending task (§7.2).
+
+        The excess part is deliberately the SAME part left unlinked in
+        Scenario 1, so Phase 2's allocation portal (§7.3) — whose whole point
+        is that excess counted in one session can fill a shortage found in
+        another — has real cross-session stock to find.
         """
         parts = list(Part.objects.order_by("part_number")[:3])
         if len(parts) < 3:
             self.stdout.write(
                 self.style.WARNING(
-                    "Fewer than 3 Parts exist — skipping Phase 5 scan/reconciliation "
-                    "seed scenarios."
+                    "Fewer than 3 Parts exist — skipping Phase 5 scan seed scenarios."
                 )
             )
             return
         part_x, part_y, part_z = parts[0], parts[1], parts[2]
 
-        # ---- Scenario 1: ACTIVE scan session, N-to-M staged, no cascade yet.
+        # ---- Scenario 1: ACTIVE scan session, N-to-M unlinked, no cascade yet.
         ntom_shipment = ShipmentFactory.create(
             domain=domain,
             lines=[
@@ -645,11 +649,11 @@ class Command(BaseCommand):
             actor=actor,
         )
         scan_session.associate_shipment(shipment_id=ntom_shipment.pk, actor=actor)
-        # Ambiguous — two open lines expect part_x, so a real scan would stage
-        # this rather than pick one. Staged directly via the manual-allocation
-        # verb (same effect as an ambiguous `process_scan`, without needing a
-        # real barcode payload for the seed): 3 < either line's 10 expected,
-        # so the FIFO cascade has nothing to fill yet.
+        # Ambiguous — two open lines expect part_x, so a real scan would leave
+        # this unlinked rather than pick one. Created directly via the
+        # manual-allocation verb (same effect as an ambiguous `process_scan`,
+        # without needing a real barcode payload for the seed): 3 < either
+        # line's 10 expected, so the FIFO cascade has nothing to fill yet.
         scan_session.create_manual_allocation(
             shipment_line_id=None,
             part_id=part_x.pk,
@@ -657,57 +661,54 @@ class Command(BaseCommand):
             condition=AllocationCondition.GOOD,
             actor=actor,
         )
-        # Leave ACTIVE — do not transition or close.
+        # Leave ACTIVE — do not close.
 
-        # ---- Scenario 2: RECONCILING session — shortage parent (2 lines) +
-        # overage parent, both left PENDING so the Hub is demonstrable.
-        recon_shipment = ShipmentFactory.create(
+        # ---- Scenario 2: short receipt + unlinked excess, left ACTIVE.
+        short_shipment = ShipmentFactory.create(
             domain=domain,
             lines=[
-                {"part_id": part_x.pk, "quantity": Decimal("10")},  # shortage line A
-                {"part_id": part_x.pk, "quantity": Decimal("10")},  # shortage line B
-                {"part_id": part_y.pk, "quantity": Decimal("5")},  # overage line
+                {"part_id": part_x.pk, "quantity": Decimal("10")},  # short line A
+                {"part_id": part_x.pk, "quantity": Decimal("10")},  # short line B
+                {"part_id": part_y.pk, "quantity": Decimal("5")},   # short line C
             ],
             actor=actor,
-            shipment_id="DEV-RECON-0001",
-            notes="Phase 5 dev seed — shortage + overage reconciliation demo.",
+            shipment_id="DEV-SHORT-0001",
+            notes="Phase 5 dev seed — short receipt + unlinked excess demo.",
         )
-        recon_lines = list(
-            recon_shipment.lines.filter(deleted_at__isnull=True).order_by("id")
+        short_lines = list(
+            short_shipment.lines.filter(deleted_at__isnull=True).order_by("id")
         )
-        line_a, line_b, line_c = recon_lines[0], recon_lines[1], recon_lines[2]
+        line_a, line_b, line_c = short_lines[0], short_lines[1], short_lines[2]
 
-        recon_session = IntakeContext.start_session(
+        short_session = IntakeContext.start_session(
             operator=actor,
             warehouse_id=warehouse.pk,
             room_id=None,
             intake_method=IntakeSessionMethod.SCAN,
             actor=actor,
         )
-        recon_session.associate_shipment(shipment_id=recon_shipment.pk, actor=actor)
-        recon_session.create_manual_allocation(
+        short_session.associate_shipment(shipment_id=short_shipment.pk, actor=actor)
+        # Each line under-received. The shortage is DERIVED from these numbers
+        # on every read (§11.2) — no row records it, so nothing can drift.
+        short_session.create_manual_allocation(
             shipment_line_id=line_a.pk, part_id=part_x.pk,
             quantity=Decimal("6"), condition=AllocationCondition.GOOD, actor=actor,
         )
-        recon_session.create_manual_allocation(
+        short_session.create_manual_allocation(
             shipment_line_id=line_b.pk, part_id=part_x.pk,
             quantity=Decimal("7"), condition=AllocationCondition.GOOD, actor=actor,
         )
-        recon_session.create_manual_allocation(
+        short_session.create_manual_allocation(
             shipment_line_id=line_c.pk, part_id=part_y.pk,
-            quantity=Decimal("8"), condition=AllocationCondition.GOOD, actor=actor,
+            quantity=Decimal("4"), condition=AllocationCondition.GOOD, actor=actor,
         )
-        # Some genuinely unmanifested overage stock too (part_z), quarantined
-        # pending paperwork follow-up — exercises `has_unlinked_allocations`
-        # independent of the reconciliation-parent overage above.
-        recon_session.create_manual_allocation(
+        # Genuinely unmanifested stock (part_z) — no matching line anywhere, so
+        # it stays unlinked. That is its terminal state, not a pending task.
+        short_session.create_manual_allocation(
             shipment_line_id=None, part_id=part_z.pk,
             quantity=Decimal("2"), condition=AllocationCondition.GOOD, actor=actor,
         )
-        recon_session.transition_to_reconciliation(actor=actor)
-        # Both parents left PENDING — the Hub's "unresolved parts" filter and
-        # the reconciliation detail page's resolution controls are meant to
-        # be exercised by hand, not pre-resolved by the seed.
+        # Left ACTIVE and unposted — nothing to sign off, nothing to resolve.
 
     def _seed_movements_and_issuance(
         self, *, actor, warehouse, warehouse_b, domain

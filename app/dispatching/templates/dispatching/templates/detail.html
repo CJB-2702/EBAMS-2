@@ -20,6 +20,13 @@
         <p class="page-subtitle">{{ template.domain.name }} · {% if head %}Head revision #{{ head.revision_number }}{% else %}No revisions yet{% endif %} · Used by {{ usage_count }} dispatch{{ usage_count|pluralize }}</p>
       </div>
     </div>
+    {% if head and not template.is_retired %}
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_dispatch_create' %}?template={{ head.pk }}" class="button is-small is-primary">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Create Dispatch from Template</span>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </div>
 

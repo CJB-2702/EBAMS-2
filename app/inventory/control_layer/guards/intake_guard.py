@@ -1,6 +1,11 @@
 """Guard types: StateMachine, Validator, Policy for the intake domain.
 
 `IntakeSessionStateMachine` — legal `IntakeSession.status` transitions.
+NOTE: the over-allocation ban (§7.2) — `sum(live allocations linked to a
+shipment line) <= line.quantity` — does NOT live here yet. It is an
+aggregate across rows and has to be checked with the line locked for update
+inside the same transaction as the write, so it belongs with the Phase 2
+linking manager, not in a stateless validator.
 `AllocationValidator` — serial => qty 1.000, composite_sn uniqueness.
 `AutoIntakeValidator` — the Auto Intake portal's monotonic floor/cap math
 (`auto_intake_workflow_guide.md` §3).
@@ -26,21 +31,16 @@ from app.inventory.models.intake.enums import IntakeSessionStatus
 from app.inventory.models.intake.item_allocation import ItemAllocation
 from app.inventory.models.stock.active_inventory import ActiveInventory
 
+# `status` is a coarse DISPLAY label (intake_portal_workflow.md §11.4); the
+# authority on session state is the `recording_locked_at` / `stock_posted_at`
+# stamp pair on IntakeSession. RECONCILING is gone with the reconciliation
+# tables (§12.7) — there is no such stage, because association and
+# reconciliation are revisitable activities rather than pipeline stages (§4.1).
 INTAKE_SESSION_TRANSITIONS: dict[str, frozenset[str]] = {
     IntakeSessionStatus.DRAFT: frozenset(
         {IntakeSessionStatus.ACTIVE, IntakeSessionStatus.CANCELLED}
     ),
-    # ACTIVE -> CLOSED directly is legal (FD-13): the Auto Intake path never
-    # touches reconciliation because partial receipts are resolved by
-    # splitting the shipment line, not by a reconciliation task.
     IntakeSessionStatus.ACTIVE: frozenset(
-        {
-            IntakeSessionStatus.RECONCILING,
-            IntakeSessionStatus.CLOSED,
-            IntakeSessionStatus.CANCELLED,
-        }
-    ),
-    IntakeSessionStatus.RECONCILING: frozenset(
         {IntakeSessionStatus.CLOSED, IntakeSessionStatus.CANCELLED}
     ),
     IntakeSessionStatus.CLOSED: frozenset(),

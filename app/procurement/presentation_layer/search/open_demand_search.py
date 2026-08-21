@@ -211,6 +211,8 @@ class OpenDemandSearch:
         shipment_state: str = "",
         issuance_state: str = "",
         priority: str = "",
+        source: str = "",
+        event_id: int | None = None,
         part_id: int | None = None,
         domain_id: int | None = None,
         needed_by_from=None,
@@ -252,6 +254,10 @@ class OpenDemandSearch:
             qs = qs.filter(issuance_state=issuance_state)
         if priority:
             qs = qs.filter(priority=priority)
+        if source:
+            qs = qs.filter(source=source)
+        if event_id:
+            qs = qs.filter(event_id=event_id)
         if part_id:
             qs = qs.filter(part_id=part_id)
         if domain_id:

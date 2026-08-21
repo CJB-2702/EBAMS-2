@@ -47,6 +47,7 @@ class ActiveInventorySearch:
         warehouse_id: str = "",
         room_id: str = "",
         storage_location_id: str = "",
+        room_location_code: str = "",
         part_q: str = "",
         part_number: str = "",
         part_name: str = "",
@@ -71,6 +72,12 @@ class ActiveInventorySearch:
             qs = qs.filter(room_id=room_id)
         if storage_location_id:
             qs = qs.filter(storage_location_id=storage_location_id)
+        # Map Area (XY) filter — the FK-backed equivalent of "storage code
+        # starts with this area code", without a string LIKE.
+        if room_location_code:
+            qs = qs.filter(
+                storage_location__room_location__display_code=room_location_code
+            )
         if part_q:
             qs = qs.filter(
                 Q(part__part_number__icontains=part_q) | Q(part__name__icontains=part_q)

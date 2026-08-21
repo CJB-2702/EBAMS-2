@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Procurement & Purchase Order Events Mockup — EBAMS-2 Design Contract</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bulma-radius-small: 0px;
+      --bulma-radius: 0px;
+      --bulma-radius-large: 0px;
+    }
+    * { border-radius: 0px !important; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; min-height: 100vh; padding-bottom: 4rem; }
+    .hero-banner { background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: #fff; padding: 2rem 1.5rem; border-bottom: 3px solid #14b8a6; margin-bottom: 2rem; }
+    .depth-1 { border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #ffffff; }
+    .depth-2 { border: 1px solid #cbd5e1; background: #f8fafc; }
+    .card-header { background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0.75rem 1rem; }
+    .proc-badge { background-color: #ccfbf1; color: #115e59; font-weight: 700; padding: 0.2rem 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-grid { background: #fafafa; border: 1px solid #e2e8f0; padding: 0.85rem; }
+    .detail-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #0d9488; margin-bottom: 0.2rem; }
+    .detail-val { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+    .code-val { font-family: 'JetBrains Mono', monospace; background: #e2e8f0; padding: 0.1rem 0.35rem; font-size: 0.8rem; }
+    .section-title { font-size: 1.15rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-left: 4px solid #14b8a6; padding-left: 0.75rem; margin-top: 2.5rem; margin-bottom: 1rem; color: #115e59; }
+    .comment-bubble { background: #ffffff; border: 1px solid #e2e8f0; padding: 0.75rem; margin-bottom: 0.75rem; }
+    .comment-meta { font-size: 0.725rem; color: #64748b; margin-bottom: 0.35rem; }
+    .user-chip { display: inline-flex; align-items: center; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 0.4rem; margin-bottom: 0.4rem; }
+  </style>
+</head>
+<body>
+  <header class="hero-banner">
+    <div class="container">
+      <div class="level">
+        <div class="level-left">
+          <div>
+            <span class="tag is-teal is-light mb-2" style="background:#ccfbf1; color:#115e59;"><span class="material-icons mr-1" style="font-size:14px;">shopping_cart</span> Procurement Domain</span>
+            <h1 class="title is-3 has-text-white">Procurement & Purchase Order Event Mockups</h1>
+            <p class="subtitle is-6 has-text-grey-light">Visual specifications for Purchase Order lifecycles showing Purchaser, Demand Requesters, Vendor, and Line Allocations.</p>
+          </div>
+        </div>
+        <div class="level-right">
+          <button class="button is-teal is-outlined has-text-white" onclick="window.history.back()">Back</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <!-- ITEM 1: FULLY EXPANDED PROCUREMENT EVENT CARD (LARGE DENSITY) -->
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <div class="section-title">Item 1: Fully Expanded Procurement Event Card (format=large)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Comfortable details view showcasing purchaser, vendor contact, and all linked part demand requesters.</p>
+
+    <div class="card depth-1 mb-6">
+      <div class="card-header level">
+        <div class="level-left">
+          <span class="icon mr-2 text-teal" style="color:#0d9488;"><span class="material-icons">receipt_long</span></span>
+          <div>
+            <span class="is-size-7 has-text-grey is-family-monospace">PO-2026-9901</span>
+            <strong class="is-size-5 ml-2">Hydraulic Filter & Seal Kit Bulk Purchase Order Transmission</strong>
+          </div>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="proc-badge">Procurement</span>
+          <span class="tag is-info is-light">Issued to Vendor</span>
+          <span class="tag is-light">High Priority</span>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <div class="columns">
+          <!-- Left Column (2/3) -->
+          <div class="column is-8">
+            <div class="depth-2 p-3 mb-3 is-size-7">
+              Outbound transmission of purchase order PO-2026-9901 to HydraTech Components Inc. fulfilling 3 open part demands from maintenance and fleet operations.
+            </div>
+
+            <!-- Custom Detail Sub-Card -->
+            <div class="depth-2 p-3 mb-3" style="background-color:#f0fdf4; border:1px solid #bbf7d0;">
+              <div class="columns is-multiline is-mobile is-size-7">
+                <div class="column is-4">
+                  <div class="detail-label">Purchaser / Buyer</div>
+                  <div class="detail-val">Elena Rostova (Lead Buyer)</div>
+                </div>
+                <div class="column is-4">
+                  <div class="detail-label">Vendor Name</div>
+                  <div class="detail-val">HydraTech Components Inc.</div>
+                </div>
+                <div class="column is-4">
+                  <div class="detail-label">Total Value</div>
+                  <div class="detail-val has-text-success">$4,850.00 USD</div>
+                </div>
+                <div class="column is-4">
+                  <div class="detail-label">Vendor Rep / Contact</div>
+                  <div class="detail-val">Tom Harrison (sales@hydratech)</div>
+                </div>
+                <div class="column is-4">
+                  <div class="detail-label">Payment Terms</div>
+                  <div class="detail-val">Net 30 Days</div>
+                </div>
+                <div class="column is-4">
+                  <div class="detail-label">Est Delivery</div>
+                  <div class="detail-val is-family-monospace">2026-08-26</div>
+                </div>
+              </div>
+
+              <!-- Associated Demand Requesters Sub-Section -->
+              <div class="mt-3 p-3" style="background:#ffffff; border:1px solid #86efac;">
+                <div class="detail-label mb-2" style="color:#166534;"><span class="material-icons" style="font-size:12px; vertical-align:middle;">people</span> Associated Part Demand Requesters (3)</div>
+                <div>
+                  <div class="user-chip">
+                    <span class="material-icons mr-1 has-text-info" style="font-size:14px;">person</span>
+                    <div>
+                      <strong>Sarah Jenkins</strong> &middot; <span class="has-text-grey">WO-MT-0801</span>
+                      <div class="has-text-grey" style="font-size:0.68rem;">Demand DEM-8831 (2x Hydraulic Filters)</div>
+                    </div>
+                  </div>
+                  <div class="user-chip">
+                    <span class="material-icons mr-1 has-text-warning-dark" style="font-size:14px;">person</span>
+                    <div>
+                      <strong>Marcus Vance</strong> &middot; <span class="has-text-grey">WO-MT-0782</span>
+                      <div class="has-text-grey" style="font-size:0.68rem;">Demand DEM-8820 (1x Seal Overhaul Kit)</div>
+                    </div>
+                  </div>
+                  <div class="user-chip">
+                    <span class="material-icons mr-1 has-text-primary" style="font-size:14px;">person</span>
+                    <div>
+                      <strong>David Miller</strong> &middot; <span class="has-text-grey">DSP-0412 Stock</span>
+                      <div class="has-text-grey" style="font-size:0.68rem;">Demand DEM-8815 (5x Fleet Maintenance Fluid)</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Base Metadata -->
+            <div class="columns is-size-7 is-mobile is-multiline mb-3">
+              <div class="column is-narrow">
+                <div class="detail-label">Domain Scope</div>
+                <div>Central Procurement</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Issue Timestamp</div>
+                <div class="is-family-monospace">2026-08-20 10:45</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Approved By</div>
+                <div class="is-family-monospace">2026-08-20 &middot; erostova</div>
+              </div>
+            </div>
+
+            <!-- Comments & Activity History Thread -->
+            <div class="depth-2 p-3">
+              <h4 class="title is-7 text-uppercase mb-3 has-text-grey"><span class="material-icons" style="font-size:14px; vertical-align:middle;">forum</span> Purchase Order Transmission Log (2)</h4>
+              
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>Elena Rostova</strong> <span class="tag is-teal is-light is-small ml-2" style="background:#ccfbf1; color:#115e59;">Buyer</span></div>
+                  <div class="level-right is-family-monospace">2026-08-20 10:46</div>
+                </div>
+                <div class="is-size-7">EDI transmission dispatched to HydraTech. Confirmation ACK pending.</div>
+              </div>
+
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>Tom Harrison</strong> <span class="tag is-light is-small ml-2">Vendor Sales</span></div>
+                  <div class="level-right is-family-monospace">2026-08-20 11:15</div>
+                </div>
+                <div class="is-size-7">Received PO-2026-9901. Order scheduled for shipment on Aug 24 via Freight Direct.</div>
+              </div>
+
+              <!-- Add Comment -->
+              <div class="mt-3">
+                <div class="field has-addons">
+                  <div class="control is-expanded">
+                    <input class="input is-small" type="text" placeholder="Add procurement status note…">
+                  </div>
+                  <div class="control">
+                    <button class="button is-small is-teal" style="background:#0d9488; color:#fff;">Post Note</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column (1/3) -->
+          <div class="column is-4">
+            <div class="card depth-1 p-3">
+              <h4 class="title is-6 mb-2"><span class="material-icons" style="font-size:16px; vertical-align:middle;">attach_file</span> PO Documents (2)</h4>
+              <div class="is-size-7 mb-2 p-2 depth-2">
+                <span class="material-icons mr-1 has-text-danger" style="font-size:14px; vertical-align:middle;">picture_as_pdf</span>
+                <a href="#" class="has-text-link">purchase_order_po9901.pdf</a>
+                <div class="has-text-grey" style="font-size:0.68rem;">1.1 MB &middot; Official PO</div>
+              </div>
+              <div class="is-size-7 p-2 depth-2">
+                <span class="material-icons mr-1 has-text-info" style="font-size:14px; vertical-align:middle;">description</span>
+                <a href="#" class="has-text-link">vendor_quote_hydratech_v4.pdf</a>
+                <div class="has-text-grey" style="font-size:0.68rem;">620 KB &middot; Approved Quote</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <!-- ITEM 2: MEDIUM PROCUREMENT EVENT CARD (MEDIUM DENSITY) -->
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <div class="section-title">Item 2: Medium Procurement Event Card (format=medium)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Shows critical information comfortably at a glance for dashboard feeds and split-pane browsing.</p>
+
+    <div class="card depth-1 mb-6">
+      <div class="card-header level py-2">
+        <div class="level-left">
+          <span class="icon mr-2 text-teal" style="color:#0d9488;"><span class="material-icons">receipt_long</span></span>
+          <strong class="is-size-6">PO-2026-9901: Hydraulic Filter Bulk Purchase Order</strong>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="proc-badge">Procurement</span>
+          <span class="tag is-info is-light is-small">Issued</span>
+        </div>
+      </div>
+      <div class="card-content py-3">
+        <div class="columns is-vcentered is-size-7">
+          <div class="column is-3">
+            <div class="detail-label">Purchaser</div>
+            <div class="detail-val">Elena Rostova</div>
+          </div>
+          <div class="column is-3">
+            <div class="detail-label">Vendor</div>
+            <div class="detail-val">HydraTech Components</div>
+          </div>
+          <div class="column is-3">
+            <div class="detail-label">Requesters</div>
+            <div class="detail-val">S. Jenkins, M. Vance, D. Miller</div>
+          </div>
+          <div class="column is-3 text-right">
+            <div class="detail-label">PO Value</div>
+            <div class="detail-val has-text-success">$4,850.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <!-- ITEM 3: CONDENSED PROCUREMENT EVENT TABLE ROWS (CONDENSED DENSITY) -->
+    <!-- ────────────────────────────────────────────────────────────────── -->
+    <div class="section-title">Item 3: Condensed Event Table Rows (format=condensed)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Base event rows displaying a few critical columns for high-density listing tables.</p>
+
+    <div class="card depth-1">
+      <div class="table-container">
+        <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th>PO Ref / Title</th>
+              <th>Type</th>
+              <th>Vendor</th>
+              <th>Purchaser</th>
+              <th>Requesters</th>
+              <th>Status</th>
+              <th>Total Amount</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="is-family-monospace has-text-grey">PO-9901</span> &middot; <strong>Hydraulic Filter Bulk Order</strong></td>
+              <td><span class="proc-badge">Procurement</span></td>
+              <td>HydraTech Components</td>
+              <td>Elena Rostova</td>
+              <td>Jenkins, Vance, Miller</td>
+              <td><span class="tag is-info is-light is-small">Issued</span></td>
+              <td><strong class="has-text-success">$4,850.00</strong></td>
+              <td class="is-family-monospace">2026-08-20</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{% comment %}
+Inventory / Parts detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+<div class="depth-2 p-3 mb-3" style="background-color:#ecfdf5; border:1px solid #a7f3d0;">
+  <div class="columns is-multiline is-mobile is-size-7">
+    <div class="column is-3">
+      <p class="has-text-success-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Inventory Movement</p>
+      <p>
+        {% if card.detail and card.detail.movement_type %}
+          <span class="tag is-success is-light is-small" style="font-weight:600;">{{ card.detail.get_movement_type_display }}</span>
+        {% else %}
+          <span class="tag is-success is-light is-small">Stock Issue</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-success-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">PO Reference</p>
+      <p class="is-family-monospace" style="font-weight:600; color:#047857;">
+        {{ card.detail.po_reference|default:"PO-INV-882" }}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-success-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Quantity Delta</p>
+      <p class="has-text-success" style="font-weight:700;">
+        {% if card.detail and card.detail.quantity_delta %}
+          {{ card.detail.quantity_delta }} Units
+        {% else %}
+          —
+        {% endif %}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-success-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Warehouse Bin</p>
+      <p style="font-weight:600;">
+        {{ card.detail.warehouse_location|default:"Central Bay Bin B-12" }}
+      </p>
+    </div>
+
+    {% if card.asset_links %}
+    <div class="column is-6">
+      <p class="has-text-success-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Target Asset / Recipient</p>
+      <p style="font-weight:600;">
+        {% for link in card.asset_links %}
+          <a href="{% url 'asset_detail' asset_id=link.asset.id %}" class="has-text-link">
+            <span class="material-icons" style="font-size:12px; vertical-align:middle;">inventory_2</span>
+            {{ link.asset.name }}
+          </a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    </div>
+    {% endif %}
+  </div>
+</div>

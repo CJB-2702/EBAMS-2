@@ -13,6 +13,18 @@
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   <style>
+    dialog[popover] {
+      margin: auto;
+      border: none;
+      padding: 0;
+      background: transparent;
+      max-width: 600px;
+      width: 90vw;
+    }
+    dialog[popover]::backdrop, [popover]::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+    }
     {% block extra_css %}{% endblock %}
   </style>
   {% block extra_head %}{% endblock %}
@@ -78,6 +90,55 @@
 </div>
 
 {% include "csrf-htmx-required-snippet.html" %}
+<script>
+window.__toggleCommentsSection = function(headerEl, evt) {
+  if (evt && evt.target && evt.target.closest('.comment-filter-group')) return;
+
+  const card = headerEl.closest('.comments-card-container');
+  if (!card) return;
+  const body = card.querySelector('.comments-card-body');
+  const icon = card.querySelector('.comments-toggle-icon');
+  if (!body) return;
+  const isHidden = body.style.display === 'none';
+  if (isHidden) {
+    body.style.display = 'block';
+    if (icon) icon.textContent = 'expand_more';
+  } else {
+    body.style.display = 'none';
+    if (icon) icon.textContent = 'chevron_right';
+  }
+};
+
+window.__toggleAllComments = function(btnEl) {
+  const isCollapsing = btnEl.dataset.state !== 'collapsed';
+  const bodies = document.querySelectorAll('.comments-card-body');
+  const icons = document.querySelectorAll('.comments-toggle-icon');
+  
+  bodies.forEach(b => {
+    b.style.display = isCollapsing ? 'none' : 'block';
+  });
+  icons.forEach(i => {
+    i.textContent = isCollapsing ? 'chevron_right' : 'expand_more';
+  });
+
+  const globalIcon = document.getElementById('global-comments-icon');
+  const globalText = document.getElementById('global-comments-text');
+
+  if (isCollapsing) {
+    btnEl.dataset.state = 'collapsed';
+    if (globalIcon) globalIcon.textContent = 'unfold_more';
+    if (globalText) globalText.textContent = 'Expand Comments';
+    btnEl.classList.add('is-info');
+    btnEl.classList.remove('is-light');
+  } else {
+    btnEl.dataset.state = 'expanded';
+    if (globalIcon) globalIcon.textContent = 'unfold_less';
+    if (globalText) globalText.textContent = 'Collapse Comments';
+    btnEl.classList.remove('is-info');
+    btnEl.classList.add('is-light');
+  }
+};
+</script>
 {% block body_scripts %}{% endblock %}
 </body>
 </html>

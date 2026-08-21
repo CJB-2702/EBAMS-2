@@ -151,9 +151,10 @@ class DemandSourceModule(models.TextChoices):
     origin detail. That resolves through each consumer app's own link table.
     """
 
-    MAINTENANCE = "maintenance", "Maintenance"
-    DISPATCHING = "dispatching", "Dispatching"
-    GENERAL = "general", "General"
+    PROCUREMENT = "Procurement", "Procurement"
+    MAINTENANCE = "Maintenance", "Maintenance"
+    DISPATCHING = "Dispatching", "Dispatching"
+    GENERAL = "General", "General"
 
 
 #: Maps a dimension to the PartDemand column it snapshots. Used by

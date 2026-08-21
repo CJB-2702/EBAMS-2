@@ -28,7 +28,9 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
 <div class="page-hero">
   <div class="page-header">
     <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">event</span></div>
+      <div class="page-header-icon" style="background-color: {{ card.header_style.bg|default:'#f8fafc' }}; color: {{ card.header_style.text|default:'#334155' }};">
+        <span class="material-icons" aria-hidden="true">{{ card.header_style.icon|default:'event' }}</span>
+      </div>
       <div>
         <h1 class="page-title">{{ event.title }}</h1>
         <p class="page-subtitle">{{ event.domain.name }} &middot; Created {{ event.created_at|date:"Y-m-d H:i" }} by {{ event.created_by }}</p>
@@ -39,205 +41,69 @@ collapsable-side-bar { --bulma-scheme-main-bis: var(--white); }
         <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
         <span>All Events</span>
       </a>
+      {% if card.origin_link %}
+      <a href="{{ card.origin_link.url }}" class="button is-small is-info is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">{{ card.origin_link.icon }}</span></span>
+        <span>{{ card.origin_link.label }}</span>
+      </a>
+      {% endif %}
       {% if can_edit %}
       <a href="{% url 'event_edit' hash=event_hash %}" class="button is-small is-info">
         <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
         <span>Edit</span>
       </a>
       {% endif %}
-    </div>
-  </div>
-</div>
-
-<div class="body-grid has-rail">
-
-  <div>
-
-    {# Event details card #}
-    <div class="card depth-1">
-      <div class="card-header">
-        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Event Details</div>
-        <div>
-          <span class="tag is-light">{{ event.get_event_type_display }}</span>
-        </div>
-      </div>
-      <div class="card-content">
-
-        {% if event.description %}
-        <div class="depth-2 p-3 mb-4 is-size-7" style="white-space: pre-wrap; min-height: 100px; max-height: 350px; overflow-y: auto;">{{ event.description }}</div>
-        {% endif %}
-
-        <div class="columns is-size-7">
-          <div class="column">
-            <p class="has-text-grey mb-1" style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Status</p>
-            {% if event.status == 'in_progress' %}
-              <span class="tag is-info is-light">{{ event.get_status_display }}</span>
-            {% elif event.status == 'complete' %}
-              <span class="tag is-success is-light">{{ event.get_status_display }}</span>
-            {% elif event.status == 'failed' %}
-              <span class="tag is-danger is-light">{{ event.get_status_display }}</span>
-            {% elif event.status == 'blocked' %}
-              <span class="tag is-warning is-light">{{ event.get_status_display }}</span>
-            {% elif event.status == 'cancelled' %}
-              <span class="tag is-light has-text-grey">{{ event.get_status_display }}</span>
-            {% else %}
-              <span class="tag is-light">{{ event.get_status_display }}</span>
-            {% endif %}
-          </div>
-          <div class="column">
-            <p class="has-text-grey mb-1" style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Priority</p>
-            {% if event.priority == 'critical' %}
-              <span class="tag is-danger is-light">{{ event.get_priority_display }}</span>
-            {% elif event.priority == 'high' %}
-              <span class="tag is-warning is-light">{{ event.get_priority_display }}</span>
-            {% elif event.priority == 'medium' %}
-              <span class="tag is-info is-light">{{ event.get_priority_display }}</span>
-            {% elif event.priority %}
-              <span class="tag is-light">{{ event.get_priority_display }}</span>
-            {% else %}
-              <span class="has-text-grey-light">—</span>
-            {% endif %}
-          </div>
-          <div class="column">
-            <p class="has-text-grey mb-1" style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Start</p>
-            <p class="is-family-monospace">{{ event.event_start|date:"Y-m-d H:i"|default:"—" }}</p>
-          </div>
-          <div class="column">
-            <p class="has-text-grey mb-1" style="font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">End</p>
-            <p class="is-family-monospace">{{ event.event_end|date:"Y-m-d H:i"|default:"—" }}</p>
-          </div>
-        </div>
-
-      </div>
       {% if can_delete %}
-      <div style="padding: 0.5rem 1rem; border-top: 1px solid var(--bulma-border-weak);">
-        <form method="post" action="{% url 'event_soft_delete' hash=event_hash %}">
-          {% csrf_token %}
-          <button class="button is-small is-danger is-light" type="submit"
-            onclick="return confirm('Delete this event?');">
-            <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-            <span>Delete Event</span>
-          </button>
-        </form>
-      </div>
+      <form method="post" action="{% url 'event_soft_delete' hash=event_hash %}" style="display:inline;">
+        {% csrf_token %}
+        <button class="button is-small is-danger is-light" type="submit" onclick="return confirm('Delete this event?');">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
+          <span>Delete</span>
+        </button>
+      </form>
       {% endif %}
     </div>
-
-    {# Comments #}
-    <div class="card depth-1">
-      <div class="card-header">
-        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>Comments ({{ comments_context|length }})</div>
-      </div>
-      <div class="card-content">
-
-        {% for row in comments_context %}
-        <div class="card mb-3 depth-2">
-          <div class="card-content is-size-7">
-            <div class="is-flex is-justify-content-space-between mb-2">
-              <span class="has-text-grey">
-                {{ row.comment.created_by }} &middot; {{ row.comment.created_at|date:"Y-m-d H:i" }}
-                {% if row.comment.revision > 1 %}
-                <span class="tag is-light ml-1">rev {{ row.comment.revision }}</span>
-                {% endif %}
-              </span>
-              <div style="display:flex; gap:0.4rem;">
-                {% if row.comment.revision > 1 %}
-                <a href="{% url 'comment_history' event_hash=event_hash comment_hash=row.comment_hash %}"
-                  class="button is-small is-light" title="View revision history">
-                  <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>
-                </a>
-                {% endif %}
-                {% if row.comment.created_by == request.user %}
-                <a href="{% url 'comment_edit' event_hash=event_hash comment_hash=row.comment_hash %}"
-                  class="button is-small is-info is-light">
-                  <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>
-                </a>
-                <form method="post"
-                  action="{% url 'comment_soft_delete' event_hash=event_hash comment_hash=row.comment_hash %}">
-                  {% csrf_token %}
-                  <button class="button is-small is-danger is-light" type="submit">
-                    <span class="icon"><span class="material-icons" aria-hidden="true">delete</span></span>
-                  </button>
-                </form>
-                {% endif %}
-              </div>
-            </div>
-            <p>{{ row.comment.content }}</p>
-            {% include "events/comment/fragments/attachment_mini_cards.html" with att_list=row.attachments event_hash=event_hash comment_hash=row.comment_hash %}
-          </div>
-        </div>
-        {% empty %}
-        <p class="is-size-7 has-text-grey">No comments yet.</p>
-        {% endfor %}
-
-      </div>
-    </div>
-
-    {# Add comment #}
-    <div class="card depth-1">
-      <div class="card-header">
-        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_comment</span></span>Add Comment</div>
-      </div>
-      <div class="card-content">
-        <form method="post" action="{% url 'comment_add' event_hash=event_hash %}" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="field">
-            <label class="label is-small">Comment</label>
-            <div class="control">
-              <textarea class="textarea is-small" name="content" rows="3" placeholder="Write a comment…"></textarea>
-            </div>
-          </div>
-          <div class="field">
-            <label class="label is-small">Attachments (optional)</label>
-            <div class="file has-name">
-              <label class="file-label">
-                <input class="file-input" type="file" name="files" id="file-inline" multiple
-                       onchange="
-                         var f=this.files,l=document.getElementById('file-inline-list');
-                         document.getElementById('file-inline-name').textContent=f.length===0?'No file chosen':f.length===1?f[0].name:f.length+' files selected';
-                         l.innerHTML='';
-                         if(f.length>1){Array.from(f).forEach(function(x){var t=document.createElement('span');t.className='tag is-light is-small';t.textContent=x.name;l.appendChild(t);});}">
-                <span class="file-cta">
-                  <span class="file-icon"><span class="material-icons is-size-7" aria-hidden="true">attach_file</span></span>
-                  <span class="file-label">Choose files…</span>
-                </span>
-                <span class="file-name" id="file-inline-name">No file chosen</span>
-              </label>
-            </div>
-            <div class="tags mt-2" id="file-inline-list"></div>
-          </div>
-          <div class="buttons mt-3">
-            <button class="button is-small is-primary" type="submit">
-              <span class="icon"><span class="material-icons" aria-hidden="true">send</span></span>
-              <span>Submit Comment</span>
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
   </div>
-
-  {# Rail #}
-  <div class="body-rail">
-    <div class="card depth-1">
-      <div class="card-header">
-        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info_outline</span></span>Meta</div>
-      </div>
-      <div class="card-content is-size-7">
-        <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Domain</p>
-        <p class="mb-3"><strong>{{ event.domain.name }}</strong></p>
-        <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Created</p>
-        <p class="mb-3 is-family-monospace">{{ event.created_at|date:"Y-m-d H:i" }}</p>
-        <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">By</p>
-        <p class="mb-3">{{ event.created_by }}</p>
-        {% if event.updated_at != event.created_at %}
-        <p class="has-text-grey mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">Last Updated</p>
-        <p class="is-family-monospace">{{ event.updated_at|date:"Y-m-d H:i" }}</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
 </div>
+
+<div class="body-grid full-width">
+  {% include "events/fragments/event_card.html" with card=card %}
+
+  {# 1. Direct Event Attachments Gallery #}
+  <div class="mt-5">
+    <h3 class="title is-5 mb-3" style="font-weight: 700; color: var(--bulma-text-strong);">
+      <span class="icon mr-2" style="color: var(--bulma-link);"><span class="material-icons" aria-hidden="true">folder</span></span>Event File Attachments
+    </h3>
+    {% include "events/fragments/files_card.html" with documents=card.direct_attachments title="Direct Event Files" %}
+    {% if card.direct_images %}
+    <div class="mt-3">
+      {% include "events/fragments/gallery_card.html" with images=card.direct_images title="Direct Image Gallery" dom_id="event-direct" %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# 2. Comment Attachments Gallery #}
+  <div class="mt-5 mb-6">
+    <h3 class="title is-5 mb-3" style="font-weight: 700; color: var(--bulma-text-strong);">
+      <span class="icon mr-2" style="color: var(--bulma-info);"><span class="material-icons" aria-hidden="true">collections</span></span>Comment Attachments Gallery
+    </h3>
+    {% include "events/fragments/files_card.html" with documents=card.comment_attachments title="Comment Files" %}
+    {% if card.comment_images %}
+    <div class="mt-3">
+      {% include "events/fragments/gallery_card.html" with images=card.comment_images title="Comment Image Gallery" dom_id="event-comments" %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block body_scripts %}
+{% load static %}
+<script defer src="{% static 'web_components/file_browser.js' %}"></script>
+<script defer src="{% static 'web_components/file_upload.js' %}"></script>
+<script defer src="{% static 'web_components/image_carousel.js' %}"></script>
+<script defer src="{% static 'web_components/mini_gallery.js' %}"></script>
+<script defer src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script defer src="{% static 'web_components/app_specific/comment_filter.js' %}"></script>
 {% endblock %}

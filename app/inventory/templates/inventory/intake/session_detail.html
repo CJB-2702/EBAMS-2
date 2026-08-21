@@ -24,13 +24,6 @@
   </div>
 </div>
 
-{% if session.has_unlinked_allocations %}
-<div class="notification is-warning is-light">
-  <span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>
-  This session has <strong>unmanifested allocations</strong> — stock with no matching shipment line, quarantined in the intake room pending reconciliation.
-</div>
-{% endif %}
-
 {% if session.status == "active" and session.intake_method == "scan" %}
 <div class="body-grid full-width">
 
@@ -166,14 +159,6 @@
 </script>
 {% endif %}
 
-{% if session.status == "reconciling" %}
-<div class="notification is-info is-light">
-  <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
-  This session is in reconciliation. Resolve every part below (or via the
-  <a href="{% url 'inventory_reconciliation_hub' %}">Reconciliation Hub</a>) before it can close.
-</div>
-{% endif %}
-
 <div class="body-grid full-width">
 
   {# ---------------- Metadata ---------------- #}
@@ -190,9 +175,10 @@
         <dt>Method</dt><dd>{{ session.get_intake_method_display }}</dd>
         <dt>Hardware device</dt><dd>{{ session.hardware_device_id|default:"—" }}</dd>
         <dt>Started</dt><dd>{{ session.started_at }}</dd>
-        <dt>Closed</dt><dd>{{ session.closed_at|default:"—" }}</dd>
-        <dt>Unlinked allocations?</dt>
-        <dd>{% if session.has_unlinked_allocations %}<span class="tag is-small is-warning is-light">Yes</span>{% else %}No{% endif %}</dd>
+        <dt>Recording locked</dt>
+        <dd>{% if session.recording_locked_at %}{{ session.recording_locked_at }} by {{ session.recording_locked_by|default:"—" }}{% else %}<span class="has-text-grey">Open</span>{% endif %}</dd>
+        <dt>Stock posted</dt>
+        <dd>{% if session.stock_posted_at %}{{ session.stock_posted_at }} by {{ session.stock_posted_by|default:"—" }}{% else %}<span class="has-text-grey">Not posted</span>{% endif %}</dd>
         <dt>Notes</dt><dd>{{ session.notes|default:"—"|linebreaksbr }}</dd>
       </dl>
     </div>
@@ -285,53 +271,6 @@
     </div>
   </div>
 
-  {# ---------------- Reconciliation (rule 5: card always renders) ---------------- #}
-  <div class="card">
-    <div class="card-header"><div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
-      Reconciliation
-    </div>
-    {% if reconciliations %}
-    <div class="card-header-icon">
-      <a href="{% url 'inventory_reconciliation_hub' %}" class="is-size-7">Open Reconciliation Hub</a>
-    </div>
-    {% endif %}
-    </div>
-    <div class="card-content is-flush">
-      {% if reconciliations %}
-      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-        <thead><tr><th>Part</th><th>Status</th><th class="has-text-right">Expected</th><th class="has-text-right">Allocated</th><th class="has-text-right">Rejected</th><th></th></tr></thead>
-        <tbody>
-          {% for r in reconciliations %}
-          <tr>
-            <td class="is-family-monospace">{{ r.part.part_number }}</td>
-            <td><span class="tag is-small {% if r.status == 'resolved' %}is-success{% else %}is-warning{% endif %} is-light">{{ r.get_status_display }}</span></td>
-            <td class="has-text-right is-family-monospace">{{ r.total_expected_quantity }}</td>
-            <td class="has-text-right is-family-monospace">{{ r.total_allocated_quantity }}</td>
-            <td class="has-text-right is-family-monospace">{{ r.total_rejected_quantity }}</td>
-            <td class="has-text-right">
-              <a href="{% url 'inventory_reconciliation_detail' pk=r.pk %}" class="button is-small is-light">
-                <span>{% if r.status == 'resolved' %}View{% else %}Resolve{% endif %}</span>
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="p-4">
-        <p class="has-text-grey is-size-7">
-          {% if session.intake_method == "manual_package" %}
-          No reconciliation tasks — Auto Intake sessions never generate any (FD-13): floors/caps are enforced at commit time instead.
-          {% else %}
-          No reconciliation tasks for this session{% if session.status == "active" %} yet — they are generated when the session transitions to reconciliation{% endif %}.
-          {% endif %}
-        </p>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
   {# ---------------- Lifecycle actions ---------------- #}
   <div class="card">
     <div class="card-header"><div class="card-header-title">
@@ -345,9 +284,6 @@
         Pause/resume is a no-op — this portal is stateless server-side. Reloading the page later <em>is</em> resuming.
       </p>
       {% endif %}
-      {% if pending_reconciliation_count > 0 %}
-      <span class="tag is-warning is-light mb-3">{{ pending_reconciliation_count }} part{{ pending_reconciliation_count|pluralize }} pending reconciliation</span>
-      {% endif %}
     </div>
     {% if can_intake %}
     <footer class="card-footer custom-card-footer">
@@ -356,25 +292,15 @@
           <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
           <span>Back to Intake</span>
         </a>
-        {% if session.status == "active" %}
-        <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}" style="margin:0;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="transition_to_reconciliation">
-          <button type="submit" class="button is-small is-warning is-light">
-            <span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>
-            <span>Transition to Reconciliation</span>
-          </button>
-        </form>
-        {% endif %}
       </div>
-      {% if session.status == "active" or session.status == "reconciling" %}
+      {% if session.status == "active" %}
       <form method="post" action="{% url 'inventory_intake_session_detail' pk=session.pk %}" style="margin:0;" class="card-footer-primary">
         {% csrf_token %}
         <input type="hidden" name="action" value="close">
-        <button type="submit" class="button is-primary is-fullwidth" {% if pending_reconciliation_count > 0 %}disabled{% endif %}
-                onclick="return confirm('Close and commit this session? This writes stock and cannot be undone.');">
+        <button type="submit" class="button is-primary is-fullwidth"
+                onclick="return confirm('Post stock for this session? This cannot be undone.');">
           <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
-          <span>Close &amp; Commit{% if pending_reconciliation_count > 0 %} ({{ pending_reconciliation_count }} pending){% endif %}</span>
+          <span>Post Stock &amp; Close</span>
         </button>
       </form>
       {% else %}

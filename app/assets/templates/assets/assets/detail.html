@@ -24,6 +24,7 @@
       </div>
     </div>
     <div class="page-header-actions">
+      <a href="{% url 'event_index' %}?asset={{ asset.id }}" class="button is-small is-info"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span><span>View Events</span></a>
       <a href="{% url 'asset_edit' asset_id=asset.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
       <a href="{% url 'asset_images' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span><span>Images</span></a>
       <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span><span>Configuration</span></a>

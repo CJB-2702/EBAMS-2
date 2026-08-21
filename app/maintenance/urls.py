@@ -114,6 +114,13 @@ urlpatterns = [
     path("plans/create", plan_create, name="plan_create"),
     path("plan/<int:pk>", plan_detail, name="plan_detail"),
     path("plan/<int:pk>/edit", plan_edit, name="plan_edit"),
-    path("plan/<int:pk>/plan", plan_worklist, name="plan_worklist"),
-    path("plan/<int:pk>/move-models", plan_move_asset_models, name="plan_move_asset_models"),
+    path("events-portal", lambda req: _events_portal(req, "maintenance"), name="maintenance_events_portal"),
 ]
+
+def _events_portal(request, default_type: str):
+    from app.events.presentation_layer.entrypoints.events import event_index
+    get_copy = request.GET.copy()
+    if not get_copy.get("event_type"):
+        get_copy["event_type"] = default_type
+    request.GET = get_copy
+    return event_index(request)

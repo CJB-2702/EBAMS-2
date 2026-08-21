@@ -37,7 +37,9 @@ class PartDemandFactory:
         needed_by=None,
         notes: str = "",
         expected_cost: Decimal | None = None,
-        source_module: str = DemandSourceModule.GENERAL,
+        source: str | None = None,
+        source_module: str | None = None,
+        event_id: int | None = None,
         serial_number_tracking_required: bool = False,
         requested_by=None,
         actor=None,
@@ -55,15 +57,13 @@ class PartDemandFactory:
         THE CALLER OWNS ITS OWN LINK ROW. This factory does not create link
         rows, does not know what a link row is, and never will (G3, D7). A
         future Maintenance or Dispatching app calling this must create its own
-        table's row pointing at the returned demand's id. A demand created
-        without one is an orphan: nothing can explain why it exists, because
-        source_module is a display convenience and never a source of truth
-        (D38).
+        table's row pointing at the returned demand's id.
 
         demand_state defaults to Required — a human filling in a form is asking
         for something now. Projected is only for a caller explicitly forecasting
         future work; there is no UI path to it.
         """
+        resolved_source = source or source_module or DemandSourceModule.PROCUREMENT
 
         def _create() -> PartDemand:
             demand = PartDemand.objects.create(
@@ -74,7 +74,8 @@ class PartDemandFactory:
                 needed_by=needed_by,
                 notes=notes,
                 expected_cost=expected_cost,
-                source_module=source_module,
+                source=resolved_source,
+                event_id=event_id,
                 serial_number_tracking_required=serial_number_tracking_required,
                 requested_by=requested_by,
                 # The four axes open at their defaults. No guard runs at

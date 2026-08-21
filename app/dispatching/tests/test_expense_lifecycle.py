@@ -25,7 +25,6 @@ class ExpenseLifecycleTestCase(DispatchingTestCase):
             actor=self.actor,
         )
         ctx = DispatchContext(dispatch.pk, self.actor)
-        ctx.submit()
         ctx.take_under_review()
         return ctx
 

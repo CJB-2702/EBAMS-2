@@ -20,7 +20,7 @@ class DispatchCostStruct:
     expenses: list[DispatchExpense] = field(default_factory=list)
 
     @classmethod
-    def load(cls, *, dispatch_id: int) -> "DispatchCostStruct":
+    def load(cls, dispatch_id: int) -> "DispatchCostStruct":
         expenses = list(DispatchExpense.objects.filter(dispatch_id=dispatch_id).order_by("-created_at"))
         return cls(dispatch_id=dispatch_id, expenses=expenses)
 

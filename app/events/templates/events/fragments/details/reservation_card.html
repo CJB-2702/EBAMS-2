@@ -1,0 +1,59 @@
+{% comment %}
+Reservation detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+<div class="depth-2 p-3 mb-3" style="background-color:#f3e8ff; border:1px solid #d8b4fe;">
+  <div class="columns is-multiline is-mobile is-size-7">
+    <div class="column is-3">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Requester</p>
+      <p style="font-weight:600;">
+        {{ card.detail.requester|default:card.event.created_by|default:"Marcus Vance" }}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Lifecycle Status</p>
+      <p>
+        <span class="tag is-purple is-light is-small" style="background:#f3e8ff; color:#6b21a8; font-weight:600;">
+          {{ card.detail.get_checkout_status_display|default:"Approved / Pending Checkout" }}
+        </span>
+      </p>
+    </div>
+    <div class="column is-3">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Booking Purpose</p>
+      <p style="font-weight:600;">
+        {{ card.detail.purpose|default:"Sector Field Backup" }}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Approver</p>
+      <p style="font-weight:600;">
+        {{ card.detail.approver|default:"Dispatcher Command" }}
+      </p>
+    </div>
+
+    {% if card.asset_links %}
+    <div class="column is-6">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Reserved Equipment / Asset</p>
+      <p style="font-weight:600;">
+        {% for link in card.asset_links %}
+          <a href="{% url 'asset_detail' asset_id=link.asset.id %}" class="has-text-link">
+            <span class="material-icons" style="font-size:12px; vertical-align:middle;">precision_manufacturing</span>
+            {{ link.asset.name }}
+          </a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    </div>
+    {% endif %}
+
+    <div class="column is-6">
+      <p style="font-size:0.68rem; font-weight:700; text-transform:uppercase; color:#6b21a8;">Reservation Window</p>
+      <p class="is-family-monospace">
+        {% if card.detail and card.detail.start_time and card.detail.end_time %}
+          {{ card.detail.start_time|date:"Y-m-d H:i" }} &rarr; {{ card.detail.end_time|date:"Y-m-d H:i" }}
+        {% else %}
+          Advance Reservation Window Active
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+{% comment %}
+Asset Management detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+<div class="depth-2 p-3 mb-3" style="background-color:#eff6ff; border:1px solid #bfdbfe;">
+  <div class="columns is-multiline is-mobile is-size-7">
+    <div class="column is-4">
+      <p class="has-text-link-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Asset Action</p>
+      <p>
+        <span class="tag is-link is-light is-small" style="font-weight:600;">Lifecycle Update</span>
+      </p>
+    </div>
+    <div class="column is-4">
+      <p class="has-text-link-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Subject Asset</p>
+      <p style="font-weight:600;">
+        {% if card.asset_links %}
+          {% for link in card.asset_links %}
+            <a href="{% url 'asset_detail' asset_id=link.asset.id %}" class="has-text-link">
+              <span class="material-icons" style="font-size:12px; vertical-align:middle;">precision_manufacturing</span>
+              {{ link.asset.name }}
+            </a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        {% else %}
+          Asset Record #{{ card.event.id }}
+        {% endif %}
+      </p>
+    </div>
+    <div class="column is-4">
+      <p class="has-text-link-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Domain Scope</p>
+      <p style="font-weight:600;">{{ card.event.domain.name }}</p>
+    </div>
+  </div>
+</div>

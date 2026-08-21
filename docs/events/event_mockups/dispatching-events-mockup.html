@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dispatching & Reservations Events Mockup — EBAMS-2 Design Contract</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bulma-radius-small: 0px;
+      --bulma-radius: 0px;
+      --bulma-radius-large: 0px;
+    }
+    * { border-radius: 0px !important; }
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; min-height: 100vh; padding-bottom: 4rem; }
+    .hero-banner { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fff; padding: 2rem 1.5rem; border-bottom: 3px solid #6366f1; margin-bottom: 2rem; }
+    .depth-1 { border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); background: #ffffff; }
+    .depth-2 { border: 1px solid #cbd5e1; background: #f8fafc; }
+    .card-header { background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 0.75rem 1rem; }
+    .disp-badge { background-color: #e0e7ff; color: #3730a3; font-weight: 700; padding: 0.2rem 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .res-badge { background-color: #f3e8ff; color: #6b21a8; font-weight: 700; padding: 0.2rem 0.5rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-grid { background: #fafafa; border: 1px solid #e2e8f0; padding: 0.85rem; }
+    .detail-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #475569; margin-bottom: 0.2rem; }
+    .detail-val { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+    .code-val { font-family: 'JetBrains Mono', monospace; background: #e2e8f0; padding: 0.1rem 0.35rem; font-size: 0.8rem; }
+    .section-title { font-size: 1.15rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-left: 4px solid #6366f1; padding-left: 0.75rem; margin-top: 2.5rem; margin-bottom: 1rem; color: #312e81; }
+    .sub-section-title { font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #475569; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.35rem; }
+    .comment-bubble { background: #ffffff; border: 1px solid #e2e8f0; padding: 0.75rem; margin-bottom: 0.75rem; }
+    .comment-meta { font-size: 0.725rem; color: #64748b; margin-bottom: 0.35rem; }
+  </style>
+</head>
+<body>
+  <header class="hero-banner">
+    <div class="container">
+      <div class="level">
+        <div class="level-left">
+          <div>
+            <span class="tag is-indigo is-light mb-2" style="background:#e0e7ff; color:#3730a3;"><span class="material-icons mr-1" style="font-size:14px;">local_shipping</span> Dispatching Domain</span>
+            <h1 class="title is-3 has-text-white">Dispatching & Reservation Event Mockups</h1>
+            <p class="subtitle is-6 has-text-grey-light">Visual specifications for Operational Dispatches and Asset Reservations across Expanded (Large), Medium, and Condensed (Table) views.</p>
+          </div>
+        </div>
+        <div class="level-right">
+          <button class="button is-link is-outlined has-text-white" onclick="window.history.back()">Back</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ================================================================== -->
+    <!-- CATEGORY 1: OPERATIONAL DISPATCH EVENTS                            -->
+    <!-- ================================================================== -->
+    <div class="section-title">Category 1: Operational Dispatch Events (Dispatches)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Active field deployments, vehicle dispatches, crew assignments, and transport waybills.</p>
+
+    <!-- ITEM 1.1: EXPANDED DISPATCH CARD -->
+    <div class="sub-section-title">1.1 Fully Expanded Dispatch Event Card (format=large)</div>
+    <div class="card depth-1 mb-5">
+      <div class="card-header level">
+        <div class="level-left">
+          <span class="icon mr-2 has-text-link"><span class="material-icons">local_shipping</span></span>
+          <div>
+            <span class="is-size-7 has-text-grey is-family-monospace">DSP-2026-0412</span>
+            <strong class="is-size-5 ml-2">Sector Alpha Emergency Equipment & Vehicle Dispatch</strong>
+          </div>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="disp-badge">Dispatch</span>
+          <span class="tag is-info is-light">Active En-Route</span>
+          <span class="tag is-danger is-light">High Priority</span>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <div class="columns">
+          <div class="column is-8">
+            <div class="depth-2 p-3 mb-3 is-size-7">
+              Rapid field deployment of Caterpillar excavator and support equipment trailers to Sector Alpha for storm emergency debris clearance.
+            </div>
+
+            <!-- Custom Detail Sub-Card -->
+            <div class="depth-2 p-3 mb-3" style="background-color:#eef2ff; border:1px solid #c7d2fe;">
+              <div class="columns is-multiline is-mobile is-size-7">
+                <div class="column is-3">
+                  <div class="detail-label">Operator / Driver</div>
+                  <div class="detail-val">David Miller (Lic #9021)</div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Destination</div>
+                  <div class="detail-val">Sector Alpha Field Base</div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Workflow Status</div>
+                  <div class="detail-val"><span class="tag is-info is-light is-small">En-Route</span></div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Dispatch Scope</div>
+                  <div class="detail-val">Vehicle & Equipment</div>
+                </div>
+                <div class="column is-6">
+                  <div class="detail-label">Dispatched Vehicle / Unit</div>
+                  <div class="detail-val">
+                    <a href="#" class="has-text-link"><span class="material-icons" style="font-size:12px;">local_shipping</span> Kenworth T880 Transport Truck (#TRK-104)</a>
+                  </div>
+                </div>
+                <div class="column is-6">
+                  <div class="detail-label">Linked Reservation</div>
+                  <div class="detail-val">RES-2026-8802 (Sector Alpha Fleet Booking)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Base Metadata -->
+            <div class="columns is-size-7 is-mobile is-multiline mb-3">
+              <div class="column is-narrow">
+                <div class="detail-label">Domain Scope</div>
+                <div>Northern Field Ops</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Departure Time</div>
+                <div class="is-family-monospace">2026-08-20 06:30</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Est Return</div>
+                <div class="is-family-monospace">2026-08-22 18:00</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Dispatcher</div>
+                <div class="is-family-monospace">2026-08-19 &middot; admin</div>
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="depth-2 p-3">
+              <h4 class="title is-7 text-uppercase mb-3 has-text-grey"><span class="material-icons" style="font-size:14px; vertical-align:middle;">forum</span> Dispatch Activity Log (2)</h4>
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>David Miller</strong> <span class="tag is-indigo is-light is-small ml-2" style="background:#e0e7ff; color:#3730a3;">Operator</span></div>
+                  <div class="level-right is-family-monospace">2026-08-20 06:35</div>
+                </div>
+                <div class="is-size-7">Pre-trip inspection verified. Transport trailer loaded and cleared checkpoint 1.</div>
+              </div>
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>Dispatcher Station</strong> <span class="tag is-light is-small ml-2">System</span></div>
+                  <div class="level-right is-family-monospace">2026-08-20 07:00</div>
+                </div>
+                <div class="is-size-7">GPS tracking active. ETA Sector Alpha Base is 09:15.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-4">
+            <div class="card depth-1 p-3">
+              <h4 class="title is-6 mb-2"><span class="material-icons" style="font-size:16px; vertical-align:middle;">attach_file</span> Dispatch Documents (1)</h4>
+              <div class="is-size-7 p-2 depth-2">
+                <span class="material-icons mr-1 has-text-danger" style="font-size:14px; vertical-align:middle;">picture_as_pdf</span>
+                <a href="#" class="has-text-link">waybill_manifest_dsp0412.pdf</a>
+                <div class="has-text-grey" style="font-size:0.68rem;">520 KB &middot; Signed by Dispatcher</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEM 1.2: MEDIUM DISPATCH CARD -->
+    <div class="sub-section-title">1.2 Medium Dispatch Event Card (format=medium)</div>
+    <div class="card depth-1 mb-5">
+      <div class="card-header level py-2">
+        <div class="level-left">
+          <span class="icon mr-2 has-text-link"><span class="material-icons">local_shipping</span></span>
+          <strong class="is-size-6">DSP-2026-0412: Sector Alpha Emergency Equipment Dispatch</strong>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="disp-badge">Dispatch</span>
+          <span class="tag is-info is-light is-small">En-Route</span>
+        </div>
+      </div>
+      <div class="card-content py-3">
+        <div class="columns is-vcentered is-size-7">
+          <div class="column is-4">
+            <div class="detail-label">Primary Unit</div>
+            <div class="detail-val"><span class="material-icons" style="font-size:12px;">local_shipping</span> Kenworth T880 (#TRK-104)</div>
+          </div>
+          <div class="column is-3">
+            <div class="detail-label">Operator</div>
+            <div class="detail-val">David Miller</div>
+          </div>
+          <div class="column is-2">
+            <div class="detail-label">Destination</div>
+            <div class="detail-val">Sector Alpha Base</div>
+          </div>
+          <div class="column is-3 text-right">
+            <div class="detail-label">Departure / ETA</div>
+            <div class="is-family-monospace">06:30 &rarr; ETA 09:15</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- CATEGORY 2: ASSET RESERVATION EVENTS                              -->
+    <!-- ================================================================== -->
+    <div class="section-title">Category 2: Asset Reservation Events (Reservations)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Forward booking requests, checkout/checkin lifecycle tracking, and requester approval workflows.</p>
+
+    <!-- ITEM 2.1: EXPANDED RESERVATION CARD -->
+    <div class="sub-section-title">2.1 Fully Expanded Reservation Event Card (format=large)</div>
+    <div class="card depth-1 mb-5">
+      <div class="card-header level">
+        <div class="level-left">
+          <span class="icon mr-2 has-text-primary"><span class="material-icons">event_seat</span></span>
+          <div>
+            <span class="is-size-7 has-text-grey is-family-monospace">RES-2026-8802</span>
+            <strong class="is-size-5 ml-2">Emergency Power Unit Forward Asset Reservation</strong>
+          </div>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="res-badge">Reservation</span>
+          <span class="tag is-primary is-light">Approved / Pending Checkout</span>
+          <span class="tag is-light">Normal Priority</span>
+        </div>
+      </div>
+
+      <div class="card-content">
+        <div class="columns">
+          <div class="column is-8">
+            <div class="depth-2 p-3 mb-3 is-size-7">
+              Advance booking request for CAT-3512 Diesel Generator to provide backup power during planned sector substation maintenance.
+            </div>
+
+            <!-- Custom Detail Sub-Card for Reservation -->
+            <div class="depth-2 p-3 mb-3" style="background-color:#f3e8ff; border:1px solid #d8b4fe;">
+              <div class="columns is-multiline is-mobile is-size-7">
+                <div class="column is-3">
+                  <div class="detail-label">Requester</div>
+                  <div class="detail-val">Marcus Vance (mvance)</div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Lifecycle Status</div>
+                  <div class="detail-val"><span class="tag is-purple is-light is-small" style="background:#f3e8ff; color:#6b21a8;">Pending Checkout</span></div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Booking Purpose</div>
+                  <div class="detail-val">Sector Substation Backup</div>
+                </div>
+                <div class="column is-3">
+                  <div class="detail-label">Approver</div>
+                  <div class="detail-val">Dispatcher Command</div>
+                </div>
+                <div class="column is-6">
+                  <div class="detail-label">Reserved Asset / Equipment</div>
+                  <div class="detail-val">
+                    <a href="#" class="has-text-link"><span class="material-icons" style="font-size:12px;">precision_manufacturing</span> CAT-3512 Diesel Generator (#GEN-042)</a>
+                  </div>
+                </div>
+                <div class="column is-6">
+                  <div class="detail-label">Reservation Period</div>
+                  <div class="detail-val is-family-monospace">2026-08-22 08:00 &rarr; 2026-08-25 17:00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Base Metadata -->
+            <div class="columns is-size-7 is-mobile is-multiline mb-3">
+              <div class="column is-narrow">
+                <div class="detail-label">Domain Scope</div>
+                <div>Northern Division</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Pickup Location</div>
+                <div class="is-family-monospace">Central Bay Yard</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Return Location</div>
+                <div class="is-family-monospace">Central Bay Yard</div>
+              </div>
+              <div class="column is-narrow">
+                <div class="detail-label">Created</div>
+                <div class="is-family-monospace">2026-08-18 &middot; mvance</div>
+              </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="depth-2 p-3">
+              <h4 class="title is-7 text-uppercase mb-3 has-text-grey"><span class="material-icons" style="font-size:14px; vertical-align:middle;">forum</span> Reservation Activity & Approval Log (2)</h4>
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>Marcus Vance</strong> <span class="tag is-info is-light is-small ml-2">Requester</span></div>
+                  <div class="level-right is-family-monospace">2026-08-18 10:20</div>
+                </div>
+                <div class="is-size-7">Submitted reservation request for 3-day backup power unit during substation maintenance.</div>
+              </div>
+              <div class="comment-bubble">
+                <div class="comment-meta level mb-1">
+                  <div class="level-left"><strong>Dispatcher Command</strong> <span class="tag is-dark is-light is-small ml-2">Approver</span></div>
+                  <div class="level-right is-family-monospace">2026-08-18 11:45</div>
+                </div>
+                <div class="is-size-7">Reservation approved. Asset locked for checkout on 2026-08-22.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column is-4">
+            <div class="card depth-1 p-3">
+              <h4 class="title is-6 mb-2"><span class="material-icons" style="font-size:16px; vertical-align:middle;">attach_file</span> Reservation Attachments (1)</h4>
+              <div class="is-size-7 p-2 depth-2">
+                <span class="material-icons mr-1 has-text-danger" style="font-size:14px; vertical-align:middle;">picture_as_pdf</span>
+                <a href="#" class="has-text-link">approval_form_res8802.pdf</a>
+                <div class="has-text-grey" style="font-size:0.68rem;">280 KB &middot; Approved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEM 2.2: MEDIUM RESERVATION CARD -->
+    <div class="sub-section-title">2.2 Medium Reservation Event Card (format=medium)</div>
+    <div class="card depth-1 mb-6">
+      <div class="card-header level py-2">
+        <div class="level-left">
+          <span class="icon mr-2 has-text-primary"><span class="material-icons">event_seat</span></span>
+          <strong class="is-size-6">RES-2026-8802: Emergency Power Unit Forward Asset Reservation</strong>
+        </div>
+        <div class="level-right" style="gap:0.4rem;">
+          <span class="res-badge">Reservation</span>
+          <span class="tag is-primary is-light is-small">Approved</span>
+        </div>
+      </div>
+      <div class="card-content py-3">
+        <div class="columns is-vcentered is-size-7">
+          <div class="column is-4">
+            <div class="detail-label">Reserved Asset</div>
+            <div class="detail-val"><span class="material-icons" style="font-size:12px;">precision_manufacturing</span> CAT-3512 Generator (#GEN-042)</div>
+          </div>
+          <div class="column is-3">
+            <div class="detail-label">Requester</div>
+            <div class="detail-val">Marcus Vance</div>
+          </div>
+          <div class="column is-2">
+            <div class="detail-label">Status</div>
+            <div class="detail-val">Pending Checkout</div>
+          </div>
+          <div class="column is-3 text-right">
+            <div class="detail-label">Booking Window</div>
+            <div class="is-family-monospace">Aug 22 - Aug 25</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ================================================================== -->
+    <!-- CATEGORY 3: CONDENSED DISPATCH & RESERVATION TABLE ROWS            -->
+    <!-- ================================================================== -->
+    <div class="section-title">Category 3: Condensed Table Rows (format=condensed)</div>
+    <p class="subtitle is-7 has-text-grey mb-3">Base event rows displaying a few critical columns for high-density listing tables.</p>
+
+    <div class="card depth-1">
+      <div class="table-container">
+        <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7">
+          <thead>
+            <tr style="background:#f1f5f9;">
+              <th>Ref / Title</th>
+              <th>Event Kind</th>
+              <th>Domain</th>
+              <th>Target Asset / Vehicle</th>
+              <th>Operator / Requester</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Date / Window</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="is-family-monospace has-text-grey">DSP-0412</span> &middot; <strong>Sector Alpha Emergency Dispatch</strong></td>
+              <td><span class="disp-badge">Dispatch</span></td>
+              <td>Northern Field Ops</td>
+              <td>Kenworth T880 (#TRK-104)</td>
+              <td>David Miller</td>
+              <td><span class="tag is-info is-light is-small">En-Route</span></td>
+              <td><span class="tag is-danger is-light is-small">High</span></td>
+              <td class="is-family-monospace">2026-08-20</td>
+            </tr>
+            <tr>
+              <td><span class="is-family-monospace has-text-grey">RES-8802</span> &middot; <strong>Emergency Power Unit Reservation</strong></td>
+              <td><span class="res-badge">Reservation</span></td>
+              <td>Northern Division</td>
+              <td>CAT-3512 Generator (#GEN-042)</td>
+              <td>Marcus Vance</td>
+              <td><span class="tag is-primary is-light is-small">Approved</span></td>
+              <td><span class="tag is-light is-small">Normal</span></td>
+              <td class="is-family-monospace">Aug 22 - Aug 25</td>
+            </tr>
+            <tr>
+              <td><span class="is-family-monospace has-text-grey">DSP-0410</span> &middot; <strong>Routine Supply Shuttle Run #4</strong></td>
+              <td><span class="disp-badge">Dispatch</span></td>
+              <td>Central Depot</td>
+              <td>Ford F-550 Service Van (#VAN-012)</td>
+              <td>Alex Rivera</td>
+              <td><span class="tag is-success is-light is-small">Completed</span></td>
+              <td><span class="tag is-light is-small">Low</span></td>
+              <td class="is-family-monospace">2026-08-19</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

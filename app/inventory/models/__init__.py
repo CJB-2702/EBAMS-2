@@ -11,20 +11,15 @@ from app.inventory.models.audit.inventory_audit_log import InventoryAuditLog
 from app.inventory.models.intake.enums import (
     AllocationCondition,
     AllocationIntakeMethod,
+    AllocationLinkSource,
     IntakeSessionMethod,
     IntakeSessionStatus,
-    ReconciliationResolutionType,
-    ReconciliationStatus,
 )
 from app.inventory.models.intake.intake_session import IntakeSession
 from app.inventory.models.intake.intake_session_shipment_link import (
     IntakeSessionShipmentLink,
 )
 from app.inventory.models.intake.item_allocation import ItemAllocation
-from app.inventory.models.intake.part_reconciliation_line import PartReconciliationLine
-from app.inventory.models.intake.part_reconciliation_session import (
-    PartReconciliationSession,
-)
 from app.inventory.models.issuance.enums import IssueSessionStatus, IssueType
 from app.inventory.models.issuance.part_issue import PartIssue
 from app.inventory.models.issuance.part_issue_session import PartIssueSession
@@ -40,6 +35,7 @@ __all__ = [
     "ActiveInventory",
     "AllocationCondition",
     "AllocationIntakeMethod",
+    "AllocationLinkSource",
     "AuditReasonCode",
     "AuditResolutionType",
     "AuditSession",
@@ -59,10 +55,6 @@ __all__ = [
     "PartIssue",
     "PartIssueSession",
     "PartMovement",
-    "PartReconciliationLine",
-    "PartReconciliationSession",
-    "ReconciliationResolutionType",
-    "ReconciliationStatus",
     "Room",
     "RoomLocation",
     "StorageLocation",

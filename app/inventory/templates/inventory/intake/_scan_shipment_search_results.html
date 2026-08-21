@@ -1,10 +1,12 @@
 {% comment %}
 format=htmx-search-results fragment for the Scan Session start page. Swapped
 into #scan-shipment-results-region by both the search input and each row's
-checkbox. Every response also OOB-swaps `#scan-selected-summary` so the
-"assigned" half of the pair (FD-18: in-page, not a modal) always reflects
-whichever shipments are currently checked, even when the request that
-changed the checked set was a checkbox toggle rather than a search.
+checkbox. Every response also OOB-swaps `#scan-selected-summary`,
+`#scan-submit-hint`, and `#scan-submit-button` so the "assigned" half of the
+pair (FD-18: in-page, not a modal) and the submit control's enabled state
+always reflect whichever shipments are currently checked, even when the
+request that changed the checked set was a checkbox toggle rather than a
+search.
 {% endcomment %}
 <div id="scan-shipment-results">
   {% if shipments %}
@@ -22,15 +24,18 @@ changed the checked set was a checkbox toggle rather than a search.
     <tbody>
       {% for shipment in shipments %}
       <tr {% if shipment.pk in selected_ids %}class="is-selected"{% endif %}>
-        <td>
+        {# hx-* lives on the td, not the checkbox: for GET requests htmx's own #}
+        {# triggering element is appended unconditionally, ignoring .checked — #}
+        {# putting it on a name-less ancestor forces selection state to come #}
+        {# only from hx-include, which does respect .checked. #}
+        <td hx-get="{% url 'inventory_scan_intake_start' %}?format=htmx-search-results"
+            hx-trigger="change from:'find input'"
+            hx-target="#scan-shipment-results-region"
+            hx-swap="innerHTML"
+            hx-include="[name='q'],[name='shipment_ids']">
           <label class="checkbox">
             <input type="checkbox" name="shipment_ids" value="{{ shipment.pk }}"
-                   {% if shipment.pk in selected_ids %}checked{% endif %}
-                   hx-get="{% url 'inventory_scan_intake_start' %}?format=htmx-search-results"
-                   hx-trigger="change"
-                   hx-target="#scan-shipment-results-region"
-                   hx-swap="innerHTML"
-                   hx-include="[name='q'],[name='shipment_ids']">
+                   {% if shipment.pk in selected_ids %}checked{% endif %}>
           </label>
         </td>
         <td class="is-family-monospace">{{ shipment.shipment_number }}</td>
@@ -49,3 +54,10 @@ changed the checked set was a checkbox toggle rather than a search.
 <div id="scan-selected-summary" hx-swap-oob="true">
   {% include "inventory/intake/_scan_selected_summary.html" %}
 </div>
+<div id="scan-submit-hint" hx-swap-oob="true">
+  {% include "inventory/intake/_scan_submit_hint.html" %}
+</div>
+<button id="scan-submit-button" class="button is-primary card-footer-primary" type="submit" hx-swap-oob="true" {% if not selected_shipments %}disabled{% endif %}>
+  <span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span>
+  <span>Start Scan Session</span>
+</button>

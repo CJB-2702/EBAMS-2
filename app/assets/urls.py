@@ -179,7 +179,18 @@ urlpatterns = [
     # Asset Relationships (parent/child grouping)
     path("asset-relationships/", asset_relationships_index, name="asset_relationships_index"),
 
-    # Part Associations (placeholder — future association framework)
+    # Part Associations
     path("part-associations/models/", part_model_association_index, name="part_model_association_index"),
     path("part-associations/classes/", part_class_association_index, name="part_class_association_index"),
+
+    # Asset Events Portal
+    path("events/", lambda req: _events_portal(req, "asset_management"), name="asset_events_portal"),
 ]
+
+def _events_portal(request, default_type: str):
+    from app.events.presentation_layer.entrypoints.events import event_index
+    get_copy = request.GET.copy()
+    if not get_copy.get("event_type"):
+        get_copy["event_type"] = default_type
+    request.GET = get_copy
+    return event_index(request)

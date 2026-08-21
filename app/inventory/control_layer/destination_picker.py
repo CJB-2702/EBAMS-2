@@ -39,16 +39,21 @@ class DestinationPickerContext:
         cls,
         request: HttpRequest,
         *,
-        source_warehouse_id: int,
+        source_warehouse_id: int | None = None,
         part_id: int | None = None,
+        include_intake_rooms: bool = False,
     ) -> dict:
         """Assemble full destination-picker state from query params.
 
         Args:
             request: Django request (to read GET params).
             source_warehouse_id: Active inventory's warehouse (to detect
-                inter-warehouse moves).
+                inter-warehouse moves). `None` for read-only browsing, where
+                there is no source and nothing can "cross" warehouses.
             part_id: Optional part ID for stock-level display on location rows.
+            include_intake_rooms: Keep Intake Rooms in the room list. Movement
+                flows exclude them (you never put stock away *into* Intake),
+                but browsing flows must show them — Intake holds real stock.
 
         Returns:
             {
@@ -74,7 +79,9 @@ class DestinationPickerContext:
         warehouses = Warehouse.objects.filter(is_active=True).order_by("name")
         selected_warehouse = warehouses.filter(pk=warehouse_id).first() if warehouse_id else None
         crosses_warehouse = bool(
-            selected_warehouse and selected_warehouse.pk != source_warehouse_id
+            source_warehouse_id is not None
+            and selected_warehouse
+            and selected_warehouse.pk != source_warehouse_id
         )
 
         rooms = []
@@ -84,11 +91,11 @@ class DestinationPickerContext:
         selected_storage_location = None
 
         if selected_warehouse and not crosses_warehouse:
+            room_qs = Room.objects.filter(warehouse=selected_warehouse, is_active=True)
+            if not include_intake_rooms:
+                room_qs = room_qs.exclude(is_intake_room=True)
             rooms = list(
-                Room.objects.filter(warehouse=selected_warehouse, is_active=True)
-                .exclude(is_intake_room=True)
-                .select_related("current_layout")
-                .order_by("room_name")
+                room_qs.select_related("current_layout").order_by("room_name")
             )
 
             for room in rooms:

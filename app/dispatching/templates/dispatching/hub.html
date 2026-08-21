@@ -7,7 +7,7 @@
 <div class="page-hero" style="text-align: center; border-left: none; border-top: 4px solid var(--bulma-link);">
   <div class="page-header-icon" style="margin: 0 auto 0.5rem;"><span class="material-icons" aria-hidden="true" style="font-size: 2.5rem;">directions_car</span></div>
   <h1 class="page-title">Dispatching</h1>
-  <p class="page-subtitle">Templates and skills are live. The dispatcher queue and dispatch requests are coming in a later pass.</p>
+  <p class="page-subtitle">Manage dispatch requests, asset reservations, procedure templates, and skills catalogue.</p>
 </div>
 
 <div class="body-grid full-width">
@@ -59,9 +59,14 @@
   <div class="card">
     <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span>Dispatcher Queue</div></div>
     <div class="card-content">
-      <p class="has-text-grey is-size-7 mb-3">Raising a dispatch, planning it, assigning crew, and expenses — coming in a later pass. Asset booking and handover are live above.</p>
+      <p class="has-text-grey is-size-7 mb-3">Manage incoming dispatch requests, assign crew, track expenses, and coordinate asset reservations.</p>
       <div class="buttons">
-        <button class="button is-small is-light" disabled><span class="icon"><span class="material-icons" aria-hidden="true">block</span></span><span>Not yet available</span></button>
+        <a href="{% url 'dispatching_dispatch_index' %}?status=requested" class="button is-small is-link is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">outbox</span></span><span>Requested Queue</span>
+        </a>
+        <a href="{% url 'dispatching_dispatch_index' %}" class="button is-small is-light">
+          <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span><span>All Dispatches</span>
+        </a>
       </div>
     </div>
   </div>

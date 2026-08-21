@@ -29,6 +29,31 @@ PERM_RESERVATION_CONFIRM = "dispatching.reservation_confirm"
 PERM_RESERVATION_SELF_SERVICE = "dispatching.reservation_self_service"
 PERM_RESERVATION_VERIFY = "dispatching.reservation_verify"
 
+PERM_DISPATCH_RAISE = "events.dispatch_raise"
+PERM_DISPATCH_PLAN = "events.dispatch_plan"
+PERM_DISPATCH_REJECT = "events.dispatch_reject"
+PERM_DISPATCH_COMPLETE = "events.dispatch_complete"
+
+
+def can_raise_dispatch(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_DISPATCH_RAISE)
+
+
+def can_plan_dispatch(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_DISPATCH_PLAN)
+
+
+def can_reject_dispatch(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_DISPATCH_REJECT)
+
+
+def can_complete_dispatch(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_DISPATCH_COMPLETE)
+
+
+def can_view_dispatches(request: HttpRequest) -> bool:
+    return can_read_dispatching(request) or can_raise_dispatch(request) or can_plan_dispatch(request)
+
 
 def can_manage_skills_catalogue(request: HttpRequest) -> bool:
     return request.user.has_perm(PERM_SKILLS_CATALOGUE)

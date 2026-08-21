@@ -1,0 +1,30 @@
+<div id="personnel-card-container" class="card max-w-4xl mb-5">
+  <div class="card-header is-flex is-justify-content-space-between is-align-items-center pr-4">
+    <div class="card-header-title mb-0">
+      <span class="icon"><span class="material-icons" aria-hidden="true">group</span></span>
+      Personnel Selection / Crew Roster <span class="tag is-light ml-2">{{ struct.crew|length }}</span>
+    </div>
+    {% if struct.requested_skills %}
+    <div class="tags is-flex is-align-items-center mb-0" style="gap: 0.25rem;">
+      <span class="is-size-7 has-text-grey mr-1">Required Skills:</span>
+      {% for req in struct.requested_skills %}
+      <button type="button" class="tag is-info is-light is-clickable" style="cursor: pointer; border: 1px solid var(--bulma-info, #3273dc);"
+              hx-get="{% url 'dispatching_dispatch_personnel_search' dispatch.pk %}?skill_name={{ req.skill.name|urlencode }}&user_name={{ username_q|urlencode }}"
+              hx-target="#available-personnel-container"
+              hx-swap="outerHTML"
+              onclick="document.getElementById('skill-search-input').value='{{ req.skill.name|escapejs }}';">
+        <span class="icon is-small"><span class="material-icons" style="font-size: 0.85rem;">verified</span></span>
+        <span>{{ req.skill.name }} (L{{ req.minimum_level|default:"1" }})</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7 mb-3">Assign crew members to this dispatch. Crew members are persisted via <code>DispatchPersonnel</code>.</p>
+    <div class="columns is-variable is-4">
+      {% include "dispatching/dispatches/_available_personnel.html" %}
+      {% include "dispatching/dispatches/_assigned_personnel.html" %}
+    </div>
+  </div>
+</div>

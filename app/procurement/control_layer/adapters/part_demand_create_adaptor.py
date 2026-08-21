@@ -20,10 +20,14 @@ class PartDemandCreateInput:
     needed_by: object
     notes: str
     expected_cost: Decimal | None
-    source_module: str
+    source: str
     serial_number_tracking_required: bool
     requested_by_id: int | None
     demand_state: str
+
+    @property
+    def source_module(self) -> str:
+        return self.source
 
 
 class PartDemandCreateAdaptor:
@@ -55,8 +59,8 @@ class PartDemandCreateAdaptor:
         if priority not in DemandPriority.values:
             errors.append("Invalid priority.")
 
-        source_module = post_data.get("source_module") or DemandSourceModule.GENERAL
-        if source_module not in DemandSourceModule.values:
+        source = post_data.get("source") or post_data.get("source_module") or DemandSourceModule.PROCUREMENT
+        if source not in DemandSourceModule.values:
             errors.append("Invalid source module.")
 
         # Required when a human fills in the form — they are asking for
@@ -92,7 +96,7 @@ class PartDemandCreateAdaptor:
             needed_by=needed_by,
             notes=(post_data.get("notes") or "").strip(),
             expected_cost=expected_cost,
-            source_module=source_module,
+            source=source,
             serial_number_tracking_required=str(
                 post_data.get("serial_number_tracking_required", "")
             ).lower()

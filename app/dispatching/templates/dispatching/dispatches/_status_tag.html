@@ -1,0 +1,23 @@
+{% comment %}
+Standard status tag snippet for Dispatching workflow_status.
+Usage: {% include "dispatching/dispatches/_status_tag.html" with status=dispatch.workflow_status %}
+{% endcomment %}
+{% if status == "requested" %}
+  <span class="tag is-info is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">outbox</span></span>Requested</span>
+{% elif status == "under_review" %}
+  <span class="tag is-link is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">pending_actions</span></span>Under Review</span>
+{% elif status == "fixes_requested" %}
+  <span class="tag is-warning is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">error_outline</span></span>Fixes Requested</span>
+{% elif status == "planned" %}
+  <span class="tag is-success is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">event_available</span></span>Planned</span>
+{% elif status == "alternate_resolution" %}
+  <span class="tag is-success is-light has-text-weight-normal"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">alt_route</span></span>Alternate Resolution</span>
+{% elif status == "rejected" %}
+  <span class="tag is-danger is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">block</span></span>Rejected</span>
+{% elif status == "completed" %}
+  <span class="tag is-dark is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">task_alt</span></span>Completed</span>
+{% elif status == "cancelled" %}
+  <span class="tag is-light"><span class="icon is-small mr-1"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">cancel</span></span>Cancelled</span>
+{% else %}
+  <span class="tag is-light">{{ status|default:"—" }}</span>
+{% endif %}

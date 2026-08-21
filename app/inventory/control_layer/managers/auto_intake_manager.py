@@ -15,12 +15,14 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.utils import timezone
 
 from app.inventory.control_layer.errors import InventoryValidationError
 from app.inventory.control_layer.guards.intake_guard import AutoIntakeValidator
 from app.inventory.models.intake.enums import (
     AllocationCondition,
     AllocationIntakeMethod,
+    AllocationLinkSource,
     IntakeSessionMethod,
     IntakeSessionStatus,
 )
@@ -164,6 +166,9 @@ class AutoIntakeManager:
                         quantity=delta["delta_good"],
                         condition=AllocationCondition.GOOD,
                         intake_method=AllocationIntakeMethod.MANUAL,
+                        link_source=AllocationLinkSource.MANUAL,
+                        linked_at=timezone.now(),
+                        linked_by=actor,
                         created_by=actor,
                         updated_by=actor,
                     )
@@ -175,6 +180,9 @@ class AutoIntakeManager:
                         quantity=delta["delta_rejected"],
                         condition=AllocationCondition.REJECTED,
                         intake_method=AllocationIntakeMethod.MANUAL,
+                        link_source=AllocationLinkSource.MANUAL,
+                        linked_at=timezone.now(),
+                        linked_by=actor,
                         created_by=actor,
                         updated_by=actor,
                     )

@@ -195,15 +195,17 @@ class Command(BaseCommand):
         actor,
         quantity,
         priority=DemandPriority.MEDIUM,
-        source_module=DemandSourceModule.GENERAL,
+        source=DemandSourceModule.PROCUREMENT,
+        source_module=None,
         notes="",
     ) -> PartDemand:
+        resolved_source = source or source_module or DemandSourceModule.PROCUREMENT
         return PartDemandFactory.create(
             part_id=part.pk,
             domain_id=domain.pk,
             quantity_requested=Decimal(quantity),
             priority=priority,
-            source_module=source_module,
+            source=resolved_source,
             notes=f"{notes} {SEED_MARKER}".strip(),
             requested_by=actor,
             actor=actor,

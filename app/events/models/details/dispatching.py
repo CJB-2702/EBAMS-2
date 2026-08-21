@@ -12,8 +12,7 @@ class DispatchScope(models.TextChoices):
 
 
 class DispatchWorkflowStatus(models.TextChoices):
-    DRAFT = "draft", "Draft"
-    SUBMITTED = "submitted", "Submitted"
+    REQUESTED = "requested", "Requested"
     UNDER_REVIEW = "under_review", "Under Review"
     FIXES_REQUESTED = "fixes_requested", "Fixes Requested"
     PLANNED = "planned", "Planned"
@@ -43,7 +42,7 @@ class DispatchingDetail(Event):
     selected among them.
 
     workflow_status is deliberately separate from the inherited Event.status:
-    the dispatch lifecycle (draft/submitted/under_review/.../completed) is not
+    the dispatch lifecycle (requested/under_review/.../completed) is not
     the generic Event vocabulary (planned/in_progress/complete/...), and legacy's
     duplicate status field is exactly the drift this split avoids.
     """
@@ -64,7 +63,7 @@ class DispatchingDetail(Event):
     workflow_status = models.CharField(
         max_length=30,
         choices=DispatchWorkflowStatus.choices,
-        default=DispatchWorkflowStatus.DRAFT,
+        default=DispatchWorkflowStatus.REQUESTED,
     )
 
     desired_start = models.DateTimeField()

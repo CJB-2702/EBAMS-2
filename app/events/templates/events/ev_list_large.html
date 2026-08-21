@@ -18,6 +18,10 @@
       </div>
     </div>
     <div class="page-header-actions">
+      <button type="button" class="button is-small is-light" id="global-comments-toggle" onclick="window.__toggleAllComments(this)">
+        <span class="icon"><span class="material-icons" id="global-comments-icon" aria-hidden="true">unfold_less</span></span>
+        <span id="global-comments-text">Collapse Comments</span>
+      </button>
       {% include "events/fragments/density_switch.html" %}
       <a href="{% url 'event_create' %}" class="button is-small is-link">
         <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
@@ -43,19 +47,36 @@
         <a href="{% url 'asset_detail' asset_id=asset.id %}" class="is-size-7">View asset →</a>
       </div>
       {% endif %}
-      <form method="get">
+      <form method="get" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML" hx-push-url="true">
         <input type="hidden" name="format" value="large">
-        {% if asset_filter %}<input type="hidden" name="asset" value="{{ asset_filter }}">{% endif %}
-        <div class="columns is-vcentered is-multiline is-variable is-3">
-          <div class="column is-4">
+        <div class="columns is-vcentered is-multiline is-variable is-2">
+          <div class="column is-3">
             <label class="label is-small">Title</label>
             <input class="input is-small is-family-monospace" type="search" name="q"
-              value="{{ q }}" placeholder="Search title…" autocomplete="off">
+              value="{{ q }}" placeholder="Search title…" autocomplete="off"
+              hx-trigger="keyup delay:300ms changed" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML">
           </div>
-          <div class="column is-3">
+          <div class="column is-2">
+            <label class="label is-small">Domain</label>
+            <div class="select is-small is-fullwidth">
+              <select name="domain" hx-trigger="change" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML">
+                <option value="">All domains</option>
+                {% for dom in user_domains %}
+                <option value="{{ dom.id }}" {% if dom.id|slugify == domain_filter %}selected{% endif %}>{{ dom.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Asset ID</label>
+            <input class="input is-small is-family-monospace" type="number" name="asset"
+              value="{{ asset_filter }}" placeholder="e.g. 8" autocomplete="off"
+              hx-trigger="keyup delay:300ms changed" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML">
+          </div>
+          <div class="column is-2">
             <label class="label is-small">Status</label>
             <div class="select is-small is-fullwidth">
-              <select name="status">
+              <select name="status" hx-trigger="change" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML">
                 <option value="">All statuses</option>
                 {% for val, label in status_choices %}
                 <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
@@ -63,10 +84,10 @@
               </select>
             </div>
           </div>
-          <div class="column is-3">
+          <div class="column is-2">
             <label class="label is-small">Type</label>
             <div class="select is-small is-fullwidth">
-              <select name="event_type">
+              <select name="event_type" hx-trigger="change" hx-get="{% url 'event_index' %}" hx-target="#event-cards" hx-select="#event-cards" hx-swap="outerHTML">
                 <option value="">All types</option>
                 {% for val, label in type_choices %}
                 <option value="{{ val }}" {% if val == type_filter %}selected{% endif %}>{{ label }}</option>
@@ -74,14 +95,12 @@
               </select>
             </div>
           </div>
-          <div class="column is-2 is-flex is-align-items-flex-end" style="gap: 0.5rem;">
-            <button class="button is-small is-info" type="submit">
+          <div class="column is-1 is-flex is-align-items-flex-end" style="gap: 0.25rem;">
+            <button class="button is-small is-info" type="submit" title="Apply Filters">
               <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-              <span>Apply</span>
             </button>
-            <a href="?format=large" class="button is-small is-light">
+            <a href="?format=large" class="button is-small is-light" title="Clear Filters">
               <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
-              <span>Clear</span>
             </a>
           </div>
         </div>

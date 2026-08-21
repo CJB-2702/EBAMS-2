@@ -80,17 +80,59 @@ class BarcodeParseError(InventoryValidationError):
         super().__init__([msg])
 
 
-class ReconciliationBarrierError(InventoryValidationError):
-    """Session close was attempted while a `PartReconciliationSession` child
-    is still PENDING — the close barrier `IntakeCommitOrchestrator` enforces
-    before any stock/procurement write runs."""
+class LineCapacityExceeded(InventoryValidationError):
+    """A link would push a shipment line past its quantity — the
+    over-allocation ban (intake_portal_workflow.md §7.2).
 
-    def __init__(self, *, session_id: int, pending_part_ids: list[int]) -> None:
-        self.session_id = session_id
-        self.pending_part_ids = pending_part_ids
+    THIS IS AN EXPLANATION, NOT A FAULT. The physical stock is real and
+    already counted; it simply has nowhere on this line to go, so it stays
+    unlinked as excess. The message is worded for an operator holding a box,
+    and callers on the auto-association path swallow it entirely (§5.3) —
+    the operator is never shown a linking failure.
+    """
+
+    def __init__(
+        self, *, shipment_line_id: int, part_number: str, expected, already_linked,
+        requested,
+    ) -> None:
+        self.shipment_line_id = shipment_line_id
+        self.part_number = part_number
+        self.expected = expected
+        self.already_linked = already_linked
+        self.requested = requested
+        self.remaining = max(expected - already_linked, 0)
         msg = (
-            f"Intake session #{session_id} still has unresolved reconciliation "
-            f"for part(s) {pending_part_ids} — resolve every discrepancy before "
-            f"closing."
+            f"This line is fully allocated ({already_linked}/{expected} of "
+            f"{part_number}). {requested} more cannot be filed against it — "
+            f"that stock stays unlinked as excess."
         )
         super().__init__([msg])
+
+
+class RecordingLocked(InventoryValidationError):
+    """A write was attempted against a session whose recording is locked
+    (§4.3). Recording locks only when a user explicitly says so, and once
+    locked it stays locked — editing a locked session is deliberately out of
+    scope for this build (§4.5). If more items need counting, the operator
+    opens a second session, which may reference the first (§7.5)."""
+
+    def __init__(self, *, session_id: int) -> None:
+        self.session_id = session_id
+        super().__init__(
+            [
+                f"Recording is locked on intake session #{session_id}. Open a "
+                f"new session to count more items."
+            ]
+        )
+
+
+class StockAlreadyPosted(InventoryValidationError):
+    """Stock posting is the one-way door (§4.2). Once stock merges into the
+    general pool its per-receipt traceability is gone, so there is nothing to
+    reverse into."""
+
+    def __init__(self, *, session_id: int) -> None:
+        self.session_id = session_id
+        super().__init__(
+            [f"Stock has already been posted for intake session #{session_id}."]
+        )

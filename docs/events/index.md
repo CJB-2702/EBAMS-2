@@ -15,6 +15,7 @@ The event tracking sub-application: comments, attachments, shadow history, and e
 ## Guides
 
 - [Events Domain](events.md) — authoritative source of truth for the events sub-application.
+- [Unified Event Portals & Dynamic Cards](unified_event_portals_architecture.md) — architecture, detail card fragments, color schemes, rosters, and comment collapse controls.
 - [Event Context Design](event_context_design.md) — structs, context classes, and handler interactions.
 - [Events Endpoints — Handler vs Context Routing](events_endpoints.md) — per-endpoint routing decisions.
 - [Comment Auditing — History, Attachments, and File Lifecycle](comment_auditing.md) — comment editing, deletion, and cleanup.

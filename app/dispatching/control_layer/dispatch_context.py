@@ -141,29 +141,6 @@ class DispatchContext:
     # Lifecycle
     # ------------------------------------------------------------------ #
 
-    def submit(self, *, candidate_asset_ids: list[int] | None = None) -> DispatchingDetail:
-        from django.utils import timezone
-
-        self._transition(to_status=DispatchWorkflowStatus.SUBMITTED)
-        dispatch = self.dispatch
-        with transaction.atomic():
-            dispatch.workflow_status = DispatchWorkflowStatus.SUBMITTED
-            dispatch.submitted_at = timezone.now()
-            dispatch.updated_by = self.actor
-            dispatch.save(update_fields=["workflow_status", "submitted_at", "updated_by", "updated_at"])
-        self._narrate(DispatchNarrator.submitted(actor=self.actor))
-        self.refresh()
-
-        if candidate_asset_ids:
-            from app.dispatching.control_layer.managers.requested_asset_auto_reserver import (
-                RequestedAssetAutoReserver,
-            )
-
-            RequestedAssetAutoReserver.reserve_free_assets(
-                dispatch=self.dispatch, candidate_asset_ids=candidate_asset_ids, actor=self.actor
-            )
-            self.refresh()
-        return self.dispatch
 
     def take_under_review(self) -> DispatchingDetail:
         self._transition(to_status=DispatchWorkflowStatus.UNDER_REVIEW)
@@ -188,9 +165,9 @@ class DispatchContext:
         return self.dispatch
 
     def resubmit(self) -> DispatchingDetail:
-        self._transition(to_status=DispatchWorkflowStatus.SUBMITTED)
+        self._transition(to_status=DispatchWorkflowStatus.REQUESTED)
         dispatch = self.dispatch
-        dispatch.workflow_status = DispatchWorkflowStatus.SUBMITTED
+        dispatch.workflow_status = DispatchWorkflowStatus.REQUESTED
         dispatch.updated_by = self.actor
         dispatch.save(update_fields=["workflow_status", "updated_by", "updated_at"])
         self._narrate(DispatchNarrator.resubmitted(actor=self.actor))

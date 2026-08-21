@@ -20,6 +20,10 @@ class ItemAllocationStruct:
     composite_sn: str
     condition: str
     intake_method: str
+    link_source: str
+    linked_at: object
+    raw_payload: str
+    notes: str
 
     @classmethod
     def load(cls, *, allocation_id: int) -> "ItemAllocationStruct":
@@ -39,6 +43,10 @@ class ItemAllocationStruct:
             composite_sn=allocation.composite_sn,
             condition=allocation.condition,
             intake_method=allocation.intake_method,
+            link_source=allocation.link_source,
+            linked_at=allocation.linked_at,
+            raw_payload=allocation.raw_payload,
+            notes=allocation.notes,
         )
 
     def to_dict(self) -> dict:
@@ -53,4 +61,8 @@ class ItemAllocationStruct:
             "composite_sn": self.composite_sn,
             "condition": self.condition,
             "intake_method": self.intake_method,
+            "link_source": self.link_source,
+            "linked_at": self.linked_at,
+            "raw_payload": self.raw_payload,
+            "notes": self.notes,
         }

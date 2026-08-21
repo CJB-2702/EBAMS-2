@@ -1,5 +1,5 @@
 {% extends "procurement/base.html" %}
-{% load procurement_tags %}
+{% load procurement_tags hashid_tags %}
 {% block title %}Demand #{{ demand.pk }}{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'demand_index' %}">Demands</a></li>
@@ -61,7 +61,15 @@
           <dt>Needed By</dt><dd>{{ demand.needed_by|date:"Y-m-d H:i"|default:"—" }}</dd>
           <dt>Requested By</dt><dd>{{ demand.requested_by|default:"—" }}</dd>
           <dt>Domain</dt><dd>{{ demand.domain.name }}</dd>
-          <dt>Source Module</dt><dd>{{ demand.get_source_module_display }}</dd>
+          <dt>Source</dt><dd><span class="tag is-light">{{ demand.source }}</span></dd>
+          <dt>Linked Event</dt>
+          <dd>
+            {% if demand.event_id %}
+              <a href="{% url 'event_detail' hash=demand.event_id|encode_id %}">#{{ demand.event_id }}{% if demand.event %} — {{ demand.event.title }}{% endif %}</a>
+            {% else %}
+              <span class="has-text-grey">—</span>
+            {% endif %}
+          </dd>
           <dt>Serial Tracking</dt><dd>{{ demand.serial_number_tracking_required|yesno:"Required,Not required" }}</dd>
           <dt>Created</dt><dd>{{ demand.created_at|date:"Y-m-d H:i" }} by {{ demand.created_by|default:"—" }}</dd>
           <dt>Updated</dt><dd>{{ demand.updated_at|date:"Y-m-d H:i" }} by {{ demand.updated_by|default:"—" }}</dd>

@@ -39,6 +39,7 @@ from app.procurement.control_layer.factories.part_demand_factory import (
 from app.procurement.control_layer.part_demand_context import PartDemandContext
 from app.procurement.models import (
     DemandPriority,
+    DemandSourceModule,
     DemandState,
     IssuanceState,
     PartDemand,
@@ -209,6 +210,9 @@ def demand_index(request: HttpRequest) -> HttpResponse:
     shipment_state = request.GET.get("shipment_state", "").strip()
     issuance_state = request.GET.get("issuance_state", "").strip()
     priority = request.GET.get("priority", "").strip()
+    source = request.GET.get("source", "").strip() or request.GET.get("source_module", "").strip()
+    event_id_raw = request.GET.get("event_id", "").strip()
+    event_id = int(event_id_raw) if event_id_raw.isdigit() else None
     q = request.GET.get("q", "").strip()
     part_id_raw = request.GET.get("part_id", "").strip()
     part_id = int(part_id_raw) if part_id_raw.isdigit() else None
@@ -248,6 +252,8 @@ def demand_index(request: HttpRequest) -> HttpResponse:
         shipment_state=shipment_state,
         issuance_state=issuance_state,
         priority=priority,
+        source=source,
+        event_id=event_id,
         part_id=part_id,
         domain_id=domain_id,
         needed_by_from=needed_by_from,
@@ -274,6 +280,8 @@ def demand_index(request: HttpRequest) -> HttpResponse:
             "shipment_state": shipment_state,
             "issuance_state": issuance_state,
             "priority": priority,
+            "source": source,
+            "event_id": event_id_raw,
             "q": q,
             "part_id": part_id_raw,
             "domain_id": domain_id_raw,
@@ -289,6 +297,7 @@ def demand_index(request: HttpRequest) -> HttpResponse:
         "shipment_states": ShipmentState.choices,
         "issuance_states": IssuanceState.choices,
         "priorities": DemandPriority.choices,
+        "sources": DemandSourceModule.choices,
         "domains": Domain.objects.filter(pk__in=domain_ids).order_by("name"),
         "can_request": can_request(request),
     }
@@ -335,7 +344,7 @@ def demand_create(request: HttpRequest) -> HttpResponse:
             needed_by=data.needed_by,
             notes=data.notes,
             expected_cost=data.expected_cost,
-            source_module=data.source_module,
+            source=data.source,
             serial_number_tracking_required=data.serial_number_tracking_required,
             requested_by=request.user,
             actor=request.user,
@@ -405,8 +414,8 @@ def demand_detail(request: HttpRequest, pk: int) -> HttpResponse:
     # app boundary (D7).
     issue_rows = list(
         demand.issues.select_related(
-            "created_by", "active_inventory__warehouse", "active_inventory__room",
-            "active_inventory__storage_location", "issued_to_asset",
+            "created_by", "from_room__warehouse", "from_room",
+            "from_storage_location", "issued_to_asset",
         ).order_by("-issued_at")
     )
     context = {

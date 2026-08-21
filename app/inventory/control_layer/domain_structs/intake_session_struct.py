@@ -1,6 +1,13 @@
 """Struct: aggregated read model for one IntakeSession — metadata, linked
 shipments, and its allocations, in the shapes the Auto Intake portal and
-session-detail page both need."""
+session-detail page both need.
+
+`recording_locked_at` / `stock_posted_at` are the authority on session
+state, not `status` (intake_portal_workflow.md §11.4). The totals below are
+SESSION-SCOPED counts of what this run recorded — they are NOT the truth
+about any shipment line, which is always the sum across every live session
+(§5.5). Do not build a line's progress bar from these.
+"""
 
 from __future__ import annotations
 
@@ -35,9 +42,11 @@ class IntakeSessionStruct:
     room_name: str
     status: str
     intake_method: str
-    has_unlinked_allocations: bool
     started_at: object
-    closed_at: object
+    recording_locked_at: object
+    stock_posted_at: object
+    active_shipment_id: int | None
+    continues_session_id: int | None
     hardware_device_id: str
     notes: str
     shipments: tuple[IntakeSessionShipmentLinkStruct, ...] = field(default_factory=tuple)
@@ -75,9 +84,11 @@ class IntakeSessionStruct:
             room_name=session.room.room_name if session.room_id else "",
             status=session.status,
             intake_method=session.intake_method,
-            has_unlinked_allocations=session.has_unlinked_allocations,
             started_at=session.started_at,
-            closed_at=session.closed_at,
+            recording_locked_at=session.recording_locked_at,
+            stock_posted_at=session.stock_posted_at,
+            active_shipment_id=session.active_shipment_id,
+            continues_session_id=session.continues_session_id,
             hardware_device_id=session.hardware_device_id,
             notes=session.notes,
             shipments=tuple(
@@ -104,9 +115,11 @@ class IntakeSessionStruct:
             "room_name": self.room_name,
             "status": self.status,
             "intake_method": self.intake_method,
-            "has_unlinked_allocations": self.has_unlinked_allocations,
             "started_at": self.started_at,
-            "closed_at": self.closed_at,
+            "recording_locked_at": self.recording_locked_at,
+            "stock_posted_at": self.stock_posted_at,
+            "active_shipment_id": self.active_shipment_id,
+            "continues_session_id": self.continues_session_id,
             "hardware_device_id": self.hardware_device_id,
             "notes": self.notes,
             "shipments": [s.to_dict() for s in self.shipments],

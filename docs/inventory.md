@@ -2,6 +2,11 @@
 
 The `inventory` application handles physical topography, stock ledger mutation, intake processes (interacting with the procurement system), and auditing. It follows the project's layered architecture strictly (`presentation_layer/`, `control_layer/`, `models/`).
 
+## Sub-documents
+
+* [intake_portal_workflow.md](inventory/intake_portal_workflow.md) — the seven-page intake portal, the stock-posting vs paperwork-closure split, cross-session visibility, and the intake data model. **Proposed**, supersedes the single-page session detail surface.
+* [tech_debt/intake_shipment_graph_closure.md](inventory/tech_debt/intake_shipment_graph_closure.md) — sessions sharing shipments couple transitively; reconciliation completeness is a connected-component property. **Deferred**, warning-only mitigation.
+
 ## Domain Scope
 
 The inventory module is composed of four major operational phases:

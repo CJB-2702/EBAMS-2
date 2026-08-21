@@ -10,10 +10,20 @@
           <span class="portal-tab-icon"><span class="material-icons" aria-hidden="true">event</span></span> Events <span class="portal-tab-chevron">▾</span>
         </button>
         <div id="portal-events" popover="auto" class="portal-dropdown">
-          <p class="portal-dropdown-label">Events</p>
-          <div class="portal-dropdown-inner">
-            <a href="{% url 'event_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
-            <a href="{% url 'event_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Events</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'event_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Events</a>
+                <a href="{% url 'event_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Event</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Dev Reference</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'events_kitchen_sink' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">widgets</span></span> Kitchen Sink</a>
+              </div>
+            </div>
           </div>
         </div>
       </li>
@@ -28,6 +38,22 @@
               <p class="portal-dropdown-label">Home</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'dispatching_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Hub</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Dispatches</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'dispatching_dispatch_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">outbox</span></span> Dispatches</a>
+                <a href="{% url 'dispatching_dispatch_index' %}?requested-for={{ request.user.pk|default:user.pk }}&has-assigned-person={{ request.user.pk|default:user.pk }}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Dispatches</a>
+                <a href="{% url 'dispatching_dispatch_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> New Dispatch</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Reservations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'dispatching_reservation_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span> Reservations</a>
+                <a href="{% url 'dispatching_reservation_index' %}?requested-for={{ request.user.pk|default:user.pk }}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Reservations</a>
+                <a href="{% url 'dispatching_reservation_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> New Reservation</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
@@ -59,7 +85,13 @@
               <div class="portal-dropdown-inner">
                 <a href="{% url 'maintenance_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
                 <a href="{% url 'technician_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">engineering</span></span> Technician Dashboard</a>
-                <a href="{% url 'maintenance_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span> All Maintenance Events</a>
+                <a href="{% url 'maintenance_asset_dashboard' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> Assets Dashboard</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Events</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'maintenance_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> All Events</a>
                 <a href="{% url 'create_assign' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">person_add</span></span> Create &amp; Assign</a>
                 <a href="{% url 'unassigned_events' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_late</span></span> Unassigned Events</a>
               </div>
@@ -71,16 +103,17 @@
               </div>
             </div>
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Planning</p>
+              <p class="portal-dropdown-label">Procedure Templates</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'plan_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span> Recurring Plans</a>
+                <a href="{% url 'template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">description</span></span> Template Library</a>
+                <a href="{% url 'template_builder' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span> Template Builder</a>
+                <a href="{% url 'proto_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">list_alt</span></span> Proto Actions</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Library</p>
+              <p class="portal-dropdown-label">Planning</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Procedure Templates</a>
-                <a href="{% url 'proto_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Proto Actions</a>
+                <a href="{% url 'plan_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">event_repeat</span></span> Maintenance Plans</a>
               </div>
             </div>
           </div>
@@ -94,27 +127,46 @@
         <div id="portal-assets" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
             <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Assets</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'asset_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Assets Dashboard</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Core</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'asset_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
                 <a href="{% url 'asset_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
-                <a href="{% url 'model_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Models</a>
-                <a href="{% url 'class_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Classes</a>
+                <a href="{% url 'model_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Asset Models</a>
+                <a href="{% url 'class_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Asset Classes</a>
                 <a href="{% url 'manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
+                <a href="{% url 'meter_history_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span> Meter History</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Capabilities</p>
               <div class="portal-dropdown-inner">
+                <a href="{% url 'capability_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">stars</span></span> Capabilities Overview</a>
                 <a href="{% url 'capability_definition_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Definitions</a>
+                <a href="{% url 'class_capability_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> By Asset Class</a>
+                <a href="{% url 'model_capability_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> By Model</a>
                 <a href="{% url 'asset_capability_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Configurations</p>
               <div class="portal-dropdown-inner">
+                <a href="{% url 'configurations_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configurations Overview</a>
                 <a href="{% url 'config_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
-                <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Modifications</a>
+                <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Defined Modifications</a>
+                <a href="{% url 'asset_configuration_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+                <a href="{% url 'asset_relationships_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span> Asset Relationships</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Part Associations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'part_model_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Part-Model Associations</a>
+                <a href="{% url 'part_class_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Part-Class Associations</a>
               </div>
             </div>
           </div>
@@ -128,23 +180,18 @@
         <div id="portal-parts" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Core</p>
+              <p class="portal-dropdown-label">Parts</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'parts_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
                 <a href="{% url 'part_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Part</a>
+                <a href="{% url 'part_bulk_upload' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span> Bulk Upload</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Supply</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'part_manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
-              </div>
-            </div>
-            <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Part Demands (in Procurement)</p>
-              <div class="portal-dropdown-inner">
-                <a href="{% url 'demand_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
-                <a href="{% url 'demand_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+                <a href="{% url 'supplier_items_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Supplier Items</a>
               </div>
             </div>
           </div>
@@ -162,6 +209,7 @@
               <div class="portal-dropdown-inner">
                 <a href="{% url 'demand_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span> Hub &amp; Search</a>
                 <a href="{% url 'demand_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add</span></span> New Demand</a>
+                <a href="{% url 'procurement_graph_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">share</span></span> View Graphs</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
@@ -169,12 +217,15 @@
               <div class="portal-dropdown-inner">
                 <a href="{% url 'purchase_order_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span> Purchase Orders</a>
                 <a href="{% url 'purchase_order_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span> New Purchase Order</a>
+                <a href="{% url 'vendor_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">storefront</span></span> Vendors</a>
+                <a href="{% url 'price_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">attach_money</span></span> Prices</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Shipments</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'shipment_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Shipments</a>
+                <a href="{% url 'shipment_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_box</span></span> New Shipment</a>
               </div>
             </div>
           </div>
@@ -194,7 +245,6 @@
                 <a href="{% url 'active_inventory_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
                 <a href="{% url 'inventory_intake_dashboard' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake Dashboard</a>
                 <a href="{% url 'inventory_scan_intake_start' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span> Scan Session</a>
-                <a href="{% url 'inventory_reconciliation_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span> Reconciliation Hub</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
@@ -204,7 +254,18 @@
                 <a href="{% url 'inventory_movements_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>
                 <a href="{% url 'inventory_issues_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</a>
                 <a href="{% url 'inventory_audit_session_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist_rtl</span></span> Audits</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Topography</p>
+              <div class="portal-dropdown-inner">
                 <a href="{% url 'inventory_warehouse_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span> Warehouses</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Shipments</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'inventory_shipment_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span> Inventory Shipments</a>
               </div>
             </div>
           </div>
@@ -217,6 +278,12 @@
         </button>
         <div id="portal-administration" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Home</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'administration_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Dashboard</a>
+              </div>
+            </div>
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">User Management</p>
               <div class="portal-dropdown-inner">
@@ -257,7 +324,7 @@
         <div id="portal-extensions" popover="auto" class="portal-dropdown">
           <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Detail Extensions</p>
+              <p class="portal-dropdown-label">Extensions</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'extension_home' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Overview</a>
                 <a href="{% url 'extension_config_landing' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configuration</a>
@@ -266,7 +333,7 @@
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Asset Extensions</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'extension_summary' 'purchase_info' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">receipt</span></span> Purchase Info</a>
+                <a href="{% url 'extension_summary' 'purchase_info' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">receipt</span></span> Purchase Information</a>
                 <a href="{% url 'extension_summary' 'vehicle_registration' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span> Vehicle Registration</a>
                 <a href="{% url 'extension_summary' 'smog_record' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">analytics</span></span> Smog History</a>
               </div>
@@ -278,9 +345,9 @@
               </div>
             </div>
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Custom Tracking</p>
+              <p class="portal-dropdown-label">Serial Numbers</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'extension_serial_number_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates</a>
+                <a href="{% url 'extension_serial_number_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates &amp; Tracking</a>
               </div>
             </div>
           </div>

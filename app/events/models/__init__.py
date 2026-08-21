@@ -1,4 +1,5 @@
 from app.events.models.activity_thread_proxy import ActivityThread
+from app.events.models.asset_event import AssetEvent
 from app.events.models.attachment import Attachment, AttachmentType
 from app.events.models.comment import Comment
 from app.events.models.details import (
@@ -29,6 +30,7 @@ __all__ = [
     "ActivityThreadType",
     "AdministrationDetail",
     "ALLOWED_EXTENSIONS",
+    "AssetEvent",
     "AssetManagementDetail",
     "Attachment",
     "AttachmentType",

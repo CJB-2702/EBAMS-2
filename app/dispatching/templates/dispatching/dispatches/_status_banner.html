@@ -1,0 +1,39 @@
+{% comment %}
+Standard status notification banner for Dispatching detail & edit views.
+Usage: {% include "dispatching/dispatches/_status_banner.html" with dispatch=dispatch %}
+{% endcomment %}
+{% with status=dispatch.workflow_status %}
+{% if status == "requested" %}
+  <div class="notification is-info is-light mb-4">
+    <strong>Requested.</strong> This dispatch is in the dispatcher's working set. You can still change what you asked for.
+  </div>
+{% elif status == "under_review" %}
+  <div class="notification is-link is-light mb-4">
+    <strong>Under review.</strong> A dispatcher has picked this up. Intent is still editable while they work.
+  </div>
+{% elif status == "fixes_requested" %}
+  <div class="notification is-warning is-light mb-4">
+    <strong>Fixes requested.</strong> A dispatcher sent this back — see the timeline for what they asked. Make the changes, then resubmit.
+  </div>
+{% elif status == "planned" %}
+  <div class="notification is-success is-light mb-4">
+    <strong>Planned.</strong> Assets are committed to this job. Intent is locked; only title, description, priority, activity location, and names remain editable.
+  </div>
+{% elif status == "alternate_resolution" %}
+  <div class="notification is-success is-light mb-4">
+    <strong>Alternate resolution.</strong> This need was met without our assets. Intent is locked.
+  </div>
+{% elif status == "rejected" %}
+  <div class="notification is-danger is-light mb-4">
+    <strong>Rejected.</strong> This is terminal — see the rejection details. To try again, raise a follow-up dispatch.
+  </div>
+{% elif status == "completed" %}
+  <div class="notification is-dark is-light mb-4">
+    <strong>Completed.</strong> Work done, assets returned, material reconciled. Read-only.
+  </div>
+{% elif status == "cancelled" %}
+  <div class="notification is-light mb-4">
+    <strong>Cancelled.</strong> Live reservations and unissued material demands were cancelled with it. Read-only.
+  </div>
+{% endif %}
+{% endwith %}

@@ -1,6 +1,10 @@
 """Phase 5 tests: barcode parsing, the scan-matching engine (1-to-1 / N-to-M
-staging / FIFO cascade), reconciliation reassignment, cross-session excess
-pulling, and split-allocation conservation.
+staging / FIFO cascade), and split-allocation conservation.
+
+The reassignment, cross-session pull, and reconciliation-resolution suites
+were deleted with the reconciliation tables (intake_portal_workflow.md §12.5).
+Their replacements belong to Phase 2's allocation portal (§7.3) and the
+over-allocation ban (§7.2), neither of which exists yet.
 """
 
 from __future__ import annotations
@@ -22,8 +26,8 @@ from app.inventory.control_layer.managers.intake_matching_manager import (
 )
 from app.inventory.models.intake.enums import (
     AllocationCondition,
+    AllocationLinkSource,
     IntakeSessionMethod,
-    ReconciliationResolutionType,
 )
 from app.inventory.models.intake.item_allocation import ItemAllocation
 from app.parts.control_layer.factories.part_factory import PartFactory
@@ -135,7 +139,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
             raw_payload=self.part.part_number, actor=None
         )
         self.assertEqual(allocation.shipment_line_id, line.pk)
-        self.assertFalse(session.session.has_unlinked_allocations)
+        self.assertEqual(allocation.link_source, AllocationLinkSource.AUTO_SINGLE_MATCH)
 
     def test_ambiguous_two_line_scan_stages_unlinked(self):
         shipment = ShipmentFactory.create(
@@ -153,7 +157,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
             raw_payload=self.part.part_number, actor=None
         )
         self.assertIsNone(allocation.shipment_line_id)
-        self.assertTrue(session.session.has_unlinked_allocations)
+        self.assertEqual(allocation.link_source, AllocationLinkSource.UNLINKED)
 
     def test_no_matching_line_routes_unmanifested(self):
         other_part = PartFactory.create(
@@ -172,7 +176,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
             raw_payload=other_part.part_number, actor=None
         )
         self.assertIsNone(allocation.shipment_line_id)
-        self.assertTrue(session.session.has_unlinked_allocations)
+        self.assertEqual(allocation.link_source, AllocationLinkSource.UNLINKED)
 
     def test_process_scan_unknown_sku_raises_validation_error(self):
         session = self._session()
@@ -338,296 +342,3 @@ class SplitAllocationTests(IntakeMatchingTestCase):
 
         allocation.refresh_from_db()
         self.assertIsNotNone(allocation.deleted_at)
-
-
-# ---------------------------------------------------------------------- #
-# Reassignment + no cross-line netting regression
-# ---------------------------------------------------------------------- #
-
-class ReassignmentAndNettingTests(IntakeMatchingTestCase):
-    def test_reassign_allocation_moves_it_to_another_session_line(self):
-        shipment = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[
-                {"part_id": self.part.pk, "quantity": Decimal("5")},
-                {"part_id": self.part.pk, "quantity": Decimal("5")},
-            ],
-            actor=None,
-        )
-        line1, line2 = shipment.lines.filter(deleted_at__isnull=True).order_by("id")
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment.pk, actor=None)
-
-        allocation = session.create_manual_allocation(
-            shipment_line_id=line1.pk, part_id=self.part.pk,
-            quantity=Decimal("3"), condition=AllocationCondition.GOOD,
-            actor=None,
-        )
-        moved = session.reassign_allocation(
-            allocation_id=allocation.pk, target_shipment_line_id=line2.pk,
-            actor=None,
-        )
-        self.assertEqual(moved.shipment_line_id, line2.pk)
-
-    def test_reassign_to_quarantine_sets_null_and_flags_session(self):
-        shipment = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None,
-        )
-        line = shipment.lines.get(deleted_at__isnull=True)
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment.pk, actor=None)
-
-        allocation = session.create_manual_allocation(
-            shipment_line_id=line.pk, part_id=self.part.pk,
-            quantity=Decimal("3"), condition=AllocationCondition.GOOD,
-            actor=None,
-        )
-        moved = session.reassign_allocation(
-            allocation_id=allocation.pk, target_shipment_line_id=None, actor=None,
-        )
-        self.assertIsNone(moved.shipment_line_id)
-        self.assertTrue(session.session.has_unlinked_allocations)
-
-    def test_reassign_rejects_line_not_associated_with_session(self):
-        shipment_a = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None,
-        )
-        shipment_b = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None,
-        )
-        line_a = shipment_a.lines.get(deleted_at__isnull=True)
-        line_b = shipment_b.lines.get(deleted_at__isnull=True)
-
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment_a.pk, actor=None)
-
-        allocation = session.create_manual_allocation(
-            shipment_line_id=line_a.pk, part_id=self.part.pk,
-            quantity=Decimal("3"), condition=AllocationCondition.GOOD,
-            actor=None,
-        )
-        with self.assertRaises(InventoryValidationError):
-            session.reassign_allocation(
-                allocation_id=allocation.pk, target_shipment_line_id=line_b.pk,
-                actor=None,
-            )
-
-    def test_resolution_on_one_line_does_not_net_against_sibling_line(self):
-        """FD-9 / overages_and_shortages_guide.md §2.1: a shortage on one
-        vendor shipment's line must never be netted against an overage on
-        another vendor shipment's line for the same part, even though both
-        roll up under the same PartReconciliationSession parent."""
-        shipment_short = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
-            actor=None, shipment_id="SHP-NET-SHORT",
-        )
-        shipment_over = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None, shipment_id="SHP-NET-OVER",
-        )
-        line_short = shipment_short.lines.get(deleted_at__isnull=True)
-        line_over = shipment_over.lines.get(deleted_at__isnull=True)
-
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment_short.pk, actor=None)
-        session.associate_shipment(shipment_id=shipment_over.pk, actor=None)
-
-        # Short line: only 6 of 10 received.
-        session.create_manual_allocation(
-            shipment_line_id=line_short.pk, part_id=self.part.pk,
-            quantity=Decimal("6"), condition=AllocationCondition.GOOD, actor=None,
-        )
-        # Over line: 8 received against an expected 5.
-        session.create_manual_allocation(
-            shipment_line_id=line_over.pk, part_id=self.part.pk,
-            quantity=Decimal("8"), condition=AllocationCondition.GOOD, actor=None,
-        )
-
-        session.transition_to_reconciliation(actor=None)
-        reconciliation = session.session.reconciliations.get(part=self.part)
-        short_child = reconciliation.lines.get(shipment_line=line_short)
-        over_child = reconciliation.lines.get(shipment_line=line_over)
-
-        # Independently visible discrepancies — no netting to zero.
-        self.assertEqual(short_child.expected_quantity, Decimal("10"))
-        self.assertEqual(short_child.allocated_quantity, Decimal("6"))
-        self.assertEqual(over_child.expected_quantity, Decimal("5"))
-        self.assertEqual(over_child.allocated_quantity, Decimal("8"))
-
-        session.resolve_line(
-            reconciliation_line_id=short_child.pk,
-            resolution_type=ReconciliationResolutionType.ACCEPTED_SHORTAGE,
-            actor=None,
-        )
-        over_child.refresh_from_db()
-        # The overage line must still be unresolved — resolving the shortage
-        # line must not have silently resolved (or netted against) it.
-        self.assertEqual(over_child.resolution_type, ReconciliationResolutionType.NONE)
-
-        session.resolve_line(
-            reconciliation_line_id=over_child.pk,
-            resolution_type=ReconciliationResolutionType.QUARANTINED_OVERAGE,
-            actor=None,
-        )
-        reconciliation.refresh_from_db()
-        self.assertEqual(reconciliation.status, "resolved")
-
-
-# ---------------------------------------------------------------------- #
-# Cross-session excess pull (FD-26)
-# ---------------------------------------------------------------------- #
-
-class PullExternalAllocationTests(IntakeMatchingTestCase):
-    def test_pull_moves_allocation_and_writes_audit_comment(self):
-        shipment_short = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
-            actor=None, shipment_id="SHP-PULL-SHORT",
-        )
-        line_short = shipment_short.lines.get(deleted_at__isnull=True)
-
-        session_a = self._session()
-        session_a.associate_shipment(shipment_id=shipment_short.pk, actor=None)
-
-        # Session B has excess stock for the same part, unlinked.
-        session_b = self._session()
-        excess = session_b.create_manual_allocation(
-            shipment_line_id=None, part_id=self.part.pk,
-            quantity=Decimal("4"), condition=AllocationCondition.GOOD, actor=None,
-        )
-
-        moved = session_a.pull_external_allocation(
-            allocation_id=excess.pk, target_line_id=line_short.pk, actor=None,
-        )
-        self.assertEqual(moved.intake_session_id, session_a.session.pk)
-        self.assertEqual(moved.shipment_line_id, line_short.pk)
-
-        line_short.refresh_from_db()
-        notes = line_short.comments.get("intake_notes", [])
-        self.assertEqual(len(notes), 1)
-        self.assertIn(str(excess.pk), notes[0]["note"])
-        self.assertIn(str(session_b.session.pk), notes[0]["note"])
-
-        session_b.session.refresh_from_db()
-        self.assertFalse(session_b.session.has_unlinked_allocations)
-
-    def test_pull_rejects_already_linked_allocation(self):
-        shipment = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None,
-        )
-        line = shipment.lines.get(deleted_at__isnull=True)
-        session_a = self._session()
-        session_a.associate_shipment(shipment_id=shipment.pk, actor=None)
-
-        session_b = self._session()
-        session_b.associate_shipment(shipment_id=shipment.pk, actor=None)
-        linked_allocation = session_b.create_manual_allocation(
-            shipment_line_id=line.pk, part_id=self.part.pk,
-            quantity=Decimal("2"), condition=AllocationCondition.GOOD, actor=None,
-        )
-        with self.assertRaises(InventoryValidationError):
-            session_a.pull_external_allocation(
-                allocation_id=linked_allocation.pk, target_line_id=line.pk, actor=None,
-            )
-
-    def test_pull_rejects_target_line_not_associated_with_this_session(self):
-        shipment_a = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("5")}],
-            actor=None,
-        )
-        line_a = shipment_a.lines.get(deleted_at__isnull=True)
-
-        session_a = self._session()  # deliberately NOT associated with shipment_a
-
-        session_b = self._session()
-        excess = session_b.create_manual_allocation(
-            shipment_line_id=None, part_id=self.part.pk,
-            quantity=Decimal("2"), condition=AllocationCondition.GOOD, actor=None,
-        )
-        with self.assertRaises(InventoryValidationError):
-            session_a.pull_external_allocation(
-                allocation_id=excess.pk, target_line_id=line_a.pk, actor=None,
-            )
-
-
-# ---------------------------------------------------------------------- #
-# Rejected-quantity propagation on resolve
-# ---------------------------------------------------------------------- #
-
-class RejectionNotePropagationTests(IntakeMatchingTestCase):
-    def test_resolving_a_line_with_rejected_quantity_writes_shipment_line_comment(self):
-        shipment = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
-            actor=None, shipment_id="SHP-REJNOTE",
-        )
-        line = shipment.lines.get(deleted_at__isnull=True)
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment.pk, actor=None)
-
-        # 6 good + 3 rejected = 9 of 10 expected — a real discrepancy (short
-        # by 1), and distinct from the exactly-satisfied case so
-        # `generate_tasks` actually spawns a reconciliation task.
-        session.create_manual_allocation(
-            shipment_line_id=line.pk, part_id=self.part.pk,
-            quantity=Decimal("6"), condition=AllocationCondition.GOOD, actor=None,
-        )
-        session.create_manual_allocation(
-            shipment_line_id=line.pk, part_id=self.part.pk,
-            quantity=Decimal("3"), condition=AllocationCondition.REJECTED, actor=None,
-        )
-        session.transition_to_reconciliation(actor=None)
-        reconciliation = session.session.reconciliations.get(part=self.part)
-        child = reconciliation.lines.get(shipment_line=line)
-        self.assertEqual(child.rejected_quantity, Decimal("3"))
-
-        session.resolve_line(
-            reconciliation_line_id=child.pk,
-            resolution_type=ReconciliationResolutionType.RMA_DISPOSITION,
-            notes="3 damaged in transit, RMA filed.",
-            actor=None,
-        )
-
-        line.refresh_from_db()
-        entries = line.comments.get("reconciliation_notes", [])
-        self.assertEqual(len(entries), 1)
-        self.assertIn("rma_disposition", entries[0]["note"])
-        self.assertIn("3", entries[0]["note"])
-
-    def test_resolving_a_line_with_no_rejected_quantity_writes_no_comment(self):
-        shipment = ShipmentFactory.create(
-            domain=self.domain,
-            lines=[{"part_id": self.part.pk, "quantity": Decimal("10")}],
-            actor=None, shipment_id="SHP-NOREJNOTE",
-        )
-        line = shipment.lines.get(deleted_at__isnull=True)
-        session = self._session()
-        session.associate_shipment(shipment_id=shipment.pk, actor=None)
-
-        session.create_manual_allocation(
-            shipment_line_id=line.pk, part_id=self.part.pk,
-            quantity=Decimal("6"), condition=AllocationCondition.GOOD, actor=None,
-        )
-        session.transition_to_reconciliation(actor=None)
-        reconciliation = session.session.reconciliations.get(part=self.part)
-        child = reconciliation.lines.get(shipment_line=line)
-        self.assertEqual(child.rejected_quantity, Decimal("0"))
-
-        session.resolve_line(
-            reconciliation_line_id=child.pk,
-            resolution_type=ReconciliationResolutionType.ACCEPTED_SHORTAGE,
-            actor=None,
-        )
-        line.refresh_from_db()
-        self.assertEqual(line.comments.get("reconciliation_notes", []), [])

@@ -74,7 +74,12 @@
           <td>{{ template.domain.name }}</td>
           <td>{% if template.head_revision %}#{{ template.head_revision.revision_number }}{% else %}—{% endif %}</td>
           <td>{% if template.is_retired %}<span class="tag is-light">Retired</span>{% else %}<span class="tag is-success is-light">Live</span>{% endif %}</td>
-          <td><a href="{% url 'dispatching_template_detail' template.pk %}" class="has-text-grey">View →</a></td>
+          <td class="has-text-right">
+            {% if template.head_revision and not template.is_retired %}
+            <a href="{% url 'dispatching_dispatch_create' %}?template={{ template.head_revision.pk }}" class="button is-extra-small is-primary is-light mr-2">Use Template</a>
+            {% endif %}
+            <a href="{% url 'dispatching_template_detail' template.pk %}" class="has-text-grey">View →</a>
+          </td>
         </tr>
         {% empty %}
         <tr><td colspan="5" class="has-text-grey has-text-centered py-4">No templates yet.</td></tr>

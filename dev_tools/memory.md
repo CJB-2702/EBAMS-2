@@ -7,6 +7,7 @@
 2026-04-18 — Documented Django superuser (`admin` / `DJANGO_SUPERUSER_PASSWORD`) in `docs/users_and_passwords.md` for `/admin/`.
 2026-04-18 — Installed django-jazzmin; added `jazzmin` before `django.contrib.admin` and `JAZZMIN_SETTINGS` in `app/config/settings.py`.
 2026-04-19 — Added `core.models.groupings` (`DivisionOrganisation`, moved `OrganizationOwnershipGroup`), M2M division link via through table; migration `0002_division_organisation_and_groupings`; slug uniqueness is now global per organization.
+2026-08-20 — Updated `app/public_app/templates/shared/topnav.html` to include all side navigation links across every application portal dropdown (Events, Dispatching, Maintenance, Assets, Parts, Procurement, Inventory, Administration, Extensions).
 2026-04-18 — Merged `app.core` into `app.administration` (models, migrations, admin, auth_session); removed `app.core`; kept legacy `core_*` table names; migration `0003_contenttypes_from_core_app_label`.
 2026-04-18 — `.cursor/rules/migration-strategy.mdc`: on any schema-affecting model change, delete project numbered `migrations/*.py` (keep `__init__.py`), wipe DB, `makemigrations` + `migrate` + `seed_dev`.
 2026-04-18 — Added root `delete_database_rebuild_models.py` (`--seed`) and `.cursor/skills/delete-database-rebuild-models/SKILL.md`; migration rule points to the script.
@@ -69,3 +70,4 @@
 2026-08-16 — Updated Active Inventory storage location filter to use `<search-dropdown>` web component backed by `storage_location_search` endpoint.
 2026-08-17 — Inventory Phase 6 terminal issue sessions: added PartIssueSession entity (ISS-YYYYMMDD-HEX header, IssueSessionStatus.COMMITTED), updated PartIssue FK, PartIssuanceOrchestrator.commit_session, updated issuance_portal to Issue Parts Workspace with F5 draft queue, and updated issues_index to Issued Parts Ledger (Committed Sessions tab + Granular Line Items tab + session_detail.html receipt page).
 2026-08-18 — Ported Maintenance Plans UI (Index, Detail, Create, Edit, Worklist) with Many-to-Many models schema, custom filters, and HTMX-backed dual listbox; changed template index to default to preview split with auto-selection of first template.
+2026-08-20 — Updated `app/public_app/templates/shared/topnav.html` to include all side navigation links across every application portal dropdown (Events, Dispatching, Maintenance, Assets, Parts, Procurement, Inventory, Administration, Extensions).

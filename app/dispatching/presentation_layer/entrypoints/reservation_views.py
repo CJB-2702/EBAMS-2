@@ -52,11 +52,15 @@ from app.dispatching.control_layer.guards.asset_availability_guard import (
 )
 from app.dispatching.control_layer.guards.double_booking_guard import DoubleBookingPolicy
 from app.dispatching.control_layer.reservation_context import ReservationContext
+from app.dispatching.control_layer.managers.reservation_promotion_manager import (
+    ReservationPromotionManager,
+)
 from app.dispatching.models.enums import (
     ConditionRating,
     ReservationStatus,
     ReservationType,
 )
+from app.events.models.details.dispatching import DispatchingDetail
 from app.dispatching.models.reservations.asset_reservation import AssetReservation
 from app.dispatching.presentation_layer.search import reservation_search as rs
 from app.dispatching.presentation_layer.tools.dispatching_access import (
@@ -222,6 +226,16 @@ def reservation_index(request: HttpRequest) -> HttpResponse:
         )
 
     filters = {key: request.GET.get(key, "").strip() for key in LIST_FILTER_KEYS}
+    requested_for_id = (
+        request.GET.get("requested_for")
+        or request.GET.get("requested-for")
+        or request.GET.get("accountable_person")
+        or request.GET.get("accountable-person")
+        or ""
+    ).strip()
+    if requested_for_id:
+        filters["accountable_person"] = requested_for_id
+
     mine_only = request.GET.get("mine") == "1"
 
     # The window defaults to this month, and the calendar's prev/next arrows
@@ -340,6 +354,13 @@ def reservation_create(request: HttpRequest) -> HttpResponse:
     if not can_book_reservations(request):
         raise PermissionDenied("Booking an asset requires the reservation_book permission.")
 
+    dispatch_id = (request.GET.get("dispatch") or request.POST.get("dispatch_id") or "").strip()
+    dispatch_obj = None
+    if dispatch_id.isdigit():
+        dispatch_obj = DispatchingDetail.objects.filter(
+            pk=int(dispatch_id), deleted_at__isnull=True, domain_id__in=accessible_domain_ids(request)
+        ).first()
+
     if request.method == "POST":
         asset_id = (request.POST.get("asset_id") or "").strip()
         start = _parse_datetime_local(request.POST.get("scheduled_start"))
@@ -379,6 +400,12 @@ def reservation_create(request: HttpRequest) -> HttpResponse:
                     description=(request.POST.get("description") or "").strip(),
                     actor=request.user,
                 )
+                if dispatch_obj:
+                    ReservationPromotionManager.promote(
+                        reservation_id=reservation.pk,
+                        dispatch_id=dispatch_obj.pk,
+                        actor=request.user,
+                    )
             except (ValueError, User.DoesNotExist) as exc:
                 errors.append(str(exc))
             else:
@@ -393,19 +420,48 @@ def reservation_create(request: HttpRequest) -> HttpResponse:
                         "claim is tentative, so nothing is blocked — a dispatcher will "
                         "have to acknowledge the conflict to confirm it.",
                     )
-                messages.success(request, f"Tentative booking #{reservation.pk} created.")
+                messages.success(request, f"Booking #{reservation.pk} created.")
+                if dispatch_obj:
+                    messages.success(request, f"Attached booking #{reservation.pk} to Dispatch #{dispatch_obj.pk}.")
+                    return redirect(reverse("dispatching_dispatch_edit", kwargs={"pk": dispatch_obj.pk}))
                 return redirect(reverse("dispatching_reservation_detail", kwargs={"pk": reservation.pk}))
 
         for error in errors:
             messages.error(request, error)
 
     picker = _picker_context(request)
+    form_data = {}
     if request.method == "POST":
         picker["selected_asset_id"] = (request.POST.get("asset_id") or "").strip()
+        form_data = request.POST
+    else:
+        scheduled_start = (request.GET.get("scheduled_start") or request.GET.get("start") or "").strip()
+        scheduled_end = (request.GET.get("scheduled_end") or request.GET.get("end") or "").strip()
+        accountable = (request.GET.get("accountable_person_id") or request.GET.get("accountable_person") or "").strip()
+        title = (request.GET.get("title") or "").strip()
+
+        if dispatch_obj:
+            if not scheduled_start and dispatch_obj.desired_start:
+                scheduled_start = dispatch_obj.desired_start.strftime("%Y-%m-%dT%H:%M")
+            if not scheduled_end and dispatch_obj.desired_end:
+                scheduled_end = dispatch_obj.desired_end.strftime("%Y-%m-%dT%H:%M")
+            if not accountable and dispatch_obj.requested_for_id:
+                accountable = str(dispatch_obj.requested_for_id)
+            if not title:
+                title = f"Reservation for Dispatch #{dispatch_obj.pk}: {dispatch_obj.title}"
+
+        form_data = {
+            "scheduled_start": scheduled_start,
+            "scheduled_end": scheduled_end,
+            "accountable_person_id": accountable,
+            "title": title,
+        }
+
     return render(request, "dispatching/reservations/create.html", {
         **_form_choices(request),
         **picker,
-        "form": request.POST if request.method == "POST" else {},
+        "form": form_data,
+        "dispatch_obj": dispatch_obj,
     })
 
 # ─────────────────────────────────────────────────────────────────────────

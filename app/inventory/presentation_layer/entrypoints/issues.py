@@ -670,7 +670,8 @@ def issues_index(request: HttpRequest) -> HttpResponse:
     }
 
     if view_tab == "lines":
-        qs = IssueSearch.index_list(domain_ids=domain_ids, **filters)
+        search_filters = {k: v for k, v in filters.items() if k != "tab"}
+        qs = IssueSearch.index_list(domain_ids=domain_ids, **search_filters)
         paginator = Paginator(qs, PAGE_SIZE)
         page = paginator.get_page(request.GET.get("page", "1"))
         context = {

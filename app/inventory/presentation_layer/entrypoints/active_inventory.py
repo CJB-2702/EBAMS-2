@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 
 from app.inventory.control_layer.audit_session_context import AuditSessionContext
+from app.inventory.control_layer.destination_picker import DestinationPickerContext
 from app.inventory.control_layer.errors import InventoryValidationError
 from app.inventory.models.stock.active_inventory import ActiveInventory
 from app.inventory.models.topography.warehouse import Warehouse
@@ -138,10 +139,118 @@ def active_inventory_inline_edit(request: HttpRequest, pk: int) -> HttpResponse:
 
     # Re-fetch for updated state
     balance.refresh_from_db()
-    
+
     if request.GET.get("format") == "htmx-row":
         return render(request, f"{TEMPLATE_DIR}/_row.html", {"row": balance, "can_audit": can_audit(request)})
-    
+
     response = redirect("active_inventory_index")
     response.status_code = 303
     return response
+
+
+def _int_or_none(raw) -> int | None:
+    raw = (raw or "").strip()
+    return int(raw) if raw.isdigit() else None
+
+
+@require_http_methods(["GET"])
+def active_inventory_gui(request: HttpRequest) -> HttpResponse:
+    """Location-first stock browser: the warehouse → room → location picker on
+    the left narrows the stock list on the right.
+
+    Filtering is *progressive* — each tier the user picks adds one filter on
+    top of the last, so the right pane is populated from the moment a
+    warehouse is chosen rather than staying empty until a leaf location is
+    reached:
+
+        warehouse            → all stock in the warehouse
+        + room               → stock in that room
+        + loc (Map Area XY)  → stock in any storage location under that area
+        + sloc               → stock in that one storage location
+
+    Selection state lives entirely in GET params (warehouse_id, room_id, loc,
+    sloc), so F5 reproduces the view and every control is a plain link.
+    Unlike the movement/putaway flows this one keeps Intake Rooms in the
+    picker — Intake holds real stock, and a locator that cannot see it is
+    lying about where things are.
+    """
+    domain_ids = accessible_domain_ids(request)
+
+    warehouses = Warehouse.objects.filter(is_active=True).order_by("name")
+    warehouse_id = _int_or_none(request.GET.get("warehouse_id", ""))
+    selected_warehouse = warehouses.filter(pk=warehouse_id).first() if warehouse_id else None
+
+    if selected_warehouse is not None:
+        picker = DestinationPickerContext.build_state(
+            request, include_intake_rooms=True
+        )
+    else:
+        picker = {
+            "warehouses": warehouses,
+            "warehouse_id": warehouse_id,
+            "selected_warehouse": None,
+            "crosses_warehouse": False,
+            "rooms": [],
+            "room_id": None,
+            "selected_room": None,
+            "room_locations": [],
+            "map_svg": None,
+            "loc": "",
+            "sloc": None,
+            "selected_storage_location": None,
+        }
+
+    # Each tier narrows the one above it. Nothing is queried until a
+    # warehouse is picked — an unscoped stock list belongs on the index route.
+    rows = []
+    page = None
+    if selected_warehouse is not None:
+        qs = ActiveInventorySearch.index_list(
+            domain_ids=domain_ids,
+            warehouse_id=str(selected_warehouse.pk),
+            room_id=str(picker["room_id"]) if picker["selected_room"] else "",
+            room_location_code=picker["loc"] if picker["selected_room"] else "",
+            storage_location_id=(
+                str(picker["sloc"]) if picker["selected_storage_location"] else ""
+            ),
+        )
+        paginator = Paginator(qs, PAGE_SIZE)
+        page = paginator.get_page(request.GET.get("page", "1"))
+        rows = page.object_list
+
+    context = {
+        "rows": rows,
+        "page": page,
+        "scope_label": _scope_label(picker),
+        "base_qs": _base_qs(picker),
+        "can_audit": can_audit(request),
+    }
+    context.update(picker)
+    return render(request, f"{TEMPLATE_DIR}/gui.html", context)
+
+
+def _scope_label(picker: dict) -> str:
+    """Human-readable description of what the right pane is currently showing."""
+    if picker["selected_storage_location"] is not None:
+        return picker["selected_storage_location"].display_code
+    if picker["loc"] and picker["selected_room"] is not None:
+        return f"{picker['selected_room'].room_name} / area {picker['loc']}"
+    if picker["selected_room"] is not None:
+        return picker["selected_room"].room_name
+    if picker["selected_warehouse"] is not None:
+        return f"{picker['selected_warehouse'].code} — all rooms"
+    return ""
+
+
+def _base_qs(picker: dict) -> str:
+    """Current selection as a query string, for pagination links to carry."""
+    parts = []
+    if picker["warehouse_id"]:
+        parts.append(f"warehouse_id={picker['warehouse_id']}")
+    if picker["selected_room"] is not None:
+        parts.append(f"room_id={picker['room_id']}")
+    if picker["loc"]:
+        parts.append(f"loc={picker['loc']}")
+    if picker["selected_storage_location"] is not None:
+        parts.append(f"sloc={picker['sloc']}")
+    return "&".join(parts)

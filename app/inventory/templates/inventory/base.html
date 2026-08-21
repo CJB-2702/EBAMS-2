@@ -30,6 +30,7 @@
       <p class="sidebar-section-label">Inventory</p>
       <a href="{% url 'inventory_home' %}" class="sidebar-link {% block nav_inventory_home %}{% endblock %}"><span class="icon">{% svg "inventory-icon" %}</span> Overview</a>
       <a href="{% url 'active_inventory_index' %}" class="sidebar-link {% block nav_active_inventory %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
+      <a href="{% url 'active_inventory_gui' %}" class="sidebar-link {% block nav_active_inventory_gui %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">location_on</span></span> Inventory Locator</a>
       <a href="{% url 'inventory_intake_dashboard' %}" class="sidebar-link {% block nav_intake %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake</a>
       <a href="{% url 'inventory_putaway_worklist' %}" class="sidebar-link {% block nav_putaway %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway</a>
       <a href="{% url 'inventory_movements_index' %}" class="sidebar-link {% block nav_movements %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>

@@ -20,11 +20,13 @@ from app.dispatching.models.enums import ExpenseStatus, ReservationStatus
 from app.events.models.details.dispatching import DispatchWorkflowStatus
 
 DISPATCH_STATE_TRANSITIONS: dict[str, frozenset[str]] = {
-    DispatchWorkflowStatus.DRAFT: frozenset(
-        {DispatchWorkflowStatus.SUBMITTED, DispatchWorkflowStatus.CANCELLED}
-    ),
-    DispatchWorkflowStatus.SUBMITTED: frozenset(
-        {DispatchWorkflowStatus.UNDER_REVIEW, DispatchWorkflowStatus.CANCELLED}
+    DispatchWorkflowStatus.REQUESTED: frozenset(
+        {
+            DispatchWorkflowStatus.UNDER_REVIEW,
+            DispatchWorkflowStatus.PLANNED,
+            DispatchWorkflowStatus.ALTERNATE_RESOLUTION,
+            DispatchWorkflowStatus.CANCELLED,
+        }
     ),
     DispatchWorkflowStatus.UNDER_REVIEW: frozenset(
         {
@@ -36,7 +38,7 @@ DISPATCH_STATE_TRANSITIONS: dict[str, frozenset[str]] = {
         }
     ),
     DispatchWorkflowStatus.FIXES_REQUESTED: frozenset(
-        {DispatchWorkflowStatus.SUBMITTED, DispatchWorkflowStatus.CANCELLED}
+        {DispatchWorkflowStatus.REQUESTED, DispatchWorkflowStatus.CANCELLED}
     ),
     DispatchWorkflowStatus.PLANNED: frozenset(
         {
@@ -106,6 +108,7 @@ LIVE_EXPENSE_STATUSES = frozenset(
 
 _DERIVABLE_STATUSES = frozenset(
     {
+        DispatchWorkflowStatus.REQUESTED,
         DispatchWorkflowStatus.UNDER_REVIEW,
         DispatchWorkflowStatus.PLANNED,
         DispatchWorkflowStatus.ALTERNATE_RESOLUTION,

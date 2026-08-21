@@ -1,0 +1,301 @@
+{% extends "dispatching/base.html" %}
+{% block title %}Dispatches{% endblock %}
+{% block nav_dispatch_index %}is-active{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Dispatches</a></li>{% endblock %}
+
+{% block extra_css %}
+  .res-calendar { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .res-calendar th {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--bulma-text-weak); font-weight: 600; padding: 0.35rem 0.4rem;
+    text-align: left; border-bottom: 1px solid var(--bulma-border);
+  }
+  .res-calendar td {
+    border: 1px solid var(--bulma-border-weak); vertical-align: top;
+    height: 6.5rem; padding: 0.25rem; overflow: hidden;
+  }
+  .res-calendar td.is-outside { background: var(--bulma-background); opacity: 0.55; }
+  .res-calendar td.is-today { box-shadow: inset 0 0 0 2px var(--bulma-link); }
+  .res-daynum { font-size: 0.7rem; font-weight: 600; color: var(--bulma-text-weak); display: block; margin-bottom: 0.15rem; }
+  .res-chip {
+    display: block; font-size: 0.62rem; line-height: 1.25; padding: 0.1rem 0.25rem;
+    margin-bottom: 0.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .res-chip:hover { text-decoration: underline; }
+  .res-more { font-size: 0.6rem; color: var(--bulma-text-weak); }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+  .stat-tile {
+    border-left: 5px solid var(--bulma-border, #dbdbdb);
+    padding: 0.35rem 0.25rem 0.35rem 0.65rem;
+  }
+  .stat-tile.is-info { border-left-color: var(--bulma-info, #3e8ed0); }
+  .stat-tile.is-warning { border-left-color: var(--bulma-warning, #ffe08a); }
+  .stat-tile.is-link { border-left-color: var(--bulma-link, #485fc7); }
+  .stat-tile.is-primary { border-left-color: var(--bulma-primary, #00d1b2); }
+  .stat-tile.is-success { border-left-color: var(--bulma-success, #48c78e); }
+  .stat-tile.is-danger { border-left-color: var(--bulma-danger, #f14668); }
+  .stat-desc {
+    font-size: 0.65rem;
+    color: var(--bulma-text-weak, #7a7a7a);
+    margin-top: 0.1rem;
+    line-height: 1.2;
+  }
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">outbox</span></div>
+      <div>
+        <h1 class="page-title">Dispatches</h1>
+        <p class="page-subtitle">Manage dispatch requests, requirement manifests, crew, and fulfillment across domains.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      {% if can_raise %}
+      <a href="{% url 'dispatching_dispatch_create' %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Dispatch</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Calendar (3/4) beside the Queue Overview summary rail (1/4) ── #}
+<div class="body-grid has-rail mb-4">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">calendar_month</span></span>{{ month_anchor|date:"F Y" }}
+      </div>
+      <div class="buttons are-small" style="margin: 0.35rem 0.75rem 0 0;">
+        <a class="button is-small" href="?{{ querystring_base }}start={{ previous_window.0|date:'Y-m-d' }}&amp;end={{ previous_window.1|date:'Y-m-d' }}">
+          <span class="icon"><span class="material-icons" aria-hidden="true">chevron_left</span></span>
+        </a>
+        <a class="button is-small" href="?{{ querystring_base }}start={{ this_window.0|date:'Y-m-d' }}&amp;end={{ this_window.1|date:'Y-m-d' }}">Today</a>
+        <a class="button is-small" href="?{{ querystring_base }}start={{ next_window.0|date:'Y-m-d' }}&amp;end={{ next_window.1|date:'Y-m-d' }}">
+          <span class="icon"><span class="material-icons" aria-hidden="true">chevron_right</span></span>
+        </a>
+      </div>
+    </div>
+    <div class="card-content">
+      <table class="res-calendar">
+        <thead>
+          <tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>
+        </thead>
+        <tbody>
+          {% for week in weeks %}
+          <tr>
+            {% for cell in week %}
+            <td class="{% if not cell.in_month %}is-outside{% endif %} {% if cell.is_today %}is-today{% endif %}">
+              <span class="res-daynum">{{ cell.day|date:"j" }}</span>
+              {% for d in cell.dispatches|slice:":4" %}
+              <a class="tag res-chip is-light {% if d.workflow_status == 'requested' %}is-info{% elif d.workflow_status == 'under_review' %}is-warning{% elif d.workflow_status == 'fixes_requested' %}is-link{% elif d.workflow_status == 'planned' or d.workflow_status == 'alternate_resolution' %}is-primary{% elif d.workflow_status == 'completed' %}is-success{% elif d.workflow_status == 'rejected' or d.workflow_status == 'cancelled' %}is-danger{% endif %}"
+                 href="{% url 'dispatching_dispatch_detail' pk=d.pk %}"
+                 title="#{{ d.pk }} {{ d.title }} — {{ d.get_workflow_status_display }} · {{ d.desired_start|date:'M j H:i' }} → {{ d.desired_end|date:'M j H:i' }}">#{{ d.pk }} {{ d.title }}</a>
+              {% endfor %}
+              {% if cell.dispatches|length > 4 %}
+              <span class="res-more">+{{ cell.dispatches|length|add:"-4" }} more</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="has-text-grey is-size-7 mt-3">
+        Showing every dispatch job that overlaps {{ window_start|date:"M j, Y" }} – {{ window_end|date:"M j, Y" }} — the same set listed below.
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>Queue Overview</div></div>
+      <div class="card-content">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-value">{{ summary.total }}</div>
+            <div class="stat-label">Total Jobs</div>
+            <div class="stat-desc">All domain dispatches</div>
+          </div>
+          <div class="stat-tile is-info">
+            <div class="stat-value">{{ summary.requested }}</div>
+            <div class="stat-label">Requested</div>
+            <div class="stat-desc">New dispatch raised</div>
+          </div>
+          <div class="stat-tile is-warning">
+            <div class="stat-value">{{ summary.under_review }}</div>
+            <div class="stat-label">Under Review</div>
+            <div class="stat-desc">Dispatcher evaluating</div>
+          </div>
+          <div class="stat-tile is-link">
+            <div class="stat-value">{{ summary.fixes_requested }}</div>
+            <div class="stat-label">Fixes Req</div>
+            <div class="stat-desc">Returned to requester</div>
+          </div>
+          <div class="stat-tile is-primary">
+            <div class="stat-value">{{ summary.planned }}</div>
+            <div class="stat-label">Planned</div>
+            <div class="stat-desc">Reservation attached</div>
+          </div>
+          <div class="stat-tile is-primary">
+            <div class="stat-value">{{ summary.alternate }}</div>
+            <div class="stat-label">Alternate Res</div>
+            <div class="stat-desc">Expenses active</div>
+          </div>
+          <div class="stat-tile is-success">
+            <div class="stat-value">{{ summary.completed }}</div>
+            <div class="stat-label">Completed</div>
+            <div class="stat-desc">Job fulfilled</div>
+          </div>
+          <div class="stat-tile is-danger">
+            <div class="stat-value">{{ summary.rejected_cancelled }}</div>
+            <div class="stat-label">Rejected / Cancelled</div>
+            <div class="stat-desc">Closed without fulfillment</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Filters (Matching Reservations index layout) ── #}
+<div class="body-grid full-width">
+  <div class="card">
+    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>Filters &amp; Search</div></div>
+    <div class="card-content">
+      <form method="get">
+        <div class="columns is-vcentered is-multiline is-variable is-3">
+          <div class="column is-3">
+            <label class="label is-small">Search</label>
+            <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Title, location, subclass, requested asset…" autocomplete="off">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Asset Class</label>
+            <div class="select is-small is-fullwidth"><select name="asset_class">
+              <option value="">All classes</option>
+              {% for c in asset_classes %}<option value="{{ c.id }}" {% if asset_class == c.id|stringformat:'s' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Status</label>
+            <div class="select is-small is-fullwidth"><select name="status">
+              <option value="">All statuses</option>
+              {% for value, label in statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Scope</label>
+            <div class="select is-small is-fullwidth"><select name="dispatch_scope">
+              <option value="">All scopes</option>
+              {% for value, label in dispatch_scopes %}<option value="{{ value }}" {% if dispatch_scope == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-3">
+            <label class="label is-small">Requested For</label>
+            <div class="select is-small is-fullwidth"><select name="requested_for">
+              <option value="">Anyone</option>
+              {% for p in people %}<option value="{{ p.id }}" {% if requested_for == p.id|stringformat:'s' %}selected{% endif %}>{{ p.username }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Data Domain</label>
+            <div class="select is-small is-fullwidth"><select name="domain">
+              <option value="">All domains</option>
+              {% for d in domains %}<option value="{{ d.id }}" {% if domain == d.id|stringformat:'s' %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+            </select></div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">From</label>
+            <input class="input is-small" type="date" name="start" value="{{ window_start|date:'Y-m-d' }}">
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">To</label>
+            <input class="input is-small" type="date" name="end" value="{{ window_end|date:'Y-m-d' }}">
+          </div>
+          <div class="column is-2 is-flex is-align-items-flex-end">
+            <label class="checkbox is-size-7">
+              <input type="checkbox" name="mine" value="1" {% if mine_only %}checked{% endif %}> Only mine
+            </label>
+          </div>
+          <div class="column is-4 is-flex is-align-items-flex-end">
+            <div class="buttons are-small">
+              <button class="button is-small is-info" type="submit"><span class="icon"><span class="material-icons" aria-hidden="true">search</span></span></button>
+              <a class="button is-small" href="{% url 'dispatching_dispatch_index' %}" title="Clear filters"><span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span></a>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Results List ── #}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Dispatches ({{ dispatches|length }})</div>
+    </div>
+    <div class="card-content is-flush">
+      {% if dispatches %}
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title &amp; Subclass</th>
+            <th>Domain</th>
+            <th>Asset Class</th>
+            <th>Requested For</th>
+            <th>Window</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dispatch in dispatches %}
+          <tr>
+            <td class="is-family-monospace">{{ dispatch.pk }}</td>
+            <td>
+              <a href="{% url 'dispatching_dispatch_detail' dispatch.pk %}"><strong>{{ dispatch.title }}</strong></a>
+              {% if dispatch.asset_subclass_text %}
+              <br><span class="has-text-grey" style="font-size:0.65rem;">{{ dispatch.asset_subclass_text }}</span>
+              {% endif %}
+            </td>
+            <td>{{ dispatch.domain.name }}</td>
+            <td>{{ dispatch.asset_class.name }}</td>
+            <td>{{ dispatch.requested_for.username }}</td>
+            <td class="is-family-monospace">
+              {{ dispatch.desired_start|date:"M j, H:i" }}<br>
+              <span class="has-text-grey">→ {{ dispatch.desired_end|date:"M j, H:i" }}</span>
+            </td>
+            <td>
+              {% include "dispatching/dispatches/_status_tag.html" with status=dispatch.workflow_status %}
+            </td>
+            <td class="has-text-right">
+              <a class="button is-small is-link is-light" href="{% url 'dispatching_dispatch_detail' pk=dispatch.pk %}">Open</a>
+              <a class="button is-small is-light" href="{% url 'dispatching_dispatch_edit' pk=dispatch.pk %}">Edit</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="p-5 has-text-centered">
+        <span class="material-icons has-text-grey-light" aria-hidden="true" style="font-size:3rem;">outbox</span>
+        <p class="has-text-grey mt-2">No dispatches match your search or filter criteria.</p>
+        {% if can_raise %}
+        <a href="{% url 'dispatching_dispatch_create' %}" class="button is-small is-link mt-3">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Dispatch</span>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

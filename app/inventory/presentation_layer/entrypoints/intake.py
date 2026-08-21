@@ -34,7 +34,6 @@ from app.inventory.models.intake.enums import (
     AllocationCondition,
     IntakeSessionMethod,
     IntakeSessionStatus,
-    ReconciliationStatus,
 )
 from app.inventory.models.intake.intake_session import IntakeSession
 from app.inventory.models.intake.item_allocation import ItemAllocation
@@ -425,9 +424,19 @@ def _scan_intake_commit(request: HttpRequest) -> HttpResponse:
 
 def _scan_portal_context(session: IntakeSession) -> dict:
     """Live read-model for the ACTIVE/SCAN face of the session portal: per
-    shipment-line progress, the staged/unmanifested pool with its
-    reassignment target choices, and the distinct parts on this session's
-    linked shipments (for the manual-entry fallback's part picker)."""
+    shipment-line progress, the staged/unlinked pool, and the distinct parts
+    on this session's linked shipments (for the manual-entry fallback's part
+    picker).
+
+    KNOWN WRONG, REBUILT IN PHASE 2. THE SHIPMENT LINE IS THE UNIT OF TRUTH;
+    THE SESSION IS A LENS ONTO IT (intake_portal_workflow.md §5.5). The
+    per-line aggregate below filters on `intake_session=session`, so it
+    reports a line at 0% received when another session already took 40 of
+    50 — the phantom-shortage bug §5.5 exists to kill. It is left as-is
+    because Phase 2 replaces this whole surface with the record page (§2.2),
+    where progress aggregates by part number across every live session.
+    Do not build anything new on it.
+    """
     from app.procurement.models import ShipmentLine
 
     linked_shipment_ids = list(
@@ -476,7 +485,6 @@ def _scan_portal_context(session: IntakeSession) -> dict:
         .select_related("part")
         .order_by("id")
     )
-    reassign_targets = [row["line"] for row in line_progress if row["remaining"] > 0]
     session_parts = sorted(
         {row["line"].part for row in line_progress}, key=lambda p: p.part_number
     )
@@ -484,7 +492,6 @@ def _scan_portal_context(session: IntakeSession) -> dict:
     return {
         "line_progress": line_progress,
         "staged_allocations": staged_allocations,
-        "reassign_targets": reassign_targets,
         "session_parts": session_parts,
     }
 
@@ -505,22 +512,10 @@ def intake_session_detail(request: HttpRequest, pk: int) -> HttpResponse:
         .select_related("part", "shipment_line")
         .order_by("-id")
     )
-    reconciliations = list(
-        session.reconciliations.filter(deleted_at__isnull=True)
-        .select_related("part")
-        .prefetch_related("lines")
-        .order_by("id")
-    )
-    pending_reconciliation_count = sum(
-        1 for r in reconciliations if r.status != ReconciliationStatus.RESOLVED
-    )
-
     context = {
         "session": session,
         "struct": struct,
         "allocations": allocations,
-        "reconciliations": reconciliations,
-        "pending_reconciliation_count": pending_reconciliation_count,
         "can_intake": can_intake(request),
     }
 
@@ -539,7 +534,7 @@ def intake_session_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 def _session_action(request: HttpRequest, session: IntakeSession) -> HttpResponse:
     """Dispatches every session-portal POST action (scan, manual allocation,
-    reassignment, split, reconciliation transition, close) through
+    reassignment, split, close) through
     `IntakeContext` — never a raw model write here. Same canonical detail
     URL for every action (FD-17); `format=htmx-scan-feed` on the query
     string (present on both GET and POST) selects the fragment response the
@@ -580,14 +575,6 @@ def _session_action(request: HttpRequest, session: IntakeSession) -> HttpRespons
                 f"Manual allocation recorded: {allocation.part.part_number} "
                 f"x{allocation.quantity}."
             )
-        elif action == "reassign":
-            target_raw = request.POST.get("target_shipment_line_id", "")
-            ctx.reassign_allocation(
-                allocation_id=_int(request.POST.get("allocation_id")),
-                target_shipment_line_id=_int(target_raw) if target_raw else None,
-                actor=request.user,
-            )
-            flash_success = "Allocation reassigned."
         elif action == "split":
             ctx.split_allocation(
                 allocation_id=_int(request.POST.get("allocation_id")),
@@ -596,12 +583,9 @@ def _session_action(request: HttpRequest, session: IntakeSession) -> HttpRespons
                 actor=request.user,
             )
             flash_success = "Allocation split."
-        elif action == "transition_to_reconciliation":
-            ctx.transition_to_reconciliation(actor=request.user)
-            flash_success = "Session moved to reconciliation."
         elif action == "close":
             ctx.close_session(actor=request.user, notes=request.POST.get("notes", ""))
-            flash_success = "Session closed and committed."
+            flash_success = "Stock posted; session closed."
         else:
             flash_errors = [f"Unknown session action '{action}'."]
     except InventoryValidationError as exc:
@@ -620,20 +604,10 @@ def _session_action(request: HttpRequest, session: IntakeSession) -> HttpRespons
             .select_related("part", "shipment_line")
             .order_by("-id")
         )
-        reconciliations = list(
-            session.reconciliations.filter(deleted_at__isnull=True)
-            .select_related("part")
-            .prefetch_related("lines")
-            .order_by("id")
-        )
         fragment_context = {
             "session": session,
             "struct": struct,
             "allocations": allocations,
-            "reconciliations": reconciliations,
-            "pending_reconciliation_count": sum(
-                1 for r in reconciliations if r.status != ReconciliationStatus.RESOLVED
-            ),
             "flash_errors": flash_errors,
             "flash_success": flash_success,
             "can_intake": can_intake(request),

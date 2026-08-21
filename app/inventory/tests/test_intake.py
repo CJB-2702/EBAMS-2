@@ -10,20 +10,13 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from app.administration.models import Division, Domain
-from app.inventory.control_layer.errors import (
-    InventoryValidationError,
-    ReconciliationBarrierError,
-)
+from app.inventory.control_layer.errors import InventoryValidationError
 from app.inventory.control_layer.factories.warehouse_factory import WarehouseFactory
 from app.inventory.control_layer.intake_context import IntakeContext
-from app.inventory.control_layer.managers.reconciliation_manager import (
-    ReconciliationManager,
-)
 from app.inventory.models.intake.enums import (
     AllocationCondition,
     IntakeSessionMethod,
     IntakeSessionStatus,
-    ReconciliationStatus,
 )
 from app.inventory.models.intake.intake_session import IntakeSession
 from app.inventory.models.intake.item_allocation import ItemAllocation
@@ -200,10 +193,14 @@ class UnmanifestedAllocationTests(IntakeTestCase):
             shipment_line_id=None, part_id=self.part_b.pk,
             quantity=Decimal("2"), condition=AllocationCondition.GOOD, actor=None,
         )
-        self.assertTrue(session_context.session.has_unlinked_allocations)
+        self.assertTrue(
+            session_context.session.allocations.filter(
+                shipment_line__isnull=True, deleted_at__isnull=True
+            ).exists()
+        )
 
         session = session_context.close_session(actor=None)
-        self.assertTrue(session.has_unlinked_allocations)
+        self.assertIsNotNone(session.stock_posted_at)
 
         quarantined = ActiveInventory.objects.get(
             room=self.intake_room, storage_location__isnull=True, part=self.part_b
@@ -211,43 +208,31 @@ class UnmanifestedAllocationTests(IntakeTestCase):
         self.assertEqual(quarantined.quantity_on_hand, Decimal("2"))
 
 
-class ReconciliationBarrierTests(IntakeTestCase):
-    def test_closing_with_a_pending_reconciliation_is_blocked(self):
-        line = self._shipment(part=self.part_a, quantity=Decimal("10"), shipment_id="SHP-RECON")
+class ShortReceiptCloseTests(IntakeTestCase):
+    def test_a_short_session_closes_without_any_sign_off(self):
+        """The reconciliation barrier is gone (intake_portal_workflow.md
+        §7.1). A discrepancy is never approved, accepted, or closed — the
+        shortage simply stays visible and derivable, and stock posts
+        regardless so the parts are pickable today."""
+        line = self._shipment(part=self.part_a, quantity=Decimal("10"), shipment_id="SHP-SHORT")
 
         session_context = IntakeContext.start_session(
             operator=self.user, warehouse_id=self.warehouse.pk,
             intake_method=IntakeSessionMethod.SCAN, actor=None,
         )
         session_context.associate_shipment(shipment_id=line.shipment_id, actor=None)
-        # Only 4 of the 10 physically logged — a real discrepancy.
+        # Only 4 of the 10 physically logged — a real shortage.
         session_context.create_manual_allocation(
             shipment_line_id=line.pk, part_id=self.part_a.pk,
             quantity=Decimal("4"), condition=AllocationCondition.GOOD, actor=None,
         )
-        session_context.transition_to_reconciliation(actor=None)
-        self.assertEqual(
-            session_context.session.status, IntakeSessionStatus.RECONCILING
-        )
-
-        with self.assertRaises(ReconciliationBarrierError):
-            session_context.close_session(actor=None)
-
-        # Resolving the one open line clears the barrier.
-        reconciliation = session_context.session.reconciliations.get(
-            part=self.part_a, deleted_at__isnull=True
-        )
-        recon_line = reconciliation.lines.get(deleted_at__isnull=True)
-        session_context.resolve_line(
-            reconciliation_line_id=recon_line.pk,
-            resolution_type="accepted_shortage",
-            actor=None,
-        )
-        reconciliation.refresh_from_db()
-        self.assertEqual(reconciliation.status, ReconciliationStatus.RESOLVED)
 
         session = session_context.close_session(actor=None)
         self.assertEqual(session.status, IntakeSessionStatus.CLOSED)
+        self.assertIsNotNone(session.stock_posted_at)
+        # Stock posting does NOT lock recording — that is an explicit user
+        # act with no surface yet (§4.3), rebuilt in Phase 2.
+        self.assertIsNone(session.recording_locked_at)
 
 
 class CancelSessionTests(IntakeTestCase):

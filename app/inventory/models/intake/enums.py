@@ -9,16 +9,24 @@ from django.db import models
 
 
 class IntakeSessionStatus(models.TextChoices):
-    """IntakeSession.status — DRAFT -> ACTIVE -> RECONCILING -> CLOSED, with
-    CANCELLED reachable from any non-CLOSED state (see IntakeSessionStateMachine
-    in guards/intake_guard.py for the legal-transition table). ACTIVE -> CLOSED
-    directly is also legal — the Auto Intake path never touches reconciliation
-    because partial receipts are resolved by splitting the shipment line
-    (FD-27), not by a reconciliation task."""
+    """IntakeSession.status — DRAFT -> ACTIVE -> CLOSED, with CANCELLED
+    reachable from any non-CLOSED state (see IntakeSessionStateMachine in
+    guards/intake_guard.py for the legal-transition table).
+
+    This is a coarse DISPLAY label maintained by the control layer, not the
+    authority on session state (intake_portal_workflow.md §11.4). The
+    authority is the pair of event stamps on IntakeSession —
+    `recording_locked_at/_by` and `stock_posted_at/_by` — because each one
+    answers *who* and *when*, which an enum position never could.
+
+    `RECONCILING` was removed with the reconciliation tables (§12.7): there
+    is no such stage any more. Association and reconciliation are abstract,
+    revisitable activities that happen at any point in a session's life,
+    never stages in a pipeline (§4.1).
+    """
 
     DRAFT = "draft", "Draft"
     ACTIVE = "active", "Active"
-    RECONCILING = "reconciling", "Reconciling"
     CLOSED = "closed", "Closed"
     CANCELLED = "cancelled", "Cancelled"
 
@@ -38,23 +46,26 @@ class AllocationCondition(models.TextChoices):
 
 
 class AllocationIntakeMethod(models.TextChoices):
+    """How the COUNT was captured. Not how the link was decided — that is
+    `AllocationLinkSource`, and the two are deliberately separate columns."""
+
     SCAN = "scan", "Scan"
     MANUAL = "manual", "Manual"
 
 
-class ReconciliationStatus(models.TextChoices):
-    PENDING = "pending", "Pending"
-    RESOLVED = "resolved", "Resolved"
+class AllocationLinkSource(models.TextChoices):
+    """How an ItemAllocation came to point at its shipment line
+    (intake_portal_workflow.md §12.3).
 
+    The record page auto-links behind every scan (§5.2), so audit must be
+    able to tell a machine guess from a human decision — and to tell the
+    *confident* guess (the part number appears on exactly one line in the
+    whole session manifest) from the *contextual* one (it was on the active
+    shipment). UNLINKED is a real, terminal, non-exceptional state, not a
+    null: excess physical stock stays unlinked by design (§7.2).
+    """
 
-class ReconciliationResolutionType(models.TextChoices):
-    """Declared on PartReconciliationLine (the child), never on the parent
-    PartReconciliationSession (FD-9) — resolution is a per-shipment-line fact,
-    to avoid netting shortages from one vendor shipment against overages from
-    another for the same part number."""
-
-    NONE = "none", "None"
-    ACCEPTED_SHORTAGE = "accepted_shortage", "Accepted Shortage"
-    QUARANTINED_OVERAGE = "quarantined_overage", "Quarantined Overage"
-    FORCE_ACCEPTED_OVERAGE = "force_accepted_overage", "Force Accepted Overage"
-    RMA_DISPOSITION = "rma_disposition", "RMA Disposition"
+    UNLINKED = "unlinked", "Unlinked"
+    AUTO_SINGLE_MATCH = "auto_single_match", "Auto — Single Match"
+    AUTO_ACTIVE_PACKAGE = "auto_active_package", "Auto — Active Shipment"
+    MANUAL = "manual", "Manual"

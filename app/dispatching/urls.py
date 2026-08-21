@@ -65,8 +65,43 @@ from app.dispatching.presentation_layer.entrypoints.template_views import (
     template_retire,
 )
 
+from app.dispatching.presentation_layer.entrypoints.dispatch_views import (
+    dispatch_attach_reservation,
+    dispatch_cancel,
+    dispatch_create,
+    dispatch_crew_action,
+    dispatch_demand_action,
+    dispatch_detail,
+    dispatch_edit,
+    dispatch_expense_action,
+    dispatch_index,
+    dispatch_lifecycle,
+    dispatch_personnel_search,
+    dispatch_reject,
+    dispatch_requirement_action,
+    dispatch_supersede,
+    dispatch_update_intent,
+)
+
 urlpatterns = [
     path("", dispatching_hub, name="dispatching_hub"),
+
+    # ── Dispatches ───────────────────────────────────────────────────────
+    path("dispatches", dispatch_index, name="dispatching_dispatch_index"),
+    path("dispatches/create", dispatch_create, name="dispatching_dispatch_create"),
+    path("dispatch/<int:pk>", dispatch_detail, name="dispatching_dispatch_detail"),
+    path("dispatch/<int:pk>/edit", dispatch_edit, name="dispatching_dispatch_edit"),
+    path("dispatch/<int:pk>/lifecycle", dispatch_lifecycle, name="dispatching_dispatch_lifecycle"),
+    path("dispatch/<int:pk>/intent", dispatch_update_intent, name="dispatching_dispatch_update_intent"),
+    path("dispatch/<int:pk>/requirements", dispatch_requirement_action, name="dispatching_dispatch_requirement_action"),
+    path("dispatch/<int:pk>/demands", dispatch_demand_action, name="dispatching_dispatch_demand_action"),
+    path("dispatch/<int:pk>/crew", dispatch_crew_action, name="dispatching_dispatch_crew_action"),
+    path("dispatch/<int:pk>/personnel-search", dispatch_personnel_search, name="dispatching_dispatch_personnel_search"),
+    path("dispatch/<int:pk>/expenses", dispatch_expense_action, name="dispatching_dispatch_expense_action"),
+    path("dispatch/<int:pk>/reject", dispatch_reject, name="dispatching_dispatch_reject"),
+    path("dispatch/<int:pk>/cancel", dispatch_cancel, name="dispatching_dispatch_cancel"),
+    path("dispatch/<int:pk>/supersede", dispatch_supersede, name="dispatching_dispatch_supersede"),
+    path("dispatch/<int:pk>/attach-reservation", dispatch_attach_reservation, name="dispatching_dispatch_attach_reservation"),
 
     # ── Asset reservations ──────────────────────────────────────────────
     path("reservations", reservation_index, name="dispatching_reservation_index"),
@@ -109,8 +144,18 @@ urlpatterns = [
     path("templates/draft/update", template_draft_update, name="dispatching_template_draft_update"),
     path("templates/draft/commit", template_draft_commit, name="dispatching_template_draft_commit"),
 
-    # ── Requirement-picker search fragments (template draft editor) ────
-    path("templates/draft/search/capabilities", capability_pool_search, name="dispatching_capability_pool_search"),
-    path("templates/draft/search/configuration-templates", configuration_template_pool_search, name="dispatching_configuration_template_pool_search"),
     path("templates/draft/search/materials", material_pool_search, name="dispatching_material_pool_search"),
+    path("templates/draft/search/capabilities", capability_pool_search, name="dispatching_capability_pool_search"),
+    path("templates/draft/search/configurations", configuration_template_pool_search, name="dispatching_configuration_template_pool_search"),
+
+    # ── Events Portal ──────────────────────────────────────────────────
+    path("events", lambda req: _events_portal(req, "dispatching"), name="dispatching_events_portal"),
 ]
+
+def _events_portal(request, default_type: str):
+    from app.events.presentation_layer.entrypoints.events import event_index
+    get_copy = request.GET.copy()
+    if not get_copy.get("event_type"):
+        get_copy["event_type"] = default_type
+    request.GET = get_copy
+    return event_index(request)

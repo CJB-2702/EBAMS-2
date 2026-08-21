@@ -60,7 +60,8 @@ class PartDemandStruct:
 
     priority: str
     needed_by: object
-    source_module: str
+    source: str
+    event_id: int | None
     serial_number_tracking_required: bool
     notes: str
     requested_by_id: int | None
@@ -69,6 +70,10 @@ class PartDemandStruct:
 
     # Derived — the number the PO wizard caps against (D28).
     outstanding_qty: Decimal = Decimal("0")
+
+    @property
+    def source_module(self) -> str:
+        return self.source
 
     @classmethod
     def load(cls, *, demand_id: int) -> "PartDemandStruct":
@@ -112,7 +117,8 @@ class PartDemandStruct:
             issued_qty=demand.issued_qty,
             priority=demand.priority,
             needed_by=demand.needed_by,
-            source_module=demand.source_module,
+            source=demand.source,
+            event_id=demand.event_id,
             serial_number_tracking_required=demand.serial_number_tracking_required,
             notes=demand.notes,
             requested_by_id=demand.requested_by_id,
@@ -137,7 +143,9 @@ class PartDemandStruct:
             "outstanding_qty": self.outstanding_qty,
             "priority": self.priority,
             "needed_by": self.needed_by,
-            "source_module": self.source_module,
+            "source": self.source,
+            "source_module": self.source,
+            "event_id": self.event_id,
             "serial_number_tracking_required": self.serial_number_tracking_required,
             "notes": self.notes,
             "requested_by_id": self.requested_by_id,

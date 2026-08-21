@@ -137,12 +137,8 @@ room_id/q round-trip through the URL for F5 the same way auto.html does.
 
     {# ================= Submit ================= #}
     <div class="card">
-      <div class="card-content">
-        {% if selected_shipments %}
-        <p class="is-size-7 has-text-grey">Ready to start a scan session against {{ selected_shipments|length }} shipment{{ selected_shipments|length|pluralize }}.</p>
-        {% else %}
-        <p class="is-size-7 has-text-grey">Select a warehouse and at least one unfulfilled shipment above before submitting.</p>
-        {% endif %}
+      <div class="card-content" id="scan-submit-hint">
+        {% include "inventory/intake/_scan_submit_hint.html" %}
       </div>
       {% if can_intake %}
       <footer class="card-footer custom-card-footer">
@@ -152,7 +148,7 @@ room_id/q round-trip through the URL for F5 the same way auto.html does.
             <span>Cancel</span>
           </a>
         </div>
-        <button class="button is-primary card-footer-primary" type="submit" {% if not selected_shipments %}disabled{% endif %}>
+        <button id="scan-submit-button" class="button is-primary card-footer-primary" type="submit" {% if not selected_shipments %}disabled{% endif %}>
           <span class="icon"><span class="material-icons" aria-hidden="true">qr_code_scanner</span></span>
           <span>Start Scan Session</span>
         </button>

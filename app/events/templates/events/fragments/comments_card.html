@@ -30,13 +30,14 @@ for callers gating comment-writing on a permission the viewer lacks. Existing
 rows still show, still filterable, and edit/delete still render per-row for
 whoever authored them.
 {% endcomment %}
-<div class="card {{ depth }}">
-  <div class="card-header">
+<div class="card {{ depth }} comments-card-container">
+  <div class="card-header" style="cursor: pointer; user-select: none;" onclick="window.__toggleCommentsSection(this, event)">
     <div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">chat</span></span>
-      Comments ({{ card.comments|length }})
+      <span class="icon mr-1"><span class="material-icons comments-toggle-icon" aria-hidden="true">expand_more</span></span>
+      <span class="icon mr-1"><span class="material-icons" aria-hidden="true">chat</span></span>
+      <span>Comments ({{ card.comments|length }})</span>
     </div>
-    <div class="buttons has-addons comment-filter-group mb-0">
+    <div class="buttons has-addons comment-filter-group mb-0" onclick="event.stopPropagation();">
       <button type="button" class="button is-small is-light comment-filter-item" data-filter="human"
               onclick="return window.__filterComments(event, this, 'human')">Human</button>
       <button type="button" class="button is-small is-link is-selected comment-filter-item" data-filter="all"
@@ -45,7 +46,7 @@ whoever authored them.
               onclick="return window.__filterComments(event, this, 'system')">Machine</button>
     </div>
   </div>
-  <div class="card-content">
+  <div class="card-content comments-card-body">
     {% for row in card.comments %}
     {% include "events/fragments/comment_row.html" with row=row event_hash=card.hash row_depth=row_depth action_depth=action_depth next=next %}
     {% empty %}

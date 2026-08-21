@@ -44,14 +44,29 @@
       </div>
       {% endif %}
       <form method="get">
-        {% if asset_filter %}<input type="hidden" name="asset" value="{{ asset_filter }}">{% endif %}
-        <div class="columns is-vcentered is-multiline is-variable is-3">
-          <div class="column is-4">
+        <div class="columns is-vcentered is-multiline is-variable is-2">
+          <div class="column is-3">
             <label class="label is-small">Title</label>
             <input class="input is-small is-family-monospace" type="search" name="q"
               value="{{ q }}" placeholder="Search title…" autocomplete="off">
           </div>
-          <div class="column is-3">
+          <div class="column is-2">
+            <label class="label is-small">Domain</label>
+            <div class="select is-small is-fullwidth">
+              <select name="domain">
+                <option value="">All domains</option>
+                {% for dom in user_domains %}
+                <option value="{{ dom.id }}" {% if dom.id|slugify == domain_filter %}selected{% endif %}>{{ dom.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Asset ID</label>
+            <input class="input is-small is-family-monospace" type="number" name="asset"
+              value="{{ asset_filter }}" placeholder="e.g. 8" autocomplete="off">
+          </div>
+          <div class="column is-2">
             <label class="label is-small">Status</label>
             <div class="select is-small is-fullwidth">
               <select name="status">
@@ -62,7 +77,7 @@
               </select>
             </div>
           </div>
-          <div class="column is-3">
+          <div class="column is-2">
             <label class="label is-small">Type</label>
             <div class="select is-small is-fullwidth">
               <select name="event_type">
@@ -73,14 +88,12 @@
               </select>
             </div>
           </div>
-          <div class="column is-2 is-flex is-align-items-flex-end" style="gap: 0.5rem;">
-            <button class="button is-small is-info" type="submit">
+          <div class="column is-1 is-flex is-align-items-flex-end" style="gap: 0.25rem;">
+            <button class="button is-small is-info" type="submit" title="Apply Filters">
               <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-              <span>Apply</span>
             </button>
-            <a href="{% url 'event_index' %}" class="button is-small is-light">
+            <a href="{% url 'event_index' %}" class="button is-small is-light" title="Clear Filters">
               <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
-              <span>Clear</span>
             </a>
           </div>
         </div>

@@ -1,0 +1,108 @@
+<div id="available-personnel-container" class="column is-7">
+  <!-- Search Form -->
+  <form id="personnel-search-form"
+        hx-get="{% url 'dispatching_dispatch_personnel_search' dispatch.pk %}"
+        hx-target="#available-personnel-container"
+        hx-swap="outerHTML"
+        hx-trigger="submit"
+        class="mb-4">
+    <div class="columns is-variable is-2 is-multiline is-vcentered mb-2">
+      <div class="column is-4">
+        <label class="label is-size-7 mb-1">User name</label>
+        <input class="input is-small" type="text" id="user-search-input" name="user_name" value="{{ username_q }}" placeholder="Partial name...">
+      </div>
+      <div class="column is-4">
+        <label class="label is-size-7 mb-1">Skill name</label>
+        <input class="input is-small" type="text" id="skill-search-input" name="skill_name" value="{{ skill_q }}" placeholder="e.g. CDL">
+      </div>
+      <div class="column is-4 pt-4">
+        <label class="checkbox is-size-7">
+          <input type="checkbox" name="include_overlapping" {% if include_overlapping %}checked{% endif %}
+                 hx-get="{% url 'dispatching_dispatch_personnel_search' dispatch.pk %}"
+                 hx-target="#available-personnel-container"
+                 hx-swap="outerHTML"
+                 hx-include="#personnel-search-form">
+          Include with overlapping dispatches assigned
+        </label>
+      </div>
+    </div>
+    <div class="buttons is-right mb-0">
+      <button type="submit" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" style="font-size: 1rem;">search</span></span>
+        <span>Search</span>
+      </button>
+      <button type="button" class="button is-small is-light"
+              hx-get="{% url 'dispatching_dispatch_personnel_search' dispatch.pk %}"
+              hx-target="#available-personnel-container"
+              hx-swap="outerHTML"
+              onclick="document.getElementById('user-search-input').value=''; document.getElementById('skill-search-input').value='';">
+        Clear
+      </button>
+    </div>
+  </form>
+
+  <!-- Available Personnel Results Table -->
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable is-narrow is-size-7">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Skills</th>
+          <th style="min-width: 170px;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for usr in available_users %}
+        <tr>
+          <td class="has-text-weight-semibold">
+            {{ usr.get_full_name|default:usr.username }}
+            {% if usr.pk in overlapping_user_ids %}
+            <br><span class="tag is-warning is-light is-small" title="Assigned to another active dispatch in this time window">Overlapping</span>
+            {% endif %}
+          </td>
+          <td class="has-text-grey-dark">{{ usr.email|default:"—" }}</td>
+          <td>
+            {% if usr.active_skills_list %}
+              <div class="tags" style="gap: 0.25rem;">
+                {% for cert in usr.active_skills_list %}
+                <span class="tag is-info is-light is-small" title="Level {{ cert.level|default:'1' }}">{{ cert.skill.name }}</span>
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="has-text-grey">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+                  hx-post="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+                  hx-target="#personnel-card-container"
+                  hx-swap="outerHTML"
+                  hx-include="#personnel-search-form"
+                  class="is-flex is-align-items-center gap-1">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add">
+              <input type="hidden" name="user_id" value="{{ usr.pk }}">
+              <div class="select is-small">
+                <select name="role">
+                  {% for r_val, r_lbl in personnel_roles %}
+                  <option value="{{ r_val }}">{{ r_lbl }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="button is-small is-link">
+                <span class="icon"><span class="material-icons" style="font-size: 1rem;">add_circle</span></span>
+                <span>Add</span>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="has-text-grey has-text-centered py-4">No available personnel found matching search filters.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

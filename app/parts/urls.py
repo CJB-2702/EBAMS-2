@@ -131,4 +131,15 @@ urlpatterns = [
         supplier_item_add_document,
         name="supplier_item_add_document",
     ),
+
+    # Events Portal
+    path("events/", lambda req: _events_portal(req, "inventory"), name="parts_events_portal"),
 ]
+
+def _events_portal(request, default_type: str):
+    from app.events.presentation_layer.entrypoints.events import event_index
+    get_copy = request.GET.copy()
+    if not get_copy.get("event_type"):
+        get_copy["event_type"] = default_type
+    request.GET = get_copy
+    return event_index(request)

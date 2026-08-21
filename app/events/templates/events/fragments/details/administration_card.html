@@ -1,0 +1,20 @@
+{% comment %}
+Administration detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+<div class="depth-2 p-3 mb-3" style="background-color:#f8fafc; border:1px solid #cbd5e1;">
+  <div class="columns is-multiline is-mobile is-size-7">
+    <div class="column is-4">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Audit Category</p>
+      <p><span class="tag is-dark is-light is-small" style="font-weight:600;">System & RBAC Audit</span></p>
+    </div>
+    <div class="column is-4">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Target Domain</p>
+      <p style="font-weight:600;">{{ card.event.domain.name }}</p>
+    </div>
+    <div class="column is-4">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Initiated By</p>
+      <p style="font-weight:600;">{{ card.event.created_by|default:"System Administrator" }}</p>
+    </div>
+  </div>
+</div>

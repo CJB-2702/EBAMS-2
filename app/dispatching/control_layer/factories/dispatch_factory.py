@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from django.db import transaction
 
+from django.utils import timezone
+
 from app.events.models.details.dispatching import (
     DispatchingDetail,
     DispatchWorkflowStatus,
@@ -48,13 +50,15 @@ class DispatchFactory:
         if not title:
             title = f"Dispatch — {asset_subclass_text or 'request'}"
 
+        now = timezone.now()
         with transaction.atomic():
             dispatch = DispatchingDetail.objects.create(
                 thread_type=ActivityThreadType.EVENT,
                 domain_id=domain_id,
                 title=title,
                 description=description,
-                workflow_status=DispatchWorkflowStatus.DRAFT,
+                workflow_status=DispatchWorkflowStatus.REQUESTED,
+                submitted_at=now,
                 requested_for_id=requested_for_id,
                 requested_by_id=requested_by_id or getattr(actor, "pk", None),
                 desired_start=desired_start,

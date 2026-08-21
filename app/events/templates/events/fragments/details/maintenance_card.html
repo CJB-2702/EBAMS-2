@@ -1,0 +1,67 @@
+{% comment %}
+Maintenance detail sub-card fragment.
+Expects `card` = {event, detail, asset_links, ...}
+{% endcomment %}
+<div class="depth-2 p-3 mb-3" style="background-color:#fffbeb; border:1px solid #fef3c7;">
+  <div class="columns is-multiline is-mobile is-size-7">
+    <div class="column is-3">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Maintenance Type</p>
+      <p>
+        {% if card.detail and card.detail.maintenance_type %}
+          <span class="tag is-warning is-light is-small" style="font-weight:600;">{{ card.detail.get_maintenance_type_display }}</span>
+        {% else %}
+          <span class="tag is-warning is-light is-small">Maintenance</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Work Order Ref</p>
+      <p class="is-family-monospace" style="font-weight:600; color:#b45309;">
+        {{ card.detail.work_order_reference|default:"WO-MT-001" }}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Assigned Tech</p>
+      <p style="font-weight:600;">
+        {{ card.detail.assigned_user|default:card.event.created_by|default:"Unassigned" }}
+      </p>
+    </div>
+    <div class="column is-3">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Billable Hours</p>
+      <p class="has-text-link" style="font-weight:700;">
+        {% if card.detail and card.detail.actual_billable_hours %}
+          {{ card.detail.actual_billable_hours }} hrs
+        {% else %}
+          —
+        {% endif %}
+      </p>
+    </div>
+
+    {% if card.asset_links %}
+    <div class="column is-6">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Linked Equipment / Assets</p>
+      <p style="font-weight:600;">
+        {% for link in card.asset_links %}
+          <a href="{% url 'asset_detail' asset_id=link.asset.id %}" class="has-text-link">
+            <span class="material-icons" style="font-size:12px; vertical-align:middle;">precision_manufacturing</span>
+            {{ link.asset.name }} ({{ link.asset.serial_number|default:link.asset.id }})
+          </a>{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    </div>
+    {% endif %}
+
+    {% if card.detail and card.detail.maintenance_schedule %}
+    <div class="column is-6">
+      <p class="has-text-grey-dark" style="font-size:0.68rem; font-weight:700; text-transform:uppercase;">Maintenance Schedule</p>
+      <p>{{ card.detail.maintenance_schedule }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if card.detail and card.detail.completion_notes %}
+  <div class="mt-2 p-2 is-size-7" style="background:#ffffff; border:1px solid #fde68a;">
+    <strong class="has-text-warning-dark">Completion Notes:</strong> {{ card.detail.completion_notes }}
+  </div>
+  {% endif %}
+</div>

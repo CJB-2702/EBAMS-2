@@ -124,10 +124,18 @@ class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
     )
 
     # ── Origin and tracking flags (D38) ─────────────────────────────────────
-    source_module = models.CharField(
-        max_length=20,
+    source = models.CharField(
+        max_length=50,
         choices=DemandSourceModule.choices,
-        default=DemandSourceModule.GENERAL,
+        default=DemandSourceModule.PROCUREMENT,
+        db_index=True,
+    )
+    event = models.ForeignKey(
+        "events.Event",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="part_demands",
     )
     # Declared upstream, consumed by a future Inventory app. Nothing in this
     # build reads it.
@@ -183,6 +191,8 @@ class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
             models.Index(fields=["part", "demand_state"], name="pd_part_state_idx"),
             # Priority ordering in the Buyer's queue.
             models.Index(fields=["needed_by"], name="pd_needed_by_idx"),
+            # Source & Event lookup.
+            models.Index(fields=["source", "event"], name="pd_source_event_idx"),
         ]
         permissions = [
             (

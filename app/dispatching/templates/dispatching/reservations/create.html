@@ -26,10 +26,20 @@
   </div>
 </div>
 
+{% if dispatch_obj %}
+<div class="notification is-info is-light mb-4">
+  <span class="icon"><span class="material-icons" aria-hidden="true">outbox</span></span>
+  <strong>Dispatch Linkage:</strong> Creating booking for <strong>Dispatch #{{ dispatch_obj.pk }}: {{ dispatch_obj.title }}</strong>. This reservation will be automatically promoted and attached to the dispatch.
+</div>
+{% endif %}
+
 <div class="body-grid full-width">
 
   <form method="post" id="reservation-form">
     {% csrf_token %}
+    {% if dispatch_obj %}
+    <input type="hidden" name="dispatch_id" value="{{ dispatch_obj.pk }}">
+    {% endif %}
 
     {# ── 1. Booking Details ── #}
     <div class="card">

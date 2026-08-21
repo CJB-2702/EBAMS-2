@@ -30,8 +30,15 @@
       <a href="{% url 'dispatching_hub' %}" class="sidebar-link {% block nav_hub %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span> Hub</a>
 
       <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Dispatches</p>
+      <a href="{% url 'dispatching_dispatch_index' %}" class="sidebar-link {% block nav_dispatch_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">outbox</span></span> Dispatches</a>
+      <a href="{% url 'dispatching_dispatch_index' %}?requested-for={{ request.user.pk|default:user.pk }}&has-assigned-person={{ request.user.pk|default:user.pk }}" class="sidebar-link {% block nav_my_dispatches %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Dispatches</a>
+      <a href="{% url 'dispatching_dispatch_create' %}" class="sidebar-link {% block nav_dispatch_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> New Dispatch</a>
+
+      <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Reservations</p>
       <a href="{% url 'dispatching_reservation_index' %}" class="sidebar-link {% block nav_reservation_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span> Reservations</a>
+      <a href="{% url 'dispatching_reservation_index' %}?requested-for={{ request.user.pk|default:user.pk }}" class="sidebar-link {% block nav_my_reservations %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">person</span></span> My Reservations</a>
       <a href="{% url 'dispatching_reservation_create' %}" class="sidebar-link {% block nav_reservation_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span> New Reservation</a>
 
       <div class="sidebar-divider"></div>

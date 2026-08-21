@@ -150,4 +150,15 @@ urlpatterns = [
     path("domain-templates/<slug:template_slug>/move-domains/", domain_template_move_domains, name="domain_template_move_domains"),
 
     path("domain-organizations/", domain_organizations_portal, name="domain_organizations_portal"),
+
+    # Events / Audit Portal
+    path("events/", lambda req: _events_portal(req, "administration"), name="administration_events_portal"),
 ]
+
+def _events_portal(request, default_type: str):
+    from app.events.presentation_layer.entrypoints.events import event_index
+    get_copy = request.GET.copy()
+    if not get_copy.get("event_type"):
+        get_copy["event_type"] = default_type
+    request.GET = get_copy
+    return event_index(request)

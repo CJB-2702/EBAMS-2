@@ -49,10 +49,14 @@ def _check_domain_access(request, event: Event) -> bool:
 
 @require_http_methods(["GET"])
 def event_index(request: HttpRequest) -> HttpResponse:
+    from app.administration.models.data_ownership.domains import Domain
+    from django.db.models import Q
+
     q = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "").strip()
     type_filter = request.GET.get("event_type", "").strip()
-    asset_filter = request.GET.get("asset", "").strip()
+    asset_filter = (request.GET.get("asset", "") or request.GET.get("asset_id", "")).strip()
+    domain_filter = (request.GET.get("domain", "") or request.GET.get("domain_id", "")).strip()
 
     qs = list_events_for_user(request.user)
     if q:
@@ -61,32 +65,47 @@ def event_index(request: HttpRequest) -> HttpResponse:
         qs = qs.filter(status=status_filter)
     if type_filter:
         qs = qs.filter(event_type=type_filter)
+    if domain_filter.isdigit():
+        qs = qs.filter(domain_id=int(domain_filter))
 
     asset = None
     if asset_filter.isdigit():
-        from app.assets.models import Asset
+        asset_id = int(asset_filter)
+        from app.assets.models import Asset, AssetEvent
+        from app.events.models.details import MaintenanceDetail
 
-        asset = Asset.objects.filter(pk=int(asset_filter)).first()
-        qs = qs.filter(asset_links__asset_id=int(asset_filter)).distinct()
+        asset = Asset.objects.filter(pk=asset_id).first()
+        linked_event_ids = set(
+            AssetEvent.objects.filter(asset_id=asset_id).values_list("event_id", flat=True)
+        ) | set(
+            MaintenanceDetail.objects.filter(asset_id=asset_id).values_list("pk", flat=True)
+        )
+        qs = qs.filter(pk__in=linked_event_ids)
 
     fmt = request.GET.get("format", "").strip()
 
-    # Querystring carrying just the active filters (no page / format) so the
-    # density switch and infinite-scroll sentinel can preserve filter state.
+    # Querystring carrying active filters so density switches & HTMX preserve state.
     filter_params = {k: v for k, v in (
         ("q", q),
         ("status", status_filter),
         ("event_type", type_filter),
+        ("domain", domain_filter),
         ("asset", asset_filter),
     ) if v}
     base_query = urlencode(filter_params)
+
+    user_domains = Domain.objects.filter(
+        pk__in=request.user.get_all_domain_ids()
+    ).order_by("name")
 
     shared = {
         "q": q,
         "status_filter": status_filter,
         "type_filter": type_filter,
+        "domain_filter": domain_filter,
         "asset_filter": asset_filter,
         "asset": asset,
+        "user_domains": user_domains,
         "base_query": base_query,
         "status_choices": EventStatus.choices,
         "type_choices": EventType.choices,
@@ -159,8 +178,9 @@ def event_detail(request: HttpRequest, hash: str) -> HttpResponse:
     if not _check_domain_access(request, event):
         return HttpResponseForbidden("You do not have access to this event.")
 
-    ctx = EventContext(event.pk, request.user)
-    comments_context = build_comments_context(ctx.struct)
+    from app.events.presentation_layer.tools.generic_cards import build_activity_card
+
+    card = build_activity_card(event, request.user)
 
     can_edit = (
         event.created_by == request.user
@@ -170,14 +190,15 @@ def event_detail(request: HttpRequest, hash: str) -> HttpResponse:
         event.created_by == request.user
         and not any(
             row["comment"].is_human_made and row["comment"].created_by != request.user
-            for row in comments_context
+            for row in card["comments"]
         )
     )
 
     return render(request, "events/ev_detail.html", {
         "event": event,
         "event_hash": hash,
-        "comments_context": comments_context,
+        "card": card,
+        "comments_context": card["comments"],
         "can_edit": can_edit,
         "can_delete": can_delete,
     })

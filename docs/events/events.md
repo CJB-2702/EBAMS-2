@@ -10,7 +10,7 @@ context_tier: 2
 
 This document is the authoritative source of truth for the `app/events` sub-application. It covers entity design, mixin strategy, behavioural rules (shadow history, soft delete), domain scoping, and permission groups.
 
-> **Asset linkage is out of scope for this build phase.** Events carry no asset reference. A future many-to-many table (event ↔ asset) will be built in `app/assets` and will reference events from that side. No asset field, import, or mention belongs in `app/events`.
+> **Asset linkage & Unified Event Portals**: `AssetEvent` (`app/events/models/asset_event.py`) provides explicit event-to-asset role tracking. Events dynamically resolve domain proxy models (`MaintenanceDetail`, `DispatchingDetail`, `InventoryDetail`, `AssetManagementDetail`, `AdministrationDetail`) and render domain-specific detail card fragments. See [unified_event_portals_architecture.md](unified_event_portals_architecture.md).
 
 ---
 

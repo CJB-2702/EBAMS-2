@@ -28,6 +28,14 @@ ALWAYS_EDITABLE_FIELDS = frozenset(
 
 class IntentLockPolicy:
     @classmethod
+    def is_locked(cls, dispatch) -> bool:
+        return dispatch.workflow_status in LOCKED_STATUSES
+
+    @classmethod
+    def is_fully_editable(cls, dispatch) -> bool:
+        return dispatch.workflow_status not in LOCKED_STATUSES
+
+    @classmethod
     def check_editable(cls, *, dispatch, fields: set[str] | None = None) -> None:
         """Raises if intent is locked. ``fields``, when given, is checked
         against ALWAYS_EDITABLE_FIELDS so a caller updating only those may

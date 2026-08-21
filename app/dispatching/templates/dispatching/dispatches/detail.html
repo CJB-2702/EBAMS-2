@@ -1,0 +1,612 @@
+{% extends "dispatching/base.html" %}
+{% load static %}
+{% block title %}Dispatch #{{ dispatch.pk }} — {{ dispatch.title }}{% endblock %}
+{% block nav_dispatch_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_dispatch_index' %}">Dispatches</a></li>
+<li class="is-active"><a href="#" aria-current="page">#{{ dispatch.pk }}</a></li>
+{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/dispatching.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">outbox</span></div>
+      <div>
+        <div class="is-flex is-align-items-center gap-2 mb-1">
+          <h1 class="page-title mb-0">Dispatch #{{ dispatch.pk }}: {{ dispatch.title }}</h1>
+          {% include "dispatching/dispatches/_status_tag.html" with status=dispatch.workflow_status %}
+        </div>
+        <p class="page-subtitle">
+          Domain: <strong>{{ dispatch.domain.name }}</strong> &bull;
+          Window: <strong>{{ dispatch.desired_start|date:"M d, H:i" }} – {{ dispatch.desired_end|date:"M d, H:i" }}</strong> &bull;
+          Requested for: <strong>{{ dispatch.requested_for.get_full_name|default:dispatch.requested_for.username }}</strong>
+        </p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_dispatch_edit' dispatch.pk %}" class="button is-small is-link">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit Dispatch</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% include "dispatching/dispatches/_status_banner.html" with dispatch=dispatch %}
+
+{# ── 1. Top Card: Horizontal Lifecycle Actions (Full Width 3/3) ── #}
+<div class="card mb-4">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">gavel</span></span>Lifecycle Actions &amp; Governance</div>
+  </div>
+  <div class="card-content py-3">
+    <div class="is-flex is-flex-wrap-wrap is-align-items-center" style="gap:0.75rem;">
+
+      {% if dispatch.workflow_status == 'requested' and can_plan %}
+      <form method="post" action="{% url 'dispatching_dispatch_lifecycle' dispatch.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="take_under_review">
+        <button type="submit" class="button is-link is-small">
+          <span class="icon"><span class="material-icons" aria-hidden="true">pending_actions</span></span><span>Take Under Review</span>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if dispatch.workflow_status == 'under_review' and can_plan %}
+      <button class="button is-warning is-small" onclick="document.getElementById('fixes-modal').classList.add('is-active')">
+        <span class="icon"><span class="material-icons" aria-hidden="true">error_outline</span></span><span>Request Fixes</span>
+      </button>
+      {% endif %}
+
+      {% if dispatch.workflow_status == 'fixes_requested' and can_raise %}
+      <form method="post" action="{% url 'dispatching_dispatch_lifecycle' dispatch.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="resubmit">
+        <button type="submit" class="button is-info is-small">
+          <span class="icon"><span class="material-icons" aria-hidden="true">outbox</span></span><span>Resubmit Dispatch</span>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if dispatch.workflow_status == 'planned' or dispatch.workflow_status == 'alternate_resolution' %}
+      {% if can_complete %}
+      <form method="post" action="{% url 'dispatching_dispatch_lifecycle' dispatch.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_completed">
+        <button type="submit" class="button is-dark is-small">
+          <span class="icon"><span class="material-icons" aria-hidden="true">task_alt</span></span><span>Mark Completed</span>
+        </button>
+      </form>
+      {% endif %}
+      {% endif %}
+
+      {% if dispatch.workflow_status == 'under_review' and can_reject %}
+      <button class="button is-danger is-small" onclick="document.getElementById('reject-modal').classList.add('is-active')">
+        <span class="icon"><span class="material-icons" aria-hidden="true">block</span></span><span>Reject Dispatch</span>
+      </button>
+      {% endif %}
+
+      {% if dispatch.workflow_status != 'completed' and dispatch.workflow_status != 'cancelled' and dispatch.workflow_status != 'rejected' %}
+      <button class="button is-light is-small" onclick="document.getElementById('cancel-modal').classList.add('is-active')">
+        <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Cancel Dispatch</span>
+      </button>
+      {% endif %}
+
+      {% if dispatch.workflow_status == 'planned' or dispatch.workflow_status == 'alternate_resolution' or dispatch.workflow_status == 'rejected' %}
+      {% if can_raise %}
+      <form method="post" action="{% url 'dispatching_dispatch_supersede' dispatch.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="button is-link is-light is-small">
+          <span class="icon"><span class="material-icons" aria-hidden="true">content_copy</span></span><span>Raise Superseding Dispatch</span>
+        </button>
+      </form>
+      {% endif %}
+      {% endif %}
+
+      {% if dispatch.previous_dispatch %}
+      <span class="tag is-info is-light is-small">Supersedes #{{ dispatch.previous_dispatch.pk }}</span>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{# Rejection details alert banner if rejected #}
+{% if dispatch.workflow_status == 'rejected' %}
+<div class="notification is-danger is-light mb-4">
+  <p class="title is-6 mb-1"><span class="icon"><span class="material-icons" aria-hidden="true">block</span></span>Rejection Details (Category: {{ dispatch.get_rejection_category_display }})</p>
+  <p class="is-size-7 mb-1"><strong>Rejected By:</strong> {{ dispatch.rejected_by.get_full_name|default:dispatch.rejected_by.username }} on {{ dispatch.rejected_at|date:"Y-m-d H:i" }}</p>
+  <p class="is-size-7"><strong>Reason:</strong> {{ dispatch.rejection_reason }}</p>
+  {% if dispatch.alternative_suggestion %}
+  <p class="is-size-7 mt-1"><strong>Suggestion:</strong> {{ dispatch.alternative_suggestion }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{# ── 2. Merged Intent & Requirements Overview Super-Card (Full Width 3/3) ── #}
+<div class="card mb-4">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span>Intent &amp; Requirements Overview</div>
+  </div>
+  <div class="card-content">
+    
+    {# ── Section A: Base Intent & Requirements (Handrolled hero box) ── #}
+    <div class="dispatching-intent-hero-box">
+      <h5 class="title is-6 mb-3"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Base Intent Details</h5>
+      <div class="columns is-multiline is-size-7">
+        <div class="column is-3">
+          <p class="has-text-grey">Asset Class</p>
+          <p class="has-text-weight-semibold">{{ dispatch.asset_class.name }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Asset Subclass</p>
+          <p class="has-text-weight-semibold">{{ dispatch.asset_subclass_text|default:"—" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Dispatch Scope</p>
+          <p class="has-text-weight-semibold">{{ dispatch.get_dispatch_scope_display|default:"Unspecified" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Activity Location</p>
+          <p class="has-text-weight-semibold">{{ dispatch.activity_location|default:"—" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Headcount</p>
+          <p class="has-text-weight-semibold">{{ dispatch.headcount|default:"—" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Estimated Meter Usage</p>
+          <p class="has-text-weight-semibold">{{ dispatch.estimated_meter_usage|default:"—" }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Requested By</p>
+          <p class="has-text-weight-semibold">{{ dispatch.requested_by.get_full_name|default:dispatch.requested_by.username }}</p>
+        </div>
+        <div class="column is-3">
+          <p class="has-text-grey">Raised At</p>
+          <p class="has-text-weight-semibold">{{ dispatch.created_at|date:"Y-m-d H:i" }}</p>
+        </div>
+        {% if dispatch.description %}
+        <div class="column is-12">
+          <p class="has-text-grey">Description / Context</p>
+          <div class="has-text-grey-dark mt-1" style="white-space:pre-wrap;">{{ dispatch.description }}</div>
+        </div>
+        {% endif %}
+        {% if dispatch.requested_assets %}
+        <div class="column is-6">
+          <p class="has-text-grey">Requested Assets (Historical Free-text)</p>
+          <div class="notification is-light p-2 mt-1">{{ dispatch.requested_assets|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+        {% if dispatch.names_free_text %}
+        <div class="column is-6">
+          <p class="has-text-grey">Personnel / Travel Names</p>
+          <div class="notification is-light p-2 mt-1">{{ dispatch.names_free_text|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ── Section B: Model Requirements List & Config Templates (Full Width) ── #}
+    <div class="mb-5">
+      <h5 class="title is-6 mb-3">
+        <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+        Model Requirements &amp; Configuration Templates <span class="tag is-light ml-2">{{ struct.requested_models|length|default:0 }}</span>
+      </h5>
+      {% if struct.requested_models %}
+      <div class="dispatching-model-card-list">
+        {% for r in struct.requested_models %}
+        <div class="card dispatching-model-card">
+          <div class="card-content p-4">
+            <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+              <div>
+                <p class="title is-size-6 mb-1">{{ r.model.model_name }}{% if r.model.version %} — {{ r.model.version }}{% endif %}</p>
+                <div class="dispatching-model-meta">
+                  {{ r.model.asset_class.name|default:"—" }}
+                  {% with mfrs=r.model.manufacturers.all %}{% if mfrs %} · {% for mf in mfrs %}{{ mf.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}
+                </div>
+                <div class="has-text-grey-dark is-size-8 mt-1">Qty: <strong>{{ r.quantity }}</strong></div>
+              </div>
+              {% if r.is_required %}
+              <span class="tag is-danger is-light">Required</span>
+              {% else %}
+              <span class="tag is-info is-light">Preferred</span>
+              {% endif %}
+            </div>
+            {% if r.configuration_template %}
+            <div class="mt-3 p-3 dispatching-model-config-box">
+              <p class="is-size-7 has-text-grey mb-1"><strong>Associated Configuration Template</strong></p>
+              <p class="is-size-7"><strong>{{ r.configuration_template.name }}</strong></p>
+            </div>
+            {% endif %}
+            {% if r.notes %}
+            <div class="mt-3 is-size-8 has-text-grey-dark">
+              <p class="has-text-weight-semibold mb-1">Notes</p>
+              {{ r.notes }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="has-text-grey is-size-7">No specific model requirements specified.</p>
+      {% endif %}
+    </div>
+
+    {# ── Section C: Skill, Capability, & Modification Requirements (3 Columns with Square Cards) ── #}
+    <div>
+      <h5 class="title is-6 mb-3">
+        <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+        Skill, Capability, &amp; Modification Requirements
+      </h5>
+      <div class="columns is-variable is-4">
+
+        {# Column 1: Skills #}
+        <div class="column is-4">
+          <p class="label is-small mb-2">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">verified</span></span>
+            Skills <span class="tag is-light is-small ml-1">{{ struct.requested_skills|length|default:0 }}</span>
+          </p>
+          {% if struct.requested_skills %}
+          <div class="is-flex is-flex-direction-column gap-2">
+            {% for r in struct.requested_skills %}
+            <div class="dispatching-square-card is-skill">
+              <div>
+                <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                  <strong class="is-size-7">{{ r.skill.name }}</strong>
+                  {% if r.is_required %}
+                  <span class="tag is-danger is-light is-small">Required</span>
+                  {% else %}
+                  <span class="tag is-info is-light is-small">Preferred</span>
+                  {% endif %}
+                </div>
+                <div class="has-text-grey-dark is-size-8">
+                  {% if r.minimum_level %}<div>Min Level: <strong>{{ r.minimum_level }}</strong></div>{% endif %}
+                  <div>Qty: <strong>{{ r.quantity|default:"1" }}</strong></div>
+                </div>
+              </div>
+              {% if r.notes %}
+              <div class="has-text-grey is-size-8 mt-2 pt-2 border-top-light">{{ r.notes }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="has-text-grey is-size-7">None.</p>
+          {% endif %}
+        </div>
+
+        {# Column 2: Capabilities #}
+        <div class="column is-4">
+          <p class="label is-small mb-2">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">checklist</span></span>
+            Capabilities <span class="tag is-light is-small ml-1">{{ struct.requested_capabilities|length|default:0 }}</span>
+          </p>
+          {% if struct.requested_capabilities %}
+          <div class="is-flex is-flex-direction-column gap-2">
+            {% for r in struct.requested_capabilities %}
+            <div class="dispatching-square-card is-capability">
+              <div>
+                <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                  <strong class="is-size-7">{{ r.capability_definition.name }}</strong>
+                  {% if r.is_required %}
+                  <span class="tag is-danger is-light is-small">Required</span>
+                  {% else %}
+                  <span class="tag is-info is-light is-small">Preferred</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% if r.notes %}
+              <div class="has-text-grey is-size-8 mt-2 pt-2 border-top-light">{{ r.notes }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="has-text-grey is-size-7">None.</p>
+          {% endif %}
+        </div>
+
+        {# Column 3: Modifications #}
+        <div class="column is-4">
+          <p class="label is-small mb-2">
+            <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">build</span></span>
+            Modifications <span class="tag is-light is-small ml-1">{{ struct.requested_modifications|length|default:0 }}</span>
+          </p>
+          {% if struct.requested_modifications %}
+          <div class="is-flex is-flex-direction-column gap-2">
+            {% for r in struct.requested_modifications %}
+            <div class="dispatching-square-card is-modification">
+              <div>
+                <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+                  <strong class="is-size-7">{{ r.defined_modification.name }}</strong>
+                  {% if r.is_required %}
+                  <span class="tag is-danger is-light is-small">Required</span>
+                  {% else %}
+                  <span class="tag is-info is-light is-small">Preferred</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% if r.notes %}
+              <div class="has-text-grey is-size-8 mt-2 pt-2 border-top-light">{{ r.notes }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="has-text-grey is-size-7">None.</p>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# ── 3. Asset Reservations Card (Full Width 3/3) ── #}
+<div class="card mb-4 dispatching-highlight-card-reservation">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span>Attached Asset Reservations</div>
+  </div>
+  <div class="card-content">
+    {% if struct.reservations %}
+    <table class="table is-fullwidth is-size-7 mb-3">
+      <thead>
+        <tr><th>Asset</th><th>Reservation Window</th><th>Status</th><th>Accountable Person</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        {% for res in struct.reservations %}
+        <tr>
+          <td><a href="{% url 'dispatching_reservation_detail' res.pk %}"><strong>{{ res.asset.name }}</strong> ({{ res.asset.serial_number|default:res.asset.asset_tag }})</a></td>
+          <td>{{ res.desired_start|date:"M d, H:i" }} – {{ res.desired_end|date:"M d, H:i" }}</td>
+          <td><span class="tag is-success is-light">{{ res.get_reservation_status_display }}</span></td>
+          <td>{{ res.accountable_person.get_full_name|default:res.accountable_person.username }}</td>
+          <td><a href="{% url 'dispatching_reservation_detail' res.pk %}" class="has-text-grey">View →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 mb-3">No live asset reservations attached to this dispatch.</p>
+    {% endif %}
+    <div class="buttons">
+      <a href="{% url 'dispatching_reservation_create' %}?dispatch={{ dispatch.pk }}&amp;scheduled_start={{ dispatch.desired_start|date:'Y-m-d\TH:i' }}&amp;scheduled_end={{ dispatch.desired_end|date:'Y-m-d\TH:i' }}&amp;accountable_person_id={{ dispatch.requested_for_id }}" class="button is-small is-link is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Book Asset for this Dispatch</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{# ── 4. Expenses & Financials Card (Full Width 3/3) ── #}
+<div class="card mb-4 dispatching-highlight-card-expense">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">payments</span></span>Expenses &amp; Financials</div>
+  </div>
+  <div class="card-content">
+    <div class="level is-mobile mb-3 py-2 px-3 bg-light">
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Planned Cost</p>
+          <p class="title is-6">${{ costs.total_planned|floatformat:2 }}</p>
+        </div>
+      </div>
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Committed / Complete</p>
+          <p class="title is-6">${{ costs.total_committed_or_complete|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if struct.expenses %}
+    <table class="table is-fullwidth is-size-7">
+      <thead>
+        <tr><th>Type</th><th>Reason / Counterparty</th><th>Amount</th><th>Status</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        {% for exp in struct.expenses %}
+        <tr>
+          <td><span class="tag is-info is-light">{{ exp.get_expense_type_display }}</span></td>
+          <td><strong>{{ exp.reason }}</strong> {% if exp.counterparty_name %}(Vendor: {{ exp.counterparty_name }}){% endif %}</td>
+          <td>${{ exp.amount|floatformat:2 }}</td>
+          <td><span class="tag is-light">{{ exp.get_status_display }}</span></td>
+          <td>{{ exp.notes|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="has-text-grey is-size-7">No financial expenses recorded.</p>{% endif %}
+  </div>
+</div>
+
+{# ── 5. Split Row: Material Demands (2/3) and Assigned Personnel (1/3) ── #}
+<div class="columns">
+
+  {# 2/3 Material Requirements & Part Demands #}
+  <div class="column is-8">
+    <div class="card mb-4" style="height:100%;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+          Material Requirements &amp; Part Demands <span class="tag is-light ml-2">{{ struct.demand_links|length|default:0 }}</span>
+        </div>
+      </div>
+      <div class="card-content">
+        {% if struct.demand_links %}
+        <div class="dispatching-material-list">
+          {% for link in struct.demand_links %}
+          <div class="card dispatching-material-row">
+            <div class="card-content p-3 is-size-7">
+              <div class="is-flex is-justify-content-space-between is-align-items-start mb-1">
+                <div>
+                  <strong>{{ link.part_demand.part.part_number|default:"(unknown)" }}</strong> — {{ link.part_demand.part.name }}
+                </div>
+                <span class="tag is-info is-light is-small">{{ link.part_demand.status }}</span>
+              </div>
+              <div class="has-text-grey-dark is-size-8">
+                Requested Qty: <strong>{{ link.part_demand.quantity_requested }}</strong> &middot; Issued Qty: <strong>{{ link.part_demand.quantity_issued|default:"0" }}</strong>
+                {% if link.part_demand.notes %}<div class="mt-1">{{ link.part_demand.notes }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">No material part demands raised for this dispatch.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# 1/3 Assigned Personnel / Crew Roster #}
+  <div class="column is-4">
+    <div class="card mb-4" style="height:100%;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">group</span></span>
+          Assigned Personnel <span class="tag is-light ml-2">{{ struct.crew|length|default:0 }}</span>
+        </div>
+      </div>
+      <div class="card-content">
+        {% if struct.crew %}
+        <div class="dispatching-material-list">
+          {% for person in struct.crew %}
+          <div class="card dispatching-material-row">
+            <div class="card-content p-3 is-size-7">
+              <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                <strong>{{ person.user.get_full_name|default:person.user.username }}</strong>
+                <span class="tag is-link is-light is-small">{{ person.get_role_display }}</span>
+              </div>
+              {% if person.notes %}<div class="has-text-grey-dark is-size-8">{{ person.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">No crew assigned.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{# ── 6. Composite Event Card from Event App with Commenting Enabled (Full Width 3/3) ── #}
+{% if activity %}
+<div class="mb-4">
+  {% include "events/fragments/event_card.html" with card=activity %}
+</div>
+{% endif %}
+
+<!-- Modals -->
+
+<!-- Fixes Request Modal -->
+<div class="modal" id="fixes-modal">
+  <div class="modal-background" onclick="document.getElementById('fixes-modal').classList.remove('is-active')"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Request Fixes on Dispatch #{{ dispatch.pk }}</p>
+      <button class="delete" aria-label="close" onclick="document.getElementById('fixes-modal').classList.remove('is-active')"></button>
+    </header>
+    <form method="post" action="{% url 'dispatching_dispatch_lifecycle' dispatch.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="request_fixes">
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label is-size-7">Reason / Required Changes *</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="reason" rows="3" placeholder="Explain what changes or clarifications the raiser needs to make..." required></textarea>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" class="button is-warning is-small">Send Fixes Request</button>
+        <button type="button" class="button is-small is-light" onclick="document.getElementById('fixes-modal').classList.remove('is-active')">Cancel</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal" id="reject-modal">
+  <div class="modal-background" onclick="document.getElementById('reject-modal').classList.remove('is-active')"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Reject Dispatch #{{ dispatch.pk }}</p>
+      <button class="delete" aria-label="close" onclick="document.getElementById('reject-modal').classList.remove('is-active')"></button>
+    </header>
+    <form method="post" action="{% url 'dispatching_dispatch_reject' dispatch.pk %}">
+      {% csrf_token %}
+      <section class="modal-card-body">
+        <div class="field">
+          <label class="label is-size-7">Rejection Category *</label>
+          <div class="control">
+            <div class="select is-small is-fullwidth">
+              <select name="category" required>
+                <option value="">Select category...</option>
+                {% for cat_val, cat_lbl in rejection_categories %}
+                <option value="{{ cat_val }}">{{ cat_lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label is-size-7">Rejection Reason *</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="reason" rows="3" placeholder="Explain why this request cannot be fulfilled..." required></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label is-size-7">Alternative Suggestion</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="alternative_suggestion" rows="2" placeholder="Optional recommendation for the raiser..."></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="checkbox is-size-7">
+            <input type="checkbox" name="can_resubmit" checked> Allow raiser to create a superseding dispatch
+          </label>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" class="button is-danger is-small">Reject Dispatch</button>
+        <button type="button" class="button is-small is-light" onclick="document.getElementById('reject-modal').classList.remove('is-active')">Cancel</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- Cancellation Modal -->
+<div class="modal" id="cancel-modal">
+  <div class="modal-background" onclick="document.getElementById('cancel-modal').classList.remove('is-active')"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Cancel Dispatch #{{ dispatch.pk }}</p>
+      <button class="delete" aria-label="close" onclick="document.getElementById('cancel-modal').classList.remove('is-active')"></button>
+    </header>
+    <form method="post" action="{% url 'dispatching_dispatch_cancel' dispatch.pk %}">
+      {% csrf_token %}
+      <section class="modal-card-body">
+        <p class="is-size-7 mb-3">Cancelling this dispatch will also cancel all live asset reservations and unissued part demands associated with it.</p>
+        <div class="field">
+          <label class="label is-size-7">Cancellation Reason *</label>
+          <div class="control">
+            <textarea class="textarea is-small" name="reason" rows="3" placeholder="Explain why this dispatch is being cancelled..." required></textarea>
+          </div>
+        </div>
+      </section>
+      <footer class="modal-card-foot">
+        <button type="submit" class="button is-danger is-small">Cancel Dispatch</button>
+        <button type="button" class="button is-small is-light" onclick="document.getElementById('cancel-modal').classList.remove('is-active')">Close</button>
+      </footer>
+    </form>
+  </div>
+</div>
+{% endblock %}

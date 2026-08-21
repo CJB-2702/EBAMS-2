@@ -1,11 +1,18 @@
-"""thread_domain — resolves the bootstrap Domain id for a Room/RoomLocation
-layout gallery thread.
+"""thread_domain — resolves the bootstrap Domain id for an inventory thread.
 
-Event-family rows (`FileSet`) require a NOT-NULL `domain`, but a Room or
-RoomLocation carries no single ownership domain of its own (a Warehouse's
-`domains` M2M governs data-domain scope, never `thread.domain`). The
-bootstrap Domain is purely "what to physically write into the NOT NULL
-column"; it is not access control.
+Two callers today:
+
+  FileSet          the Room/RoomLocation layout gallery.
+  ActivityThread   the IntakeSession comment/attachment thread
+                   (intake_portal_workflow.md §8).
+
+Event-family rows require a NOT-NULL `domain`, but neither owner carries a
+single ownership domain of its own. A Room/RoomLocation defers to its
+Warehouse's `domains` M2M; an IntakeSession spans every shipment it receives
+against, and those shipments may sit in different domains. The bootstrap
+Domain is purely "what to physically write into the NOT NULL column"; it is
+NOT access control. Who may read an intake session's thread is decided by
+who may read the session.
 
 Mirrors `app/assets/control_layer/thread_domain.py` / `app/parts/control_layer/thread_domain.py`.
 """
@@ -13,10 +20,11 @@ Mirrors `app/assets/control_layer/thread_domain.py` / `app/parts/control_layer/t
 from __future__ import annotations
 
 from app.administration.models import Domain
-from app.events.models import Event, FileSet
+from app.events.models import ActivityThread, Event, FileSet
 
 _DEFAULT_DOMAIN_SPECS: dict[type, tuple[str, str]] = {
     FileSet: ("File Set", "file-set"),
+    ActivityThread: ("Activity Thread", "activity-thread"),
 }
 
 

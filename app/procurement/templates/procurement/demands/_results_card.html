@@ -1,4 +1,4 @@
-{% load procurement_tags %}
+{% load procurement_tags hashid_tags %}
 {% comment %}
 The results card alone. Included directly by index.html on a full page load,
 and by _index_results.html (which adds the OOB metrics swap) on the htmx
@@ -11,7 +11,7 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
     <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead>
         <tr>
-          <th>#</th><th>Part</th><th>Qty Req.</th><th>Priority</th><th>Needed By</th>
+          <th>#</th><th>Part</th><th>Source</th><th>Event</th><th>Qty Req.</th><th>Priority</th><th>Needed By</th>
           <th>Demand</th><th>Purchasing</th><th>Shipment</th><th>Issuance</th><th></th>
         </tr>
       </thead>
@@ -20,6 +20,14 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
         <tr>
           <td><a href="{% url 'demand_detail' pk=d.pk %}">#{{ d.pk }}</a></td>
           <td>{{ d.part.part_number }} <span class="has-text-grey is-size-7">{{ d.part.name }}</span></td>
+          <td><span class="tag is-light">{{ d.source }}</span></td>
+          <td>
+            {% if d.event_id %}
+              <a href="{% url 'event_detail' hash=d.event_id|encode_id %}" class="tag is-info is-light">#{{ d.event_id }}</a>
+            {% else %}
+              <span class="has-text-grey">—</span>
+            {% endif %}
+          </td>
           <td class="is-family-monospace">{{ d.quantity_requested }}</td>
           <td>{% demand_priority_tag d.priority %}</td>
           <td>{{ d.needed_by|date:"Y-m-d"|default:"—" }}</td>
@@ -34,7 +42,7 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="10" class="has-text-grey has-text-centered py-5">No demands match your filters.</td></tr>
+        <tr><td colspan="12" class="has-text-grey has-text-centered py-5">No demands match your filters.</td></tr>
         {% endfor %}
       </tbody>
     </table>

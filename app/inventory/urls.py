@@ -16,6 +16,7 @@ from django.urls import path
 from app.inventory.presentation_layer.entrypoints.active_inventory import (
     active_inventory_index,
     active_inventory_inline_edit,
+    active_inventory_gui,
 )
 from app.inventory.presentation_layer.entrypoints.home import inventory_home
 from app.inventory.presentation_layer.entrypoints.intake import (
@@ -37,10 +38,6 @@ from app.inventory.presentation_layer.entrypoints.movements import (
     movement_portal,
     movements_index,
     putaway_worklist,
-)
-from app.inventory.presentation_layer.entrypoints.reconciliation import (
-    reconciliation_detail,
-    reconciliation_hub,
 )
 from app.inventory.presentation_layer.entrypoints.shipments import (
     inventory_shipment_detail,
@@ -66,6 +63,7 @@ from app.inventory.presentation_layer.entrypoints.topography import (
 urlpatterns = [
     path("", inventory_home, name="inventory_home"),
     path("active-inventory/", active_inventory_index, name="active_inventory_index"),
+    path("active-inventory/gui/", active_inventory_gui, name="active_inventory_gui"),
     path("active-inventory/<int:pk>/inline-edit/", active_inventory_inline_edit, name="active_inventory_inline_edit"),
     path("shipments/", inventory_shipment_index, name="inventory_shipment_index"),
     path(
@@ -106,18 +104,8 @@ urlpatterns = [
         intake_session_detail,
         name="inventory_intake_session_detail",
     ),
-    # Phase 5 — Scan Sessions & Reconciliation Hub.
+    # Phase 5 — Scan Sessions.
     path("intake/scan/", scan_intake_start, name="inventory_scan_intake_start"),
-    path(
-        "intake/reconciliations/",
-        reconciliation_hub,
-        name="inventory_reconciliation_hub",
-    ),
-    path(
-        "intake/reconciliation/<int:pk>/",
-        reconciliation_detail,
-        name="inventory_reconciliation_detail",
-    ),
     # Phase 6 — Part Movements, Putaway GUI & Issuance.
     path("movements/create/", movement_portal, name="inventory_movement_portal"),
     path("putaway/", putaway_worklist, name="inventory_putaway_worklist"),

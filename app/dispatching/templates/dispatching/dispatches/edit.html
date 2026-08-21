@@ -1,0 +1,627 @@
+{% extends "dispatching/base.html" %}
+{% load static %}
+{% block title %}Edit Dispatch #{{ dispatch.pk }}{% endblock %}
+{% block nav_dispatch_index %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'dispatching_dispatch_index' %}">Dispatches</a></li>
+<li><a href="{% url 'dispatching_dispatch_detail' dispatch.pk %}">#{{ dispatch.pk }}</a></li>
+<li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/dispatching.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit</span></div>
+      <div>
+        <div class="is-flex is-align-items-center gap-2 mb-1">
+          <h1 class="page-title mb-0">Edit Dispatch #{{ dispatch.pk }}: {{ dispatch.title }}</h1>
+          {% include "dispatching/dispatches/_status_tag.html" with status=dispatch.workflow_status %}
+        </div>
+        <p class="page-subtitle">Update dispatch intent, requirements manifest, material demands, crew, expenses, and reservations.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'dispatching_dispatch_detail' dispatch.pk %}" class="button is-small is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">visibility</span></span><span>View Detail</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% include "dispatching/dispatches/_status_banner.html" with dispatch=dispatch %}
+
+{% if intent_locked %}
+<div class="notification is-warning is-light mb-4">
+  <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
+  <strong>Intent Locked:</strong> This dispatch is in state <strong>{{ dispatch.get_workflow_status_display }}</strong>. Core requirements and timing window are frozen. Only Title, Description, Activity Location, and Personnel Names remain editable.
+</div>
+{% endif %}
+
+<!-- Section 1: Intent Form -->
+<div class="card max-w-4xl mb-5">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit_note</span></span>Dispatch Intent</div>
+  </div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_dispatch_update_intent' dispatch.pk %}">
+      {% csrf_token %}
+      <div class="columns">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">Title *</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="title" value="{{ dispatch.title }}" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="column is-3">
+          <div class="field">
+            <label class="label is-size-7">Asset Class</label>
+            <div class="control">
+              {% if intent_locked %}
+              <input class="input is-small" type="text" value="{{ dispatch.asset_class.name }}" disabled>
+              {% else %}
+              <div class="select is-small is-fullwidth">
+                <select name="asset_class_id">
+                  {% for ac in asset_classes %}
+                  <option value="{{ ac.pk }}" {% if dispatch.asset_class_id == ac.pk %}selected{% endif %}>{{ ac.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="column is-3">
+          <div class="field">
+            <label class="label is-size-7">Asset Subclass</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="asset_subclass_text" value="{{ dispatch.asset_subclass_text }}" {% if intent_locked %}disabled{% endif %}>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">Desired Start</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" name="desired_start" value="{{ dispatch.desired_start|date:'Y-m-d\TH:i' }}" {% if intent_locked %}disabled{% endif %}>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">Desired End</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" name="desired_end" value="{{ dispatch.desired_end|date:'Y-m-d\TH:i' }}" {% if intent_locked %}disabled{% endif %}>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="columns">
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-size-7">Scope</label>
+            <div class="control">
+              {% if intent_locked %}
+              <input class="input is-small" type="text" value="{{ dispatch.get_dispatch_scope_display }}" disabled>
+              {% else %}
+              <div class="select is-small is-fullwidth">
+                <select name="dispatch_scope">
+                  <option value="">(Unspecified)</option>
+                  <option value="on_site" {% if dispatch.dispatch_scope == 'on_site' %}selected{% endif %}>On-site</option>
+                  <option value="local" {% if dispatch.dispatch_scope == 'local' %}selected{% endif %}>Local</option>
+                  <option value="regional" {% if dispatch.dispatch_scope == 'regional' %}selected{% endif %}>Regional</option>
+                  <option value="national" {% if dispatch.dispatch_scope == 'national' %}selected{% endif %}>National</option>
+                  <option value="international" {% if dispatch.dispatch_scope == 'international' %}selected{% endif %}>International</option>
+                </select>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-size-7">Activity Location</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="activity_location" value="{{ dispatch.activity_location }}">
+            </div>
+          </div>
+        </div>
+        <div class="column is-4">
+          <div class="field">
+            <label class="label is-size-7">Headcount</label>
+            <div class="control">
+              <input class="input is-small" type="number" name="headcount" value="{{ dispatch.headcount }}" {% if intent_locked %}disabled{% endif %}>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label is-size-7">Personnel / Non-System Travel Names</label>
+        <div class="control">
+          <textarea class="textarea is-small" name="names_free_text" rows="2">{{ dispatch.names_free_text }}</textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label is-size-7">Description</label>
+        <div class="control">
+          <textarea class="textarea is-small" name="description" rows="3">{{ dispatch.description }}</textarea>
+        </div>
+      </div>
+
+      <div class="buttons is-right">
+        <button type="submit" class="button is-primary is-small">Save Intent Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Section 2: Asset Reservations -->
+<div class="card max-w-4xl mb-5 dispatching-highlight-card-reservation">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event_available</span></span>Asset Reservations</div>
+  </div>
+  <div class="card-content">
+    {% if struct.reservations %}
+    <table class="table is-fullwidth is-size-7 mb-4">
+      <thead>
+        <tr><th>Asset</th><th>Reservation Window</th><th>Status</th><th>Accountable Person</th></tr>
+      </thead>
+      <tbody>
+        {% for res in struct.reservations %}
+        <tr>
+          <td><a href="{% url 'dispatching_reservation_detail' res.pk %}"><strong>{{ res.asset.name }}</strong> ({{ res.asset.serial_number|default:res.asset.asset_tag }})</a></td>
+          <td>{{ res.desired_start|date:"M d, H:i" }} – {{ res.desired_end|date:"M d, H:i" }}</td>
+          <td><span class="tag is-success is-light">{{ res.get_reservation_status_display }}</span></td>
+          <td>{{ res.accountable_person.get_full_name|default:res.accountable_person.username }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 mb-4">No asset reservations attached to this dispatch.</p>
+    {% endif %}
+
+    <div class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <a href="{% url 'dispatching_reservation_create' %}?dispatch={{ dispatch.pk }}" class="button is-small is-link">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Book Asset for this Dispatch →</span>
+          </a>
+        </div>
+      </div>
+      <div class="level-right">
+        <form method="post" action="{% url 'dispatching_dispatch_attach_reservation' dispatch.pk %}" class="field has-addons mb-0">
+          {% csrf_token %}
+          <div class="control">
+            <input class="input is-small" type="number" name="reservation_id" placeholder="Reservation ID to attach…" required>
+          </div>
+          <div class="control">
+            <button type="submit" class="button is-small is-light">Promote / Attach</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section 3: Expenses & Financials -->
+<div class="card max-w-4xl mb-5 dispatching-highlight-card-expense">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">payments</span></span>Expenses &amp; Financials</div>
+  </div>
+  <div class="card-content">
+    {% if struct.expenses %}
+    <table class="table is-fullwidth is-size-7 mb-4">
+      <thead>
+        <tr><th>Type</th><th>Reason / Counterparty</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for exp in struct.expenses %}
+        <tr>
+          <td><span class="tag is-info is-light">{{ exp.get_expense_type_display }}</span></td>
+          <td><strong>{{ exp.reason }}</strong> {% if exp.counterparty_name %}(Vendor: {{ exp.counterparty_name }}){% endif %}</td>
+          <td>${{ exp.amount|floatformat:2 }}</td>
+          <td><span class="tag is-light">{{ exp.get_status_display }}</span></td>
+          <td>
+            {% if exp.status == 'planned' %}
+            <form method="post" action="{% url 'dispatching_dispatch_expense_action' dispatch.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="commit">
+              <input type="hidden" name="expense_id" value="{{ exp.pk }}">
+              <button type="submit" class="button is-extra-small is-link is-light mr-1">Commit</button>
+            </form>
+            {% endif %}
+            {% if exp.status == 'committed' or exp.status == 'planned' %}
+            <form method="post" action="{% url 'dispatching_dispatch_expense_action' dispatch.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="complete">
+              <input type="hidden" name="expense_id" value="{{ exp.pk }}">
+              <button type="submit" class="button is-extra-small is-success is-light mr-1">Complete</button>
+            </form>
+            {% endif %}
+            {% if exp.status != 'complete' and exp.status != 'cancelled' %}
+            <form method="post" action="{% url 'dispatching_dispatch_expense_action' dispatch.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="cancel">
+              <input type="hidden" name="expense_id" value="{{ exp.pk }}">
+              <button type="submit" class="button is-extra-small is-danger is-light">Cancel</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 mb-4">No expenses recorded.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'dispatching_dispatch_expense_action' dispatch.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="columns is-multiline">
+        <div class="column is-3">
+          <div class="field">
+            <label class="label is-size-7">Expense Type *</label>
+            <div class="control">
+              <div class="select is-small is-fullwidth">
+                <select name="expense_type" required>
+                  {% for et_val, et_lbl in expense_types %}
+                  <option value="{{ et_val }}">{{ et_lbl }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">Reason (Why contract/reimbursement was needed) *</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="reason" placeholder="e.g. Contracted out heavy haul transport" required>
+            </div>
+          </div>
+        </div>
+        <div class="column is-3">
+          <div class="field">
+            <label class="label is-size-7">Amount ($) *</label>
+            <div class="control">
+              <input class="input is-small" type="number" step="0.01" name="amount" placeholder="0.00" required>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">Vendor Name / Counterparty</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="counterparty_name" placeholder="e.g. Acme Transport Logistics">
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-size-7">External Reference / PO #</label>
+            <div class="control">
+              <input class="input is-small" type="text" name="external_reference" placeholder="e.g. PO-99482">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="buttons is-right">
+        <button type="submit" class="button is-small is-primary">Add Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if not intent_locked %}
+<!-- Card 4: Skill, Capability, & Modification Requirements -->
+<div class="card max-w-4xl mb-5">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+      Skill, Capability, &amp; Modification Requirements
+    </div>
+  </div>
+  <div class="card-content">
+    <div class="columns is-variable is-4">
+
+      {# Skill Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">verified</span></span>
+          Skill Requirements <span class="tag is-light is-small ml-1">{{ struct.requested_skills|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="kind" value="skill">
+          <search-dropdown name="picked_id" placeholder="search skills…" class="mb-1"
+              hx-get="{% url 'dispatching_skill_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <div class="columns is-mobile is-variable is-1 mb-1">
+            <div class="column"><input class="input is-small" type="number" min="1" name="quantity" value="1" placeholder="Qty"></div>
+            <div class="column"><input class="input is-small" type="number" min="1" max="5" name="minimum_level" placeholder="Min lvl"></div>
+          </div>
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if struct.requested_skills %}
+        <div class="dispatching-tile-list">
+          {% for r in struct.requested_skills %}
+          <div class="card dispatching-req-tile is-skill">
+            <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove">
+              <input type="hidden" name="kind" value="skill">
+              <input type="hidden" name="requirement_id" value="{{ r.pk }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove skill requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ r.skill.name }}</strong><br>
+              <span class="has-text-grey-dark is-size-8">Qty: {{ r.quantity|default:"1" }}{% if r.minimum_level %} · Min L{{ r.minimum_level }}{% endif %}</span>
+              {% if r.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if r.notes %}<div class="mt-2 has-text-grey-dark">{{ r.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Capability Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">checklist</span></span>
+          Capability Requirements <span class="tag is-light is-small ml-1">{{ struct.requested_capabilities|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="kind" value="capability">
+          <search-dropdown name="picked_id" placeholder="search capabilities…" class="mb-1"
+              hx-get="{% url 'dispatching_capability_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if struct.requested_capabilities %}
+        <div class="dispatching-tile-list">
+          {% for r in struct.requested_capabilities %}
+          <div class="card dispatching-req-tile is-capability">
+            <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove">
+              <input type="hidden" name="kind" value="capability">
+              <input type="hidden" name="requirement_id" value="{{ r.pk }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove capability requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ r.capability_definition.name }}</strong>
+              {% if r.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if r.notes %}<div class="mt-2 has-text-grey-dark">{{ r.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Modification Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">build</span></span>
+          Modification Requirements <span class="tag is-light is-small ml-1">{{ struct.requested_modifications|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add">
+          <input type="hidden" name="kind" value="modification">
+          <search-dropdown name="picked_id" placeholder="search modifications…" class="mb-1"
+              hx-get="{% url 'defined_modification_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if struct.requested_modifications %}
+        <div class="dispatching-tile-list">
+          {% for r in struct.requested_modifications %}
+          <div class="card dispatching-req-tile is-modification">
+            <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove">
+              <input type="hidden" name="kind" value="modification">
+              <input type="hidden" name="requirement_id" value="{{ r.pk }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove modification requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ r.defined_modification.name }}</strong>
+              {% if r.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if r.notes %}<div class="mt-2 has-text-grey-dark">{{ r.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Card 5: Model Requirements -->
+<div class="card max-w-4xl mb-5">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>
+      Model Requirements <span class="tag is-light ml-2">{{ struct.requested_models|length }}</span>
+    </div>
+  </div>
+  <div class="card-content">
+    <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="mb-4">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <input type="hidden" name="kind" value="model">
+      <div class="columns is-variable is-2 is-vcentered">
+        <div class="column is-3">
+          <search-dropdown id="edit-model-picker" name="picked_id" placeholder="search models…"
+              hx-get="{% url 'model_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+        </div>
+        <div class="column is-3">
+          <search-dropdown name="configuration_template_id" placeholder="configuration (pick model first)"
+              hx-get="{% url 'dispatching_configuration_template_pool_search' %}"
+              hx-vals='js:{model_id: document.getElementById("edit-model-picker").value}'
+              hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+        </div>
+        <div class="column is-1"><input class="input is-small" type="number" min="1" name="quantity" value="1" placeholder="Qty"></div>
+        <div class="column is-3"><input class="input is-small" type="text" name="notes" placeholder="Notes"></div>
+        <div class="column is-1"><label class="checkbox is-size-7"><input type="checkbox" name="is_required" checked> Req'd</label></div>
+        <div class="column is-1"><button type="submit" class="button is-small is-link is-fullwidth">Add</button></div>
+      </div>
+    </form>
+    {% if struct.requested_models %}
+    <div class="dispatching-model-card-list">
+      {% for r in struct.requested_models %}
+      <div class="card dispatching-model-card">
+        <form method="post" action="{% url 'dispatching_dispatch_requirement_action' dispatch.pk %}" class="dispatching-remove-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="remove">
+          <input type="hidden" name="kind" value="model">
+          <input type="hidden" name="requirement_id" value="{{ r.pk }}">
+          <button type="submit" class="dispatching-remove-btn" aria-label="Remove model requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+        </form>
+        <div class="card-content p-4 pr-5">
+          <div class="is-flex is-justify-content-space-between is-align-items-start mb-2">
+            <div>
+              <p class="title is-size-6 mb-1">{{ r.model.model_name|default:"(unknown)" }}{% if r.model.version %} — {{ r.model.version }}{% endif %}</p>
+              <div class="dispatching-model-meta">
+                {{ r.model.asset_class.name|default:"—" }}
+                {% with mfrs=r.model.manufacturers.all %}{% if mfrs %} · {% for mf in mfrs %}{{ mf.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endwith %}
+              </div>
+              <div class="has-text-grey-dark is-size-8 mt-1">Qty: <strong>{{ r.quantity }}</strong></div>
+            </div>
+            {% if r.is_required %}
+            <span class="tag is-danger is-light">Required</span>
+            {% else %}
+            <span class="tag is-info is-light">Preferred</span>
+            {% endif %}
+          </div>
+          {% if r.configuration_template %}
+          <div class="mt-3 p-3 dispatching-model-config-box">
+            <p class="is-size-7 has-text-grey mb-1"><strong>Configuration</strong></p>
+            <p class="is-size-7"><strong>{{ r.configuration_template.name }}</strong></p>
+          </div>
+          {% endif %}
+          {% if r.notes %}
+          <div class="mt-3 is-size-8 has-text-grey-dark">
+            <p class="has-text-weight-semibold mb-1">Notes</p>
+            {{ r.notes }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Card 6: Material Requirements & Part Demands -->
+<div class="card max-w-4xl mb-5">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+      Material Requirements &amp; Part Demands <span class="tag is-light ml-2">{{ struct.demand_links|length }}</span>
+    </div>
+  </div>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7 mb-3">Adding a material requirement raises a formal part demand linked to this dispatch managed under inventory.</p>
+    <div class="columns is-variable is-4">
+      <div class="column is-7">
+        <form method="post" action="{% url 'dispatching_dispatch_demand_action' dispatch.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="raise">
+          <div class="field">
+            <label class="label is-small">Part</label>
+            <search-dropdown name="part_id" placeholder="search parts…"
+                hx-get="{% url 'dispatching_material_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          </div>
+          <div class="columns is-variable is-2">
+            <div class="column is-4">
+              <label class="label is-small">Quantity</label>
+              <input class="input is-small" type="number" step="any" min="0" name="quantity_requested" value="1" placeholder="Qty" required>
+            </div>
+            <div class="column is-8">
+              <label class="label is-small">Notes</label>
+              <input class="input is-small" type="text" name="notes" placeholder="Notes">
+            </div>
+          </div>
+          <button type="submit" class="button is-small is-link mt-2">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Raise Part Demand</span>
+          </button>
+        </form>
+      </div>
+      <div class="column is-5">
+        <p class="label is-small">Part Demands</p>
+        {% if struct.demand_links %}
+        <div class="dispatching-material-list">
+          {% for link in struct.demand_links %}
+          <div class="card dispatching-material-row">
+            {% if link.part_demand.status != 'cancelled' %}
+            <form method="post" action="{% url 'dispatching_dispatch_demand_action' dispatch.pk %}" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="cancel">
+              <input type="hidden" name="part_demand_id" value="{{ link.part_demand_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Cancel demand"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            {% endif %}
+            <div class="card-content p-2 pr-5 is-size-7">
+              <strong>{{ link.part_demand.part.part_number|default:"(unknown)" }}</strong><br>
+              {{ link.part_demand.part.name }}<br>
+              Qty {{ link.part_demand.quantity_requested }}
+              <span class="tag is-info is-light is-small ml-2">{{ link.part_demand.status }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Card 7: Assigned Personnel / Crew Roster -->
+{% include "dispatching/dispatches/_personnel_card.html" %}
+{% endblock %}

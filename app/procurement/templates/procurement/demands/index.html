@@ -131,6 +131,21 @@
             <input class="input is-small" type="search" name="requested_by" value="{{ filters.requested_by }}" placeholder="username, name…">
           </div>
           <div class="column is-2">
+            <label class="label is-small">Source</label>
+            <div class="select is-small is-fullwidth">
+              <select name="source">
+                <option value="">Any</option>
+                {% for value, label in sources %}
+                <option value="{{ value }}" {% if filters.source == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="column is-2">
+            <label class="label is-small">Event ID</label>
+            <input class="input is-small" type="number" name="event_id" value="{{ filters.event_id }}" placeholder="Event ID…">
+          </div>
+          <div class="column is-2">
             <label class="label is-small">PO Number</label>
             <input class="input is-small" type="search" name="po_number" value="{{ filters.po_number }}" placeholder="PO-1002…">
           </div>

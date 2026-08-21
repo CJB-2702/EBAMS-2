@@ -1,0 +1,13 @@
+{% comment %}
+Plain partial — the helper text above the Start Scan Session button. Included
+directly by scan_start.html on full page load, and re-rendered as an
+out-of-band swap (`#scan-submit-hint`) alongside `#scan-selected-summary`
+whenever a checkbox toggles in `_scan_shipment_search_results.html`, so the
+hint text and the submit button's disabled state stay in sync with the
+selection instead of only updating on a full reload.
+{% endcomment %}
+{% if selected_shipments %}
+<p class="is-size-7 has-text-grey">Ready to start a scan session against {{ selected_shipments|length }} shipment{{ selected_shipments|length|pluralize }}.</p>
+{% else %}
+<p class="is-size-7 has-text-grey">Select a warehouse and at least one unfulfilled shipment above before submitting.</p>
+{% endif %}

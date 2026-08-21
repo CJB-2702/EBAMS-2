@@ -171,6 +171,7 @@ def seed_database():
         'seed_inventory_dev',
         'seed_maintenance_dev',
         'seed_dispatching_dev',
+        'seed_events_dev',
     ]
     for seed_cmd in seed_commands:
         result = subprocess.run(

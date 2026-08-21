@@ -1,4 +1,4 @@
-"""Hard-coded mock data for the assets UI prototype.
+"""Mock data fallback for assets domain.
 
 Single source of truth for all fixture shapes used by the mock entrypoints.
 Mirrors the migrated models in ``app/assets/models/`` but uses plain dicts and

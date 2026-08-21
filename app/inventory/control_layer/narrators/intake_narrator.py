@@ -1,10 +1,16 @@
 """Narrator: human-readable audit text for the intake domain.
 
-`IntakeSession` carries no `Event`/`Comment` thread of its own (unlike
-`Shipment`/`PurchaseOrder`), so this narrator is a pure string factory —
-callers persist the text wherever it belongs (`IntakeSession.notes`,
-`messages.success`, a future `ItemAllocation`-level log). Mirrors
+A pure string factory — callers persist the text wherever it belongs. As of
+intake_portal_workflow.md §8 an `IntakeSession` DOES carry a thread of its
+own (`IntakeSession.activity_thread`, nullable, created lazily by
+`events.ActivityThreadManager`), so machine comments belong there. Phase 2
+wires the writes; this module only produces the strings. Mirrors
 `PartDemandNarrator`'s shape.
+
+Rejection reasons deliberately have no column (§7.6) — when an item is
+marked rejected the reason becomes a comment on the session's activity
+thread, prefixed with the line identifier as plain text. NOTHING PARSES
+THAT PREFIX. It is a human breadcrumb.
 """
 
 from __future__ import annotations
@@ -27,23 +33,18 @@ class IntakeNarrator:
         return f"Shipment {shipment_number} linked to this intake session."
 
     @staticmethod
-    def transitioned_to_reconciling(*, discrepancy_part_count: int) -> str:
+    def stock_posted(*, good_qty: Decimal, rejected_qty: Decimal) -> str:
+        """The irreversible act (§4.3). `has_unlinked_allocations` is gone as
+        a flag (§12.2) — unlinked is NORMAL, not an exception worth
+        announcing, and the count is derived live where it matters."""
         return (
-            f"Moved to reconciliation — {discrepancy_part_count} part(s) have a "
-            f"discrepancy between expected and allocated quantity."
+            f"Stock posted. {good_qty} good / {rejected_qty} rejected logged. "
+            f"This cannot be undone."
         )
 
     @staticmethod
-    def session_closed(
-        *, good_qty: Decimal, rejected_qty: Decimal, has_unlinked_allocations: bool
-    ) -> str:
-        flag = " Unlinked (unmanifested) allocations remain quarantined." if (
-            has_unlinked_allocations
-        ) else ""
-        return (
-            f"Intake session closed. {good_qty} good / {rejected_qty} rejected "
-            f"logged.{flag}"
-        )
+    def recording_locked() -> str:
+        return "Recording locked — no further items can be counted on this session."
 
     @staticmethod
     def session_cancelled(*, reason: str) -> str:
@@ -71,10 +72,13 @@ class IntakeNarrator:
         )
 
     @staticmethod
-    def unmanifested_allocation_quarantined(*, part_number: str, quantity: Decimal) -> str:
+    def allocation_left_unlinked(*, part_number: str, quantity: Decimal) -> str:
+        """Not an error (§5.3, §7.2). Silent non-association is the default
+        and correct outcome; unlinked is a terminal state, not a pending
+        task. Worded as an explanation, never a failure."""
         return (
-            f"{quantity} x {part_number} received with no matching shipment "
-            f"line — quarantined as unmanifested stock."
+            f"{quantity} x {part_number} recorded but not linked to a shipment "
+            f"line — held as excess in the intake room."
         )
 
     # ------------------------------------------------------------------ #
@@ -96,32 +100,6 @@ class IntakeNarrator:
             f"Auto Intake committed against shipment {shipment_number}: "
             f"{line_count} line(s) processed."
         )
-
-    # ------------------------------------------------------------------ #
-    # Reconciliation
-    # ------------------------------------------------------------------ #
-
-    @staticmethod
-    def reconciliation_task_generated(
-        *, part_number: str, expected: Decimal, allocated: Decimal, rejected: Decimal
-    ) -> str:
-        return (
-            f"Reconciliation task opened for {part_number}: expected {expected}, "
-            f"allocated {allocated} good / {rejected} rejected."
-        )
-
-    @staticmethod
-    def reconciliation_line_resolved(
-        *, part_number: str, shipment_number: str, resolution_type: str
-    ) -> str:
-        return (
-            f"{part_number} on shipment {shipment_number} resolved as "
-            f"'{resolution_type}'."
-        )
-
-    @staticmethod
-    def reconciliation_parent_auto_resolved(*, part_number: str) -> str:
-        return f"All shipment lines for {part_number} resolved — reconciliation closed."
 
     # ------------------------------------------------------------------ #
     # Commit orchestrator (procurement hand-off)

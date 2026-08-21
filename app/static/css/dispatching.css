@@ -122,6 +122,31 @@
   background-color: var(--teal-10);
 }
 
+/* Highlighted Cards — Asset Reservations & Expenses */
+.dispatching-highlight-card-reservation {
+  border-radius: 0;
+  border: 1px solid var(--teal-20);
+  border-left: 5px solid var(--teal-60);
+  background-color: var(--teal-10);
+}
+
+.dispatching-highlight-card-reservation .card-header {
+  background-color: rgba(0, 125, 121, 0.08);
+  border-bottom: 1px solid var(--teal-20);
+}
+
+.dispatching-highlight-card-expense {
+  border-radius: 0;
+  border: 1px solid var(--purple-20);
+  border-left: 5px solid var(--purple-60);
+  background-color: var(--purple-18);
+}
+
+.dispatching-highlight-card-expense .card-header {
+  background-color: rgba(138, 63, 252, 0.08);
+  border-bottom: 1px solid var(--purple-20);
+}
+
 /* ── Dark mode ──────────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -169,6 +194,28 @@
 
     #asset-picker-results tr.asset-row:has(input:checked) {
       background-color: var(--teal-90);
+    }
+
+    .dispatching-highlight-card-reservation {
+      border: 1px solid var(--teal-80);
+      border-left: 5px solid var(--teal-40);
+      background-color: var(--teal-100);
+    }
+
+    .dispatching-highlight-card-reservation .card-header {
+      background-color: rgba(2, 43, 48, 0.6);
+      border-bottom: 1px solid var(--teal-80);
+    }
+
+    .dispatching-highlight-card-expense {
+      border: 1px solid var(--purple-80);
+      border-left: 5px solid var(--purple-50);
+      background-color: var(--purple-100);
+    }
+
+    .dispatching-highlight-card-expense .card-header {
+      background-color: rgba(49, 19, 94, 0.6);
+      border-bottom: 1px solid var(--purple-80);
     }
   }
 }
@@ -220,4 +267,98 @@
   #asset-picker-results tr.asset-row:has(input:checked) {
     background-color: var(--teal-90);
   }
+
+  .dispatching-highlight-card-reservation {
+    border: 1px solid var(--teal-80);
+    border-left: 5px solid var(--teal-40);
+    background-color: var(--teal-100);
+  }
+
+  .dispatching-highlight-card-reservation .card-header {
+    background-color: rgba(2, 43, 48, 0.6);
+    border-bottom: 1px solid var(--teal-80);
+  }
+
+  .dispatching-highlight-card-expense {
+    border: 1px solid var(--purple-80);
+    border-left: 5px solid var(--purple-50);
+    background-color: var(--purple-100);
+  }
+
+  .dispatching-highlight-card-expense .card-header {
+    background-color: rgba(49, 19, 94, 0.6);
+    border-bottom: 1px solid var(--purple-80);
+  }
 }
+
+/* Square requirement cards and intent hero box */
+.dispatching-square-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+  padding: 0.85rem;
+  border: 1px solid var(--gray-20);
+  background-color: var(--gray-10);
+  height: 100%;
+}
+
+.dispatching-square-card.is-skill {
+  border-top: 4px solid var(--teal-50);
+}
+
+.dispatching-square-card.is-capability {
+  border-top: 4px solid var(--cyan-50);
+}
+
+.dispatching-square-card.is-modification {
+  border-top: 4px solid var(--orange-50);
+}
+
+.dispatching-intent-hero-box {
+  background-color: var(--gray-10);
+  border: 1px solid var(--gray-20);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dispatching-square-card {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+  .dispatching-square-card.is-skill {
+    border-top-color: var(--teal-40);
+  }
+  .dispatching-square-card.is-capability {
+    border-top-color: var(--cyan-40);
+  }
+  .dispatching-square-card.is-modification {
+    border-top-color: var(--orange-40);
+  }
+  .dispatching-intent-hero-box {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+}
+
+:root[data-theme="dark"] {
+  .dispatching-square-card {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+  .dispatching-square-card.is-skill {
+    border-top-color: var(--teal-40);
+  }
+  .dispatching-square-card.is-capability {
+    border-top-color: var(--cyan-40);
+  }
+  .dispatching-square-card.is-modification {
+    border-top-color: var(--orange-40);
+  }
+  .dispatching-intent-hero-box {
+    background-color: var(--gray-90);
+    border-color: var(--gray-70);
+  }
+}
+

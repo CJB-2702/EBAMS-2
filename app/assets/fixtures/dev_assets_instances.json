@@ -978,7 +978,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 1,
  "fields": {
   "created_at": "2026-06-25T03:26:18.387Z",
@@ -991,7 +991,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 2,
  "fields": {
   "created_at": "2026-06-25T03:26:18.400Z",
@@ -1004,7 +1004,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 3,
  "fields": {
   "created_at": "2026-06-25T03:26:18.475Z",
@@ -1017,7 +1017,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 4,
  "fields": {
   "created_at": "2026-06-25T03:26:18.478Z",
@@ -1030,7 +1030,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 5,
  "fields": {
   "created_at": "2026-06-25T03:26:18.511Z",
@@ -1043,7 +1043,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 6,
  "fields": {
   "created_at": "2026-06-25T03:26:18.563Z",
@@ -1056,7 +1056,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 7,
  "fields": {
   "created_at": "2026-06-25T03:26:18.565Z",
@@ -1069,7 +1069,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 8,
  "fields": {
   "created_at": "2026-06-25T03:26:18.613Z",
@@ -1082,7 +1082,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 9,
  "fields": {
   "created_at": "2026-06-25T03:26:18.662Z",
@@ -1095,7 +1095,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 10,
  "fields": {
   "created_at": "2026-06-25T03:26:18.713Z",
@@ -1108,7 +1108,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 11,
  "fields": {
   "created_at": "2026-06-25T03:26:18.775Z",
@@ -1121,7 +1121,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 12,
  "fields": {
   "created_at": "2026-06-25T03:26:18.830Z",
@@ -1134,7 +1134,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 13,
  "fields": {
   "created_at": "2026-06-25T03:26:18.917Z",
@@ -1147,7 +1147,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 14,
  "fields": {
   "created_at": "2026-06-25T03:26:18.918Z",
@@ -1160,7 +1160,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 15,
  "fields": {
   "created_at": "2026-06-25T03:26:18.957Z",
@@ -1173,7 +1173,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 16,
  "fields": {
   "created_at": "2026-06-25T03:26:18.958Z",
@@ -1186,7 +1186,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 17,
  "fields": {
   "created_at": "2026-06-25T03:26:18.981Z",
@@ -1199,7 +1199,7 @@
  }
 },
 {
- "model": "assets.assetevent",
+ "model": "events.assetevent",
  "pk": 18,
  "fields": {
   "created_at": "2026-06-25T03:26:18.982Z",

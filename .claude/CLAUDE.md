@@ -92,6 +92,10 @@ Read these when in doubt — they are authoritative:
 - [harness/Architecture/seeding.md](harness/Architecture/seeding.md) — dev seed strategy
 - [harness/Architecture/tests.md](harness/Architecture/tests.md) — testing conventions
 
+### Documentation Standards (harness)
+
+- [harness/OKF_Documentation_Standard.md](harness/OKF_Documentation_Standard.md) — metadata requirements for all `docs/` files (created date, creator, updated date, editor)
+
 ### UX / UI (harness)
 
 - [harness/UX_UI.md](harness/UX_UI.md) — visual language, density (`format=`)

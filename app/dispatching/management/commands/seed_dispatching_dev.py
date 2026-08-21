@@ -120,7 +120,8 @@ class Command(BaseCommand):
 
         skills = self._seed_skills(actor=actor)
         self._seed_certifications(actor=actor, skills=skills)
-        self._seed_templates(actor=actor, domain=domain, skills=skills, parts=parts)
+        templates = self._seed_templates(actor=actor, domain=domain, skills=skills, parts=parts)
+        self._seed_dispatches(actor=actor, domain=domain)
 
         self.stdout.write(self.style.SUCCESS("Dispatching dev seed complete."))
 
@@ -261,3 +262,34 @@ class Command(BaseCommand):
         TemplateContext(revision3.template_id, actor).retire(
             reason=f"Superseded by contractor-managed excavation service. {SEED_MARKER}"
         )
+        return {"t1": revision, "t2": draft, "t3": revision3}
+
+    def _seed_dispatches(self, *, actor, domain) -> None:
+        import datetime
+        from django.utils import timezone
+        from app.dispatching.control_layer.factories.dispatch_factory import DispatchFactory
+        from app.events.models.details.dispatching import DispatchingDetail
+
+        if DispatchingDetail.objects.filter(description__icontains=SEED_MARKER).exists():
+            return
+
+        forklift_class = AssetClass.objects.filter(name="Forklift").first()
+        if forklift_class:
+            now = timezone.now()
+            DispatchFactory.create(
+                domain_id=domain.pk,
+                requested_for_id=actor.pk,
+                desired_start=now + datetime.timedelta(days=1),
+                desired_end=now + datetime.timedelta(days=2),
+                asset_class_id=forklift_class.pk,
+                asset_subclass_text="Standard Warehouse",
+                headcount=2,
+                names_free_text="Alice Smith, Bob Jones",
+                requested_assets="Forklift #01",
+                dispatch_scope="on_site",
+                activity_location="Main Depot Yard",
+                title="Forklift Transport for Depot Relocation",
+                description=f"Relocating pallet racks from Building A to B. {SEED_MARKER}",
+                actor=actor,
+            )
+
