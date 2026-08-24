@@ -21,9 +21,14 @@ from app.inventory.presentation_layer.entrypoints.active_inventory import (
 from app.inventory.presentation_layer.entrypoints.home import inventory_home
 from app.inventory.presentation_layer.entrypoints.intake import (
     auto_intake_portal,
-    intake_dashboard,
-    intake_session_detail,
-    scan_intake_start,
+    intake_allocate,
+    intake_associate,
+    intake_create,
+    intake_detail,
+    intake_discrepancies,
+    intake_index,
+    intake_print,
+    intake_record,
 )
 from app.inventory.presentation_layer.entrypoints.issues import (
     issuance_location_portal,
@@ -96,16 +101,21 @@ urlpatterns = [
         storage_location_search,
         name="storage_location_search",
     ),
-    # Phase 4 — Intake Engine Core & Auto Intake Portal.
-    path("intake/", intake_dashboard, name="inventory_intake_dashboard"),
+    # Intake Portal — 7 Surfaces + Global Allocation Portal (§2, §7.3)
+    path("intake/", intake_index, name="inventory_intake_index"),
+    path("intake/", intake_index, name="inventory_intake_dashboard"),  # Alias
+    path("intake/create/", intake_create, name="inventory_intake_create"),
+    path("intake/create/", intake_create, name="inventory_scan_intake_start"),  # Alias
+    path("intake/allocate/", intake_allocate, name="inventory_intake_allocate"),
     path("intake/auto/", auto_intake_portal, name="inventory_auto_intake_portal"),
-    path(
-        "intake/session/<int:pk>/",
-        intake_session_detail,
-        name="inventory_intake_session_detail",
-    ),
-    # Phase 5 — Scan Sessions.
-    path("intake/scan/", scan_intake_start, name="inventory_scan_intake_start"),
+    path("intake/<int:pk>/", intake_detail, name="inventory_intake_detail"),
+    path("intake/<int:pk>/", intake_detail, name="inventory_intake_session_detail"),  # Alias
+    path("intake/session/<int:pk>/", intake_detail),  # Legacy alias
+    path("intake/scan/", intake_create),  # Legacy alias
+    path("intake/<int:pk>/record/", intake_record, name="inventory_intake_record"),
+    path("intake/<int:pk>/associate/", intake_associate, name="inventory_intake_associate"),
+    path("intake/<int:pk>/discrepancies/", intake_discrepancies, name="inventory_intake_discrepancies"),
+    path("intake/<int:pk>/print/", intake_print, name="inventory_intake_print"),
     # Phase 6 — Part Movements, Putaway GUI & Issuance.
     path("movements/create/", movement_portal, name="inventory_movement_portal"),
     path("putaway/", putaway_worklist, name="inventory_putaway_worklist"),

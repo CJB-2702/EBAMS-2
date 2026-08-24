@@ -1,132 +1,136 @@
-{% comment %}
-format=htmx-scan-feed fragment — the whole live-scanning picture re-rendered
-after every scan/manual-entry/split action (Pattern B, htmx_patterns.md
-§2.B: re-render the entire parent so side effects like line progress and the
-staged pool update automatically together, rather than patching one row).
-Included directly by session_detail.html on full page load too, so F5 always
-restores the exact same state (F5 rule) — this file is the single source of
-truth for everything inside #scan-live-region.
-{% endcomment %}
+{# Single HTMX swap target — Recorded Allocations (2/3) + Part Count Progress (1/3) #}
 <div id="scan-live-region">
-
-  {% if flash_errors %}
-  <div class="notification is-danger is-light mb-4">
-    {% for error in flash_errors %}<p>{{ error }}</p>{% endfor %}
+  {% if error %}
+  <div class="notification is-danger mb-4">
+    <button class="delete" onclick="this.parentElement.remove()"></button>
+    {{ error }}
   </div>
-  {% elif flash_success %}
-  <div class="notification is-success is-light mb-4">{{ flash_success }}</div>
   {% endif %}
 
-  {# ---------------- Per-line progress ---------------- #}
-  <div class="card mb-4">
-    <div class="card-header"><div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">insights</span></span>
-      Per shipment-line progress
-    </div></div>
-    <div class="card-content">
-      {% if line_progress %}
-      {% for row in line_progress %}
-      <div class="mb-4 pb-3" style="border-bottom: 1px solid var(--bulma-border-weak);">
-        <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-          <p class="is-size-7">
-            <span class="is-family-monospace has-text-weight-semibold">{{ row.line.part.part_number }}</span>
-            <span class="has-text-grey">— {{ row.line.part.name }} — {{ row.line.shipment.shipment_number }}</span>
+  <div class="columns is-variable is-4">
+    {# Part Progress Bars aggregated BY PART NUMBER across every shipment #}
+    <div class="column is-6">
+      <div class="card chamfer-card">
+        <header class="card-header">
+          <p class="card-header-title">
+            <span class="material-icons mr-2">analytics</span>
+            Part Count Progress
           </p>
-          <p class="is-size-7 has-text-grey">
-            {{ row.good }} good / {{ row.rejected }} rejected of {{ row.expected }} expected
-            {% if row.remaining > 0 %}<span class="tag is-small is-warning is-light">{{ row.remaining }} short</span>
-            {% elif row.remaining < 0 %}<span class="tag is-small is-info is-light">{{ row.remaining }} over</span>
-            {% else %}<span class="tag is-small is-success is-light">Satisfied</span>{% endif %}
-          </p>
+        </header>
+        <div class="card-content">
+          {% for p in part_progress %}
+          <div class="mb-3">
+            <div class="is-flex is-justify-content-space-between is-size-7 mb-1">
+              <span class="is-family-monospace font-weight-bold">{{ p.part_number }}</span>
+              <span><strong>{{ p.counted_total }}</strong> / {{ p.expected }} ({% if p.expected > 0 %}{{ p.counted_pct|floatformat:0 }}%{% else %}Unman.{% endif %})</span>
+            </div>
+            <progress class="progress is-small {% if p.is_complete %}is-success{% else %}is-link{% endif %}"
+                      value="{{ p.counted_total }}" max="{{ p.expected|default:p.counted_total }}">
+              {{ p.counted_pct }}%
+            </progress>
+            {% if p.others_counted > 0 %}
+            <p class="is-size-7 has-text-grey">
+              <span class="material-icons is-size-7 v-align-middle">people</span>
+              {{ p.others_counted }} counted elsewhere.
+            </p>
+            {% endif %}
+            <details class="mt-1">
+              <summary class="is-size-7 has-text-grey">
+                <span class="material-icons is-size-7 v-align-middle">layers</span>
+                Cross-session truth
+              </summary>
+              <div class="table-container mt-1">
+                <table class="table is-fullwidth is-size-7 mb-0">
+                  <thead>
+                    <tr>
+                      <th>Shipment</th>
+                      <th class="has-text-right">Expected</th>
+                      <th class="has-text-right">Mine</th>
+                      <th class="has-text-right">Others</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for t in truths %}
+                    {% if t.part_id == p.part_id %}
+                    <tr {% if t.touched_by_others %}class="cross-session-locked"{% endif %}>
+                      <td class="is-size-7">{{ t.shipment_number }}</td>
+                      <td class="has-text-right is-family-monospace is-size-7">{{ t.expected }}</td>
+                      <td class="has-text-right is-family-monospace font-weight-bold is-size-7">{{ t.mine_good }}</td>
+                      <td class="has-text-right is-family-monospace text-muted is-size-7">{{ t.others_good }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">No items expected or counted yet.</p>
+          {% endfor %}
         </div>
-        <progress class="progress is-success" value="{{ row.allocated_pct }}" max="100" style="height:0.5rem;"></progress>
       </div>
-      {% endfor %}
-      {% else %}
-      <p class="has-text-grey is-size-7">No expected lines on this session's associated shipments.</p>
-      {% endif %}
     </div>
-  </div>
 
-  {# ---------------- Staged & unmanifested (rule 5: always render) ---------------- #}
-  <div class="card mb-4">
-    <div class="card-header"><div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span>
-      Staged &amp; unmanifested
-    </div></div>
-    <div class="card-content is-flush">
-      {% if staged_allocations %}
-      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-        <thead>
-          <tr><th>Part</th><th class="has-text-right">Qty</th><th>Serial</th><th>Condition</th><th>Linked</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for alloc in staged_allocations %}
-          <tr>
-            <td class="is-family-monospace">{{ alloc.part.part_number }}</td>
-            <td class="has-text-right is-family-monospace">{{ alloc.quantity }}</td>
-            <td class="is-family-monospace">{{ alloc.serial_number|default:"—" }}</td>
-            <td>{% if alloc.condition == "good" %}<span class="tag is-small is-success is-light">Good</span>{% else %}<span class="tag is-small is-danger is-light">Rejected</span>{% endif %}</td>
-            {# Linking is read-only here until Phase 2 builds the allocation portal (§7.3). #}
-            <td>
-              {% if alloc.shipment_line_id %}
-              <span class="tag is-small is-info is-light">{{ alloc.get_link_source_display }}</span>
-              {% else %}
-              <span class="has-text-grey is-size-7">Unlinked</span>
-              {% endif %}
-            </td>
-            <td>
-              <button class="button is-small is-light" type="button" commandfor="split-modal-{{ alloc.pk }}" command="show-modal">
-                <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">call_split</span></span>
-              </button>
-              {% include "inventory/intake/_split_modal.html" with alloc=alloc %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p class="has-text-grey is-size-7 p-4">None — every scanned/manual allocation is currently mapped to a shipment line.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  {# ---------------- Recent allocations feed ---------------- #}
-  <div class="card">
-    <div class="card-header"><div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>
-      Recent allocations
-    </div></div>
-    <div class="card-content is-flush">
-      {% if allocations %}
-      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-        <thead>
-          <tr><th>Part</th><th>Shipment line</th><th class="has-text-right">Qty</th><th>Serial</th><th>Condition</th><th>Method</th><th></th></tr>
-        </thead>
-        <tbody>
-          {% for allocation in allocations|slice:":25" %}
-          <tr>
-            <td class="is-family-monospace">{{ allocation.part.part_number }}</td>
-            <td>{% if allocation.shipment_line_id %}Line #{{ allocation.shipment_line_id }}{% else %}<span class="tag is-small is-warning is-light">Unmanifested</span>{% endif %}</td>
-            <td class="has-text-right is-family-monospace">{{ allocation.quantity }}</td>
-            <td class="is-family-monospace">{{ allocation.serial_number|default:"—" }}</td>
-            <td>{% if allocation.condition == "good" %}<span class="tag is-small is-success is-light">Good</span>{% else %}<span class="tag is-small is-danger is-light">Rejected</span>{% endif %}</td>
-            <td>{{ allocation.get_intake_method_display }}</td>
-            <td>
-              {% if allocation.shipment_line_id %}
-              <button class="button is-small is-light" type="button" commandfor="split-modal-{{ allocation.pk }}" command="show-modal">
-                <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">call_split</span></span>
-              </button>
-              {% include "inventory/intake/_split_modal.html" with alloc=allocation %}
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p class="has-text-grey is-size-7 p-4">No allocations recorded yet — scan an item above to begin.</p>
-      {% endif %}
+    {# Recorded allocations table for this session #}
+    <div class="column is-6">
+      <div class="card chamfer-card">
+        <header class="card-header">
+          <p class="card-header-title">
+            <span class="material-icons mr-2">format_list_numbered</span>
+            Recorded Allocations (This Session — INTAKE-{{ session.pk }})
+          </p>
+          <div class="card-header-icon">
+            <span class="tag is-info is-light">Staged ({{ allocations|length }} entries)</span>
+          </div>
+        </header>
+        <div class="card-content p-0">
+          {% if allocations %}
+          <div class="table-container">
+            <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+              <thead>
+                <tr>
+                  <th>Part Number</th>
+                  <th>Qty</th>
+                  <th>Serial Number</th>
+                  <th>Condition</th>
+                  <th>Matched Line</th>
+                  <th>Scan Source</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in allocations %}
+                <tr {% if forloop.first %}class="has-background-link-light"{% endif %}>
+                  <td class="is-family-monospace font-weight-bold">{{ a.part.part_number }}</td>
+                  <td class="is-family-monospace font-weight-bold">{{ a.quantity }}</td>
+                  <td class="is-family-monospace">{{ a.serial_number|default:"—" }}</td>
+                  <td>
+                    {% if a.condition == "good" %}
+                    <span class="tag is-small is-success is-light">Good</span>
+                    {% else %}
+                    <span class="tag is-small is-danger is-light">Rejected</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if a.shipment_line_id %}
+                    <span class="tag is-small is-info is-light">Line #{{ a.shipment_line_id }} ({{ a.shipment_line.shipment.shipment_number }})</span>
+                    {% else %}
+                    <span class="tag is-small is-warning is-light">Unlinked (Excess/Unmanifested)</span>
+                    {% endif %}
+                  </td>
+                  <td class="is-size-7">{{ a.get_link_source_display }}</td>
+                  <td class="has-text-grey">{{ a.created_at|date:"H:i:s" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="has-text-grey is-size-7 p-4">No items recorded yet. Use the scan box above to count items.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
   </div>
 </div>

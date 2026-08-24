@@ -123,6 +123,7 @@ class OpenDemandSearch:
         *,
         domain_ids,
         part_id: int | None = None,
+        event_id: int | None = None,
         q: str = "",
         priority: str = "",
         needed_before=None,
@@ -161,6 +162,8 @@ class OpenDemandSearch:
 
         if part_id:
             qs = qs.filter(part_id=part_id)
+        if event_id:
+            qs = qs.filter(event_id=event_id)
         if q:
             qs = qs.filter(
                 Q(part__part_number__icontains=q)

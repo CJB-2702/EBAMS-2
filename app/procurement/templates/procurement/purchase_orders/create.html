@@ -33,6 +33,7 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
 
 {% block content %}
 <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+<script defer src="{% static 'web_components/table_column_adjustable.js' %}"></script>
 
 <div class="page-hero">
   <div class="page-hero-content">
@@ -84,7 +85,8 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
         <div class="column is-6">
           <label class="label is-small" for="vendor-picker">Vendor <span class="has-text-danger">*</span></label>
           <search-dropdown id="vendor-picker" name="vendor_id"
-                           placeholder="{% if vendor %}{{ vendor.name }}{% else %}search vendors…{% endif %}"
+                           placeholder="search vendors…"
+                           {% if vendor %}value="{{ vendor.pk }}" value-label="{{ vendor.name }}"{% endif %}
                            hx-get="{% url 'vendor_index' %}?format=htmx-search-results"
                            hx-trigger="keyup changed delay:300ms, search"></search-dropdown>
           <p class="help">
@@ -230,8 +232,8 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
           <input type="hidden" id="unlinked-cost-asserted-at" name="unit_cost_asserted_at">
         </div>
         <div class="column is-2">
-          <label class="label is-small" for="unlinked-date">Delivery date</label>
-          <input id="unlinked-date" class="input is-small" type="date" name="expected_delivery_date">
+          <label class="label is-small" for="unlinked-date">Expected delivery date</label>
+          <input id="unlinked-date" class="input is-small" type="date" name="expected_delivery_date" value="{{ draft.expected_delivery_date|default:'' }}">
         </div>
         <div class="column is-2">
           <label class="label is-small" for="unlinked-notes">Notes</label>
@@ -276,6 +278,10 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
         <label class="label is-small" for="pool-part">Part id</label>
         <input id="pool-part" class="input is-small is-family-monospace" type="number" name="pool_part_id" value="{{ pool_filters.part_id|default:'' }}">
       </div>
+      <div style="flex:1;min-width:120px;">
+        <label class="label is-small" for="pool-event">Event id</label>
+        <input id="pool-event" class="input is-small is-family-monospace" type="number" name="pool_event_id" value="{{ pool_filters.event_id|default:'' }}">
+      </div>
       <button type="submit" class="button is-small is-link">
         <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
         <span>Filter</span>
@@ -286,14 +292,14 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
   <form method="post" action="{% url 'purchase_order_create' %}">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_from_demands">
-    <div class="card-content is-flush" style="max-height:380px;overflow-y:auto;">
+    <table-column-adjustable min-width="60" style="display:block;max-height:380px;overflow-y:auto;">
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr>
           <th style="width:2.5rem;"></th>
-          <th>Demand</th><th>Part</th><th>Priority</th><th>Needed by</th>
+          <th>Demand</th><th>Part</th><th>Event</th><th>Priority</th><th>Needed by</th>
           <th class="has-text-right">Requested</th>
           <th class="has-text-right">Outstanding</th>
-          <th style="width:8rem;">Unit cost</th>
+          <th style="width:14rem;">Unit cost</th>
         </tr></thead>
         <tbody>
           {% for demand in demand_pool %}
@@ -301,6 +307,7 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
             <td><input type="checkbox" name="demand_ids" value="{{ demand.pk }}" aria-label="Select demand {{ demand.pk }}"></td>
             <td class="is-family-monospace">#{{ demand.pk }}</td>
             <td>{{ demand.part.part_number }} <span class="has-text-grey">{{ demand.part.name }}</span></td>
+            <td class="is-family-monospace">{{ demand.event_id|default:"—" }}</td>
             <td>{{ demand.get_priority_display }}</td>
             <td>{{ demand.needed_by|date:"Y-m-d"|default:"—" }}</td>
             <td class="has-text-right is-family-monospace">{{ demand.quantity_requested }}</td>
@@ -308,20 +315,21 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
             <td>
               <input id="unit-cost-{{ demand.part_id }}" class="input is-small is-family-monospace" type="number" step="0.01" min="0"
                      name="unit_cost_{{ demand.part_id }}" value="{{ demand.expected_cost|default_if_none:'' }}"
-                     aria-label="Unit cost for part {{ demand.part.part_number }}">
+                     aria-label="Unit cost for part {{ demand.part.part_number }}" disabled
+                     title="Set the unit cost when this part's line is created in the next step.">
               {% with facts=price_facts|dict_get:demand.part_id %}
               {% include "procurement/prices/_price_chip.html" with facts=facts part_id=demand.part_id vendor=vendor handle=demand.price_chip_handle %}
               {% endwith %}
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="8" class="has-text-grey has-text-centered py-5">
+          <tr><td colspan="9" class="has-text-grey has-text-centered py-5">
             No open demands match these filters in your domains.
           </td></tr>
           {% endfor %}
         </tbody>
       </table>
-    </div>
+    </table-column-adjustable>
     <footer class="card-footer custom-card-footer">
       <div class="card-footer-secondaries">
         <span class="is-size-7 has-text-grey is-align-self-center">
@@ -400,7 +408,7 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
                 {% endwith %}
               </div>
               <div class="column is-3">
-                <label class="label is-small" for="line-date-{{ line.index }}">Delivery date</label>
+                <label class="label is-small" for="line-date-{{ line.index }}">Expected delivery date</label>
                 <input id="line-date-{{ line.index }}" class="input is-small" type="date" name="expected_delivery_date" value="{{ line.expected_delivery_date|default:'' }}">
               </div>
               <div class="column is-3">

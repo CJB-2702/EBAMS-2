@@ -135,7 +135,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
         session = self._session()
         session.associate_shipment(shipment_id=shipment.pk, actor=None)
 
-        allocation = session.process_scan(
+        allocation, _ = session.process_scan(
             raw_payload=self.part.part_number, actor=None
         )
         self.assertEqual(allocation.shipment_line_id, line.pk)
@@ -153,7 +153,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
         session = self._session()
         session.associate_shipment(shipment_id=shipment.pk, actor=None)
 
-        allocation = session.process_scan(
+        allocation, _ = session.process_scan(
             raw_payload=self.part.part_number, actor=None
         )
         self.assertIsNone(allocation.shipment_line_id)
@@ -172,7 +172,7 @@ class MatchRoutingTests(IntakeMatchingTestCase):
         session = self._session()
         session.associate_shipment(shipment_id=shipment.pk, actor=None)
 
-        allocation = session.process_scan(
+        allocation, _ = session.process_scan(
             raw_payload=other_part.part_number, actor=None
         )
         self.assertIsNone(allocation.shipment_line_id)

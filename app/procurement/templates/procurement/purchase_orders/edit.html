@@ -142,8 +142,8 @@ build-up, so there is nothing to hold side by side.
           <input id="add-line-cost" class="input is-small is-family-monospace" type="number" step="0.01" min="0" name="unit_cost" required>
         </div>
         <div class="column is-2">
-          <label class="label is-small" for="add-line-date">Delivery</label>
-          <input id="add-line-date" class="input is-small" type="date" name="expected_delivery_date">
+          <label class="label is-small" for="add-line-date">Expected delivery date</label>
+          <input id="add-line-date" class="input is-small" type="date" name="expected_delivery_date" value="{{ po.expected_delivery_date|date:'Y-m-d' }}">
         </div>
         <div class="column is-3">
           <label class="label is-small" for="add-line-notes">Notes</label>

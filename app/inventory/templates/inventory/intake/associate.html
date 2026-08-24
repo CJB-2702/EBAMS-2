@@ -1,0 +1,176 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Shipment Line Association — INTAKE-{{ session.pk }}{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li><a href="{% url 'inventory_intake_index' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Associate (INTAKE-{{ session.pk }})</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">link</span></div>
+        <div>
+          <h1 class="page-title">Shipment Line Association — INTAKE-{{ session.pk }}</h1>
+          <p class="page-subtitle">Page 3 — Session-scoped allocation portal. Match physical arrivals to purchase order lines.</p>
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'inventory_intake_detail' pk=session.pk %}" class="button is-success">
+          <span class="icon"><span class="material-icons">check</span></span>
+          <span>Done Associating &rarr; Review (Page 5)</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# In-page Pair Assignment Cards per Part Number (NO MODAL FOR ASSIGNMENT) #}
+{% for part_id, data in parts_map.items %}
+<div class="card chamfer-card mb-5">
+  <header class="card-header" style="display: flex; gap: 1.5rem; align-items: flex-start;">
+    <p class="card-header-title" style="flex: 0 0 auto; margin: 0;">
+      <span class="material-icons mr-2">inventory_2</span>
+      Part {{ data.progress.part_number }} — {{ data.progress.part_name }}
+    </p>
+    <div style="flex: 1 1 50%; min-width: 0;">
+      <div class="is-size-7">
+        <div class="is-flex is-justify-content-space-between mb-1" style="font-size: 0.75rem;">
+          <span><strong>{{ data.progress.linked }}</strong> / {{ data.progress.counted }} linked</span>
+          <span>({{ data.progress.linked_pct|floatformat:0 }}%)</span>
+        </div>
+        <progress class="progress is-small {% if data.progress.is_fully_filed %}is-success{% else %}is-warning{% endif %}"
+                  value="{{ data.progress.linked }}" max="{{ data.progress.counted|default:1 }}"
+                  style="margin-bottom: 0.5rem;">
+          {{ data.progress.linked_pct }}%
+        </progress>
+        {% if data.progress.unlinked > 0 %}
+        <span class="tag is-small is-warning is-light">
+          {{ data.progress.unlinked }} unlinked
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+  <div class="card-content">
+    <div class="columns is-variable is-4">
+      {# Left Sub-card: Manifested Shipment Lines #}
+      <div class="column is-6">
+        <div class="box p-3 style-subcard">
+          <h4 class="title is-6 mb-2">Manifested Shipment Lines</h4>
+          {% if data.truths %}
+          <table class="table is-fullwidth is-size-7 is-striped">
+            <thead>
+              <tr>
+                <th>Shipment Line</th>
+                <th>Expected</th>
+                <th>Remaining Cap</th>
+                <th>Link Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for truth in data.truths %}
+              <tr>
+                <td>
+                  <span class="is-family-monospace font-weight-bold">Line #{{ truth.shipment_line_id }}</span>
+                  <br><span class="has-text-grey is-size-7">{{ truth.shipment_number }}</span>
+                </td>
+                <td class="is-family-monospace">{{ truth.expected }}</td>
+                <td class="is-family-monospace font-weight-bold {% if truth.is_full %}has-text-danger{% else %}has-text-success{% endif %}">
+                  {{ truth.remaining_capacity }}
+                </td>
+                <td>
+                  {% if not truth.is_full %}
+                  {% for alloc in data.allocations %}
+                    {% if not alloc.shipment_line_id %}
+                    <form method="post" action="{% url 'inventory_intake_associate' pk=session.pk %}" class="mb-1">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="link">
+                      <input type="hidden" name="allocation_id" value="{{ alloc.pk }}">
+                      <input type="hidden" name="shipment_line_id" value="{{ truth.shipment_line_id }}">
+                      <button class="button is-small is-link py-0 px-2" type="submit">
+                        Link x{{ alloc.quantity }} &rarr; Line #{{ truth.shipment_line_id }}
+                      </button>
+                    </form>
+                    {% endif %}
+                  {% endfor %}
+                  {% else %}
+                  <span class="tag is-small is-light">Line Full (Cap Met)</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="has-text-grey is-size-7">No shipment lines manifested for this part.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Right Sub-card: Recorded Allocations in Session #}
+      <div class="column is-6">
+        <div class="box p-3 style-subcard">
+          <h4 class="title is-6 mb-2">Recorded Allocations in Session</h4>
+          {% if data.allocations %}
+          <table class="table is-fullwidth is-size-7 is-striped">
+            <thead>
+              <tr>
+                <th>Qty</th>
+                <th>Serial</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for alloc in data.allocations %}
+              <tr>
+                <td class="is-family-monospace font-weight-bold">{{ alloc.quantity }}</td>
+                <td class="is-family-monospace">{{ alloc.serial_number|default:"—" }}</td>
+                <td>
+                  {% if alloc.shipment_line_id %}
+                  <span class="tag is-small is-success is-light">Line #{{ alloc.shipment_line_id }}</span>
+                  {% else %}
+                  <span class="tag is-small is-warning is-light">Unlinked</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if alloc.shipment_line_id %}
+                  <form method="post" action="{% url 'inventory_intake_associate' pk=session.pk %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="unlink">
+                    <input type="hidden" name="allocation_id" value="{{ alloc.pk }}">
+                    <button class="button is-small is-danger is-outlined py-0 px-2" type="submit">Unlink</button>
+                  </form>
+                  {% else %}
+                  <span class="has-text-grey is-size-7">Select line &rarr;</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="has-text-grey is-size-7">No allocations for this part.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card chamfer-card">
+  <div class="card-content has-text-centered py-6">
+    <p class="has-text-grey">No item allocations exist on this session to associate.</p>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

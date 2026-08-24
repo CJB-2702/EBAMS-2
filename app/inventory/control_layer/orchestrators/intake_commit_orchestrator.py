@@ -129,6 +129,11 @@ class IntakeCommitOrchestrator:
 
         return session
 
+    @classmethod
+    def close(cls, *, session_id: int, actor=None, notes: str = "") -> IntakeSession:
+        """Alias for post_stock for backward compatibility."""
+        return cls.post_stock(session_id=session_id, actor=actor, notes=notes)
+
     @staticmethod
     def _narrate(*, session, allocations, actor=None) -> None:
         """The irreversible act belongs on the session's own thread (§8), not

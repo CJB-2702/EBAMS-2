@@ -1,0 +1,101 @@
+/* Inventory Sub-system & Intake Portal Custom CSS */
+
+:root {
+  --inv-chamfer-size: 16px;
+}
+
+/* Intake session list — one full-width row per session */
+.intake-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Chamfered Card containers */
+.chamfer-card,
+.pc-chamfer,
+.card.is-chamfered {
+  corner-shape: bevel;
+  border-radius: var(--inv-chamfer-size);
+  clip-path: polygon(
+    var(--inv-chamfer-size) 0,
+    100% 0,
+    100% calc(100% - var(--inv-chamfer-size)),
+    calc(100% - var(--inv-chamfer-size)) 100%,
+    0 100%,
+    0 var(--inv-chamfer-size)
+  );
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Modals adhering to Kitchen-Sink cards outline */
+.modal-card.ks-modal,
+.modal-styled.ks-modal {
+  border: 1px solid var(--bulma-border, #363636);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  corner-shape: bevel;
+  border-radius: 16px;
+}
+
+.modal-card.ks-modal .modal-card-head {
+  border-bottom: 1px solid var(--bulma-border, #363636);
+  background-color: var(--bulma-card-header-background-color, #1f242d);
+  padding: 1rem 1.5rem;
+}
+
+.modal-card.ks-modal .modal-card-body {
+  padding: 1.5rem;
+  background-color: var(--bulma-card-background-color, #181b20);
+}
+
+.modal-card.ks-modal .modal-card-foot {
+  border-top: 1px solid var(--bulma-border, #363636);
+  background-color: var(--bulma-card-header-background-color, #1f242d);
+  padding: 1rem 1.5rem;
+  justify-content: flex-end;
+}
+
+/* Progress bar helpers for intake portal */
+.progress.is-intake-counted::-webkit-progress-value {
+  background-color: #3e8ed0;
+}
+.progress.is-intake-counted::-moz-progress-bar {
+  background-color: #3e8ed0;
+}
+
+.progress.is-intake-linked::-webkit-progress-value {
+  background-color: #48c78e;
+}
+.progress.is-intake-linked::-moz-progress-bar {
+  background-color: #48c78e;
+}
+
+/* Locked cross-session allocation styling (§5.5) */
+.cross-session-locked {
+  opacity: 0.65;
+  background-color: rgba(120, 120, 120, 0.1);
+  border-left: 3px solid #7a7a7a;
+  cursor: not-allowed;
+}
+
+/* Print view rules (§9) */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .no-print,
+  .navbar,
+  .sidebar,
+  .breadcrumb,
+  footer {
+    display: none !important;
+  }
+  .print-page-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 15px !important;
+  }
+}

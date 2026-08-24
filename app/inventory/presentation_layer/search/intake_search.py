@@ -60,6 +60,14 @@ class UnfulfilledShipmentSearch:
 
 class IntakeSessionSearch:
     @classmethod
+    def build(cls, get_params: dict, *, domain_ids: list[int]):
+        """Parse filter parameters from GET request into a search object."""
+        return IntakeSessionSearchParams(
+            query=get_params.get("q", "").strip(),
+            status=get_params.get("status", "").strip() or None,
+        )
+
+    @classmethod
     def recent(cls, *, warehouse_ids=None, limit: int = 25) -> QuerySet[IntakeSession]:
         qs = IntakeSession.objects.filter(deleted_at__isnull=True).select_related(
             "operator", "warehouse", "room"
@@ -67,6 +75,13 @@ class IntakeSessionSearch:
         if warehouse_ids is not None:
             qs = qs.filter(warehouse_id__in=warehouse_ids)
         return qs.order_by("-started_at")[:limit]
+
+
+class IntakeSessionSearchParams:
+    """Search filter parameters for intake session index view."""
+    def __init__(self, query: str = "", status: str | None = None):
+        self.query = query
+        self.status = status
 
 
 class ExternalExcessAllocationSearch:

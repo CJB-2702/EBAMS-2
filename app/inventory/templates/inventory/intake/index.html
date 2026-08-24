@@ -1,0 +1,144 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Intake Sessions{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li class="is-active"><a href="#" aria-current="page">Intake Sessions</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></div>
+        <div>
+          <h1 class="page-title">Intake Portal</h1>
+          <p class="page-subtitle">Receiving runs, session tracking, and stock posting</p>
+        </div>
+      </div>
+      <div class="buttons">
+        <a href="{% url 'inventory_intake_allocate' %}" class="button is-info is-outlined">
+          <span class="icon"><span class="material-icons">account_tree</span></span>
+          <span>Global Allocation Portal</span>
+        </a>
+        <a href="{% url 'inventory_intake_create' %}" class="button is-primary">
+          <span class="icon"><span class="material-icons">add</span></span>
+          <span>Start Receiving Run</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card chamfer-card mb-5">
+  <div class="card-content">
+    <form method="get" action="{% url 'inventory_intake_index' %}">
+      <div class="columns is-variable is-3 is-align-items-flex-end">
+        <div class="column is-4">
+          <label class="label is-small">Search</label>
+          <div class="control has-icons-left">
+            <input class="input is-small" type="text" name="q" value="{{ search.query }}" placeholder="Session ID, warehouse, notes...">
+            <span class="icon is-small is-left"><span class="material-icons">search</span></span>
+          </div>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small">Status</label>
+          <div class="select is-small is-fullwidth">
+            <select name="status">
+              <option value="">All Statuses</option>
+              {% for val, label in status_choices %}
+              <option value="{{ val }}" {% if search.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-3">
+          <label class="checkbox is-size-7 mt-3">
+            <input type="checkbox" name="waiting_on_me" value="1" {% if waiting_on_me %}checked{% endif %}>
+            Waiting on me (Open / Not posted)
+          </label>
+        </div>
+        <div class="column is-2">
+          <button class="button is-small is-link is-fullwidth" type="submit">Filter</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="intake-session-list">
+  {% for s in sessions %}
+  <div class="intake-session-row">
+    <div class="card chamfer-card">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="material-icons mr-2">inbox</span>
+          Intake Session INTAKE-{{ s.pk }}
+        </p>
+
+        <div class="card-header-icon">
+          {% if s.status == "closed" %}
+          <span class="tag is-success is-light">Closed / Stock Posted</span>
+          {% elif s.status == "recording_locked" %}
+          <span class="tag is-info is-light">Recording Locked</span>
+          {% elif s.status == "cancelled" %}
+          <span class="tag is-danger is-light">Cancelled</span>
+          {% else %}
+          <span class="tag is-warning is-light">Open / Active</span>
+          {% endif %}
+        </div>
+      </header>
+      <div class="card-content">
+        <div class="columns is-size-7">
+          <div class="column is-6">
+            <p><strong>Warehouse:</strong> {{ s.warehouse.code }} — {{ s.warehouse.name }}</p>
+            <p><strong>Room:</strong> {{ s.room.room_name|default:"Intake Room" }}</p>
+            <p><strong>Operator:</strong> {{ s.created_by|default:"—" }}</p>
+          </div>
+          <div class="column is-6">
+            <p><strong>Started:</strong> {{ s.started_at|date:"Y-m-d H:i" }}</p>
+            <p><strong>Recording locked:</strong> {{ s.recording_locked_at|date:"Y-m-d H:i"|default:"Open" }}</p>
+            <p><strong>Stock posted:</strong> {{ s.stock_posted_at|date:"Y-m-d H:i"|default:"Not posted" }}</p>
+          </div>
+        </div>
+        {% if s.notes %}
+        <p class="is-size-7 has-text-grey mt-2"><em>{{ s.notes|truncatewords:15 }}</em></p>
+        {% endif %}
+      </div>
+      <footer class="card-footer card-footer-uniform">
+        <a href="{% url 'inventory_intake_record' pk=s.pk %}" class="button is-small is-link is-outlined">
+          <span class="icon"><span class="material-icons">qr_code_scanner</span></span>
+          <span>Record (Page 2)</span>
+        </a>
+        <a href="{% url 'inventory_intake_associate' pk=s.pk %}" class="button is-small is-info is-outlined">
+          <span class="icon"><span class="material-icons">link</span></span>
+          <span>Associate (Page 3)</span>
+        </a>
+        <a href="{% url 'inventory_intake_discrepancies' pk=s.pk %}" class="button is-small is-warning is-outlined">
+          <span class="icon"><span class="material-icons">warning</span></span>
+          <span>Discrepancies (Page 4)</span>
+        </a>
+        <a href="{% url 'inventory_intake_detail' pk=s.pk %}" class="button is-small is-dark">
+          <span>Review (Page 5)</span>
+        </a>
+      </footer>
+    </div>
+  </div>
+  {% empty %}
+  <div class="intake-session-row">
+    <div class="card chamfer-card">
+      <div class="card-content has-text-centered py-6">
+        <p class="has-text-grey is-size-6">No intake sessions match your criteria.</p>
+        <a href="{% url 'inventory_intake_create' %}" class="button is-primary mt-3">Start a new receiving run</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

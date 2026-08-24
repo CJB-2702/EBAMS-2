@@ -1,0 +1,125 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Start Receiving Run{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li><a href="{% url 'inventory_intake_index' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Start Receiving Run</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">playlist_add</span></div>
+        <div>
+          <h1 class="page-title">Start Receiving Run — Start Scan Session</h1>
+          <p class="page-subtitle">Page 1 — Select warehouse, intake room, and unfulfilled shipments</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-centered">
+  <div class="column is-9">
+    <form method="post" action="{% url 'inventory_intake_create' %}">
+      {% csrf_token %}
+      <div class="card chamfer-card">
+        <header class="card-header">
+          <p class="card-header-title">Receiving Location &amp; Target Shipments</p>
+        </header>
+        <div class="card-content">
+          <div class="columns is-variable is-4">
+            <div class="column is-6">
+              <label class="label">Warehouse</label>
+              <div class="select is-fullwidth">
+                <select name="warehouse_id" required hx-get="{% url 'inventory_intake_create' %}" hx-target="body" hx-push-url="true">
+                  {% for wh in warehouses %}
+                  <option value="{{ wh.pk }}" {% if wh.pk == selected_wh_id %}selected{% endif %}>{{ wh.code }} — {{ wh.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <div class="column is-6">
+              <label class="label">Intake Room (Optional)</label>
+              <div class="select is-fullwidth">
+                <select name="room_id">
+                  <option value="">— Default Intake Room —</option>
+                  {% for room in rooms %}
+                  <option value="{{ room.pk }}">{{ room.room_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field mt-4">
+            <label class="label">Notes / Receiving Slip #</label>
+            <div class="control">
+              <textarea class="textarea" name="notes" rows="2" placeholder="Optional notes for this intake run..."></textarea>
+            </div>
+          </div>
+
+          <hr>
+
+          <div class="field mt-4">
+            <label class="label">Select Unfulfilled Shipments to Receive Against</label>
+            <p class="help mb-3">Check every shipment expected in this delivery. Multiple shipments can be received together in one session.</p>
+
+            {% if unfulfilled_shipments %}
+            <div class="box p-0" style="max-height: 350px; overflow-y: auto;">
+              <table class="table is-fullwidth is-hoverable is-striped is-size-7">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;">Select</th>
+                    <th>Shipment #</th>
+                    <th>Supplier / Origin</th>
+                    <th>Status</th>
+                    <th>Lines</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for ship in unfulfilled_shipments %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="shipment_ids" value="{{ ship.pk }}">
+                    </td>
+                    <td class="is-family-monospace font-weight-bold">
+                      SHIP-{{ ship.pk }} ({{ ship.shipment_number }})
+                    </td>
+                    <td>{{ ship.supplier.name|default:"Vendor shipment" }}</td>
+                    <td><span class="tag is-small is-info is-light">{{ ship.status|title }}</span></td>
+                    <td>{{ ship.lines.count }} line(s)</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="notification is-warning is-light">
+              No unfulfilled shipments currently found for this warehouse. You can still open a session to receive unmanifested parts.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <footer class="card-footer custom-card-footer">
+          <a href="{% url 'inventory_intake_index' %}" class="button is-light">Cancel</a>
+          <button type="submit" class="button is-primary">
+            <span class="icon"><span class="material-icons">arrow_forward</span></span>
+            <span>Start Session &amp; Proceed to Record (Page 2)</span>
+          </button>
+        </footer>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

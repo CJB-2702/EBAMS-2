@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Intake Tally Sheet — INTAKE-{{ session.pk }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #000;
+      background: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #000;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .print-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0 0 5px 0;
+    }
+    .print-meta {
+      font-size: 13px;
+      color: #333;
+    }
+    .shipment-section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+    .shipment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0f0f0;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    table.tally-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 5px;
+      font-size: 12px;
+    }
+    table.tally-table th, table.tally-table td {
+      border: 1px solid #999;
+      padding: 8px;
+      text-align: left;
+    }
+    table.tally-table th {
+      background: #e6e6e6;
+    }
+    .ruled-box {
+      width: 60px;
+      height: 25px;
+      border: 1px dashed #666;
+      display: inline-block;
+    }
+    .disclaimer {
+      margin-top: 40px;
+      font-size: 11px;
+      font-style: italic;
+      color: #555;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    .no-print-bar {
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .btn-print {
+      background: #28a745;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    @media print {
+      .no-print-bar { display: none !important; }
+      body { padding: 0 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="no-print-bar">
+  <div>
+    <strong>INTAKE-{{ session.pk }} Dock Tally Document</strong>
+    <span> — Mode: <strong>{{ mode|upper }}</strong></span>
+  </div>
+  <div>
+    <button class="btn-print" onclick="window.print();">Print Tally Sheet</button>
+  </div>
+</div>
+
+<div class="print-header">
+  <div>
+    <h1 class="print-title">Dock Tally Sheet — INTAKE-{{ session.pk }}</h1>
+    <div class="print-meta">
+      <strong>Warehouse:</strong> {{ session.warehouse.code }} — {{ session.warehouse.name }}<br>
+      <strong>Intake Room:</strong> {{ session.room.room_name|default:"Default Intake Room" }}<br>
+      <strong>Date Generated:</strong> {% now "Y-m-d H:i" %}<br>
+      <strong>Created By:</strong> {{ session.created_by|default:"—" }}
+    </div>
+  </div>
+  <div style="text-anchor: end; text-align: right;">
+    {{ session_barcode_svg|safe }}
+  </div>
+</div>
+
+{% for sdata in shipments_data %}
+<div class="shipment-section">
+  <div class="shipment-header">
+    <div>
+      Shipment: SHIP-{{ sdata.shipment.pk }} ({{ sdata.shipment.shipment_number }})
+      <span style="font-weight: normal; font-size: 12px; margin-left: 10px;">
+        Vendor: {{ sdata.shipment.supplier.name|default:"Vendor shipment" }}
+      </span>
+    </div>
+    <div>
+      {{ sdata.barcode_svg|safe }}
+    </div>
+  </div>
+
+  <table class="tally-table">
+    <thead>
+      <tr>
+        <th style="width: 30px;">#</th>
+        <th>Part Number</th>
+        <th>Description</th>
+        <th style="width: 80px; text-align: right;">Expected Qty</th>
+        <th style="width: 90px; text-align: center;">Qty Accepted</th>
+        <th style="width: 90px; text-align: center;">Qty Rejected</th>
+        <th style="width: 90px; text-align: center;">Total Qty</th>
+        <th>Serial / Batch Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in sdata.lines %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ line.part.part_number }}</strong></td>
+        <td>{{ line.part.name }}</td>
+        <td style="text-align: right; font-family: monospace; font-weight: bold;">
+          {% if mode == "receipt" %}{{ line.quantity }}{% else %}{{ line.quantity }}{% endif %}
+        </td>
+        <td style="text-align: center;"><div class="ruled-box"></div></td>
+        <td style="text-align: center;"><div class="ruled-box"></div></td>
+        <td style="text-align: center;"><div class="ruled-box"></div></td>
+        <td style="font-family: monospace; color: #666;">
+          {% if line.part.sn_expected %}[SERIALIZED]{% else %}&nbsp;{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="font-style: italic; color: #777;">No manifest lines on this shipment.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<p style="font-style: italic; color: #777;">No shipments associated with this intake session.</p>
+{% endfor %}
+
+<div class="disclaimer">
+  Written values in pen-and-paper columns are for offline dock tallying and are not read by the system.
+  Scan barcodes on physical sheet or type SKUs directly into the Intake Record surface.
+</div>
+
+</body>
+</html>

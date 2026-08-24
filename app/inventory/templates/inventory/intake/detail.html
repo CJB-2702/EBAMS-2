@@ -1,0 +1,237 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Session Review — INTAKE-{{ session.pk }}{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li><a href="{% url 'inventory_intake_index' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Session INTAKE-{{ session.pk }} Review</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">visibility</span></div>
+        <div>
+          <h1 class="page-title">Session Review — INTAKE-{{ session.pk }}</h1>
+          <p class="page-subtitle">Page 5 — Canonical overview for session review, stock approval, and activity thread.</p>
+        </div>
+      </div>
+      <div>
+        {% if session.status == "closed" %}
+        <span class="tag is-success is-medium">Closed / Stock Posted</span>
+        {% elif session.status == "recording_locked" %}
+        <span class="tag is-info is-medium">Recording Locked</span>
+        {% else %}
+        <span class="tag is-warning is-medium">Open</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Surface Action Navigation Buttons Header #}
+<div class="card chamfer-card mb-5">
+  <div class="card-content">
+    <div class="buttons is-centered">
+      <a href="{% url 'inventory_intake_record' pk=session.pk %}" class="button is-link">
+        <span class="icon"><span class="material-icons">qr_code_scanner</span></span>
+        <span>Record (Page 2)</span>
+      </a>
+      <a href="{% url 'inventory_intake_associate' pk=session.pk %}" class="button is-info">
+        <span class="icon"><span class="material-icons">link</span></span>
+        <span>Associate (Page 3)</span>
+      </a>
+      <a href="{% url 'inventory_intake_discrepancies' pk=session.pk %}" class="button is-warning">
+        <span class="icon"><span class="material-icons">warning</span></span>
+        <span>Discrepancies (Page 4)</span>
+      </a>
+      <a href="{% url 'inventory_intake_print' pk=session.pk %}?mode=pick" class="button is-dark" target="_blank">
+        <span class="icon"><span class="material-icons">print</span></span>
+        <span>Print Tally Sheet (Page 7)</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-variable is-4">
+  {# Left Column: Session Metadata & Actions #}
+  <div class="column is-5">
+    <div class="card chamfer-card mb-4">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="material-icons mr-2">badge</span>
+          Session Metadata
+        </p>
+      </header>
+      <div class="card-content">
+        <dl class="kv">
+          <dt>Session ID</dt><dd class="is-family-monospace">INTAKE-{{ session.pk }}</dd>
+          <dt>Warehouse</dt><dd class="is-family-monospace">{{ session.warehouse.code }} — {{ session.warehouse.name }}</dd>
+          <dt>Intake Room</dt><dd>{{ session.room.room_name|default:"Default Intake Room" }}</dd>
+          <dt>Created By</dt><dd>{{ session.created_by|default:"—" }}</dd>
+          <dt>Started At</dt><dd>{{ session.started_at|date:"Y-m-d H:i" }}</dd>
+          <dt>Recording Locked</dt>
+          <dd>
+            {% if session.recording_locked_at %}
+            {{ session.recording_locked_at|date:"Y-m-d H:i" }} by {{ session.recording_locked_by|default:"—" }}
+            {% else %}
+            <span class="has-text-grey">Open (Not locked)</span>
+            {% endif %}
+          </dd>
+          <dt>Stock Posted</dt>
+          <dd>
+            {% if session.stock_posted_at %}
+            <span class="has-text-success font-weight-bold">{{ session.stock_posted_at|date:"Y-m-d H:i" }}</span> by {{ session.stock_posted_by|default:"—" }}
+            {% else %}
+            <span class="has-text-grey">Not posted yet</span>
+            {% endif %}
+          </dd>
+          <dt>Notes</dt><dd>{{ session.notes|default:"—"|linebreaksbr }}</dd>
+        </dl>
+      </div>
+
+      {% if session.status != "closed" and session.status != "cancelled" %}
+      <footer class="card-footer custom-card-footer">
+        <form method="post" action="{% url 'inventory_intake_detail' pk=session.pk %}" class="width-100">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="post_stock">
+          <button type="submit" class="button is-success is-fullwidth py-3"
+                  onclick="return confirm('Approve session and post stock into warehouse inventory? This act is irreversible.');">
+            <span class="icon"><span class="material-icons">task_alt</span></span>
+            <span>Approve Session &amp; Post Stock</span>
+          </button>
+        </form>
+      </footer>
+      {% endif %}
+    </div>
+
+    {# Linked Shipments Card #}
+    <div class="card chamfer-card mb-4">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="material-icons mr-2">local_shipping</span>
+          Linked Shipments
+        </p>
+      </header>
+      <div class="card-content p-0">
+        <table class="table is-fullwidth is-striped is-size-7">
+          <thead>
+            <tr>
+              <th>Shipment</th>
+              <th>Supplier</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for link in shipment_links %}
+            <tr>
+              <td class="is-family-monospace font-weight-bold">SHIP-{{ link.shipment.pk }} ({{ link.shipment.shipment_number }})</td>
+              <td>{{ link.shipment.supplier.name|default:"Vendor" }}</td>
+              <td><span class="tag is-small is-info is-light">{{ link.shipment.status|title }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="has-text-grey p-4">No shipments linked.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# Right Column: Allocations & Activity Thread #}
+  <div class="column is-7">
+    <div class="card chamfer-card mb-4">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="material-icons mr-2">inventory_2</span>
+          Recorded Allocations ({{ allocations|length }} entries)
+        </p>
+      </header>
+      <div class="card-content p-0">
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+            <thead>
+              <tr>
+                <th>Part Number</th>
+                <th class="has-text-right">Qty</th>
+                <th>Serial Number</th>
+                <th>Condition</th>
+                <th>Shipment Line</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in allocations %}
+              <tr>
+                <td class="is-family-monospace font-weight-bold">{{ a.part.part_number }}</td>
+                <td class="has-text-right is-family-monospace font-weight-bold">{{ a.quantity }}</td>
+                <td class="is-family-monospace">{{ a.serial_number|default:"—" }}</td>
+                <td>
+                  {% if a.condition == "good" %}
+                  <span class="tag is-small is-success is-light">Good</span>
+                  {% else %}
+                  <span class="tag is-small is-danger is-light">Rejected</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if a.shipment_line_id %}
+                  <span class="tag is-small is-info is-light">Line #{{ a.shipment_line_id }}</span>
+                  {% else %}
+                  <span class="tag is-small is-warning is-light">Unlinked</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="has-text-grey p-4">No allocations recorded.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Activity Thread (Comments & History) #}
+    <div class="card chamfer-card">
+      <header class="card-header">
+        <p class="card-header-title">
+          <span class="material-icons mr-2">forum</span>
+          Session Activity Thread &amp; Audit Log (§8)
+        </p>
+      </header>
+      <div class="card-content">
+        <div class="comments-list mb-4">
+          {% for c in comments %}
+          <div class="box p-3 mb-2 sharp-corners style-subcard">
+            <div class="is-flex is-justify-content-space-between is-size-7 text-muted mb-1">
+              <span><strong>{{ c.author|default:"System Narrator" }}</strong></span>
+              <span>{{ c.created_at|date:"Y-m-d H:i:s" }}</span>
+            </div>
+            <div class="is-size-7">{{ c.content|linebreaksbr }}</div>
+          </div>
+          {% empty %}
+          <p class="has-text-grey is-size-7">No comments on this session thread yet.</p>
+          {% endfor %}
+        </div>
+
+        <form method="post" action="{% url 'inventory_intake_detail' pk=session.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_comment">
+          <div class="field">
+            <label class="label is-small">Add Note / Comment</label>
+            <div class="control">
+              <textarea class="textarea is-small" name="comment" rows="2" placeholder="Write a note on this session..."></textarea>
+            </div>
+          </div>
+          <button type="submit" class="button is-small is-primary mt-2">Post Comment</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

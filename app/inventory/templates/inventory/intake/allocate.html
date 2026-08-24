@@ -1,0 +1,153 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Global Allocation Portal{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li><a href="{% url 'inventory_intake_index' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Global Allocation Portal</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">account_tree</span></div>
+        <div>
+          <h1 class="page-title">Global Allocation Portal</h1>
+          <p class="page-subtitle">Cross-session pool for unlinked allocations and unallocated purchase order lines (§7.3)</p>
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'inventory_intake_index' %}" class="button is-light">
+          <span class="icon"><span class="material-icons">arrow_back</span></span>
+          <span>Back to Intake Index</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="columns is-variable is-4">
+  {# Left Column: Unlinked Allocations Across All Sessions #}
+  <div class="column is-6">
+    <div class="card chamfer-card mb-4">
+      <header class="card-header">
+        <p class="card-header-title text-warning">
+          <span class="material-icons mr-2">help_outline</span>
+          Unlinked Allocations Pool ({{ unlinked_allocations|length }} items)
+        </p>
+      </header>
+      <div class="card-content p-0">
+        {% if unlinked_allocations %}
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+            <thead>
+              <tr>
+                <th>Session</th>
+                <th>Part Number</th>
+                <th class="has-text-right">Qty</th>
+                <th>Serial</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for alloc in unlinked_allocations %}
+              <tr>
+                <td>
+                  <a href="{% url 'inventory_intake_detail' pk=alloc.intake_session.pk %}" class="is-family-monospace font-weight-bold">
+                    INTAKE-{{ alloc.intake_session.pk }}
+                  </a>
+                </td>
+                <td class="is-family-monospace font-weight-bold">{{ alloc.part.part_number }}</td>
+                <td class="has-text-right is-family-monospace font-weight-bold">{{ alloc.quantity }}</td>
+                <td class="is-family-monospace">{{ alloc.serial_number|default:"—" }}</td>
+                <td>
+                  <form method="post" action="{% url 'inventory_intake_allocate' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="link">
+                    <input type="hidden" name="allocation_id" value="{{ alloc.pk }}">
+                    <div class="field has-addons">
+                      <div class="control">
+                        <div class="select is-small">
+                          <select name="shipment_line_id" required>
+                            <option value="">— Select Line —</option>
+                            {% for truth in unmet_truths %}
+                              {% if truth.part_id == alloc.part_id %}
+                              <option value="{{ truth.shipment_line_id }}">
+                                Line #{{ truth.shipment_line_id }} ({{ truth.shipment_number }}) - Cap: {{ truth.remaining_capacity }}
+                              </option>
+                              {% endif %}
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+                      <div class="control">
+                        <button type="submit" class="button is-small is-link">Link</button>
+                      </div>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7 p-4">No unlinked allocations exist across all live sessions.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {# Right Column: Unmet Shipment Lines Across All Shipments #}
+  <div class="column is-6">
+    <div class="card chamfer-card mb-4">
+      <header class="card-header">
+        <p class="card-header-title text-info">
+          <span class="material-icons mr-2">playlist_add_check</span>
+          Unmet Shipment Lines Capacity ({{ unmet_truths|length }} lines)
+        </p>
+      </header>
+      <div class="card-content p-0">
+        {% if unmet_truths %}
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-hoverable is-size-7">
+            <thead>
+              <tr>
+                <th>Line / Shipment</th>
+                <th>Part Number</th>
+                <th class="has-text-right">Expected</th>
+                <th class="has-text-right">Linked</th>
+                <th class="has-text-right">Remaining Cap</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for truth in unmet_truths %}
+              <tr>
+                <td>
+                  <span class="is-family-monospace font-weight-bold">Line #{{ truth.shipment_line_id }}</span>
+                  <br><span class="has-text-grey is-size-7">{{ truth.shipment_number }}</span>
+                </td>
+                <td class="is-family-monospace font-weight-bold">{{ truth.part_number }}</td>
+                <td class="has-text-right is-family-monospace">{{ truth.expected }}</td>
+                <td class="has-text-right is-family-monospace">{{ truth.linked_total }}</td>
+                <td class="has-text-right is-family-monospace font-weight-bold text-success">{{ truth.remaining_capacity }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7 p-4">All open shipment lines are fully allocated.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

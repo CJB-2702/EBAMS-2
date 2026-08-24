@@ -88,7 +88,30 @@ class SearchDropdown extends HTMLElement {
     `;
   }
 
+  static get observedAttributes() {
+    return ["value-label"];
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    // Keeps the visible text in sync with `value-label` even when something
+    // other than this component's own click handler updates the attribute
+    // in place (e.g. an htmx swap that patches attributes on the existing
+    // node instead of replacing it). Without this, the shadow-DOM <input>'s
+    // displayed text can silently go stale — showing whatever was last
+    // written locally — while the reflected attribute has already moved on.
+    if (name !== "value-label" || !this.input || newValue === oldValue) {
+      return;
+    }
+    this.input.value = newValue || "";
+  }
+
   connectedCallback() {
+    // Guard against re-running init (and re-stacking event listeners) if
+    // the browser ever calls connectedCallback again on an already-set-up
+    // instance (disconnect/reconnect without the node being recreated).
+    if (this._ready) return;
+    this._ready = true;
+
     this.input = this.shadowRoot.querySelector("input");
 
     const passThrough = [
@@ -163,7 +186,10 @@ class SearchDropdown extends HTMLElement {
         return;
       }
       this.value = raw;
-      this.input.value = li.innerText.trim();
+      // Routed through the attribute (not a direct `this.input.value =`
+      // write) so attributeChangedCallback is the one place that updates
+      // the visible text — see the comment there.
+      this.setAttribute("value-label", li.innerText.trim());
       this.removeAttribute("open");
       // Form-associated custom elements don't fire a native "change" on their
       // own — internals.setFormValue() is silent. Dispatch one explicitly

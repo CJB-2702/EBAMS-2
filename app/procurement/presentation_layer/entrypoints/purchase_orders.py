@@ -280,6 +280,7 @@ def _wizard_render(request: HttpRequest, *, domain_ids: list[int]) -> HttpRespon
         "q": request.GET.get("pool_q", "").strip(),
         "priority": request.GET.get("pool_priority", "").strip(),
         "part_id": _int(request.GET.get("pool_part_id")),
+        "event_id": _int(request.GET.get("pool_event_id")),
     }
     demand_pool = []
     if draft_tools.has_vendor(draft):
@@ -573,7 +574,10 @@ def _wizard_add_unlinked_line(request: HttpRequest, draft: dict) -> None:
         part_id=part_id,
         quantity_ordered=quantity,
         unit_cost=unit_cost,
-        expected_delivery_date=request.POST.get("expected_delivery_date") or None,
+        expected_delivery_date=(
+            request.POST.get("expected_delivery_date")
+            or draft.get("expected_delivery_date")
+        ),
         notes=request.POST.get("line_notes", "").strip(),
     )
     _apply_price_provenance(new_line, request.POST)
@@ -642,6 +646,7 @@ def _wizard_add_from_demands(
                     part_id=demand.part_id,
                     quantity_ordered=outstanding,
                     unit_cost=unit_cost,
+                    expected_delivery_date=draft.get("expected_delivery_date"),
                 )
             )
             index = len(draft["lines"]) - 1
@@ -1389,7 +1394,10 @@ def _detail_add_line(request: HttpRequest, context: PurchaseOrderContext) -> Non
         part_id=part_id,
         quantity_ordered=quantity,
         unit_cost=unit_cost,
-        expected_delivery_date=request.POST.get("expected_delivery_date") or None,
+        expected_delivery_date=(
+            request.POST.get("expected_delivery_date")
+            or context.purchase_order.expected_delivery_date
+        ),
         notes=request.POST.get("line_notes", "").strip(),
         unit_cost_source=(request.POST.get("unit_cost_source") or "").strip(),
         unit_cost_confidence=(request.POST.get("unit_cost_confidence") or "").strip(),

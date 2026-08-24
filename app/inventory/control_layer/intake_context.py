@@ -123,6 +123,42 @@ class IntakeContext:
         return link
 
     # ------------------------------------------------------------------ #
+    # Session state & metadata verbs
+    # ------------------------------------------------------------------ #
+
+    def set_active_shipment(self, *, shipment_id: int | None, actor=None) -> IntakeSession:
+        session = self.session
+        if session.recording_locked_at is not None:
+            raise RecordingLocked(session_id=session.pk)
+        session.active_shipment_id = shipment_id
+        session.updated_by = actor
+        session.save(update_fields=["active_shipment", "updated_by", "updated_at"])
+        self._session = session
+        return session
+
+    def set_continues_session(self, *, session_id: int | None, actor=None) -> IntakeSession:
+        session = self.session
+        session.continues_session_id = session_id
+        session.updated_by = actor
+        session.save(update_fields=["continues_session", "updated_by", "updated_at"])
+        self._session = session
+        return session
+
+    def lock_recording(self, *, actor=None) -> IntakeSession:
+        """Lock recording on this session (§4.2). Idempotent safe."""
+        session = self.session
+        if session.recording_locked_at is not None:
+            return session
+        session.recording_locked_at = timezone.now()
+        session.recording_locked_by = actor
+        session.updated_by = actor
+        session.save(
+            update_fields=["recording_locked_at", "recording_locked_by", "updated_by", "updated_at"]
+        )
+        self._session = session
+        return session
+
+    # ------------------------------------------------------------------ #
     # Manual allocations (scan-engine-adjacent; Auto Intake uses its own
     # manager path via commit_auto_intake)
     # ------------------------------------------------------------------ #
@@ -138,6 +174,9 @@ class IntakeContext:
         notes: str = "",
         actor=None,
     ) -> ItemAllocation:
+        if self.session.recording_locked_at is not None:
+            raise RecordingLocked(session_id=self.intake_session_id)
+
         AllocationValidator.check_quantity_positive(quantity=quantity)
         AllocationValidator.check_serial_implies_unit_qty(
             serial_number=serial_number, quantity=quantity
@@ -178,6 +217,9 @@ class IntakeContext:
     ) -> list[ItemAllocation]:
         """Split one allocation row into good/rejected siblings — used when
         a scan-engine operator inspects a staged batch after the fact."""
+        if self.session.recording_locked_at is not None:
+            raise RecordingLocked(session_id=self.intake_session_id)
+
         allocation = ItemAllocation.objects.get(
             pk=allocation_id, intake_session=self.session
         )
@@ -188,9 +230,6 @@ class IntakeContext:
                     f"the original allocation's quantity ({allocation.quantity})."
                 ]
             )
-        # The serial rides onto the good sibling, so that sibling has to
-        # satisfy the serial => qty 1 invariant too (§6.2) — otherwise the
-        # new DB constraint rejects the write with a bare IntegrityError.
         if good_qty > 0:
             AllocationValidator.check_serial_implies_unit_qty(
                 serial_number=allocation.serial_number, quantity=good_qty
@@ -251,27 +290,47 @@ class IntakeContext:
         *,
         raw_payload: str,
         condition: str = AllocationCondition.GOOD,
+        serial_number_override: str = "",
         actor=None,
-    ) -> ItemAllocation:
-        """The scan entrypoint verb: parse the barcode, resolve the part,
-        validate serial uniqueness, size the quantity off `Part.qty_per_scan`
-        / `Part.sn_expected`, resolve (or stage) the target shipment line,
-        create the allocation, then run the FIFO cascade for that part.
-
-        A parse failure raises `BarcodeParseError` (an `InventoryValidationError`
-        subtype) rather than crashing — the presentation layer is expected to
-        catch it and fall back to manual entry via `create_manual_allocation`.
-
-        PHASE 2 REPLACES THE MATCHER. `IntakeMatchingManager.find_target_line`
-        predates the auto-association policy in §5.2 — it knows nothing about
-        the session's `active_shipment` and does not apply the over-allocation
-        cap. Until it is rewritten, a machine-made link is stamped
-        `AUTO_SINGLE_MATCH`; the `AUTO_ACTIVE_PACKAGE` flavor has no producer
-        yet because there is no active-shipment tie-breaker to produce it.
-        """
+    ) -> tuple[ItemAllocation | None, str]:
+        """The scan entrypoint verb: checks lock, handles barcode tokens
+        (`INTAKE-id`, `SHIP-id`) and reserved `CMDX` commands, otherwise
+        parses part SKU/serial, runs `AutoAssociationPolicy`, creates
+        allocation, and returns `(allocation_or_None, confirmation_message)`."""
         from app.parts.models import Part
 
-        sku, serial_number = IntakeMatchingManager.parse_barcode(raw_payload)
+        if self.session.recording_locked_at is not None:
+            raise RecordingLocked(session_id=self.intake_session_id)
+
+        raw = (raw_payload or "").strip()
+        if not raw:
+            raise InventoryValidationError(["Empty barcode payload."])
+
+        # 1. Barcode tokens (intake_portal_workflow.md §9.4)
+        token = barcode_tokens.parse_token(raw)
+        if token is not None:
+            kind, token_id = token
+            if kind == barcode_tokens.SHIPMENT_PREFIX:
+                self.set_active_shipment(shipment_id=token_id, actor=actor)
+                return None, f"Active shipment set to SHIP-{token_id}."
+            elif kind == barcode_tokens.SESSION_PREFIX:
+                raise InventoryValidationError(
+                    [f"Scanned session barcode INTAKE-{token_id} into the item field."]
+                )
+
+        # 2. Command namespace (intake_portal_workflow.md §6)
+        if ScanCommandHandler.is_command(raw):
+            msg = ScanCommandHandler.execute(
+                session=self.session,
+                payload=raw,
+                serial_number=serial_number_override,
+                actor=actor,
+            )
+            return None, msg
+
+        # 3. Item scan
+        sku, parsed_sn = IntakeMatchingManager.parse_barcode(raw)
+        serial_num = serial_number_override or parsed_sn
 
         try:
             part = Part.objects.get(part_number=sku)
@@ -279,43 +338,67 @@ class IntakeContext:
             raise InventoryValidationError([f"No part found for SKU '{sku}'."])
 
         IntakeMatchingManager.validate_serial_uniqueness(
-            part_id=part.pk, serial_number=serial_number, session_id=self.intake_session_id
+            part_id=part.pk, serial_number=serial_num, session_id=self.intake_session_id
         )
 
         quantity = Decimal("1") if part.sn_expected else part.qty_per_scan
         AllocationValidator.check_quantity_positive(quantity=quantity)
         AllocationValidator.check_serial_implies_unit_qty(
-            serial_number=serial_number, quantity=quantity
+            serial_number=serial_num, quantity=quantity
         )
 
-        target_line = IntakeMatchingManager.find_target_line(session=self.session, part=part)
+        line_id, link_source = AutoAssociationPolicy.decide(
+            session=self.session, part_id=part.pk, quantity=quantity
+        )
 
         with transaction.atomic():
-            allocation = ItemAllocation.objects.create(
-                intake_session=self.session,
-                shipment_line=target_line,
-                part=part,
-                quantity=quantity,
-                serial_number=serial_number,
-                composite_sn=f"{part.pk}:{serial_number}" if serial_number else "",
-                condition=condition,
-                intake_method=AllocationIntakeMethod.SCAN,
-                link_source=(
-                    AllocationLinkSource.AUTO_SINGLE_MATCH
-                    if target_line is not None
-                    else AllocationLinkSource.UNLINKED
-                ),
-                linked_at=timezone.now() if target_line is not None else None,
-                linked_by=actor if target_line is not None else None,
-                raw_payload=raw_payload,
-                created_by=actor,
-                updated_by=actor,
-            )
+            if line_id is not None:
+                dummy_alloc = ItemAllocation(
+                    intake_session=self.session,
+                    part=part,
+                    quantity=quantity,
+                    serial_number=serial_num,
+                    composite_sn=f"{part.pk}:{serial_num}" if serial_num else "",
+                    condition=condition,
+                    intake_method=AllocationIntakeMethod.SCAN,
+                    link_source=link_source,
+                    linked_at=timezone.now(),
+                    linked_by=actor,
+                    raw_payload=raw,
+                    created_by=actor,
+                    updated_by=actor,
+                )
+                dummy_alloc.save()
+                allocation = AllocationLinkManager.link(
+                    allocation=dummy_alloc,
+                    shipment_line_id=line_id,
+                    link_source=link_source,
+                    actor=actor,
+                )
+            else:
+                allocation = ItemAllocation.objects.create(
+                    intake_session=self.session,
+                    shipment_line=None,
+                    part=part,
+                    quantity=quantity,
+                    serial_number=serial_num,
+                    composite_sn=f"{part.pk}:{serial_num}" if serial_num else "",
+                    condition=condition,
+                    intake_method=AllocationIntakeMethod.SCAN,
+                    link_source=AllocationLinkSource.UNLINKED,
+                    raw_payload=raw,
+                    created_by=actor,
+                    updated_by=actor,
+                )
 
-            IntakeMatchingManager.execute_fifo_cascade(session=self.session, part=part)
-
-        allocation.refresh_from_db()
-        return allocation
+        msg = f"Counted {part.part_number} x{quantity}."
+        if allocation.shipment_line_id is None and line_id is None:
+            # Check if line existed but was full
+            from app.procurement.models import ShipmentLine
+            lines = AutoAssociationPolicy._manifest_lines(session=self.session, part_id=part.pk)
+            if lines and all(not AllocationLinkManager.fits(shipment_line_id=l.pk, quantity=quantity) for l in lines):
+                msg += " (Lines full — remaining units stay unlinked as excess)."
+        return allocation, msg
 
     # ------------------------------------------------------------------ #
     # Auto Intake portal (FD-13)
@@ -348,24 +431,20 @@ class IntakeContext:
         return cls(session.pk)
 
     # ------------------------------------------------------------------ #
-    # Close / cancel
+    # Post stock / close / cancel
     # ------------------------------------------------------------------ #
 
-    def close_session(self, *, actor=None, notes: str = "") -> IntakeSession:
-        self._session = IntakeCommitOrchestrator.close(
+    def post_stock(self, *, actor=None, notes: str = "") -> IntakeSession:
+        self._session = IntakeCommitOrchestrator.post_stock(
             session_id=self.intake_session_id, actor=actor, notes=notes
         )
         return self._session
 
-    def cancel_session(self, *, actor=None, reason: str = "") -> IntakeSession:
-        """Soft-delete sweep across every child row (§5.4): allocations and
-        shipment links retract together so nothing survives the session as a
-        live orphan.
+    def close_session(self, *, actor=None, notes: str = "") -> IntakeSession:
+        """Alias for post_stock for backwards compatibility."""
+        return self.post_stock(actor=actor, notes=notes)
 
-        Cancelled sessions drop out of every cross-session total — only LIVE
-        allocations from non-cancelled sessions count toward a line (§5.5,
-        "Scope of other sessions").
-        """
+    def cancel_session(self, *, actor=None, reason: str = "") -> IntakeSession:
         session = self.session
         IntakeSessionStateMachine.check(
             from_status=session.status, to_status=IntakeSessionStatus.CANCELLED
@@ -385,3 +464,4 @@ class IntakeContext:
             session.save(update_fields=["status", "notes", "updated_by", "updated_at"])
         self._session = session
         return session
+

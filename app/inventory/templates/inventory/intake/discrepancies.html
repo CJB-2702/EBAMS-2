@@ -1,0 +1,199 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}Discrepancy Report — INTAKE-{{ session.pk }}{% endblock %}
+{% block nav_intake %}is-active{% endblock %}
+
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_home' %}">Inventory</a></li>
+<li><a href="{% url 'inventory_intake_index' %}">Intake</a></li>
+<li class="is-active"><a href="#" aria-current="page">Discrepancies (INTAKE-{{ session.pk }})</a></li>
+{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/inventory.css' %}">
+
+<div class="page-hero">
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">warning</span></div>
+        <div>
+          <h1 class="page-title">Discrepancy Report — INTAKE-{{ session.pk }}</h1>
+          <p class="page-subtitle">Page 4 — Read-only discrepancy view: shortages, unlinked excess, rejected items, and graph closure.</p>
+        </div>
+      </div>
+      <div>
+        <a href="{% url 'inventory_intake_allocate' %}" class="button is-info is-outlined">
+          <span class="icon"><span class="material-icons">account_tree</span></span>
+          <span>Global Allocation Portal</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# Shortages Card #}
+<div class="card chamfer-card mb-5">
+  <header class="card-header">
+    <p class="card-header-title text-danger">
+      <span class="material-icons mr-2">remove_circle_outline</span>
+      Vendor Shortages (Expected &gt; Received)
+    </p>
+    <div class="card-header-icon">
+      <span class="tag is-danger is-light">{{ shortages|length }} shortages</span>
+    </div>
+  </header>
+  <div class="card-content p-0">
+    {% if shortages %}
+    <table class="table is-fullwidth is-striped is-size-7">
+      <thead>
+        <tr>
+          <th>Shipment</th>
+          <th>Line #</th>
+          <th>Part Number</th>
+          <th class="has-text-right">Expected</th>
+          <th class="has-text-right">Total Received</th>
+          <th class="has-text-right">Shortage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in shortages %}
+        <tr>
+          <td class="is-family-monospace font-weight-bold">{{ s.shipment_number }}</td>
+          <td>Line #{{ s.shipment_line_id }}</td>
+          <td class="is-family-monospace font-weight-bold">{{ s.part_number }}</td>
+          <td class="has-text-right is-family-monospace">{{ s.expected }}</td>
+          <td class="has-text-right is-family-monospace">{{ s.linked_total }}</td>
+          <td class="has-text-right is-family-monospace font-weight-bold text-danger">{{ s.shortage }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 p-4">No vendor shortages detected across these shipment lines.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# Unlinked Excess Card #}
+<div class="card chamfer-card mb-5">
+  <header class="card-header">
+    <p class="card-header-title text-warning">
+      <span class="material-icons mr-2">help_outline</span>
+      Unlinked Excess Items
+    </p>
+    <div class="card-header-icon">
+      <span class="tag is-warning is-light">{{ unlinked_allocations|length }} unlinked</span>
+    </div>
+  </header>
+  <div class="card-content p-0">
+    {% if unlinked_allocations %}
+    <table class="table is-fullwidth is-striped is-size-7">
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Quantity</th>
+          <th>Serial Number</th>
+          <th>Reason / State</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in unlinked_allocations %}
+        <tr>
+          <td class="is-family-monospace font-weight-bold">{{ u.part.part_number }}</td>
+          <td class="is-family-monospace font-weight-bold">{{ u.quantity }}</td>
+          <td class="is-family-monospace">{{ u.serial_number|default:"—" }}</td>
+          <td><span class="tag is-small is-warning is-light">Unlinked (Excess / Unmanifested)</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 p-4">No unlinked excess allocations on this session.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# Rejected Items Card #}
+<div class="card chamfer-card mb-5">
+  <header class="card-header">
+    <p class="card-header-title text-danger">
+      <span class="material-icons mr-2">report_problem</span>
+      Damaged / Rejected Items
+    </p>
+    <div class="card-header-icon">
+      <span class="tag is-danger is-light">{{ rejected_allocations|length }} rejected</span>
+    </div>
+  </header>
+  <div class="card-content p-0">
+    {% if rejected_allocations %}
+    <table class="table is-fullwidth is-striped is-size-7">
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Quantity</th>
+          <th>Serial Number</th>
+          <th>Line Match</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rejected_allocations %}
+        <tr>
+          <td class="is-family-monospace font-weight-bold">{{ r.part.part_number }}</td>
+          <td class="is-family-monospace font-weight-bold text-danger">{{ r.quantity }}</td>
+          <td class="is-family-monospace">{{ r.serial_number|default:"—" }}</td>
+          <td>
+            {% if r.shipment_line_id %}Line #{{ r.shipment_line_id }}{% else %}Unlinked{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 p-4">No damaged or rejected items recorded.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# Shipment Graph Closure Diagram Card (Rendered ONLY when reaching beyond session, §4.1) #}
+{% if closure.reaches_beyond_session %}
+<div class="card chamfer-card mb-5">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="material-icons mr-2">share</span>
+      Connected Graph Closure (Transitive Session / Shipment Bipartite Component)
+    </p>
+  </header>
+  <div class="card-content">
+    <p class="is-size-7 mb-3">
+      This intake session is connected through shared shipments to other live sessions in the system.
+    </p>
+    <div class="columns is-size-7">
+      <div class="column is-6">
+        <h5 class="subtitle is-6">Coupled Intake Sessions</h5>
+        <ul>
+          {% for sid in closure.session_ids %}
+          <li>
+            INTAKE-{{ sid }}
+            {% if sid == closure.origin_session_id %}<span class="tag is-small is-info">Current Session</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="column is-6">
+        <h5 class="subtitle is-6">Coupled Shipments</h5>
+        <ul>
+          {% for sh in closure_shipments %}
+          <li>
+            SHIP-{{ sh.id }} ({{ sh.number }})
+            {% if sh.is_own %}<span class="tag is-small is-light">Own Shipment</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
