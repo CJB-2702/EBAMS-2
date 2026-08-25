@@ -47,12 +47,13 @@
               <td class="is-family-monospace has-text-weight-bold">{{ session.session_number }}</td>
             </tr>
             <tr>
-              <th>Status</th>
-              <td><span class="tag is-success is-light">{{ session.get_status_display }}</span></td>
-            </tr>
-            <tr>
-              <th>Issue Type</th>
-              <td><span class="tag is-info is-light">{{ session.get_issue_type_display }}</span></td>
+              <th>Reason</th>
+              <td>
+                <span class="tag is-info is-light">{{ session.get_issue_reason_display }}</span>
+                {% if session.issue_reason_detail %}
+                <span class="has-text-grey is-size-7 ml-2">{{ session.issue_reason_detail }}</span>
+                {% endif %}
+              </td>
             </tr>
             <tr>
               <th>Authorized By</th>
@@ -60,11 +61,7 @@
             </tr>
             <tr>
               <th>Issued To</th>
-              <td>{{ session.issued_to.username|default:"—" }}</td>
-            </tr>
-            <tr>
-              <th>Target Asset</th>
-              <td>{{ session.issued_to_asset.name|default:"—" }}</td>
+              <td>{{ session.issued_to.get_full_name|default:session.issued_to.username }}</td>
             </tr>
             <tr>
               <th>Date Issued</th>

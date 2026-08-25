@@ -41,11 +41,6 @@ class AssetModel(AuditFieldsMixin):
         related_name="models",
     )
 
-    meter1_unit = models.CharField(max_length=100, null=True, blank=True)
-    meter2_unit = models.CharField(max_length=100, null=True, blank=True)
-    meter3_unit = models.CharField(max_length=100, null=True, blank=True)
-    meter4_unit = models.CharField(max_length=100, null=True, blank=True)
-
     is_active = models.BooleanField(default=True)
 
     # Two model-level activity surfaces, each lazily created on first write and

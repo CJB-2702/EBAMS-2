@@ -1,25 +1,57 @@
 <div id="assigned-personnel-container" class="column is-5">
-  <p class="label is-small">Assigned Crew</p>
+  <p class="label is-small">Assigned Crew Roster</p>
   {% if struct.crew %}
   <div class="dispatching-material-list">
     {% for person in struct.crew %}
-    <div class="card dispatching-material-row">
+    <div class="card dispatching-material-row p-3 mb-2" style="border: 1px solid var(--bulma-border, #dbdbdb);">
+      <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+        <div>
+          <strong>{{ person.user.get_full_name|default:person.user.username }}</strong>
+          <span class="has-text-grey is-size-7">({{ person.user.username }})</span>
+        </div>
+        <form method="post" action="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+              hx-post="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
+              hx-target="#personnel-card-container"
+              hx-swap="outerHTML"
+              hx-include="#personnel-search-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="remove">
+          <input type="hidden" name="crew_id" value="{{ person.pk }}">
+          <button type="submit" class="button is-small is-light is-danger p-1" aria-label="Remove assigned person" style="height: 1.8rem; width: 1.8rem;">
+            <span class="icon"><span class="material-icons" style="font-size:0.9rem;">close</span></span>
+          </button>
+        </form>
+      </div>
+      
       <form method="post" action="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
             hx-post="{% url 'dispatching_dispatch_crew_action' dispatch.pk %}"
             hx-target="#personnel-card-container"
             hx-swap="outerHTML"
-            hx-include="#personnel-search-form"
-            class="dispatching-remove-form">
+            hx-include="#personnel-search-form">
         {% csrf_token %}
-        <input type="hidden" name="action" value="remove">
+        <input type="hidden" name="action" value="update">
         <input type="hidden" name="crew_id" value="{{ person.pk }}">
-        <button type="submit" class="dispatching-remove-btn" aria-label="Remove assigned person"><span class="material-icons" aria-hidden="true">close</span></button>
+        <div class="field has-addons mb-0">
+          <div class="control">
+            <div class="select is-small">
+              <select name="role">
+                {% for r_val, r_lbl in personnel_roles %}
+                <option value="{{ r_val }}" {% if r_val == person.role %}selected{% endif %}>{{ r_lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="control is-expanded">
+            <input class="input is-small" type="text" name="notes" value="{{ person.notes }}" placeholder="Notes (e.g. lead driver, shift timing)…">
+          </div>
+          <div class="control">
+            <button type="submit" class="button is-small is-info" title="Save role & notes">
+              <span class="icon"><span class="material-icons" style="font-size:0.9rem;">save</span></span>
+              <span>Save</span>
+            </button>
+          </div>
+        </div>
       </form>
-      <div class="card-content p-2 pr-5 is-size-7">
-        <strong>{{ person.user.get_full_name|default:person.user.username }}</strong>
-        <span class="tag is-link is-light is-small ml-2">{{ person.get_role_display }}</span><br>
-        {% if person.notes %}<span class="has-text-grey-dark">{{ person.notes }}</span>{% else %}<span class="has-text-grey">No notes</span>{% endif %}
-      </div>
     </div>
     {% endfor %}
   </div>

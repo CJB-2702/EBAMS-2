@@ -156,16 +156,32 @@ def _handover_flags(request: HttpRequest, reservation: AssetReservation) -> dict
     may_self_service = can_self_service_for(request, reservation)
     may_verify = can_verify_handover(request)
 
-    user_out_ok = status == ReservationStatus.CONFIRMED
-    user_in_ok = status == ReservationStatus.CHECKED_OUT
-    verify_out_ok = status in (ReservationStatus.CONFIRMED, ReservationStatus.USER_CHECKED_OUT)
-    verify_in_ok = status in (ReservationStatus.CHECKED_OUT, ReservationStatus.USER_RETURNED)
+    checkout_verified = reservation.checkout_verified_at is not None
+    return_verified = reservation.return_verified_at is not None
 
-    # The verifier may not be the person who filed the user-side entry
-    # (VerifierDistinctPolicy) — surfaced here so the button is disabled with
-    # an explanation rather than failing on submit.
-    same_as_checkout_actor = reservation.user_checked_out_by_id == request.user.pk
-    same_as_checkin_actor = reservation.user_checked_in_by_id == request.user.pk
+    user_out_ok = status == ReservationStatus.CONFIRMED
+    user_in_ok = (
+        status in (ReservationStatus.CHECKED_OUT, ReservationStatus.USER_CHECKED_OUT)
+        and reservation.user_checked_in_by_id is None
+    )
+    verify_out_ok = (not checkout_verified) and status in (
+        ReservationStatus.CONFIRMED,
+        ReservationStatus.USER_CHECKED_OUT,
+        ReservationStatus.USER_RETURNED,
+    )
+    verify_in_ok = checkout_verified and (not return_verified) and status in (
+        ReservationStatus.CHECKED_OUT,
+        ReservationStatus.USER_RETURNED,
+    )
+
+    same_as_checkout_actor = (
+        reservation.user_checked_out_by_id == request.user.pk
+        and status == ReservationStatus.USER_CHECKED_OUT
+    )
+    same_as_checkin_actor = (
+        reservation.user_checked_in_by_id == request.user.pk
+        and status == ReservationStatus.USER_RETURNED
+    )
 
     def reason(permitted: bool, state_ok: bool, perm_text: str, state_text: str) -> str:
         if not permitted:
@@ -189,7 +205,7 @@ def _handover_flags(request: HttpRequest, reservation: AssetReservation) -> dict
         "user_checkin_reason": reason(
             may_self_service, user_in_ok,
             "You are not the accountable person on this booking.",
-            "Available once the dispatcher has verified checkout.",
+            "Available while the asset is checked out.",
         ),
         "verify_checkout_reason": (
             "You filed the user-side checkout — someone else must verify it."
@@ -197,7 +213,7 @@ def _handover_flags(request: HttpRequest, reservation: AssetReservation) -> dict
             else reason(
                 may_verify, verify_out_ok,
                 "Requires the Reservation — Verify permission.",
-                "Available while the booking is confirmed or user-checked-out.",
+                "Available while the booking is confirmed, user-checked-out, or user-returned.",
             )
         ),
         "verify_return_reason": (
@@ -206,7 +222,7 @@ def _handover_flags(request: HttpRequest, reservation: AssetReservation) -> dict
             else reason(
                 may_verify, verify_in_ok,
                 "Requires the Reservation — Verify permission.",
-                "Available once the asset is checked out.",
+                "Available once checkout has been verified by a dispatcher.",
             )
         ),
         "acting_on_behalf": may_self_service
@@ -321,7 +337,12 @@ def _picker_context(request: HttpRequest) -> dict:
             available = not conflicts
         rows.append({"asset": asset, "available": available, "conflicts": conflicts})
 
-    if request.GET.get("only_available") == "1" and start and end:
+    if "only_available_submitted" in request.GET:
+        only_available = request.GET.get("only_available") == "1"
+    else:
+        only_available = True
+
+    if only_available and start and end:
         rows = [row for row in rows if row["available"]]
 
     return {
@@ -329,7 +350,7 @@ def _picker_context(request: HttpRequest) -> dict:
         "asset_rows": rows,
         "models": AssetModel.objects.order_by("model_name"),
         "manufacturers": Manufacturer.objects.order_by("name"),
-        "only_available": request.GET.get("only_available") == "1",
+        "only_available": only_available,
         "window_checked": bool(start and end and start < end),
         "selected_asset_id": request.GET.get("asset_id", "").strip(),
     }

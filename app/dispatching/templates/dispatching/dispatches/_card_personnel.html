@@ -1,0 +1,144 @@
+<div class="card max-w-4xl mb-5" id="card-personnel" style="overflow: visible;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">group</span></span>
+      Assigned Personnel / Crew Roster <span class="tag is-light ml-2">{{ personnel_rows|length }}</span>
+    </div>
+  </div>
+  <div class="card-content" style="overflow: visible;">
+    {% if error_message_personnel %}
+    <div class="notification is-danger is-light p-2 mb-3 is-size-7">{{ error_message_personnel }}</div>
+    {% endif %}
+    <p class="has-text-grey is-size-7 mb-3">Search personnel and assign crew members to this dispatch draft. Assigned users will be linked via <code>DispatchPersonnel</code> upon creation.</p>
+    
+    <div class="columns is-variable is-4">
+      <!-- Left Column: Personnel Search Tool (Left Heavy - 70%) -->
+      <div class="column is-7">
+        <div class="box p-3 mb-3" style="background-color: var(--bulma-scheme-main-bis, #f5f5f5); border: 1px solid var(--bulma-border-weak, #dbdbdb);">
+          <p class="label is-small mb-2">
+            <span class="icon is-small"><span class="material-icons" style="font-size:1rem;">search</span></span>
+            Personnel Search Tool
+          </p>
+          <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                hx-target="#card-personnel" hx-swap="outerHTML" hx-include="#dispatch-create-main-form"
+                hx-trigger="keyup changed delay:300ms from:#personnel-user-search, keyup changed delay:300ms from:#personnel-skill-search, change from:#personnel-overlap-search">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="search_personnel">
+            <div class="field mb-2">
+              <label class="label is-size-7 mb-1">Username / Name</label>
+              <input id="personnel-user-search" class="input is-small" type="text" name="user_name" value="{{ username_q }}" placeholder="Search username or name…">
+            </div>
+            <div class="field mb-2">
+              <label class="label is-size-7 mb-1">Skills</label>
+              <input id="personnel-skill-search" class="input is-small" type="text" name="skill_name" value="{{ skill_q }}" placeholder="Search by skill (e.g. CDL)…">
+            </div>
+            <div class="field mb-2">
+              <label class="checkbox is-size-7">
+                <input id="personnel-overlap-search" type="checkbox" name="include_overlapping" value="1" {% if include_overlapping %}checked{% endif %}>
+                Include personnel with overlapping dispatches
+              </label>
+            </div>
+          </form>
+        </div>
+
+        <!-- Available Personnel Search Results -->
+        <p class="is-size-7 has-text-weight-semibold mb-2">Available Personnel ({{ available_users|length }})</p>
+        {% if available_users %}
+        <div style="max-height: 20rem; overflow-y: auto;">
+          {% for usr in available_users %}
+          <div class="card p-2 mb-2 is-size-7" style="border: 1px solid var(--bulma-border, #dbdbdb);">
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-personnel" hx-swap="outerHTML" hx-include="#dispatch-create-main-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_personnel">
+              <input type="hidden" name="user_id" value="{{ usr.pk }}">
+              <div class="is-flex is-justify-content-space-between is-align-items-start">
+                <div>
+                  <strong>{{ usr.get_full_name|default:usr.username }}</strong>
+                  <span class="has-text-grey">({{ usr.username }})</span>
+                  {% if usr.pk in overlapping_user_ids %}
+                  <span class="tag is-warning is-light is-small ml-1" title="Assigned to another active dispatch in this time window">Overlapping</span>
+                  {% endif %}
+                  {% if usr.active_skills_list %}
+                  <div class="tags mt-1 mb-0" style="gap: 0.2rem;">
+                    {% for cert in usr.active_skills_list %}
+                    <span class="tag is-info is-light is-small">{{ cert.skill.name }}</span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <button type="submit" class="button is-small is-link is-outlined ml-2">
+                  <span class="icon"><span class="material-icons" style="font-size:0.9rem;">person_add</span></span>
+                  <span>Assign</span>
+                </button>
+              </div>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="has-text-grey is-size-7">No available personnel matching search filters.</p>
+        {% endif %}
+      </div>
+
+      <!-- Right Column: Assigned Personnel / Crew Roster (30%) -->
+      <div class="column is-5">
+        <p class="label is-small">Assigned Personnel List</p>
+        {% if personnel_rows %}
+        <div class="dispatching-material-list">
+          {% for row in personnel_rows %}
+          <div class="card dispatching-material-row p-3 mb-2" style="border: 1px solid var(--bulma-border, #dbdbdb);">
+            <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+              <div>
+                <strong>{{ row.user.get_full_name|default:row.user.username }}</strong>
+                <span class="has-text-grey is-size-7">({{ row.user.username }})</span>
+              </div>
+              <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                    hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                    hx-target="#card-personnel" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="dispatching-remove-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove_personnel">
+                <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+                <button type="submit" class="button is-small is-danger is-light p-1" aria-label="Remove assigned person" style="height: 1.8rem; width: 1.8rem;">
+                  <span class="icon"><span class="material-icons" style="font-size:0.9rem;">close</span></span>
+                </button>
+              </form>
+            </div>
+            
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-personnel" hx-swap="outerHTML" hx-include="#dispatch-create-main-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_personnel">
+              <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <div class="field has-addons mb-0">
+                <div class="control">
+                  <div class="select is-small">
+                    <select name="role">
+                      {% for r_val, r_lbl in personnel_roles %}
+                      <option value="{{ r_val }}" {% if r_val == row.role %}selected{% endif %}>{{ r_lbl }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="control is-expanded">
+                  <input class="input is-small" type="text" name="notes" value="{{ row.notes }}" placeholder="Notes (e.g. lead driver, shift timing)…">
+                </div>
+                <div class="control">
+                  <button type="submit" class="button is-small is-info" title="Save role & notes">
+                    <span class="icon"><span class="material-icons" style="font-size:0.9rem;">save</span></span>
+                    <span>Save</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>

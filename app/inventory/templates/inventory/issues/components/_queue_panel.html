@@ -1,0 +1,77 @@
+{% comment %}
+Topnav issuance-queue popover body. Served by `inventory_issuance_queue_panel`
+for both the lazy first open (GET) and each remove (POST) — the whole panel
+re-renders rather than surgically deleting a row, because indexes shift when a
+line is removed and a stale index would delete the wrong line next click.
+
+The badge button is swapped out-of-band alongside it: the count lives in the
+topnav, outside this fragment's target, and would otherwise go stale until the
+next full page load.
+{% endcomment %}
+<button class="portal-sublink {% if draft %}is-active{% endif %}" type="button"
+        id="queue-btn-issuance" hx-swap-oob="true"
+        commandfor="queue-panel-issuance" command="toggle-popover"
+        title="Parts staged for issuance"
+        hx-get="{% url 'inventory_issuance_queue_panel' %}"
+        hx-target="#queue-panel-issuance"
+        hx-swap="innerHTML"
+        hx-trigger="click">
+  <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span>
+  Issuance
+  <span class="app-queue-count">{{ draft|length }}</span>
+</button>
+
+<div class="queue-popover-head">
+  <span class="queue-popover-title">
+    Receipt ({{ draft|length }}){% if recipient %} — {{ recipient.get_full_name|default:recipient.username }}{% endif %}
+  </span>
+  <button class="delete is-small" aria-label="close"
+          command="hide-popover" commandfor="queue-panel-issuance"></button>
+</div>
+
+{% for line in draft %}
+<div class="queue-popover-row">
+  <div class="queue-popover-row-main">
+    <div class="is-family-monospace has-text-weight-semibold">
+      {{ line.part.part_number|default:"—" }}
+    </div>
+    <div class="has-text-grey is-size-7">
+      {% if line.demand %}Demand #{{ line.demand.pk }}{% else %}<span class="has-text-danger">demand missing</span>{% endif %}
+      · qty {{ line.quantity }}
+      {% if line.balance %}
+        · {{ line.balance.storage_location.display_code|default:line.balance.room.room_name }}
+      {% else %}
+        · <span class="has-text-warning">no bin chosen</span>
+      {% endif %}
+    </div>
+  </div>
+  <form hx-post="{% url 'inventory_issuance_queue_panel' %}"
+        hx-target="#queue-panel-issuance" hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="remove">
+    <input type="hidden" name="index" value="{{ line.index }}">
+    <button class="button is-small is-light" type="submit" aria-label="Remove from queue" title="Remove from queue">
+      <span class="icon"><span class="material-icons" style="font-size:1rem;">close</span></span>
+    </button>
+  </form>
+</div>
+{% empty %}
+<p class="queue-popover-empty">
+  Nothing staged. Queue demands from the demand list or the issuance workspace.
+</p>
+{% endfor %}
+
+<div class="queue-popover-foot">
+  <a href="{% url 'inventory_issue_parts' %}" class="button is-small is-link is-fullwidth">
+    <span class="icon"><span class="material-icons" aria-hidden="true">open_in_new</span></span>
+    <span>Open the receipt</span>
+  </a>
+  {% if draft %}
+  <form hx-post="{% url 'inventory_issuance_queue_panel' %}"
+        hx-target="#queue-panel-issuance" hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="clear">
+    <button class="button is-small is-light" type="submit">Clear</button>
+  </form>
+  {% endif %}
+</div>

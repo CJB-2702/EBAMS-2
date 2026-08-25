@@ -82,21 +82,28 @@
 
   class InfoPopover extends HTMLElement {
     connectedCallback() {
-      if (this._ready) return;
-      this._ready = true;
-
-      // connectedCallback fires on the opening tag before the parser has
-      // attached this element's children (<detail>/<summary>). While the
-      // document is still parsing, a single microtask isn't a safe deferral
-      // point — chunked HTTP responses let the parser yield to microtasks
-      // mid-element — so wait for DOMContentLoaded instead. Elements
-      // inserted later (e.g. via HTMX swap) already have their children
-      // attached synchronously by the time connectedCallback runs.
+      if (this._mounted) return;
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => this._init(), { once: true });
+        document.addEventListener('DOMContentLoaded', () => this._tryInit(), { once: true });
       } else {
-        this._init();
+        this._tryInit();
       }
+    }
+
+    disconnectedCallback() {
+      this._observer?.disconnect();
+    }
+
+    _tryInit() {
+      if (this._mounted) return;
+      this._mounted = true;
+
+      if (!this._observer) {
+        this._observer = new MutationObserver(() => this._tryInit());
+        this._observer.observe(this, { childList: true, subtree: true });
+      }
+
+      this._init();
     }
 
     _init() {

@@ -5,12 +5,29 @@
 
 {% block content %}
 <div class="page-hero">
-  <div class="page-header">
-    <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">sync_alt</span></div>
-      <div>
-        <h1 class="page-title">Movements</h1>
-        <p class="page-subtitle">Every relocation of stock across warehouses, rooms, and storage locations.</p>
+  <div class="page-hero-body">
+    <div class="page-header">
+      <div class="page-header-title-wrap">
+        <div class="page-header-icon"><span class="material-icons" aria-hidden="true">sync_alt</span></div>
+        <div>
+          <h1 class="page-title">Movements</h1>
+          <p class="page-subtitle">Every relocation of stock across warehouses, rooms, and storage locations.</p>
+        </div>
+      </div>
+      <div class="page-header-actions">
+        <p class="has-text-grey is-size-7 mb-2" style="max-width:22rem;">
+          <strong>To initiate a movement:</strong> find the source in Active Inventory and select the stock row you want to move.
+        </p>
+        <div class="buttons">
+          <a href="{% url 'active_inventory_index' %}" class="button is-primary is-small">
+            <span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span>
+            <span>Initiate a Movement</span>
+          </a>
+          <a href="{% url 'inventory_bulk_movements_portal' %}" class="button is-light is-small">
+            <span class="icon"><span class="material-icons" aria-hidden="true">move_up</span></span>
+            <span>Bulk Movements</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>

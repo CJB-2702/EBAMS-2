@@ -1,0 +1,8 @@
+{% comment %}
+The creator's live source + filter state, carried on every Add so the host's
+redirect lands back where the user was rather than on the default source.
+Hosts that ignore these keys are unaffected.
+{% endcomment %}
+<input type="hidden" name="tab" value="{{ tab }}">
+<input type="hidden" name="q" value="{{ q }}">
+{% if pool_model_id %}<input type="hidden" name="pool_model_id" value="{{ pool_model_id }}">{% endif %}

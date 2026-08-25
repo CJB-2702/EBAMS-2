@@ -7,55 +7,64 @@
   /* Color palette for different card types */
   --event-details-border: var(--yellow-30);
   --action-steps-border: var(--cyan-50);
-  --blocker-border: var(--red-60);
-  --limitation-border: var(--red-70);
+  --blocker-border: var(--yellow-30);
+  --limitation-border: var(--magenta-70);
   --technician-border: var(--green-60);
   --part-demand-border: var(--orange-40);
 }
 
 /* ── Event Details Card - First card in main content area ──
-   Base styling only */
-.body-grid > div > .card:nth-of-type(1) {
+   Base styling only.
+   `:not(.body-rail)` scopes these two positional rules to the main 3fr
+   column only — .body-rail is itself a `.body-grid > div`, and without the
+   guard its own 2nd-position card (Asset Limitations) collided with the
+   Action Steps cyan rule below by nth-of-type coincidence, silently
+   outranking the rail's own yellow rule on specificity. See the Asset
+   Limitations block further down for the intended (now magenta) theme. */
+.body-grid > div:not(.body-rail) > .card:nth-of-type(1) {
   border-left: 5px solid var(--event-details-border);
 }
 
 /* ── Action Steps Card - Second card in main content area ──
    Cyan/Blue accent */
-.body-grid > div > .card:nth-of-type(2) {
+.body-grid > div:not(.body-rail) > .card:nth-of-type(2) {
   border-left: 5px solid var(--action-steps-border);
 }
 
-.body-grid > div > .card:nth-of-type(2) .card-header {
+.body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header {
   border-bottom: 2px solid var(--action-steps-border);
   font-weight: 700;
 }
 
-.body-grid > div > .card:nth-of-type(2) .card-header-title {
+.body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header-title {
   color: #0056a3;
   font-weight: 700;
 }
 
-.body-grid > div > .card:nth-of-type(2) .card-header-title .icon {
+.body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header-title .icon {
   color: var(--cyan-50);
 }
 
 @media (prefers-color-scheme: light) {
-  .body-grid > div > .card:nth-of-type(2) .card-header {
+  .body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header {
     background-color: rgba(17, 146, 255, 0.08);
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  .body-grid > div > .card:nth-of-type(2) .card-header {
+  .body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header {
     background-color: rgba(17, 146, 255, 0.12);
   }
-  .body-grid > div > .card:nth-of-type(2) .card-header-title {
+  .body-grid > div:not(.body-rail) > .card:nth-of-type(2) .card-header-title {
     color: var(--cyan-40);
   }
 }
 
 /* ── Blockers Card - First card in right rail ──
-   Red accent */
+   Yellow accent — blockers are a stoppage-in-progress, called out the same
+   way Event Details' informational yellow reads: attention-worthy but not
+   alarming the way red/magenta are reserved for the two degraded-state
+   domains below. */
 .body-rail > .mb-4:nth-of-type(1) .card {
   border-left: 5px solid var(--blocker-border);
 }
@@ -66,61 +75,63 @@
 }
 
 .body-rail > .mb-4:nth-of-type(1) .card .card-header-title {
-  color: #8b2e2e;
-  font-weight: 700;
-}
-
-.body-rail > .mb-4:nth-of-type(1) .card .card-header-title .icon {
-  color: var(--red-60);
-}
-
-@media (prefers-color-scheme: light) {
-  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
-    background-color: rgba(218, 46, 40, 0.08);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
-    background-color: rgba(218, 46, 40, 0.12);
-  }
-  .body-rail > .mb-4:nth-of-type(1) .card .card-header-title {
-    color: var(--red-40);
-  }
-}
-
-/* ── Asset Limitations Card - Second card in right rail ──
-   Yellow accent (same as Event Details) */
-.body-rail > .card:nth-of-type(2) {
-  border-left: 5px solid var(--event-details-border);
-}
-
-.body-rail > .card:nth-of-type(2) .card-header {
-  border-bottom: 2px solid var(--event-details-border);
-  font-weight: 700;
-}
-
-.body-rail > .card:nth-of-type(2) .card-header-title {
   color: #8b6914;
   font-weight: 700;
 }
 
-.body-rail > .card:nth-of-type(2) .card-header-title .icon {
-  color: var(--yellow-30);
+.body-rail > .mb-4:nth-of-type(1) .card .card-header-title .icon {
+  color: var(--blocker-border);
 }
 
 @media (prefers-color-scheme: light) {
-  .body-rail > .card:nth-of-type(2) .card-header {
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
     background-color: rgba(241, 194, 27, 0.08);
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  .body-rail > .card:nth-of-type(2) .card-header {
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header {
     background-color: rgba(241, 194, 27, 0.12);
   }
+  .body-rail > .mb-4:nth-of-type(1) .card .card-header-title {
+    color: var(--blocker-border);
+  }
+}
+
+/* ── Asset Limitations Card - Second card in right rail ──
+   Carbon magenta accent — matches the Capability limitations panel on the
+   work portal (see .card-theme-limitation below); the asset-degradation
+   domain gets one color everywhere it shows up. */
+.body-rail > .card:nth-of-type(2) {
+  border-left: 5px solid var(--magenta-60);
+}
+
+.body-rail > .card:nth-of-type(2) .card-header {
+  border-bottom: 2px solid var(--magenta-60);
+  font-weight: 700;
+}
+
+.body-rail > .card:nth-of-type(2) .card-header-title {
+  color: var(--magenta-80);
+  font-weight: 700;
+}
+
+.body-rail > .card:nth-of-type(2) .card-header-title .icon {
+  color: var(--magenta-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .body-rail > .card:nth-of-type(2) .card-header {
+    background-color: rgba(208, 38, 120, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .body-rail > .card:nth-of-type(2) .card-header {
+    background-color: rgba(208, 38, 120, 0.12);
+  }
   .body-rail > .card:nth-of-type(2) .card-header-title {
-    color: var(--yellow-30);
+    color: var(--magenta-40);
   }
 }
 
@@ -398,13 +409,52 @@
   background-color: var(--bulma-grey-light, #b5b5b5);
 }
 
-/* ── Page Hero Enhancement ──
-   Bottom and left borders only */
-
-.page-hero {
-  border-bottom: 2px solid var(--action-steps-border);
-  border-left: 5px solid var(--action-steps-border);
+/* ── Page Hero: status coloring ──
+   The left accent border is the app-identity bar (--app-accent, set in
+   maintenance/base.html) and is left alone here — it comes from the base
+   .page-hero rule in custom_css.css. This only tints the hero body and adds
+   a status badge when the event has closed out, so a technician can tell
+   at a glance whether they're looking at a completed or a failed event
+   without reading the small status tag.
+   Bulma's `-light` success/danger tokens are the same pastel value in both
+   themes (they're meant to sit under dark text, not to darken themselves
+   for a dark page), so a hero-sized block of it reads as a washed-out,
+   low-contrast slab in dark mode. Dark mode swaps to the Carbon
+   green-100/red-100 stops instead — near-black tints that read as "status
+   color" without fighting the rest of the dark chrome. */
+.page-hero.is-hero-complete {
+  background: var(--bulma-success-light);
 }
+
+.page-hero.is-hero-failed {
+  background: var(--bulma-danger-light);
+}
+
+@media (prefers-color-scheme: dark) {
+  .page-hero.is-hero-complete {
+    background: var(--green-100);
+  }
+  .page-hero.is-hero-failed {
+    background: var(--red-100);
+  }
+}
+
+.hero-status-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  align-self: center;
+  padding: 0.6rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--bulma-scheme-main);
+  border: 2px solid currentColor;
+}
+.hero-status-note.is-complete { color: var(--bulma-success-light-invert); }
+.hero-status-note.is-failed { color: var(--bulma-danger-light-invert); }
 
 /* ── Billable Hours Inline Card Enhancement ──
    The nested card inside Event Details card - base styling only */
@@ -948,78 +998,128 @@
   opacity: 0.7;
 }
 
-/* ── Blockers Card: Conditional Red Styling ────────────────────────────────
-   When there are active blockers, style the card with a red accent to
-   immediately draw attention to work stoppages. */
+/* ── Blockers Card: Carbon Yellow Theme ────────────────────────────────────
+   Applied unconditionally (see work.html) rather than only while a blocker
+   is active, so the panel reads as "this is the blockers domain" the same
+   way the Capability limitations panel below always reads magenta. */
 
 .blockers-card-active {
-  border-left: 5px solid var(--red-60);
+  border-left: 5px solid var(--blocker-border);
 }
 
 .blockers-card-active > .card-header {
-  border-bottom: 2px solid var(--red-60);
+  border-bottom: 2px solid var(--blocker-border);
   font-weight: 700;
 }
 
 .blockers-card-active > .card-header .card-header-title {
-  color: #8b2e2e;
-  font-weight: 700;
-}
-
-.blockers-card-active > .card-header .card-header-title .icon {
-  color: var(--red-60);
-}
-
-@media (prefers-color-scheme: light) {
-  .blockers-card-active > .card-header {
-    background-color: rgba(218, 46, 40, 0.08);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .blockers-card-active > .card-header {
-    background-color: rgba(218, 46, 40, 0.12);
-  }
-  .blockers-card-active > .card-header .card-header-title {
-    color: var(--red-40);
-  }
-}
-
-/* ── Capability Limitations Card: Conditional Yellow Styling ─────────────────
-   When there are active capability limitations, style the card with a yellow
-   accent to highlight reduced asset functionality. */
-
-.limitations-card-active {
-  border-left: 5px solid var(--yellow-30);
-}
-
-.limitations-card-active > .card-header {
-  border-bottom: 2px solid var(--yellow-30);
-  font-weight: 700;
-}
-
-.limitations-card-active > .card-header .card-header-title {
   color: #8b6914;
   font-weight: 700;
 }
 
-.limitations-card-active > .card-header .card-header-title .icon {
-  color: var(--yellow-30);
+.blockers-card-active > .card-header .card-header-title .icon {
+  color: var(--blocker-border);
 }
 
 @media (prefers-color-scheme: light) {
-  .limitations-card-active > .card-header {
+  .blockers-card-active > .card-header {
     background-color: rgba(241, 194, 27, 0.08);
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  .limitations-card-active > .card-header {
+  .blockers-card-active > .card-header {
     background-color: rgba(241, 194, 27, 0.12);
   }
-  .limitations-card-active > .card-header .card-header-title {
-    color: var(--yellow-30);
+  .blockers-card-active > .card-header .card-header-title {
+    color: var(--blocker-border);
   }
+}
+
+/* ── Capability Limitations: Carbon Magenta Theme ─────────────────────────
+   Limitations are their own domain (the ASSET is degraded) distinct from
+   blockers (work is stopped, themed red/warning), so the card, its active
+   state, the top banner, dialogs, and the primary limitation verbs all share
+   one magenta accent — magenta-60 in light mode, magenta-40/50 in dark,
+   matching the red-60/dark-red-40 pattern the blockers card already uses. */
+
+.limitations-card-active {
+  border-left: 5px solid var(--magenta-60);
+}
+
+.limitations-card-active > .card-header {
+  border-bottom: 2px solid var(--magenta-60);
+  font-weight: 700;
+}
+
+.limitations-card-active > .card-header .card-header-title {
+  color: var(--magenta-80);
+  font-weight: 700;
+}
+
+.limitations-card-active > .card-header .card-header-title .icon {
+  color: var(--magenta-60);
+}
+
+@media (prefers-color-scheme: light) {
+  .limitations-card-active > .card-header {
+    background-color: rgba(208, 38, 120, 0.08);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .limitations-card-active > .card-header {
+    background-color: rgba(208, 38, 120, 0.12);
+  }
+  .limitations-card-active > .card-header .card-header-title {
+    color: var(--magenta-40);
+  }
+}
+
+/* Full-width "Asset capability is limited" banner (detail.html, work.html)
+   and the two limitation dialogs — same magenta identity as the card above,
+   built as its own notification/button variant since Bulma has no built-in
+   magenta modifier. */
+.notification.is-limitation {
+  background-color: rgba(208, 38, 120, 0.10);
+  border-left: 4px solid var(--magenta-60);
+  color: var(--magenta-90);
+}
+@media (prefers-color-scheme: dark) {
+  .notification.is-limitation {
+    background-color: rgba(208, 38, 120, 0.16);
+    color: var(--magenta-20);
+  }
+}
+
+.button.is-limitation {
+  background-color: var(--magenta-60);
+  border-color: transparent;
+  color: #fff;
+}
+.button.is-limitation:hover {
+  background-color: var(--magenta-70);
+}
+.button.is-limitation[disabled] {
+  background-color: var(--magenta-60);
+  opacity: 0.5;
+}
+@media (prefers-color-scheme: dark) {
+  .button.is-limitation {
+    background-color: var(--magenta-50);
+    color: var(--magenta-100);
+  }
+  .button.is-limitation:hover {
+    background-color: var(--magenta-40);
+  }
+  .button.is-limitation[disabled] {
+    background-color: var(--magenta-50);
+  }
+}
+
+#event-limitation-dialog .card-header,
+#limitation-close-dialog .card-header {
+  border-left: 4px solid var(--magenta-60);
 }
 
 /* ── Assigned Staff Card ────────────────────────────────────────────────────

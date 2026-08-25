@@ -46,6 +46,13 @@ PERM_ISSUE = "inventory.can_issue_parts"
 #: codename on `Warehouse.Meta.permissions`, mirroring `PERM_INTAKE`'s shape.
 PERM_AUDIT = "inventory.can_audit_stock"
 
+#: Storeroom-designer port — creating/editing/retiring warehouses, rooms, and
+#: their XY/Z locations, plus uploading layout SVGs. The legacy app gated its
+#: storeroom designer only on `@require_any_module_role('supply')` (and half
+#: its routes on nothing but `@login_required`); this port puts every write
+#: behind the app's own `can_manage_topography` codename.
+PERM_TOPOGRAPHY = "inventory.can_manage_topography"
+
 
 def can_receive(request: HttpRequest) -> bool:
     return request.user.has_perm(PERM_RECEIVE)
@@ -105,6 +112,20 @@ def require_audit(request: HttpRequest) -> None:
     if not can_audit(request):
         raise PermissionDenied(
             "Auditing stock requires the 'can_audit_stock' permission."
+        )
+
+
+def can_manage_topography(request: HttpRequest) -> bool:
+    return request.user.has_perm(PERM_TOPOGRAPHY)
+
+
+def require_manage_topography(request: HttpRequest) -> None:
+    """Gates every write on the warehouse CRUD pages and both tiers of the
+    layout builder."""
+    if not can_manage_topography(request):
+        raise PermissionDenied(
+            "Managing warehouses and storage locations requires the "
+            "'can_manage_topography' permission."
         )
 
 

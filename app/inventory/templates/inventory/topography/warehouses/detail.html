@@ -11,17 +11,27 @@
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">store</span></div>
       <div>
-        <h1 class="page-title">{{ warehouse.name }}</h1>
+        <h1 class="page-title">
+          {{ warehouse.name }}
+          {% if not warehouse.is_active %}<span class="tag is-warning is-light is-small">Retired</span>{% endif %}
+        </h1>
         <p class="page-subtitle is-family-monospace">{{ warehouse.code }} · {{ warehouse.division_name }}</p>
       </div>
     </div>
+    {% if can_manage %}
+    <div class="page-header-actions">
+      <a class="button is-small is-link is-light" href="{% url 'inventory_warehouse_edit' pk=warehouse.warehouse_id %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit warehouse</span>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </div>
 
 <div class="body-grid has-rail">
   <div>
 
-    {# Rooms — each row renders its own current_layout thumbnail inline, no separate preview endpoint (FD-24/FD-29). #}
+    {# ── Rooms — each row renders its own current_layout thumbnail inline, no separate preview endpoint (FD-24/FD-29). ── #}
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">meeting_room</span></span>Rooms</div></div>
       <div class="card-content">
@@ -31,10 +41,12 @@
           <div class="column is-4">
             <div class="box is-radiusless">
               <p class="has-text-weight-semibold">
-                <a href="{% url 'inventory_room_detail' pk=entry.room.room_id %}">{{ entry.room.room_name }}</a>
+                <a class="has-text-link" href="{% url 'inventory_room_detail' pk=entry.room.room_id %}">{{ entry.room.room_name }}</a>
                 {% if entry.room.is_intake_room %}<span class="icon is-small has-text-grey" title="Protected Intake Room"><span class="material-icons" style="font-size:1rem;">lock</span></span>{% endif %}
               </p>
-              <p class="is-size-7 has-text-grey">{{ entry.room.room_location_count }} location{{ entry.room.room_location_count|pluralize }}</p>
+              <p class="is-size-7">
+                <a class="has-text-link" href="{% url 'inventory_room_layout' pk=entry.room.room_id %}">{{ entry.room.room_location_count }} location{{ entry.room.room_location_count|pluralize }}</a>
+              </p>
               <div class="room-thumbnail mt-2">
                 {% if entry.thumbnail_svg %}
                   {{ entry.thumbnail_svg|safe }}
@@ -42,9 +54,14 @@
                   <p class="has-text-grey is-size-7 p-2">No layout uploaded.</p>
                 {% endif %}
               </div>
-              <a class="button is-small is-fullwidth is-link is-light mt-2" href="{% url 'inventory_room_layout' pk=entry.room.room_id %}">
-                <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Layout builder</span>
-              </a>
+              <div class="buttons are-small mt-2">
+                <a class="button is-small is-link is-light" href="{% url 'inventory_room_layout' pk=entry.room.room_id %}">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">grid_on</span></span><span>Locations &amp; layout</span>
+                </a>
+                {% if can_manage %}
+                <a class="button is-small is-ghost" href="{% url 'inventory_room_edit' pk=entry.room.room_id %}">Edit</a>
+                {% endif %}
+              </div>
             </div>
           </div>
           {% endfor %}
@@ -55,13 +72,67 @@
       </div>
     </div>
 
+    {# ── Add-room form lives inline, mirroring the legacy index page's create card. ── #}
+    <div class="card mt-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_business</span></span>Add a room</div></div>
+      <div class="card-content">
+        {% if not can_manage %}
+        <p class="has-text-grey is-size-7">You do not have permission to manage topography.</p>
+        {% elif not warehouse.is_active %}
+        <p class="has-text-grey is-size-7">This warehouse is retired. Reactivate it before adding rooms.</p>
+        {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_room">
+          <div class="field">
+            <label class="label is-small" for="room-name">Room name <span class="has-text-danger">*</span></label>
+            <div class="control"><input class="input is-small" id="room-name" name="room_name" placeholder="e.g. Main Storeroom" required></div>
+          </div>
+          <div class="field">
+            <label class="label is-small" for="room-desc">Description</label>
+            <div class="control"><input class="input is-small" id="room-desc" name="description"></div>
+          </div>
+          <div class="control">
+            <button class="button is-small is-link" type="submit">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add room</span>
+            </button>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">archive</span></span>Retired rooms</div></div>
+      <div class="card-content">
+        {% if retired_rooms %}
+        <ul class="is-size-7">
+          {% for room in retired_rooms %}
+          <li>
+            {% if can_manage %}<a class="has-text-link" href="{% url 'inventory_room_edit' pk=room.room_id %}">{{ room.room_name }}</a>{% else %}{{ room.room_name }}{% endif %}
+            — {{ room.room_location_count }} location{{ room.room_location_count|pluralize }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="has-text-grey is-size-7">None.</p>
+        {% endif %}
+        {% if retired_rooms and can_manage %}
+        <p class="help mt-2">Open a retired room to reactivate it.</p>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 
   <div>
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Warehouse facts</div></div>
       <div class="card-content">
-        <p class="is-size-7"><strong>Address</strong><br>{{ warehouse.address|default:"—" }}</p>
+        <p class="is-size-7"><strong>Status</strong><br>{% if warehouse.is_active %}Active{% else %}Retired{% endif %}</p>
+        <p class="is-size-7 mt-2"><strong>Division</strong><br>{{ warehouse.division_name }}</p>
+        <p class="is-size-7 mt-2"><strong>Address</strong><br>{{ warehouse.address|default:"—" }}</p>
+        <p class="is-size-7 mt-2"><strong>Rooms</strong><br>{{ rooms|length }} active, {{ retired_rooms|length }} retired</p>
       </div>
     </div>
   </div>

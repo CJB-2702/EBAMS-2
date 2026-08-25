@@ -20,7 +20,7 @@ from app.inventory.models.intake.intake_session_shipment_link import (
     IntakeSessionShipmentLink,
 )
 from app.inventory.models.intake.item_allocation import ItemAllocation
-from app.inventory.models.issuance.enums import IssueSessionStatus, IssueType
+from app.inventory.models.issuance.enums import IssueReason, IssueType
 from app.inventory.models.issuance.part_issue import PartIssue
 from app.inventory.models.issuance.part_issue_session import PartIssueSession
 from app.inventory.models.movements.enums import MovementType
@@ -47,7 +47,7 @@ __all__ = [
     "IntakeSessionMethod",
     "IntakeSessionShipmentLink",
     "IntakeSessionStatus",
-    "IssueSessionStatus",
+    "IssueReason",
     "IssueType",
     "InventoryAuditLog",
     "ItemAllocation",

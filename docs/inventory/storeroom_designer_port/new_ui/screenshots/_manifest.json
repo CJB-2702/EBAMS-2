@@ -1,0 +1,66 @@
+[
+  {
+    "slug": "00_warehouse_index",
+    "path": "/inventory/warehouses/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/warehouses/",
+    "title": "Warehouses",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "01_warehouse_create",
+    "path": "/inventory/warehouses/create/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/warehouses/create/",
+    "title": "New warehouse",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "02_warehouse_1_detail",
+    "path": "/inventory/warehouse/1/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/warehouse/1/",
+    "title": "North Distribution Center",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "03_warehouse_1_edit",
+    "path": "/inventory/warehouse/1/edit/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/warehouse/1/edit/",
+    "title": "Edit North Distribution Center",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "04_room_7_detail",
+    "path": "/inventory/room/7/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/room/7/",
+    "title": "Spatial Map Demo",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "05_room_7_layout_builder",
+    "path": "/inventory/room/7/layout/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/room/7/layout/",
+    "title": "Spatial Map Demo \u2014 Layout Builder",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "06_room_2_edit",
+    "path": "/inventory/room/2/edit/",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/room/2/edit/",
+    "title": "Edit Racking",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  },
+  {
+    "slug": "07_warehouse_index_all",
+    "path": "/inventory/warehouses/?show=all",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8000/inventory/warehouses/?show=all",
+    "title": "Warehouses",
+    "excerpt": "CJB-DIODE | event | Events | \u25be | directions_car | Dispatching | \u25be | build | Maintenance | \u25be | Assets | \u25be | tune | Configuration | \u25be | Parts | \u25be | shopping_cart | Procurement | \u25be | Inventory | \u25be | settings | Administration | \u25be | extension | Extensions | \u25be | GE | generic_admin | \u238b Sign out |  | INVENTORY |  | Overview | inventory | Active Inventory | location_on | View Inventory GUI | move_to_inbox | Intake | assignment_turned_in | Putaway | sync_alt | Movements | Issue Parts |  | TOPOGRAPHY"
+  }
+]

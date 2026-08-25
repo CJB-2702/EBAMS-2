@@ -28,6 +28,9 @@ from app.procurement.control_layer.managers.graph_summary_manager import (
 from app.procurement.control_layer.managers.part_demand_quantity_manager import (
     PartDemandQuantityManager,
 )
+from app.procurement.control_layer.managers.purchase_order_asset_link_manager import (
+    PurchaseOrderAssetLinkManager,
+)
 from app.procurement.control_layer.managers.part_demand_state_manager import (
     PartDemandStateManager,
 )
@@ -212,6 +215,15 @@ class PurchaseOrderDemandLinkManager:
         # exists for either demand on that line. That is a real consequence of
         # an ordinary Buyer action, and it must be said at the moment it
         # happens rather than discovered later in a report.
+        # This demand may have arrived carrying an event that knows about
+        # assets — a maintenance job, a dispatch. Mirror that asset set onto
+        # the PO's own event so the order can say what kit it is for. Snapshot
+        # semantics, refreshed on allocation only; see the manager's docstring
+        # for the drift this accepts.
+        PurchaseOrderAssetLinkManager.refresh(
+            purchase_order=purchase_order, actor=actor
+        )
+
         active_count = line.allocations.filter(
             is_active=True, deleted_at__isnull=True
         ).count()

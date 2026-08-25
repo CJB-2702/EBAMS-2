@@ -199,4 +199,92 @@ class DispatchLifecycleTestCase(DispatchingTestCase):
             HTTP_HX_REQUEST="true",
         )
         self.assertEqual(res_add.status_code, 200)
-        self.assertContains(res_add, "Personnel Selection / Crew Roster")
+        self.assertContains(res_add, "Assigned Crew Roster")
+
+    def test_dispatch_create_personnel_actions_htmx(self):
+        from app.administration.auth_session import SESSION_KEY_DOMAIN_IDS, SESSION_KEY_PERMISSION_CODENAMES
+        from app.administration.models import UserDomain
+        from django.contrib.auth.models import Permission
+        from django.urls import reverse
+
+        p1 = Permission.objects.get(codename="dispatch_raise")
+        self.actor.user_permissions.add(p1)
+        UserDomain.objects.create(user=self.actor, domain=self.domain, is_active=True)
+
+        self.client.force_login(self.actor)
+        session = self.client.session
+        session[SESSION_KEY_DOMAIN_IDS] = [self.domain.pk]
+        session[SESSION_KEY_PERMISSION_CODENAMES] = sorted(self.actor.get_all_permissions())
+        session.save()
+
+        url_create = reverse("dispatching_dispatch_create")
+
+        # Test search_personnel action via HTMX
+        res_search = self.client.post(
+            url_create,
+            {"action": "search_personnel", "user_name": self.actor.username},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(res_search.status_code, 200)
+        self.assertContains(res_search, "Assigned Personnel / Crew Roster")
+        self.assertContains(res_search, self.actor.username)
+
+        # Test add_personnel action via HTMX
+        res_add = self.client.post(
+            url_create,
+            {"action": "add_personnel", "user_id": str(self.actor.pk), "role": "driver", "notes": "Primary Driver"},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(res_add.status_code, 200)
+        self.assertContains(res_add, "Primary Driver")
+
+        # Retrieve draft temp_id from session to test update_personnel action
+        session = self.client.session
+        draft = session.get("dispatch_create_draft", {})
+        personnel = draft.get("personnel", [])
+        self.assertEqual(len(personnel), 1)
+        temp_id = personnel[0]["temp_id"]
+
+        # Test update_personnel action via HTMX
+        res_update = self.client.post(
+            url_create,
+            {"action": "update_personnel", "temp_id": temp_id, "role": "crew_chief", "notes": "Updated Crew Chief Notes"},
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(res_update.status_code, 200)
+        self.assertContains(res_update, "Updated Crew Chief Notes")
+        self.assertContains(res_update, "Crew Chief")
+
+    def test_dispatch_create_full_submission(self):
+        from app.administration.auth_session import SESSION_KEY_DOMAIN_IDS, SESSION_KEY_PERMISSION_CODENAMES
+        from app.administration.models import UserDomain
+        from django.contrib.auth.models import Permission
+        from django.urls import reverse
+
+        p1 = Permission.objects.get(codename="dispatch_raise")
+        self.actor.user_permissions.add(p1)
+        UserDomain.objects.create(user=self.actor, domain=self.domain, is_active=True)
+
+        self.client.force_login(self.actor)
+        session = self.client.session
+        session[SESSION_KEY_DOMAIN_IDS] = [self.domain.pk]
+        session[SESSION_KEY_PERMISSION_CODENAMES] = sorted(self.actor.get_all_permissions())
+        session.save()
+
+        url_create = reverse("dispatching_dispatch_create")
+        start_str = (timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M")
+        end_str = (timezone.now() + timedelta(days=1, hours=4)).strftime("%Y-%m-%dT%H:%M")
+
+        res = self.client.post(
+            url_create,
+            {
+                "domain_id": str(self.domain.pk),
+                "asset_class_id": str(self.asset_class.pk),
+                "desired_start": start_str,
+                "desired_end": end_str,
+                "title": "Full Submission Test Dispatch",
+                "activity_location": "",
+            },
+        )
+        self.assertEqual(res.status_code, 302)
+        self.assertIn("/edit", res.url)

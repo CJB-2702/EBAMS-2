@@ -1,0 +1,311 @@
+/* Events Management — Handrolled Filter Panel & Multi-Select Chips.
+   Uses carbon color scale & chamfered design tokens per harness/UX_UI. */
+
+:root {
+  --ef-accent: var(--app-color-events, #2563eb);
+}
+
+.ef-panel {
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border-weak);
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+@supports (corner-shape: bevel) {
+  .ef-panel, .ef-search, .ef-chip, .ef-btn {
+    corner-shape: bevel;
+  }
+  .ef-panel { border-radius: var(--app-chamfer, 0px); }
+  .ef-search { border-radius: var(--app-chamfer-nested, 0px); }
+  .ef-chip, .ef-btn { border-radius: var(--app-chamfer-nested-2, 0px); }
+}
+
+.ef-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1.2rem;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.08), transparent 130%);
+  border-bottom: 1px solid var(--bulma-border-weak);
+}
+
+.ef-panel-head-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ef-panel-head-title .material-icons {
+  color: var(--ef-accent);
+  font-size: 1.2rem;
+}
+.ef-panel-head h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ef-panel-body {
+  padding: 1.1rem 1.2rem 1.3rem;
+}
+
+/* ── Top Bar: Search & Select Dropdowns ── */
+.ef-toprow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+
+.ef-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ef-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bulma-text-weak);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ef-input,
+.ef-select select {
+  border: 1px solid var(--bulma-border-weak);
+  background: var(--bulma-scheme-main-bis);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
+  color: var(--bulma-text);
+  width: 100%;
+  outline: none;
+  transition: border-color 100ms ease, box-shadow 100ms ease;
+}
+.ef-input:focus,
+.ef-select select:focus {
+  border-color: var(--ef-accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* ── Section Dividers & Headers ── */
+.ef-section {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--bulma-border-weak);
+}
+
+.ef-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Multi-Select Chip Row ── */
+.ef-chiprow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ef-chip-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.ef-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border: 1px solid var(--bulma-border-weak);
+  background: var(--bulma-scheme-main-bis);
+  color: var(--bulma-text-weak);
+  cursor: pointer;
+  user-select: none;
+  transition: all 120ms ease;
+  line-height: 1.2;
+}
+
+.ef-chip .material-icons {
+  font-size: 0.9rem;
+  visibility: hidden;
+  width: 0;
+  overflow: hidden;
+  transition: width 120ms ease, visibility 120ms ease, margin 120ms ease;
+  margin-right: -0.2rem;
+}
+
+.ef-chip:hover {
+  border-color: var(--bulma-text-weak);
+  color: var(--bulma-text);
+  background: var(--bulma-scheme-main-ter);
+}
+
+.ef-chip-input:focus-visible + .ef-chip {
+  outline: 2px solid var(--ef-accent);
+  outline-offset: 1px;
+}
+
+.ef-chip-input:checked + .ef-chip {
+  background: var(--chip-bg, rgba(37, 99, 235, 0.12));
+  border-color: var(--chip-border, var(--ef-accent));
+  color: var(--chip-color, #1d4ed8);
+}
+
+.ef-chip-input:checked + .ef-chip .material-icons {
+  visibility: visible;
+  width: 0.9rem;
+  margin-right: 0;
+}
+
+/* ── Status Chip Tones ── */
+.ef-chip-input:checked + .ef-chip[data-tone="planned"] {
+  --chip-bg: rgba(37, 99, 235, 0.14);
+  --chip-border: #2563eb;
+  --chip-color: #1d4ed8;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="in_progress"] {
+  --chip-bg: rgba(2, 132, 199, 0.14);
+  --chip-border: #0284c7;
+  --chip-color: #0369a1;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="complete"] {
+  --chip-bg: rgba(16, 185, 129, 0.14);
+  --chip-border: #10b981;
+  --chip-color: #047857;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="cancelled"] {
+  --chip-bg: rgba(100, 116, 139, 0.14);
+  --chip-border: #64748b;
+  --chip-color: #334155;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="failed"] {
+  --chip-bg: rgba(239, 68, 68, 0.14);
+  --chip-border: #ef4444;
+  --chip-color: #b91c1c;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="skipped"] {
+  --chip-bg: rgba(156, 163, 175, 0.14);
+  --chip-border: #9ca3af;
+  --chip-color: #4b5563;
+}
+.ef-chip-input:checked + .ef-chip[data-tone="blocked"] {
+  --chip-bg: rgba(245, 158, 11, 0.14);
+  --chip-border: #f59e0b;
+  --chip-color: #b45309;
+}
+
+/* ── Event Type Chip Tones ── */
+.ef-chip-input:checked + .ef-chip[data-type="maintenance"] {
+  --chip-bg: rgba(245, 158, 11, 0.14);
+  --chip-border: #f59e0b;
+  --chip-color: #b45309;
+}
+.ef-chip-input:checked + .ef-chip[data-type="dispatching"] {
+  --chip-bg: rgba(99, 102, 241, 0.14);
+  --chip-border: #6366f1;
+  --chip-color: #4338ca;
+}
+.ef-chip-input:checked + .ef-chip[data-type="reservation"] {
+  --chip-bg: rgba(168, 85, 247, 0.14);
+  --chip-border: #a855f7;
+  --chip-color: #7e22ce;
+}
+.ef-chip-input:checked + .ef-chip[data-type="inventory"] {
+  --chip-bg: rgba(16, 185, 129, 0.14);
+  --chip-border: #10b981;
+  --chip-color: #047857;
+}
+.ef-chip-input:checked + .ef-chip[data-type="procurement"] {
+  --chip-bg: rgba(20, 184, 166, 0.14);
+  --chip-border: #14b8a6;
+  --chip-color: #0f766e;
+}
+.ef-chip-input:checked + .ef-chip[data-type="administration"] {
+  --chip-bg: rgba(244, 63, 94, 0.14);
+  --chip-border: #f43f5e;
+  --chip-color: #be123c;
+}
+.ef-chip-input:checked + .ef-chip[data-type="asset_management"] {
+  --chip-bg: rgba(2, 132, 199, 0.14);
+  --chip-border: #0284c7;
+  --chip-color: #0369a1;
+}
+.ef-chip-input:checked + .ef-chip[data-type="generic"],
+.ef-chip-input:checked + .ef-chip[data-type="system"] {
+  --chip-bg: rgba(100, 116, 139, 0.14);
+  --chip-border: #64748b;
+  --chip-color: #334155;
+}
+
+/* ── Dark Mode Overrides ── */
+@media (prefers-color-scheme: dark) {
+  .ef-chip-input:checked + .ef-chip[data-tone="planned"] { --chip-color: #60a5fa; }
+  .ef-chip-input:checked + .ef-chip[data-tone="in_progress"] { --chip-color: #38bdf8; }
+  .ef-chip-input:checked + .ef-chip[data-tone="complete"] { --chip-color: #34d399; }
+  .ef-chip-input:checked + .ef-chip[data-tone="cancelled"] { --chip-color: #94a3b8; }
+  .ef-chip-input:checked + .ef-chip[data-tone="failed"] { --chip-color: #f87171; }
+  .ef-chip-input:checked + .ef-chip[data-tone="skipped"] { --chip-color: #d1d5db; }
+  .ef-chip-input:checked + .ef-chip[data-tone="blocked"] { --chip-color: #fbbf24; }
+
+  .ef-chip-input:checked + .ef-chip[data-type="maintenance"] { --chip-color: #fbbf24; }
+  .ef-chip-input:checked + .ef-chip[data-type="dispatching"] { --chip-color: #818cf8; }
+  .ef-chip-input:checked + .ef-chip[data-type="reservation"] { --chip-color: #c084fc; }
+  .ef-chip-input:checked + .ef-chip[data-type="inventory"] { --chip-color: #34d399; }
+  .ef-chip-input:checked + .ef-chip[data-type="procurement"] { --chip-color: #2dd4bf; }
+  .ef-chip-input:checked + .ef-chip[data-type="administration"] { --chip-color: #fb7185; }
+  .ef-chip-input:checked + .ef-chip[data-type="asset_management"] { --chip-color: #38bdf8; }
+  .ef-chip-input:checked + .ef-chip[data-type="generic"],
+  .ef-chip-input:checked + .ef-chip[data-type="system"] { --chip-color: #94a3b8; }
+}
+
+/* ── Footer Actions ── */
+.ef-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--bulma-border-weak);
+}
+
+.ef-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1px solid var(--ef-accent);
+  background: var(--ef-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+.ef-btn:hover {
+  opacity: 0.92;
+}
+
+.ef-btn--ghost {
+  background: transparent;
+  color: var(--bulma-text-weak);
+  border-color: var(--bulma-border-weak);
+  font-weight: 600;
+}
+.ef-btn--ghost:hover {
+  border-color: var(--bulma-text-weak);
+  color: var(--bulma-text);
+}

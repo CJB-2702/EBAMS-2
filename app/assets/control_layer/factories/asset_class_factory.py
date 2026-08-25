@@ -38,6 +38,10 @@ class AssetClassFactory:
                 category=data.get("category") or None,
                 description=data.get("description") or None,
                 restrict_to_domain_set=data.get("restrict_to_domain_set", False),
+                meter1_unit=data.get("meter1_unit") or None,
+                meter2_unit=data.get("meter2_unit") or None,
+                meter3_unit=data.get("meter3_unit") or None,
+                meter4_unit=data.get("meter4_unit") or None,
                 created_by=actor,
                 updated_by=actor,
             )

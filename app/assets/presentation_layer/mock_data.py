@@ -43,35 +43,34 @@ MANUFACTURERS = [
 ASSET_CLASSES = [
     {"id": 1, "name": "Forklift", "category": "Material Handling",
      "description": "Powered industrial trucks for warehouse handling.",
-     "is_active": True, "restrict_to_domain_set": False, "domains": [1, 2]},
+     "is_active": True, "restrict_to_domain_set": False, "domains": [1, 2],
+     "meter1_unit": "Hours", "meter2_unit": "Fuel", "meter3_unit": None, "meter4_unit": None},
     {"id": 2, "name": "Excavator", "category": "Heavy Equipment",
      "description": "Tracked hydraulic digging machines.",
-     "is_active": True, "restrict_to_domain_set": True, "domains": [3]},
+     "is_active": True, "restrict_to_domain_set": True, "domains": [3],
+     "meter1_unit": "Hours", "meter2_unit": "Fuel", "meter3_unit": None, "meter4_unit": None},
     {"id": 3, "name": "Boom Lift", "category": "Aerial",
      "description": "Self-propelled aerial work platforms.",
-     "is_active": True, "restrict_to_domain_set": False, "domains": [1, 2, 3]},
+     "is_active": True, "restrict_to_domain_set": False, "domains": [1, 2, 3],
+     "meter1_unit": "Hours", "meter2_unit": "Fuel", "meter3_unit": None, "meter4_unit": None},
 ]
 
 ASSET_MODELS = [
     {"id": 1, "model_name": "8FGCU25", "version": "C", "version_rank": 1, "config_baselines": ["Cushion Tire", "Pneumatic Tire"],
      "is_base_model": True, "base_model": None, "asset_class": 1,
      "manufacturers": [1], "domains": [1, 2],
-     "meter1_unit": "Hours", "meter2_unit": "Miles", "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
     {"id": 2, "model_name": "320 GX", "version": "", "version_rank": None, "config_baselines": [],
      "is_base_model": True, "base_model": None, "asset_class": 2,
      "manufacturers": [2], "domains": [3],
-     "meter1_unit": "Hours", "meter2_unit": None, "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
     {"id": 3, "model_name": "S60XL", "version": "B", "version_rank": 1, "config_baselines": ["Standard", "XL Cab"],
      "is_base_model": True, "base_model": None, "asset_class": 3,
      "manufacturers": [4], "domains": [1, 2, 3],
-     "meter1_unit": "Hours", "meter2_unit": None, "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
     {"id": 4, "model_name": "8FGCU25", "version": "D", "version_rank": 2, "config_baselines": ["Cushion Tire"],
      "is_base_model": False, "base_model": 1, "asset_class": 1,
      "manufacturers": [1], "domains": [1, 2],
-     "meter1_unit": "Hours", "meter2_unit": "Miles", "meter3_unit": None, "meter4_unit": None,
      "is_active": True},
 ]
 
@@ -298,7 +297,12 @@ def _model_ns(mid, deep=False):
     obj.display_name = " ".join(
         p for p in [m["model_name"], m["version"]] if p
     )
-    obj.meter_units = [u for u in [m["meter1_unit"], m["meter2_unit"], m["meter3_unit"], m["meter4_unit"]] if u]
+    # Meter labels live on the class now — the model just reflects them.
+    cls = _CLASSES.get(m["asset_class"], {})
+    obj.meter_units = [
+        u for u in [cls.get("meter1_unit"), cls.get("meter2_unit"),
+                    cls.get("meter3_unit"), cls.get("meter4_unit")] if u
+    ]
     if deep:
         obj.capabilities = [
             ns(definition=capdef_ns(r["capability_definition"]), is_active=r["is_active"], source="model")
@@ -323,11 +327,11 @@ def _manufacturer_ns(mid, deep=False):
 
 def _meters(a):
     out = []
-    model = _MODELS.get(a["model"], {})
+    cls = _CLASSES.get(a["asset_class"], {})
     for i in range(1, 5):
         val = a.get(f"meter{i}")
         if val is not None:
-            out.append(ns(index=i, value=val, unit=model.get(f"meter{i}_unit") or ""))
+            out.append(ns(index=i, value=val, unit=cls.get(f"meter{i}_unit") or ""))
     return out
 
 
@@ -556,8 +560,8 @@ def get_meter_history():
     rows = []
     for r in METER_HISTORY:
         a = _ASSETS.get(r["asset"], {})
-        model = _MODELS.get(a.get("model"), {})
-        unit = model.get(f"meter{r['meter_index']}_unit") or ""
+        cls = _CLASSES.get(a.get("asset_class"), {})
+        unit = cls.get(f"meter{r['meter_index']}_unit") or ""
         rows.append(ns(asset=ns(id=a.get("id"), name=a.get("name")), meter_index=r["meter_index"],
                        value=r["value"], unit=unit, recorded_at=r["recorded_at"], source=r["source"]))
     return sorted(rows, key=lambda x: x.recorded_at, reverse=True)

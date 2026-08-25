@@ -15,10 +15,19 @@ replace the whole card — metadata, files, and comments together — in one sho
         <a href="{% url 'event_detail' hash=card.hash %}" style="color: {{ card.header_style.text|default:'#1e293b' }}; font-weight: 700;">{{ card.event.title }}</a>
       </div>
       <div class="is-flex" style="gap:0.35rem; align-items:center;">
-        <button type="button" class="button is-small is-white mr-1 py-0 px-2" popovertarget="assets-popover-{{ card.hash }}" commandfor="assets-popover-{{ card.hash }}" command="show-modal" title="View Associated Assets" style="height:1.65rem; font-size:0.725rem; font-weight:600; border:1px solid rgba(0,0,0,0.12);">
-          <span class="icon is-small"><span class="material-icons" style="font-size:0.95rem;">precision_manufacturing</span></span>
-          <span>Assets</span>
-        </button>
+        {% if card.all_associated_assets|length > 0 and card.all_associated_assets|length < 3 %}
+          {% for ast in card.all_associated_assets %}
+          <a href="{% url 'asset_detail' asset_id=ast.pk %}" class="button is-small is-white mr-1 py-0 px-2" title="View Asset: {{ ast.name }} ({{ ast.serial_number }})" style="height:1.65rem; font-size:0.725rem; font-weight:600; border:1px solid rgba(0,0,0,0.12);">
+            <span class="icon is-small" style="color:var(--bulma-link);"><span class="material-icons" style="font-size:0.95rem;">precision_manufacturing</span></span>
+            <span>{{ ast.name }} - {{ ast.serial_number }}</span>
+          </a>
+          {% endfor %}
+        {% elif card.all_associated_assets|length >= 3 %}
+          <button type="button" class="button is-small is-white mr-1 py-0 px-2" popovertarget="assets-popover-{{ card.hash }}" commandfor="assets-popover-{{ card.hash }}" command="show-modal" title="View Associated Assets" style="height:1.65rem; font-size:0.725rem; font-weight:600; border:1px solid rgba(0,0,0,0.12);">
+            <span class="icon is-small"><span class="material-icons" style="font-size:0.95rem;">precision_manufacturing</span></span>
+            <span>Assets ({{ card.all_associated_assets|length }})</span>
+          </button>
+        {% endif %}
         {% if card.origin_link %}
         <a href="{{ card.origin_link.url }}" class="button is-small is-white mr-1 py-0 px-2" title="Jump to {{ card.origin_link.label }}" style="height:1.65rem; font-size:0.725rem; font-weight:600; border:1px solid rgba(0,0,0,0.12);">
           <span class="icon is-small"><span class="material-icons" style="font-size:0.95rem;">{{ card.origin_link.icon }}</span></span>

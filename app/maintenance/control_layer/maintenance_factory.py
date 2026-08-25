@@ -8,6 +8,9 @@ from __future__ import annotations
 from django.db import transaction
 from django.utils import timezone
 
+from app.events.control_layer.managers.asset_event_link_manager import (
+    AssetEventLinkManager,
+)
 from app.events.models.details.maintenance import MaintenanceDetail
 from app.events.models.event import EventStatus, EventType
 from app.maintenance.control_layer.action_factory import ActionFactory
@@ -56,6 +59,14 @@ class MaintenanceFactory:
                 created_by=actor,
                 updated_by=actor,
             )
+            # The join row, not just the column. MaintenanceDetail.asset stays
+            # authoritative for maintenance's own reads; this makes the same
+            # fact visible to the events portal and to every app that asks
+            # "which assets is this event about" without knowing what a
+            # MaintenanceDetail is.
+            AssetEventLinkManager.link(
+                asset_id=asset_id, event_id=detail.pk, role="target", actor=actor
+            )
             # ActionFactory expands every TemplateActionItem into a live Action
             # (+ tools, + part demands) in the SAME transaction as this row (R2).
             ActionFactory.create_from_template_action_set(
@@ -97,19 +108,24 @@ class MaintenanceFactory:
         caller is expected to have already warned that this skips a template's
         known-good procedure.
         """
-        return MaintenanceDetail.objects.create(
-            domain_id=domain_id,
-            asset_id=asset_id,
-            title=title,
-            event_type=EventType.MAINTENANCE,
-            status=EventStatus.PLANNED,
-            priority=priority,
-            event_start=event_start or timezone.now(),
-            maintenance_type=maintenance_type,
-            work_order_reference=work_order_reference,
-            template_action_set=None,
-            assigned_user=assigned_user,
-            assigned_by=assigned_by,
-            created_by=actor,
-            updated_by=actor,
-        )
+        with transaction.atomic():
+            detail = MaintenanceDetail.objects.create(
+                domain_id=domain_id,
+                asset_id=asset_id,
+                title=title,
+                event_type=EventType.MAINTENANCE,
+                status=EventStatus.PLANNED,
+                priority=priority,
+                event_start=event_start or timezone.now(),
+                maintenance_type=maintenance_type,
+                work_order_reference=work_order_reference,
+                template_action_set=None,
+                assigned_user=assigned_user,
+                assigned_by=assigned_by,
+                created_by=actor,
+                updated_by=actor,
+            )
+            AssetEventLinkManager.link(
+                asset_id=asset_id, event_id=detail.pk, role="target", actor=actor
+            )
+        return detail

@@ -13,6 +13,9 @@ from django.db import transaction
 from app.dispatching.control_layer.narrators.reservation_narrator import ReservationNarrator
 from app.dispatching.models.enums import ReservationUpdateChangeType
 from app.dispatching.models.reservations.asset_reservation import AssetReservation
+from app.events.control_layer.managers.asset_event_link_manager import (
+    AssetEventLinkManager,
+)
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -46,6 +49,17 @@ class ReservationPromotionManager:
                 actor=actor,
                 created_by=actor,
                 updated_by=actor,
+            )
+
+            # The dispatch just acquired an asset. ReservationFactory writes
+            # this link when the reservation is born attached; promotion is
+            # the other way in, and it has to write it too or a promoted
+            # reservation's asset stays invisible on the dispatch.
+            AssetEventLinkManager.link(
+                asset_id=reservation.asset_id,
+                event_id=dispatch_id,
+                role="reserved_unit",
+                actor=actor,
             )
 
         from app.events.control_layer.event_context import EventContext

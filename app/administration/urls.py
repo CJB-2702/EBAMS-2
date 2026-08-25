@@ -64,6 +64,7 @@ from app.administration.presentation_layer.entrypoints.permissions.roles import 
 )
 from app.administration.presentation_layer.entrypoints.users.users import (
     check_direct_permissions_against_group,
+    user_create,
     user_detail,
     user_edit,
     user_index,
@@ -82,6 +83,7 @@ urlpatterns = [
 
     # User Management
     path("users/", user_index, name="user_index"),
+    path("users/new/", user_create, name="user_create"),
     path("users/<int:user_id>/", user_detail, name="user_detail"),
     path("users/<int:user_id>/edit/", user_edit, name="user_edit"),
     path(

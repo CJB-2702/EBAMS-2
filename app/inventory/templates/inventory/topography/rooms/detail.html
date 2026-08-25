@@ -19,8 +19,13 @@
     </div>
     <div class="page-header-actions">
       <a href="{% url 'inventory_room_layout' pk=room.room_id %}" class="button is-small is-link">
-        <span class="icon"><span class="material-icons" aria-hidden="true">upload</span></span><span>Layout builder</span>
+        <span class="icon"><span class="material-icons" aria-hidden="true">grid_on</span></span><span>Locations &amp; layout</span>
       </a>
+      {% if can_manage %}
+      <a href="{% url 'inventory_room_edit' pk=room.room_id %}" class="button is-small is-link is-light">
+        <span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit room</span>
+      </a>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -55,14 +60,15 @@
       <tbody>
         {% for rl in room.room_locations %}
         <tr>
-          <td class="is-family-monospace">{{ rl.display_code }}</td>
+          <td class="is-family-monospace"><a class="has-text-link" href="{% url 'inventory_room_location_layout' pk=rl.room_location_id %}">{{ rl.display_code }}</a></td>
           <td>{{ rl.storage_locations|length }}</td>
           <td>
             {% if rl.has_layout %}
-              <a href="{% url 'inventory_room_location_detail' pk=rl.room_location_id %}">View Z-picker</a>
+              <a class="has-text-link" href="{% url 'inventory_room_location_detail' pk=rl.room_location_id %}">View Z-picker</a>
             {% else %}
               <span class="has-text-grey">None</span>
             {% endif %}
+            &middot; <a class="has-text-link" href="{% url 'inventory_room_location_layout' pk=rl.room_location_id %}">Bins &amp; layout</a>
           </td>
         </tr>
         {% endfor %}

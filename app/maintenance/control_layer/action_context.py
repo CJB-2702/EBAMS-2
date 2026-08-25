@@ -20,6 +20,22 @@ TERMINAL_STATUSES = frozenset(
 )
 
 
+def _resolve_window(action: Action, start_time, end_time):
+    """The worked window a settling verb stamps on the step.
+
+    Both ends are optional overrides from the settle dialog; whatever the
+    technician leaves alone falls back to the step's own recorded start and
+    to now. An end before the start is refused rather than stored — a
+    negative duration is always a data-entry slip, and it silently poisons
+    every downstream duration report.
+    """
+    start = start_time or action.start_time or timezone.now()
+    end = end_time or timezone.now()
+    if end < start:
+        raise ValueError("The stop time cannot be before the start time.")
+    return start, end
+
+
 class ActionContext:
     def __init__(self, action_id: int) -> None:
         self.action_id = action_id
@@ -67,7 +83,13 @@ class ActionContext:
         return action
 
     def complete(
-        self, *, actor=None, billable_hours: float | None = None, notes: str = ""
+        self,
+        *,
+        actor=None,
+        billable_hours: float | None = None,
+        notes: str = "",
+        start_time=None,
+        end_time=None,
     ) -> Action:
         action = self.action
         if action.status not in (
@@ -77,7 +99,9 @@ class ActionContext:
         ):
             return action
         action.status = ActionStatus.COMPLETE
-        action.end_time = timezone.now()
+        action.start_time, action.end_time = _resolve_window(
+            action, start_time, end_time
+        )
         if billable_hours is not None:
             action.billable_hours = billable_hours
         if notes:
@@ -89,7 +113,13 @@ class ActionContext:
         return action
 
     def mark_failed(
-        self, *, actor=None, billable_hours: float | None = None, notes: str = ""
+        self,
+        *,
+        actor=None,
+        billable_hours: float | None = None,
+        notes: str = "",
+        start_time=None,
+        end_time=None,
     ) -> Action:
         action = self.action
         if action.status not in (
@@ -99,7 +129,9 @@ class ActionContext:
         ):
             return action
         action.status = ActionStatus.FAILED
-        action.end_time = timezone.now()
+        action.start_time, action.end_time = _resolve_window(
+            action, start_time, end_time
+        )
         if billable_hours is not None:
             action.billable_hours = billable_hours
         if notes:

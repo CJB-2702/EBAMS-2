@@ -258,6 +258,7 @@ class PartDemandContext:
         net_issued_qty: Decimal,
         to_stage: str,
         actor=None,
+        issued_to=None,
         notes: str = "",
         commit: bool = True,
     ) -> TransitionResult:
@@ -266,12 +267,17 @@ class PartDemandContext:
         Takes the net quantity AS AN ARGUMENT — it does not query PartIssue to
         compute it, because procurement may not look at inventory. See
         PartDemandIssuanceManager for the full statement of that cost.
+
+        `issued_to` is who physically took the material, which is routinely
+        NOT `requested_by` — a manager raises the demand against themselves
+        for an activity and a member of staff collects the parts.
         """
         return PartDemandIssuanceManager.record(
             demand=self.demand,
             net_issued_qty=net_issued_qty,
             to_stage=to_stage,
             actor=actor,
+            issued_to=issued_to,
             notes=notes,
             commit=commit,
         )

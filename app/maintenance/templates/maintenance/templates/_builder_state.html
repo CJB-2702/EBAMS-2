@@ -1,0 +1,9 @@
+{% comment %}
+Builder page state carried on every draft mutation, so a redirect lands the
+Planner back where they were: same creator source, same filters, same step
+row open.
+{% endcomment %}
+<input type="hidden" name="tab" value="{{ tab }}">
+<input type="hidden" name="q" value="{{ q }}">
+{% if pool_model_id %}<input type="hidden" name="pool_model_id" value="{{ pool_model_id }}">{% endif %}
+<input type="hidden" name="open_step" value="{{ action.temp_id }}">

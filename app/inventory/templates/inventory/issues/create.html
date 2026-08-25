@@ -1,19 +1,122 @@
 {% extends "inventory/base.html" %}
-{% block title %}Issue Parts Workspace{% endblock %}
+{% load static %}
+{% block title %}Bulk Issue from Demands{% endblock %}
 {% block nav_issues %}is-active{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'inventory_issues_index' %}">Issued Parts Ledger</a></li>
-<li class="is-active"><a href="#" aria-current="page">Unified Issue Workspace</a></li>
+<li class="is-active"><a href="#" aria-current="page">Bulk Issue from Demands</a></li>
+{% endblock %}
+
+{% comment %}
+Bulk Issue Parts from Demands — build one receipt for one person.
+
+The page reads top to bottom in the order the counter conversation happens:
+who is this for, what are they owed, where does it come off the shelf, sign.
+
+DEMAND FIRST. There is no stock search on this page and there must not be one.
+Finding stock happens per demand, in a popup scoped to that demand's part. A
+workflow that starts from stock is a different portal — see
+docs/inventory/issuance_portal_separation.md.
+
+Nothing on the plan is edited in place: a line is created whole in the picker
+and removed whole with its X. Wrong line, delete and re-add.
+{% endcomment %}
+
+{% block extra_css %}
+/* ── Demand pool: fixed height, scrolling body, sticky header ── */
+.pool-card { display:flex; flex-direction:column; height:32rem; overflow:hidden; }
+.pool-scroll { flex:1; overflow-y:auto; min-height:0; position:relative; }
+.pool-table thead th {
+  position:sticky; top:0; z-index:5;
+  background-color: var(--bulma-scheme-main);
+  box-shadow: inset 0 -2px 0 var(--bulma-border);
+}
+.pool-searchbar {
+  padding:0.5rem 0.75rem;
+  border-bottom:1px solid var(--bulma-border-weak);
+  background:var(--bulma-scheme-main-bis);
+}
+.pool-pagination { padding:0.5rem; }
+tr.is-pool-staged > td { background:var(--bulma-scheme-main-bis); }
+
+/* ── The receipt ── */
+.receipt-scroll { flex:1; overflow-y:auto; min-height:0; max-height:29rem; }
+.receipt-group {
+  border-bottom:1px solid var(--bulma-border);
+  border-left:3px solid var(--bulma-success);
+}
+.receipt-group.is-unready { border-left-color: var(--bulma-warning); }
+.receipt-group.is-over    { border-left-color: var(--bulma-danger); }
+.receipt-group-head {
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+  gap:0.5rem; padding:0.55rem 0.9rem;
+  background:var(--bulma-scheme-main-bis);
+  border-bottom:1px solid var(--bulma-border-weak);
+}
+.receipt-group-tally { display:flex; align-items:center; gap:0.35rem; }
+.receipt-line {
+  display:grid;
+  grid-template-columns: minmax(10rem,1.6fr) 10rem auto;
+  gap:0.6rem; align-items:center;
+  padding:0.5rem 0.9rem;
+  border-bottom:1px solid var(--bulma-border-weak);
+}
+.receipt-line:last-child { border-bottom:none; }
+.receipt-line--needs_stock { background:color-mix(in srgb, var(--bulma-warning) 8%, transparent); }
+.receipt-line--empty { display:block; padding:0.6rem 0.9rem; }
+.receipt-line--short,
+.receipt-line--mismatch    { background:color-mix(in srgb, var(--bulma-danger) 8%, transparent); }
+.receipt-line-actions { display:flex; gap:0.3rem; justify-content:flex-end; }
+.receipt-line-actions form, .receipt-line-qty form { margin:0; }
+@media (max-width: 1215px) {
+  .receipt-line { grid-template-columns: 1fr 1fr; }
+  .receipt-line-actions { grid-column: 1 / -1; justify-content:flex-start; }
+}
+
+/* ── Multi-location stock picker (the `+` under a line's location) ──
+   Deliberately COMFORTABLE: this is where the clerk decides which shelves to
+   walk to and how much comes off each, so the rows get real padding and no
+   is-size-7 shrink. */
+.bin-search-locked {
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+  gap:0.5rem; padding:0.75rem 1rem;
+  background:var(--bulma-scheme-main-bis);
+  border-bottom:1px solid var(--bulma-border-weak);
+}
+.bin-search-filters {
+  padding:0.75rem 1rem 0.25rem;
+  border-bottom:1px solid var(--bulma-border-weak);
+}
+.bin-search-body { display:flex; flex-direction:column; min-height:0; flex:1; margin:0; }
+.bin-search-scroll { flex:1; overflow-y:auto; min-height:14rem; position:relative; }
+.bin-search-table { margin:0; }
+.bin-search-table th { padding:0.75rem 0.9rem; }
+.bin-search-table td { padding:0.85rem 0.9rem; vertical-align:middle; }
+.bin-search-table tr.is-already-staged > td { background:var(--bulma-scheme-main-bis); opacity:0.7; }
+.bin-search-foot {
+  display:flex; justify-content:space-between; align-items:center; gap:0.75rem;
+  padding:0.75rem 1rem; border-top:1px solid var(--bulma-border-weak);
+}
+.bin-add-button { padding-left:0.4rem; padding-right:0.4rem; }
+/* The picker is a table with six columns and a filter grid above it — the
+   800px cap `.modal-styled` applies to ordinary dialogs would put it in a
+   horizontal scrollbar. */
+#bin-search-dialog { width:92vw; max-width:1150px; max-height:88vh; padding:0; }
+
+/* ── Bin picker modal ── */
+.bin-picker-head { padding:0.75rem 1rem; border-bottom:1px solid var(--bulma-border-weak); }
+.bin-picker-scroll { max-height:22rem; overflow-y:auto; }
+.bin-picker-foot { padding:0.75rem 1rem; border-top:1px solid var(--bulma-border-weak); }
 {% endblock %}
 
 {% block content %}
 <div class="page-hero">
   <div class="page-header">
     <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></div>
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></div>
       <div>
-        <h1 class="page-title">Unified Part Issuance Workspace</h1>
-        <p class="page-subtitle">Consolidate part demands and physical inventory into a single active session, pair items, and commit batch disbursements.</p>
+        <h1 class="page-title">Bulk Issue from Demands</h1>
+        <p class="page-subtitle">Build one receipt for one person: pick their demands, choose the bins, hand it over.</p>
       </div>
     </div>
     <div class="page-header-actions">
@@ -21,7 +124,7 @@
         <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
         <span>Issued Parts Ledger</span>
       </a>
-      <a href="{% url 'inventory_issuance_location_portal' %}" class="button is-info is-small">
+      <a href="{% url 'inventory_issuance_location_portal' %}" class="button is-light is-small">
         <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>
         <span>Issue from Location</span>
       </a>
@@ -32,434 +135,237 @@
 {% if not can_issue %}
 <div class="notification is-warning is-light mb-4">
   <span class="icon"><span class="material-icons" aria-hidden="true">lock</span></span>
-  You do not have the <span class="is-family-monospace">can_issue_parts</span> permission — this portal is read-only for you.
+  You do not have the <span class="is-family-monospace">can_issue_parts</span> permission — this workspace is read-only for you.
 </div>
 {% endif %}
 
-<!-- Top Row: Staging Queues (Demands vs Stock) -->
-<div class="columns is-variable is-4 mb-4">
-
-  <!-- Column 1: Staged Requirements & Demands Queue -->
-  <div class="column is-6">
-    <div class="card" style="height: 100%;">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>
-          1. Stage Part Demands & Requirements
-        </div>
-      </div>
-      <div class="card-content">
-        {% if can_issue %}
-        <!-- Stage Demand Form -->
-        <form method="post" action="{% url 'inventory_issue_parts' %}" class="mb-4">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_demand">
-          <label class="label is-small">Stage Open Part Demand</label>
-          <div class="field has-addons">
-            <div class="control is-expanded">
-              <div class="select is-small is-fullwidth">
-                <select name="add_demand_id" required>
-                  <option value="">Select open demand to stage…</option>
-                  {% for dem in open_demands %}
-                  <option value="{{ dem.pk }}">
-                    #{{ dem.pk }} — {{ dem.part.part_number }} (Req: {{ dem.quantity_requested|stringformat:".3f" }}, By: {{ dem.requested_by.username|default:"—" }})
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div class="control">
-              <button class="button is-small is-link" type="submit">
-                <span class="icon"><span class="material-icons">add</span></span>
-                <span>Stage Demand</span>
-              </button>
-            </div>
-          </div>
-        </form>
-        {% endif %}
-
-        <!-- Staged Demands Table (Rule 5: Renders even when empty) -->
-        <div class="table-container">
-          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
-            <thead>
-              <tr>
-                <th>Demand #</th>
-                <th>Part Number & Name</th>
-                <th>Requested Qty</th>
-                <th class="has-text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% setvar 0 as demand_count %}
-              {% for line in draft %}
-                {% if line.demand or not line.balance %}
-                <tr>
-                  <td class="is-family-monospace has-text-weight-bold">
-                    {% if line.demand %}#{{ line.demand.pk }}{% else %}<span class="has-text-grey">Direct Issue</span>{% endif %}
-                  </td>
-                  <td>
-                    {% if line.demand %}
-                      <div class="is-family-monospace has-text-weight-semibold">{{ line.demand.part.part_number }}</div>
-                      <div class="has-text-grey">{{ line.demand.part.part_name }}</div>
-                    {% else %}
-                      <div class="has-text-grey">—</div>
-                    {% endif %}
-                  </td>
-                  <td class="is-family-monospace">{{ line.quantity }}</td>
-                  <td class="has-text-right">
-                    {% if can_issue %}
-                    <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
-                      {% csrf_token %}
-                      <input type="hidden" name="action" value="remove_line">
-                      <input type="hidden" name="index" value="{{ line.index }}">
-                      <button class="button is-xs is-danger is-light" type="submit">
-                        <span class="icon"><span class="material-icons">delete</span></span>
-                      </button>
-                    </form>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endif %}
-              {% empty %}
-                <tr>
-                  <td colspan="4" class="has-text-grey has-text-centered py-4">
-                    No demands staged. Pick an open demand above to add requirements.
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Column 2: Staged Physical Stock Queue -->
-  <div class="column is-6">
-    <div class="card" style="height: 100%;">
-      <div class="card-header">
-        <div class="card-header-title">
-          <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
-          2. Stage Physical Inventory Stock
-        </div>
-      </div>
-      <div class="card-content">
-        <!-- Quick Directory Filter -->
-        <form method="get" action="{% url 'inventory_issue_parts' %}" class="mb-4">
-          <label class="label is-small">Search Physical Stock Directory</label>
-          <div class="field has-addons">
-            <div class="control is-expanded">
-              <input class="input is-small" type="text" name="search" value="{{ current_filters.search }}" placeholder="Search part #, name, serial…">
-            </div>
-            <div class="control">
-              <button class="button is-small is-primary" type="submit">
-                <span class="icon"><span class="material-icons">search</span></span>
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <!-- Staged Stock Table (Rule 5: Renders even when empty) -->
-        <div class="table-container mb-4">
-          <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
-            <thead>
-              <tr>
-                <th>Stock Location</th>
-                <th>Part Number & Serial</th>
-                <th class="has-text-right">Pick Qty</th>
-                <th class="has-text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for line in draft %}
-                {% if line.balance %}
-                <tr>
-                  <td>
-                    {{ line.balance.room.room_name }}
-                    {% if line.balance.storage_location %}<br><span class="has-text-grey">Bin: {{ line.balance.storage_location.bin_tag }}</span>{% endif %}
-                  </td>
-                  <td class="is-family-monospace">
-                    <div class="has-text-weight-bold">{{ line.balance.part.part_number }}</div>
-                    {% if line.balance.serial_number %}<span class="tag is-small is-light">SN: {{ line.balance.serial_number }}</span>{% endif %}
-                  </td>
-                  <td class="has-text-right is-family-monospace has-text-weight-bold">{{ line.quantity }}</td>
-                  <td class="has-text-right">
-                    {% if can_issue %}
-                    <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
-                      {% csrf_token %}
-                      <input type="hidden" name="action" value="remove_line">
-                      <input type="hidden" name="index" value="{{ line.index }}">
-                      <button class="button is-xs is-danger is-light" type="submit">
-                        <span class="icon"><span class="material-icons">delete</span></span>
-                      </button>
-                    </form>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% endif %}
-              {% empty %}
-                <tr>
-                  <td colspan="4" class="has-text-grey has-text-centered py-4">
-                    No physical stock items staged yet. Select stock items from the table below.
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Available Inventory Selection Table -->
-<div class="card mb-5">
+{# ══ Step 1 — who is this for. First, and required: a receipt is a handover ══ #}
+{# ══ to ONE person, and everything below is stamped with this name. ══ #}
+<div class="card" id="step-recipient">
   <div class="card-header">
     <div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">manage_search</span></span>
-      Available Physical Stock Directory
-    </div>
-  </div>
-  <div class="card-content">
-    <div class="table-container">
-      <table class="table is-fullwidth is-hoverable is-striped is-narrow is-size-7" style="margin:0;">
-        <thead>
-          <tr>
-            <th>Part Number & Name</th>
-            <th>Warehouse / Room</th>
-            <th>Bin Location</th>
-            <th>Serial #</th>
-            <th class="has-text-right">Available Qty</th>
-            <th class="has-text-right" style="width: 180px;">Stage Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for inv in available_inv_page.object_list %}
-          <tr>
-            <td>
-              <div class="is-family-monospace has-text-weight-bold">{{ inv.part.part_number }}</div>
-              <div class="has-text-grey">{{ inv.part.part_name }}</div>
-            </td>
-            <td>{{ inv.room.warehouse.name|default:"—" }} / {{ inv.room.room_name }}</td>
-            <td class="is-family-monospace">{{ inv.storage_location.bin_tag|default:"—" }}</td>
-            <td class="is-family-monospace">{{ inv.serial_number|default:"—" }}</td>
-            <td class="has-text-right is-family-monospace has-text-weight-bold">{{ inv.quantity_on_hand }}</td>
-            <td class="has-text-right">
-              {% if can_issue %}
-              <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:flex; gap:0.25rem; justify-content: flex-end;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_line">
-                <input type="hidden" name="active_inventory_id" value="{{ inv.pk }}">
-                {% if inv.serial_number %}
-                  <input type="hidden" name="quantity" value="1.000">
-                {% else %}
-                  <input class="input is-small is-family-monospace" style="width: 4rem;" type="text" name="quantity" value="{{ inv.quantity_on_hand }}">
-                {% endif %}
-                <button class="button is-small is-link" type="submit">
-                  <span class="icon"><span class="material-icons">playlist_add</span></span>
-                  <span>Stage</span>
-                </button>
-              </form>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" class="has-text-grey has-text-centered py-4">No available stock balances matching filter.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Bottom Row: Auto-Matched Pairing Matrix & Terminal Commit -->
-<div class="card border-primary mb-5">
-  <div class="card-header">
-    <div class="card-header-title">
-      <span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span>
-      3. Line Pairing Matrix & Terminal Session Commit
-      <span class="tag is-info ml-2">{{ draft|length }} total item(s) in session</span>
-    </div>
-    <div class="card-header-icon">
-      {% if can_issue and draft %}
-      <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="auto_match">
-        <button class="button is-small is-info is-light mr-2" type="submit">
-          <span class="icon"><span class="material-icons">sync</span></span>
-          <span>Auto-Match Demands & Stock</span>
-        </button>
-      </form>
-      <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="cancel_draft">
-        <button class="button is-small is-light" type="submit">
-          <span class="icon"><span class="material-icons">clear_all</span></span>
-          <span>Clear Queue</span>
-        </button>
-      </form>
+      <span class="icon"><span class="material-icons" aria-hidden="true">person</span></span>
+      Step 1 — Who is receiving these parts
+      {% if recipient %}
+      <span class="tag is-success is-light ml-2">{{ recipient.get_full_name|default:recipient.username }}</span>
+      {% else %}
+      <span class="tag is-warning is-light ml-2">Not set</span>
       {% endif %}
     </div>
   </div>
-  <div class="card-content">
-
-    <!-- Pairing Matrix Table (Rule 5) -->
-    <div class="table-container mb-4">
-      <table class="table is-fullwidth is-striped is-size-7" style="margin:0;">
-        <thead>
-          <tr>
-            <th>Status</th>
-            <th>Part Number & Description</th>
-            <th>Staged Requirement (Demand)</th>
-            <th>Physical Stock Source</th>
-            <th class="has-text-right">Quantity</th>
-            <th class="has-text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for line in draft %}
-          <tr>
-            <td>
-              {% if line.match_status == 'paired' %}
-                <span class="tag is-success is-light"><span class="icon"><span class="material-icons" style="font-size:12px;">check_circle</span></span>Paired</span>
-              {% elif line.match_status == 'direct_stock' %}
-                <span class="tag is-info is-light">Direct Stock</span>
-              {% elif line.match_status == 'unmet_demand' %}
-                <span class="tag is-warning is-light">Unmet Demand (Needs Stock)</span>
-              {% else %}
-                <span class="tag is-light">Unmatched</span>
-              {% endif %}
-            </td>
-            <td class="is-family-monospace">
-              {% if line.balance %}
-                <div class="has-text-weight-bold">{{ line.balance.part.part_number }}</div>
-                <div class="has-text-grey">{{ line.balance.part.part_name }}</div>
-              {% elif line.demand %}
-                <div class="has-text-weight-bold">{{ line.demand.part.part_number }}</div>
-                <div class="has-text-grey">{{ line.demand.part.part_name }}</div>
-              {% else %}
-                <span class="has-text-grey">—</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if line.demand %}
-                <span class="has-text-weight-bold">Demand #{{ line.demand.pk }}</span>
-                <div class="has-text-grey">Requested by {{ line.demand.requested_by.username|default:"—" }}</div>
-              {% else %}
-                <span class="has-text-grey-light">Direct Issue (No Demand)</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if line.balance %}
-                {{ line.balance.room.room_name }}
-                {% if line.balance.storage_location %}<br><span class="has-text-grey">Bin: {{ line.balance.storage_location.bin_tag }}</span>{% endif %}
-              {% else %}
-                <span class="has-text-danger">No stock balance assigned</span>
-              {% endif %}
-            </td>
-            <td class="has-text-right is-family-monospace has-text-weight-bold">{{ line.quantity }}</td>
-            <td class="has-text-right">
-              {% if can_issue %}
-              <form method="post" action="{% url 'inventory_issue_parts' %}" style="display:inline;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="remove_line">
-                <input type="hidden" name="index" value="{{ line.index }}">
-                <button class="button is-xs is-danger is-light" type="submit">
-                  <span class="icon"><span class="material-icons">delete</span></span>
-                </button>
-              </form>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="6" class="has-text-grey has-text-centered py-5">
-              <span class="icon is-large"><span class="material-icons" style="font-size: 36px;">inbox</span></span><br>
-              No items staged in this session. Add demands or physical stock from the panels above to start pairing.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Terminal Session Commit Form -->
-    <hr class="my-4">
+  <div class="card-content p-4">
     {% if can_issue %}
-    <form method="post" action="{% url 'inventory_issue_parts' %}">
+    <form method="post" action="{{ request.get_full_path }}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="set_header">
+      <div class="columns is-variable is-3">
+        <div class="column is-4">
+          <label class="label is-small" for="issued_to_id">Recipient <span class="has-text-danger">*</span></label>
+          <div class="select is-small is-fullwidth">
+            <select name="issued_to_id" id="issued_to_id" required>
+              <option value="">Select who is collecting…</option>
+              {% for u in users %}
+              <option value="{{ u.id }}" {% if header.issued_to_id == u.id %}selected{% endif %}>
+                {{ u.get_full_name|default:u.username }}{% if u.get_full_name %} ({{ u.username }}){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <p class="help">
+            Who physically takes the parts — often not who raised the demand.
+          </p>
+        </div>
+        <div class="column is-3">
+          <label class="label is-small" for="issue_reason">Reason</label>
+          <div class="select is-small is-fullwidth">
+            <select name="issue_reason" id="issue_reason">
+              {% for value, label in issue_reasons %}
+              <option value="{{ value }}" {% if header.issue_reason == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="column is-5">
+          <label class="label is-small" for="issue_reason_detail">Detail / notes</label>
+          <input class="input is-small" type="text" name="issue_reason_detail" id="issue_reason_detail"
+                 value="{{ header.issue_reason_detail|default:'' }}"
+                 placeholder="Work order, authorization reference…">
+        </div>
+      </div>
+      <button class="button is-small is-link" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span>
+        <span>{% if recipient %}Update{% else %}Set recipient{% endif %}</span>
+      </button>
+    </form>
+    {% else %}
+    <p class="has-text-grey is-size-7">Read-only.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# ══ Step 2 — the demands, and the receipt they build ══ #}
+<div class="columns is-variable is-4 mt-4">
+  <div class="column is-5">
+    <div class="card" id="step-demands" style="height:100%;">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">assignment</span></span>
+          Step 2 — Search for part demands
+        </div>
+      </div>
+
+      <div class="pool-card" style="border:none;">
+        <form id="demand-pool-form"
+              hx-get="{% url 'inventory_issue_parts' %}?format=htmx-demand-pool"
+              hx-target="#demand-pool-region"
+              hx-swap="innerHTML"
+              hx-trigger="submit, change, keyup changed delay:400ms"
+              hx-indicator="#demand-pool-region">
+          <div class="pool-searchbar">
+            <div class="is-flex is-align-items-center" style="gap:0.5rem; flex-wrap:wrap;">
+              <div class="control has-icons-left" style="flex:1; min-width:12rem;">
+                <input class="input is-small" type="search" name="dq" value="{{ demand_filters.dq }}"
+                       autocomplete="off"
+                       placeholder="part #, demand #, event #, or PO #…"
+                       aria-label="Search part demands">
+                <span class="icon is-small is-left">
+                  <span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">search</span>
+                </span>
+              </div>
+              <button type="button" class="button is-small {% if demand_filter_active %}is-info{% else %}is-light{% endif %}"
+                      command="show-modal" commandfor="demand-filters-dialog">
+                <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+                <span>Filters{% if demand_filter_active %} (on){% endif %}</span>
+              </button>
+              {% if demand_filter_active or demand_filters.dq %}
+              <a class="button is-small is-light" href="{% url 'inventory_issue_parts' %}" title="Clear search">
+                <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% include "inventory/issues/components/_demand_filters_popup.html" %}
+        </form>
+
+        <div class="pool-scroll" id="demand-pool-region">
+          {% include "inventory/issues/components/_demand_pool_results.html" %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-7">
+    {% include "inventory/issues/components/_staged_lines.html" %}
+  </div>
+</div>
+
+{# ══ Step 3 — the completion picture ══ #}
+{% include "inventory/issues/components/_issuance_summary_card.html" %}
+
+{# ══ Step 4 — hand it over ══ #}
+<div class="card mt-5 mb-6" id="commit-section">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+      Step 4 — Hand it over
+    </div>
+  </div>
+  <div class="card-content">
+    {% if can_issue %}
+    <form method="post" action="{{ request.get_full_path }}"
+          {% if over_groups %}onsubmit="return confirm('{{ over_groups|length }} demand(s) are being issued MORE than was asked for. Commit anyway?');"{% endif %}>
       {% csrf_token %}
       <input type="hidden" name="action" value="commit_session">
 
-      <div class="columns is-variable is-3">
-        <div class="column is-4">
-          <div class="field">
-            <label class="label is-small">Primary Issue Type <span class="has-text-danger">*</span></label>
-            <div class="select is-small is-fullwidth">
-              <select name="issue_type" required>
-                <option value="for_part_demand">Fulfill Part Demands</option>
-                <option value="direct_to_user">Direct Issue to User</option>
-                <option value="direct_to_asset">Direct Issue to Asset</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="column is-4">
-          <div class="field">
-            <label class="label is-small">Issued To User <span class="has-text-danger">*</span></label>
-            <div class="select is-small is-fullwidth">
-              <select name="issued_to_id" required>
-                <option value="">Select recipient user…</option>
-                {% for u in users %}
-                <option value="{{ u.id }}" {% if u.id == request.user.id %}selected{% endif %}>
-                  {{ u.username }} ({{ u.first_name }} {{ u.last_name }})
-                </option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="column is-4">
-          <div class="field">
-            <label class="label is-small">Target Asset (Optional)</label>
-            <div class="select is-small is-fullwidth">
-              <select name="issued_to_asset_id">
-                <option value="">Select target asset (if applicable)…</option>
-                {% for a in assets %}
-                <option value="{{ a.id }}">{{ a.serial_number }} — {{ a.name }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-        </div>
+      {% if not recipient %}
+      <div class="notification is-warning is-light is-size-7 py-2 px-3">
+        Set a recipient in Step 1 before committing.
       </div>
-
-      <div class="columns is-variable is-3">
-        <div class="column is-6">
-          <div class="field">
-            <label class="label is-small">Issue Reason (Optional)</label>
-            <input class="input is-small" type="text" name="issue_reason" placeholder="e.g. Scheduled PM, Field Repair, Emergency Take">
-          </div>
-        </div>
-        <div class="column is-6">
-          <div class="field">
-            <label class="label is-small">Session Notes (Optional)</label>
-            <input class="input is-small" type="text" name="notes" placeholder="Additional details or authorization references…">
-          </div>
-        </div>
+      {% endif %}
+      {% if empty_groups %}
+      <div class="notification is-warning is-light is-size-7 py-2 px-3">
+        {{ empty_groups|length }} demand{{ empty_groups|pluralize }} on the plan
+        {{ empty_groups|pluralize:"has,have" }} no location picked and
+        {{ empty_groups|pluralize:"is,are" }} left untouched by this receipt —
+        {{ empty_groups|pluralize:"it stays,they stay" }} fully owed.
       </div>
+      {% endif %}
+      {% if partial_groups %}
+      <div class="notification is-info is-light is-size-7 py-2 px-3">
+        {{ partial_groups|length }} demand{{ partial_groups|pluralize }} will be
+        <strong>partially issued</strong> — what is planned is handed over now and
+        the remainder stays owed for a later receipt.
+      </div>
+      {% endif %}
+      {% if problem_count %}
+      <div class="notification is-danger is-light is-size-7 py-2 px-3">
+        {{ problem_count }} line{{ problem_count|pluralize }} cannot be issued as planned — check the red rows and re-add them.
+      </div>
+      {% endif %}
+      {% if over_groups %}
+      <div class="notification is-danger is-light is-size-7 py-2 px-3">
+        <span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">warning</span></span>
+        {{ over_groups|length }} demand{{ over_groups|pluralize }} would be issued more than requested.
+        This is allowed — you will be asked to confirm.
+      </div>
+      {% endif %}
 
       <div class="field mt-4">
-        <button class="button is-success is-medium is-fullwidth" type="submit" {% if not draft %}disabled{% endif %}>
-          <span class="icon"><span class="material-icons">check_circle</span></span>
-          <span>Commit Issuance Session</span>
+        <button class="button is-success is-medium is-fullwidth" type="submit"
+                {% if not draft or not recipient or problem_count %}disabled{% endif %}>
+          <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+          <span>
+            Commit receipt ({{ draft_count }} line{{ draft_count|pluralize }}{% if recipient %} to {{ recipient.get_full_name|default:recipient.username }}{% endif %})
+          </span>
         </button>
       </div>
     </form>
+    {% else %}
+    <p class="has-text-grey is-size-7">You do not have permission to commit a receipt.</p>
     {% endif %}
-
   </div>
 </div>
+
+{# ── The location picker: the SAME filter set as the stock list, with the ── #}
+{# ── part locked to the demand. One dialog reused by every demand on the ── #}
+{# ── plan; its body is swapped in from `?format=htmx-bin-search`. ── #}
+<dialog id="bin-search-dialog" class="card modal-styled">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">shelves</span></span>
+      Add inventory locations to this demand
+    </div>
+    <button class="delete" aria-label="close" command="close" commandfor="bin-search-dialog"></button>
+  </div>
+  <div id="bin-search-dialog-body" style="display:flex; flex-direction:column; min-height:0; flex:1; overflow:hidden;">
+    <p class="has-text-grey is-size-7 p-4">Loading…</p>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+/* ── Arrival flash from the from-location portal's "Continue to checkout" ──
+   That page links here with ?flash=staged_success rather than a server
+   redirect, so there is no Django message queued for this GET — show it
+   client-side once, then scrub the param off so F5 doesn't reshow it. */
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('flash') !== 'staged_success') return;
+  const bar = document.createElement('div');
+  bar.className = 'notification is-success is-light';
+  bar.setAttribute('role', 'status');
+  bar.textContent = 'Stock staged successfully — continue building the receipt below.';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'delete';
+  closeBtn.addEventListener('click', () => bar.remove());
+  bar.prepend(closeBtn);
+  const hero = document.querySelector('.page-hero');
+  hero?.insertAdjacentElement('afterend', bar);
+  setTimeout(() => bar.remove(), 6000);
+  params.delete('flash');
+  const clean = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (clean ? `?${clean}` : ''));
+});
+</script>
 {% endblock %}

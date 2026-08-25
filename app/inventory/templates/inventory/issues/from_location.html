@@ -6,6 +6,27 @@
 <li class="is-active"><a href="#" aria-current="page">Issue from location</a></li>
 {% endblock %}
 
+{% block extra_css %}
+/* ── Demand picker popup ── */
+.demand-picker-bar {
+  display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;
+  padding:0.6rem 0.9rem;
+  border-bottom:1px solid var(--bulma-border-weak);
+  background:var(--bulma-scheme-main-bis);
+}
+.demand-picker-scroll { max-height:24rem; overflow-y:auto; }
+.demand-field-row { display:flex; gap:0.4rem; align-items:flex-start; }
+.demand-field-row search-dropdown { flex:0 0 150px; max-width:150px; min-width:0; }
+.demand-field-row .demand-find-btn { flex:1 1 auto; }
+.demand-info-card dt { color: var(--bulma-text-weak); }
+
+/* ── Selected-stock issuance panel ── */
+.issue-selected-stock-box {
+  border: 1px solid var(--bulma-border);
+  background: var(--bulma-scheme-main-bis);
+}
+{% endblock %}
+
 {% block content %}
 <div class="page-hero">
   <div class="page-header">
@@ -23,9 +44,9 @@
       </div>
     </div>
     <div class="page-header-actions">
-      <a href="{% url 'inventory_issuance_portal' %}" class="button is-light is-small">
-        <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-        <span>Demand / Stock Search Portal</span>
+      <a href="{% url 'inventory_issue_parts' %}" class="button is-light is-small">
+        <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></span>
+        <span>Go to Issuance Workspace</span>
       </a>
     </div>
   </div>
@@ -55,7 +76,7 @@
 
         {% if selected_stock %}
         <!-- Active Stock Selection Form -->
-        <div class="box p-3 mb-4" style="border: 1px solid var(--bulma-border, #dbdbdb); background: var(--bulma-background-light, #f9f9f9);">
+        <div class="box p-3 mb-4 issue-selected-stock-box">
           <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
             <h4 class="title is-6 mb-0">Issue Selected Stock</h4>
             <a href="?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}#available-inventory-card"
@@ -76,67 +97,57 @@
             <dd class="is-size-7">{{ selected_stock.warehouse.code }} / {{ selected_stock.room.room_name }}{% if selected_stock.storage_location %} / {{ selected_stock.storage_location.display_code }}{% endif %}</dd>
           </dl>
 
-          <form method="post" action="{% url 'inventory_issuance_location_portal' %}?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}&stock={{ selected_stock.pk }}">
+          <form id="issue-stock-form" method="post" action="{% url 'inventory_issuance_location_portal' %}?warehouse_id={{ warehouse_id|default:'' }}&room_id={{ room_id|default:'' }}&loc={{ loc|default:'' }}&sloc={{ sloc|default:'' }}&stock={{ selected_stock.pk }}">
             {% csrf_token %}
             <input type="hidden" name="active_inventory_id" value="{{ selected_stock.pk }}">
-            <input type="hidden" name="action" value="issue_stock">
+            <input type="hidden" name="action" id="issue-form-action" value="issue_stock">
+            {# ── Demand issuances only on this screen — direct-to-asset and ── #}
+            {# ── direct-to-person are not offered here, so `issue_type` is ── #}
+            {# ── fixed rather than a choice. ── #}
+            <input type="hidden" name="issue_type" value="for_part_demand">
 
-            <div class="field">
-              <label class="label is-small">Issue Type</label>
-              <div class="control">
-                <div class="select is-small is-fullwidth">
-                  <select name="issue_type" id="issue-type-select" onchange="toggleIssueFields(this.value)">
-                    {% for code, label in issue_types %}
-                    <option value="{{ code }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Field for Part Demand -->
+            {# ── Part Demand. A search-dropdown by default: standing at a ── #}
+            {# ── bin, one keystroke and a click is the whole interaction. ── #}
+            {# ── The popup beside it is the utility for when the operator ── #}
+            {# ── needs requester, need date, and outstanding side by side. ── #}
             <div id="field-demand" class="field">
-              <label class="label is-small">Part Demand</label>
-              <div class="control">
-                <div class="select is-small is-fullwidth">
-                  <select name="demand_id">
-                    <option value="">-- Direct Issue (No Demand) --</option>
-                    {% for d in demands %}
-                    <option value="{{ d.pk }}">#{{ d.pk }} — {{ d.part.part_number }} (Requested by {{ d.requested_by.get_full_name|default:d.requested_by.username }})</option>
-                    {% endfor %}
-                  </select>
-                </div>
+              <label class="label is-small" for="demand-picker">Part Demand</label>
+              <div class="control demand-field-row">
+                <search-dropdown
+                    id="demand-picker"
+                    name="demand_id"
+                    placeholder="demand id…"
+                    hx-get="{% url 'inventory_issuance_location_portal' %}?format=htmx-search-results{% if selected_stock %}&part_id={{ selected_stock.part_id }}{% endif %}"
+                    hx-trigger="keyup changed delay:300ms, search">
+                  {% include "inventory/issues/components/_demand_search_results.html" with results=demands %}
+                </search-dropdown>
+                <button type="button" class="button is-small is-light demand-find-btn"
+                        title="Find demands"
+                        command="show-modal" commandfor="demand-picker-dialog"
+                        hx-get="{% url 'inventory_issuance_location_portal' %}?format=htmx-demand-picker{% if selected_stock %}&part_id={{ selected_stock.part_id }}{% endif %}"
+                        hx-target="#demand-picker-body" hx-swap="innerHTML">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+                  <span>Find Demands</span>
+                </button>
+                <button type="button" class="button is-small is-light" id="demand-clear"
+                        title="Clear — issue with no demand">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+                </button>
               </div>
-            </div>
+              <p class="help">Type a demand id, or use Find Demands. Leave empty for a direct issue with no demand behind it.</p>
 
-            <!-- Field for Asset -->
-            <div id="field-asset" class="field" style="display:none;">
-              <label class="label is-small">Target Asset</label>
-              <div class="control">
-                <div class="select is-small is-fullwidth">
-                  <select name="issued_to_asset_id">
-                    <option value="">-- Select Asset --</option>
-                    {% for asset in assets %}
-                    <option value="{{ asset.pk }}">{{ asset.name }} ({% if asset.asset_number %}{{ asset.asset_number }}{% else %}#{{ asset.pk }}{% endif %})</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Field for User -->
-            <div id="field-user" class="field" style="display:none;">
-              <label class="label is-small">Recipient Person</label>
-              <div class="control">
-                <div class="select is-small is-fullwidth">
-                  <select name="issued_to_id">
-                    <option value="">-- Select Person --</option>
-                    {% for u in users %}
-                    <option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-              </div>
+              <dl id="demand-info-card" class="kv demand-info-card box p-3 mt-2 is-hidden">
+                <dt>Demand</dt>
+                <dd id="demand-info-id"></dd>
+                <dt>Part</dt>
+                <dd id="demand-info-part"></dd>
+                <dt>Requested by</dt>
+                <dd id="demand-info-requester"></dd>
+                <dt>Needed by</dt>
+                <dd id="demand-info-needed-by"></dd>
+                <dt>Still owed</dt>
+                <dd id="demand-info-owed"></dd>
+              </dl>
             </div>
 
             <div class="field">
@@ -146,9 +157,15 @@
                 <input id="issue-qty" class="input is-small is-family-monospace" type="text" value="1.000" disabled>
                 <input type="hidden" name="quantity" value="1.000">
                 {% else %}
-                <input id="issue-qty" class="input is-small is-family-monospace" type="text" name="quantity" value="{{ selected_stock.quantity_on_hand }}" required>
+                <input id="issue-qty" class="input is-small is-family-monospace" type="text" name="quantity"
+                       value="{{ selected_stock.quantity_on_hand }}"
+                       data-available="{{ selected_stock.quantity_on_hand }}"
+                       required>
                 {% endif %}
               </div>
+              {% if not selected_stock.serial_number %}
+              <p class="help" id="issue-qty-help">Max {{ selected_stock.quantity_on_hand }} — limited by available quantity at this location.</p>
+              {% endif %}
             </div>
 
             <div class="field">
@@ -160,15 +177,22 @@
 
             {% if can_issue %}
             <div class="buttons mt-3">
-              <button class="button is-primary is-fullwidth" type="submit">
+              <button id="stage-stock-button" class="button is-primary is-fullwidth" type="submit" disabled
+                      title="Select a part demand above to enable staging">
                 <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
                 <span>Stage Stock into Active Session</span>
               </button>
-              <a href="{% url 'inventory_issue_parts' %}" class="button is-link is-outlined is-fullwidth">
-                <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></span>
-                <span>Go to Issuance Workspace</span>
-              </a>
+              <button type="button" class="button is-link is-outlined is-fullwidth"
+                      command="show-modal" commandfor="direct-issue-dialog"
+                      onclick="document.getElementById('issue-form-action').value='direct_issue'; document.getElementById('session-issued-to-id').required = true;">
+                <span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>
+                <span>Direct Issue Now</span>
+              </button>
             </div>
+            <p class="help">
+              Staging adds this line to your <strong>Bulk Issue from Demands</strong> plan — requires a
+              part demand. No demand in hand? Use <strong>Direct Issue Now</strong> instead.
+            </p>
             {% endif %}
           </form>
         </div>
@@ -400,19 +424,127 @@
     </div>
   </div>
 </div>
+
+{# ── The demand picker utility. Read-only browsing with a single-field ── #}
+{# ── capture, which is what a modal is for. Nothing is assigned in here: ── #}
+{# ── it hands one value back to the field and closes. Styled per the ── #}
+{# ── kitchen-sink dialog pattern (card + modal-styled), not the older ── #}
+{# ── app-modal/modal-card markup. ── #}
+<dialog id="demand-picker-dialog" class="card modal-styled" style="padding:0; max-width:72rem; width:94vw; max-height:90vh;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
+      Find a part demand
+    </p>
+    <button class="delete is-large" aria-label="close" command="close" commandfor="demand-picker-dialog"></button>
+  </header>
+  <section class="card-content p-0" id="demand-picker-body" style="overflow-y:auto;">
+    <p class="has-text-grey is-size-7 p-4">Loading…</p>
+  </section>
+</dialog>
+
+{# ── Direct Issue Now. A single-field capture that ends immediately ── #}
+{# ── (recipient + reason), which UX_UI/design_patterns/modals.md ── #}
+{# ── allows in a modal — it commits one line straight to a receipt, ── #}
+{# ── skipping the staging queue entirely. Its fields submit as part ── #}
+{# ── of #issue-stock-form via the form="" attribute rather than by ── #}
+{# ── nesting, since a <dialog> cannot live inside another <form>. ── #}
+<dialog id="direct-issue-dialog" class="card modal-styled" style="padding:0;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>
+      Direct issue now
+    </p>
+    <button class="delete is-large" aria-label="close" command="close" commandfor="direct-issue-dialog"></button>
+  </header>
+  <div class="card-content">
+    {% if selected_stock %}
+    <p class="has-text-grey is-size-7 mb-4">
+      Commits immediately as a one-line receipt for
+      <span class="is-family-monospace has-text-weight-semibold">{{ selected_stock.part.part_number }}</span>
+      — skips the staging queue.
+    </p>
+    {% endif %}
+    <div class="field">
+      <label class="label is-small" for="session-issued-to-id">Recipient <span class="has-text-danger">*</span></label>
+      <div class="control">
+        <div class="select is-small is-fullwidth">
+          <select name="session_issued_to_id" id="session-issued-to-id" form="issue-stock-form">
+            <option value="">Select who is collecting…</option>
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.get_full_name|default:u.username }}{% if u.get_full_name %} ({{ u.username }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <p class="help">Who physically takes the part — stamped on the receipt header.</p>
+    </div>
+    <div class="field">
+      <label class="label is-small" for="session-issue-reason">Reason</label>
+      <div class="control">
+        <div class="select is-small is-fullwidth">
+          <select name="session_issue_reason" id="session-issue-reason" form="issue-stock-form">
+            {% for value, label in issue_reasons %}
+            <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label is-small" for="session-issue-reason-detail">Detail</label>
+      <div class="control">
+        <input class="input is-small" type="text" name="session_issue_reason_detail" id="session-issue-reason-detail"
+               form="issue-stock-form" placeholder="Work order, authorization reference…">
+      </div>
+    </div>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <button type="button" class="button is-small is-light" command="close" commandfor="direct-issue-dialog">Cancel</button>
+    </div>
+    <button type="submit" form="issue-stock-form" class="button is-link card-footer-primary">
+      <span class="icon"><span class="material-icons" aria-hidden="true">bolt</span></span>
+      <span>Issue now</span>
+    </button>
+  </footer>
+</dialog>
+
+{# ── Stage-success popup. Opens itself (via body_scripts) after a ── #}
+{# ── successful stage, off the one-shot ?staged=1 the POST redirect ── #}
+{# ── appends — it is not part of any canonical querystring the page ── #}
+{# ── reproduces on F5, so nothing re-opens it on a plain reload. ── #}
+<dialog id="stage-success-dialog" class="card modal-styled" style="padding:0; max-width:26rem;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon has-text-success"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+      Staged into your session
+    </p>
+    <button class="delete is-large" aria-label="close" command="close" commandfor="stage-success-dialog"></button>
+  </header>
+  <div class="card-content">
+    <p class="has-text-grey is-size-7">
+      Added to your <strong>Bulk Issue from Demands</strong> plan. Keep pulling stock for more
+      items, or head to checkout to finish the receipt.
+    </p>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <a class="button is-small is-light" id="stage-success-add-more" href="?added=1">
+        <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+        <span>Add more to session</span>
+      </a>
+    </div>
+    <a class="button is-link card-footer-primary" href="{% url 'inventory_issue_parts' %}?flash=staged_success">
+      <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart_checkout</span></span>
+      <span>Continue to checkout</span>
+    </a>
+  </footer>
+</dialog>
 {% endblock %}
 
 {% block body_scripts %}
 <script>
-function toggleIssueFields(issueType) {
-  const demandField = document.getElementById('field-demand');
-  const assetField = document.getElementById('field-asset');
-  const userField = document.getElementById('field-user');
-
-  if (demandField) demandField.style.display = (issueType === 'FOR_PART_DEMAND') ? '' : 'none';
-  if (assetField) assetField.style.display = (issueType === 'DIRECT_TO_ASSET') ? '' : 'none';
-  if (userField) userField.style.display = (issueType === 'DIRECT_TO_PERSON') ? '' : 'none';
-}
 
 function filterLocationTable(query) {
   const q = (query || '').toLowerCase().trim();
@@ -432,5 +564,199 @@ function filterLocationTable(query) {
     noMatchRow.style.display = (visibleCount === 0 && q) ? '' : 'none';
   }
 }
+
+/* ── Stage button gating ─────────────────────────────────────────────
+   Staging now writes straight into the Bulk Issue from Demands queue
+   (issuance_draft), which is demand-anchored by shape — there is no such
+   thing as a demand-less line in it. So the button stays disabled until
+   the demand field actually holds a value, checked every place that
+   field's value can change. */
+function updateStageButtonState() {
+  const field = document.getElementById('demand-picker');
+  const btn = document.getElementById('stage-stock-button');
+  if (!field || !btn) return;
+  btn.disabled = !field.value;
+}
+document.getElementById('demand-picker')?.addEventListener('change', updateStageButtonState);
+document.addEventListener('DOMContentLoaded', updateStageButtonState);
+
+/* ── Quantity cap ─────────────────────────────────────────────────────
+   Issuable quantity can never exceed what is physically on this shelf,
+   and once a demand is picked it also can't exceed what that demand
+   still needs — issuing past the demand just creates a second orphaned
+   surplus instead of covering it. Whichever number is smaller wins. */
+function applyQtyCap(owedQty) {
+  const qtyInput = document.getElementById('issue-qty');
+  const help = document.getElementById('issue-qty-help');
+  if (!qtyInput || qtyInput.disabled) return;
+  const available = parseFloat(qtyInput.dataset.available || '0') || 0;
+  let cap = available;
+  let limitedBy = 'available quantity at this location';
+  if (owedQty !== null && !Number.isNaN(owedQty) && owedQty < available) {
+    cap = owedQty;
+    limitedBy = "the part demand's outstanding quantity";
+  }
+  qtyInput.dataset.max = cap;
+  const current = parseFloat(qtyInput.value);
+  if (!Number.isNaN(current) && current > cap) {
+    qtyInput.value = cap.toFixed(3);
+  }
+  if (help) help.textContent = `Max ${cap.toFixed(3)} — limited by ${limitedBy}.`;
+}
+document.getElementById('issue-qty')?.addEventListener('change', function () {
+  const max = parseFloat(this.dataset.max || this.dataset.available || '');
+  const current = parseFloat(this.value);
+  if (!Number.isNaN(max) && !Number.isNaN(current) && current > max) {
+    this.value = max.toFixed(3);
+  }
+});
+document.addEventListener('DOMContentLoaded', () => applyQtyCap(null));
+
+/* ── Demand info card ────────────────────────────────────────────────
+   Fills in from data-* attributes already on the picked row/button — no
+   extra request needed, since the search results and popup rows both
+   already carry the fields the card shows. */
+function showDemandInfo(data) {
+  const card = document.getElementById('demand-info-card');
+  if (!card) return;
+  document.getElementById('demand-info-id').textContent = data.id ? `#${data.id}` : '—';
+  document.getElementById('demand-info-part').textContent =
+    [data.partNumber, data.partName].filter(Boolean).join(' — ') || '—';
+  document.getElementById('demand-info-requester').textContent = data.requester || '—';
+  document.getElementById('demand-info-needed-by').textContent = data.neededBy || '—';
+  document.getElementById('demand-info-owed').textContent = data.owed || '—';
+  card.classList.remove('is-hidden');
+  const owed = data.owed ? parseFloat(data.owed) : NaN;
+  applyQtyCap(Number.isNaN(owed) ? null : owed);
+}
+function hideDemandInfo() {
+  document.getElementById('demand-info-card')?.classList.add('is-hidden');
+  applyQtyCap(null);
+}
+
+/* Picking a demand id directly in the compact field: the dropdown's own
+   click handler already wrote `value`/`value-label` and fired `change` by
+   the time this runs, so the picked <li> can be found by that value. */
+document.getElementById('demand-picker')?.addEventListener('change', function () {
+  if (!this.value) {
+    hideDemandInfo();
+    return;
+  }
+  const li = this.querySelector(`li[data-value="${CSS.escape(this.value)}"]`);
+  if (!li) return;
+  showDemandInfo({
+    id: this.value,
+    partNumber: li.getAttribute('data-part-number'),
+    partName: li.getAttribute('data-part-name'),
+    requester: li.getAttribute('data-requester'),
+    neededBy: li.getAttribute('data-needed-by'),
+    owed: li.getAttribute('data-owed'),
+  });
+});
+
+/* ── Demand picker write-back ──────────────────────────────────────────
+   The popup hands its choice to the <search-dropdown> through the
+   component's public API — `value` sets the submitted form value and
+   `value-label` drives the visible text. Writing to a hidden input instead
+   would let the field's displayed text and its submitted value drift apart,
+   which is the failure this component exists to prevent.
+
+   Delegated off document because the popup body is swapped in by HTMX after
+   this script runs, so there is nothing to bind to at load time. ── */
+document.addEventListener('click', (event) => {
+  const pick = event.target.closest('[data-pick-demand]');
+  if (!pick) return;
+  const field = document.getElementById('demand-picker');
+  if (!field) return;
+  field.value = pick.getAttribute('data-pick-demand');
+  field.setAttribute('value-label', pick.getAttribute('data-pick-label') || '');
+  document.getElementById('demand-picker-dialog')?.close();
+  updateStageButtonState();
+  showDemandInfo({
+    id: pick.getAttribute('data-pick-demand'),
+    partNumber: pick.getAttribute('data-pick-part-number'),
+    partName: pick.getAttribute('data-pick-part-name'),
+    requester: pick.getAttribute('data-pick-requester'),
+    neededBy: pick.getAttribute('data-pick-needed-by'),
+    owed: pick.getAttribute('data-pick-owed'),
+  });
+});
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('#demand-clear')) return;
+  const field = document.getElementById('demand-picker');
+  if (!field) return;
+  field.value = '';
+  field.setAttribute('value-label', '');
+  updateStageButtonState();
+  hideDemandInfo();
+});
+
+/* ── Direct-issue hidden action reset ──────────────────────────────────
+   Opening the dialog flips #issue-form-action to 'direct_issue' so its
+   submit button (associated via form="issue-stock-form") commits the
+   right branch. Any way of closing without submitting — Cancel, Escape,
+   backdrop — must flip it back, or the next "Stage Stock" click would
+   silently commit a receipt instead of staging a line.
+
+   #session-issued-to-id's `required` is flipped the same way: it lives
+   inside this dialog but is externally associated with #issue-stock-form
+   (form="issue-stock-form"), so a `required` left set after the dialog
+   closes fails constraint validation on the NEXT plain "Stage Stock"
+   submit — the browser can't focus a control it can't see, so the
+   submit is silently blocked instead of erroring. */
+document.getElementById('direct-issue-dialog')?.addEventListener('close', () => {
+  const field = document.getElementById('issue-form-action');
+  if (field) field.value = 'issue_stock';
+  const recipient = document.getElementById('session-issued-to-id');
+  if (recipient) recipient.required = false;
+});
+
+/* ── Part Demand field: id-only entry ────────────────────────────────
+   The field beside the stock list filters on the demand id exactly
+   (see issues.py `_location_demand_qs`); hinting a numeric keyboard on
+   the shadow-DOM input keeps typed input matching what the server will
+   actually accept. */
+document.addEventListener('DOMContentLoaded', () => {
+  const field = document.getElementById('demand-picker');
+  const input = field?.shadowRoot?.querySelector('input');
+  if (input) {
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('pattern', '[0-9]*');
+  }
+});
+
+/* ── Stage-success popup ─────────────────────────────────────────────
+   Opens itself off the one-shot ?staged=1 the POST redirect appends —
+   see the dialog's own comment for why that param never round-trips
+   through a plain reload. */
+{% if staged %}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('stage-success-dialog')?.showModal();
+});
+{% endif %}
+
+/* ── "Add more to session" flash ─────────────────────────────────────
+   The dialog's "Add more" link clears every filter param and lands back
+   on the bare portal URL with `?added=1`; this shows the confirmation
+   once, then scrubs the param off so a later F5 doesn't reshow it. */
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('added') !== '1') return;
+  const bar = document.createElement('div');
+  bar.className = 'notification is-success is-light';
+  bar.setAttribute('role', 'status');
+  bar.textContent = 'Item was successful — ready for the next one.';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'delete';
+  closeBtn.addEventListener('click', () => bar.remove());
+  bar.prepend(closeBtn);
+  const hero = document.querySelector('.page-hero');
+  hero?.insertAdjacentElement('afterend', bar);
+  setTimeout(() => bar.remove(), 6000);
+  params.delete('added');
+  const clean = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (clean ? `?${clean}` : ''));
+});
 </script>
 {% endblock %}

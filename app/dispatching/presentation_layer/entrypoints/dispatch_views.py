@@ -421,8 +421,8 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
         if "title" in request.POST:
             draft["title"] = request.POST.get("title", "").strip()
         ac_id_post = request.POST.get("asset_class_id")
-        if ac_id_post and ac_id_post.isdigit():
-            draft["asset_class_id"] = int(ac_id_post)
+        if ac_id_post:
+            draft["asset_class_id"] = int(ac_id_post) if ac_id_post.isdigit() else None
         if "asset_subclass_text" in request.POST:
             draft["asset_subclass_text"] = request.POST.get("asset_subclass_text", "").strip()
         if "desired_start" in request.POST:
@@ -431,15 +431,18 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
             draft["desired_end"] = request.POST.get("desired_end", "")
         if "dispatch_scope" in request.POST:
             draft["dispatch_scope"] = request.POST.get("dispatch_scope", "")
-        hc_post = request.POST.get("headcount", "").strip()
-        if hc_post:
+        if "headcount" in request.POST:
+            hc_post = request.POST.get("headcount", "").strip()
             draft["headcount"] = int(hc_post) if hc_post.isdigit() else None
-        m_post = request.POST.get("estimated_meter_usage", "").strip()
-        if m_post:
-            try:
-                draft["estimated_meter_usage"] = float(m_post)
-            except ValueError:
-                pass
+        if "estimated_meter_usage" in request.POST:
+            m_post = request.POST.get("estimated_meter_usage", "").strip()
+            if m_post:
+                try:
+                    draft["estimated_meter_usage"] = float(m_post)
+                except ValueError:
+                    draft["estimated_meter_usage"] = None
+            else:
+                draft["estimated_meter_usage"] = None
         if "activity_location" in request.POST:
             draft["activity_location"] = request.POST.get("activity_location", "").strip()
         if "requested_assets" in request.POST:
@@ -453,6 +456,20 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
         redirect_url = request.path
         if template_param:
             redirect_url += f"?template={template_param}"
+
+        target_fragment = None
+        error_message = None
+
+        if action in ("add_requirement", "remove_requirement"):
+            kind = request.POST.get("kind", "")
+            if kind == "model":
+                target_fragment = "dispatching/dispatches/_card_models.html"
+            else:
+                target_fragment = "dispatching/dispatches/_card_requirements.html"
+        elif action in ("add_material_requirement", "remove_material_requirement"):
+            target_fragment = "dispatching/dispatches/_card_materials.html"
+        elif action in ("add_personnel", "remove_personnel", "update_personnel", "search_personnel"):
+            target_fragment = "dispatching/dispatches/_card_personnel.html"
 
         try:
             if action == "add_requirement":
@@ -488,16 +505,20 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
 
                 row = {"temp_id": uuid.uuid4().hex, **fields}
                 draft["requirements"][kind].append(row)
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                 request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "remove_requirement":
                 kind = request.POST.get("kind", "")
                 temp_id = request.POST.get("temp_id", "")
                 if kind in draft["requirements"]:
                     draft["requirements"][kind] = [r for r in draft["requirements"][kind] if r.get("temp_id") != temp_id]
+                    request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                     request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "add_material_requirement":
                 part_id_raw = request.POST.get("part_id", "").strip()
@@ -511,14 +532,18 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
                     "notes": request.POST.get("notes", "").strip(),
                 }
                 draft["material_requirements"].append(row)
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                 request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "remove_material_requirement":
                 temp_id = request.POST.get("temp_id", "")
                 draft["material_requirements"] = [m for m in draft["material_requirements"] if m.get("temp_id") != temp_id]
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                 request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "add_personnel":
                 user_id_raw = request.POST.get("user_id", "").strip()
@@ -533,14 +558,39 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
                     "notes": notes,
                 }
                 draft.setdefault("personnel", []).append(row)
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                 request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "remove_personnel":
                 temp_id = request.POST.get("temp_id", "")
                 draft["personnel"] = [p for p in draft.get("personnel", []) if p.get("temp_id") != temp_id]
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
                 request.session.modified = True
-                return redirect(redirect_url)
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
+
+            elif action == "update_personnel":
+                temp_id = request.POST.get("temp_id", "")
+                role = request.POST.get("role")
+                notes = request.POST.get("notes")
+                for p in draft.get("personnel", []):
+                    if p.get("temp_id") == temp_id:
+                        if role:
+                            p["role"] = role
+                        if notes is not None:
+                            p["notes"] = notes.strip()
+                        break
+                request.session[DISPATCH_CREATE_SESSION_KEY] = draft
+                request.session.modified = True
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
+
+            elif action == "search_personnel":
+                request.session.modified = True
+                if not request.headers.get("HX-Request"):
+                    return redirect(redirect_url)
 
             elif action == "clear_template":
                 request.session.pop(DISPATCH_CREATE_SESSION_KEY, None)
@@ -551,9 +601,8 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
                 requested_for_id = int(request.POST.get("requested_for_id") or draft.get("requested_for_id") or request.user.pk)
                 desired_start = request.POST.get("desired_start") or draft.get("desired_start")
                 desired_end = request.POST.get("desired_end") or draft.get("desired_end")
+                asset_class_id = int(request.POST.get("asset_class_id")) if request.POST.get("asset_class_id", "").isdigit() else draft.get("asset_class_id")
                 title = request.POST.get("title", "").strip() or draft.get("title", "")
-                asset_class_id_raw = request.POST.get("asset_class_id") or draft.get("asset_class_id")
-                asset_class_id = int(asset_class_id_raw) if asset_class_id_raw else 0
                 description = request.POST.get("description", "").strip() or draft.get("description", "")
                 activity_location = request.POST.get("activity_location", "").strip() or draft.get("activity_location", "")
                 created_from_revision_id = draft.get("revision_id") or (template_rev.pk if template_rev else None)
@@ -579,7 +628,7 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
                         requested_assets=request.POST.get("requested_assets", "").strip() or draft.get("requested_assets", ""),
                         dispatch_scope=request.POST.get("dispatch_scope", "") or draft.get("dispatch_scope", ""),
                         estimated_meter_usage=float(request.POST.get("estimated_meter_usage")) if request.POST.get("estimated_meter_usage", "").strip() else draft.get("estimated_meter_usage"),
-                        activity_location=activity_location or None,
+                        activity_location=activity_location,
                         title=title,
                         description=description,
                         created_from_revision_id=created_from_revision_id,
@@ -648,11 +697,64 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
                 return redirect("dispatching_dispatch_edit", pk=dispatch.pk)
 
         except (ValueError, KeyError, IntegrityError) as exc:
-            messages.error(request, str(exc))
+            if request.headers.get("HX-Request") and target_fragment:
+                error_message = str(exc)
+            else:
+                messages.error(request, str(exc))
+
+        username_q = request.POST.get("user_name", "").strip() or request.GET.get("user_name", "").strip()
+        skill_q = request.POST.get("skill_name", "").strip() or request.GET.get("skill_name", "").strip()
+        include_overlapping = (request.POST.get("include_overlapping") or request.GET.get("include_overlapping")) in ("on", "true", "1")
+
+        available_users, overlapping_user_ids = _get_available_personnel_for_draft(
+            draft, username_q=username_q, skill_q=skill_q, include_overlapping=include_overlapping
+        )
+
+        if request.headers.get("HX-Request") and target_fragment:
+            domains = Domain.objects.filter(pk__in=domain_ids)
+            asset_classes = AssetClass.objects.all()
+            users = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+
+            context = {
+                "draft": draft,
+                "template_rev": template_rev,
+                "requirement_rows": _resolve_requirement_rows(draft),
+                "material_rows": _resolve_material_rows(draft),
+                "personnel_rows": _resolve_personnel_rows(draft),
+                "personnel_roles": PersonnelRole.choices,
+                "domains": domains,
+                "asset_classes": asset_classes,
+                "users": users,
+                "available_users": available_users,
+                "overlapping_user_ids": overlapping_user_ids,
+                "username_q": username_q,
+                "skill_q": skill_q,
+                "include_overlapping": include_overlapping,
+                "dispatch_scope_choices": DispatchScope.choices,
+            }
+            if error_message:
+                if target_fragment == "dispatching/dispatches/_card_requirements.html":
+                    context["error_message_requirements"] = error_message
+                elif target_fragment == "dispatching/dispatches/_card_models.html":
+                    context["error_message_models"] = error_message
+                elif target_fragment == "dispatching/dispatches/_card_materials.html":
+                    context["error_message_materials"] = error_message
+                elif target_fragment == "dispatching/dispatches/_card_personnel.html":
+                    context["error_message_personnel"] = error_message
+
+            return render(request, target_fragment, context)
 
     domains = Domain.objects.filter(pk__in=domain_ids)
     asset_classes = AssetClass.objects.all()
     users = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+
+    username_q = request.POST.get("user_name", "").strip() or request.GET.get("user_name", "").strip()
+    skill_q = request.POST.get("skill_name", "").strip() or request.GET.get("skill_name", "").strip()
+    include_overlapping = (request.POST.get("include_overlapping") or request.GET.get("include_overlapping")) in ("on", "true", "1")
+
+    available_users, overlapping_user_ids = _get_available_personnel_for_draft(
+        draft, username_q=username_q, skill_q=skill_q, include_overlapping=include_overlapping
+    )
 
     context = {
         "draft": draft,
@@ -664,6 +766,11 @@ def dispatch_create(request: HttpRequest) -> HttpResponse:
         "domains": domains,
         "asset_classes": asset_classes,
         "users": users,
+        "available_users": available_users,
+        "overlapping_user_ids": overlapping_user_ids,
+        "username_q": username_q,
+        "skill_q": skill_q,
+        "include_overlapping": include_overlapping,
         "dispatch_scope_choices": DispatchScope.choices,
     }
     return render(request, "dispatching/dispatches/create.html", context)
@@ -701,6 +808,20 @@ def dispatch_detail(request: HttpRequest, pk: int) -> HttpResponse:
     return render(request, "dispatching/dispatches/detail.html", context)
 
 
+def _parse_datetime_local(raw: str | None) -> datetime | None:
+    """Parse a datetime-local string (ISO format) into an aware datetime."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        naive = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if timezone.is_aware(naive):
+        return naive
+    return timezone.make_aware(naive, timezone.get_current_timezone())
+
+
 def _get_available_personnel_context(
     dispatch: DispatchingDetail,
     username_q: str = "",
@@ -720,6 +841,61 @@ def _get_available_personnel_context(
             desired_start__lt=dispatch.desired_end,
             desired_end__gte=dispatch.desired_start,
         ).exclude(pk=dispatch.pk).exclude(workflow_status=DispatchWorkflowStatus.CANCELLED)
+
+        overlapping_user_ids = set(
+            DispatchPersonnel.objects.filter(dispatch__in=overlapping_dispatches).values_list("user_id", flat=True)
+        )
+
+    if not include_overlapping and overlapping_user_ids:
+        qs = qs.exclude(pk__in=overlapping_user_ids)
+
+    if username_q:
+        qs = qs.filter(
+            models.Q(username__icontains=username_q)
+            | models.Q(first_name__icontains=username_q)
+            | models.Q(last_name__icontains=username_q)
+            | models.Q(email__icontains=username_q)
+        )
+
+    if skill_q:
+        qs = qs.filter(
+            dispatch_skills__skill__name__icontains=skill_q,
+            dispatch_skills__is_active=True,
+        )
+
+    available_users = list(
+        qs.prefetch_related(
+            models.Prefetch(
+                "dispatch_skills",
+                queryset=UserDispatchSkill.objects.filter(is_active=True).select_related("skill"),
+                to_attr="active_skills_list",
+            )
+        ).order_by("username").distinct()
+    )
+
+    return available_users, overlapping_user_ids
+
+
+def _get_available_personnel_for_draft(
+    draft: dict,
+    username_q: str = "",
+    skill_q: str = "",
+    include_overlapping: bool = False,
+) -> tuple[list[User], set[int]]:
+    qs = User.objects.filter(is_active=True)
+
+    assigned_user_ids = {p.get("user_id") for p in draft.get("personnel", []) if p.get("user_id")}
+    qs = qs.exclude(pk__in=assigned_user_ids)
+
+    desired_start = _parse_datetime_local(draft.get("desired_start")) if draft.get("desired_start") else None
+    desired_end = _parse_datetime_local(draft.get("desired_end")) if draft.get("desired_end") else None
+
+    overlapping_user_ids: set[int] = set()
+    if desired_start and desired_end:
+        overlapping_dispatches = DispatchingDetail.objects.filter(
+            desired_start__lt=desired_end,
+            desired_end__gte=desired_start,
+        ).exclude(workflow_status=DispatchWorkflowStatus.CANCELLED)
 
         overlapping_user_ids = set(
             DispatchPersonnel.objects.filter(dispatch__in=overlapping_dispatches).values_list("user_id", flat=True)
@@ -1033,6 +1209,16 @@ def dispatch_crew_action(request: HttpRequest, pk: int) -> HttpResponse:
             crew_id = int(request.POST.get("crew_id"))
             ctx.crew.remove(crew_id=crew_id, actor=request.user)
             messages.success(request, "Crew member removed.")
+        elif action == "update":
+            crew_id = int(request.POST.get("crew_id"))
+            role = request.POST.get("role", PersonnelRole.PASSENGER)
+            notes = request.POST.get("notes", "").strip()
+            person = ctx.crew.get(crew_id=crew_id)
+            person.role = role
+            person.notes = notes
+            person.updated_by = request.user
+            person.save()
+            messages.success(request, "Crew member updated.")
     except ValueError as exc:
         messages.error(request, str(exc))
 

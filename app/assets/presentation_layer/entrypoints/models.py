@@ -64,6 +64,7 @@ def _manufacturer_dlb_context(model) -> dict:
 
 @require_http_methods(["GET"])
 def model_index(request: HttpRequest) -> HttpResponse:
+    format_param = request.GET.get("format", "condensed").strip()
     q = request.GET.get("q", "").strip()
     asset_class = request.GET.get("asset_class", "").strip()
     manufacturer = request.GET.get("manufacturer", "").strip()
@@ -96,6 +97,7 @@ def model_index(request: HttpRequest) -> HttpResponse:
             "models": models,
             "q": q,
             "asset_class": asset_class,
+            "format": format_param,
             **_form_choices(),
         },
     )
@@ -199,6 +201,10 @@ def model_edit(request: HttpRequest, model_id: int) -> HttpResponse:
     ]
     selected_manufacturer_ids = set(model.manufacturers.values_list("id", flat=True))
 
+    model_ctx = AssetModelContext(model_id, actor=request.user)
+    images = model_ctx.images.list_attachments()
+    comments_card = model_ctx.documents.card(request.user)
+
     return render(
         request,
         "assets/models/form.html",
@@ -208,6 +214,9 @@ def model_edit(request: HttpRequest, model_id: int) -> HttpResponse:
             "selected_manufacturer_ids": selected_manufacturer_ids,
             "assigned_capabilities": assigned_capabilities,
             "available_capabilities": available_capabilities,
+            "images": images,
+            "primary_id": model.primary_image_id,
+            "comments_card": comments_card,
             **_manufacturer_dlb_context(model),
             **_form_choices(),
         },

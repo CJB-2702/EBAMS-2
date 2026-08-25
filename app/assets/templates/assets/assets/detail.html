@@ -24,7 +24,7 @@
       </div>
     </div>
     <div class="page-header-actions">
-      <a href="{% url 'event_index' %}?asset={{ asset.id }}" class="button is-small is-info"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span><span>View Events</span></a>
+      <a href="{% url 'event_index' %}?asset_sn={{ asset.serial_number|urlencode }}" class="button is-small is-info"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span><span>View Events</span></a>
       <a href="{% url 'asset_edit' asset_id=asset.id %}" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span><span>Edit</span></a>
       <a href="{% url 'asset_images' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span><span>Images</span></a>
       <a href="{% url 'asset_configuration_detail' asset_id=asset.id %}" class="button is-small is-light"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span><span>Configuration</span></a>
@@ -39,16 +39,32 @@
     <div class="card">
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">badge</span></span>Identity &amp; Status</div></div>
       <div class="card-content">
-        <dl class="kv">
-          <dt>Name</dt><dd>{{ asset.name }}</dd>
-          <dt>Serial</dt><dd class="is-family-monospace">{{ asset.serial_number }}</dd>
-          <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=asset.asset_class.id %}">{{ asset.asset_class.name }}</a></dd>
-          <dt>Model</dt><dd><a href="{% url 'model_detail' model_id=asset.model.id %}">{{ asset.model }}</a></dd>
-          <dt>Config Baseline</dt><dd>{% if asset.config_baseline %}<span class="tag is-light is-small">{{ asset.config_baseline }}</span>{% else %}<span class="has-text-grey-light">—</span>{% endif %}</dd>
-          <dt>Status</dt><dd>{% include "assets/_status_tag.html" with value=asset.status %}</dd>
-          <dt>Active</dt><dd>{{ asset.is_active|yesno:"Yes,No" }}</dd>
-          <dt>Tags</dt><dd>{% for t in asset.tags %}<span class="tag is-light is-small">{{ t }}</span> {% empty %}<span class="has-text-grey-light">—</span>{% endfor %}</dd>
-        </dl>
+        <div class="is-flex" style="gap:1.5rem;align-items:flex-start;">
+          <div style="width:200px;max-width:200px;flex-shrink:0;">
+            {% if asset.primary_image %}
+              <figure class="image" style="width:200px;height:200px;background:var(--bulma-background);border:1px solid var(--bulma-border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0;">
+                <img src="{{ asset.primary_image.file.file.url }}" alt="{{ asset.name }}" style="max-width:200px;max-height:200px;object-fit:contain;">
+              </figure>
+            {% else %}
+              <div style="width:200px;height:200px;background:var(--bulma-background);border:1px dashed var(--bulma-border);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--bulma-text-weak);">
+                <span class="material-icons" style="font-size:3rem;">photo</span>
+                <span class="is-size-7 mt-1">No Image</span>
+              </div>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <dl class="kv">
+              <dt>Name</dt><dd>{{ asset.name }}</dd>
+              <dt>Serial</dt><dd class="is-family-monospace">{{ asset.serial_number }}</dd>
+              <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=asset.asset_class.id %}">{{ asset.asset_class.name }}</a></dd>
+              <dt>Model</dt><dd><a href="{% url 'model_detail' model_id=asset.model.id %}">{{ asset.model }}</a></dd>
+              <dt>Config Baseline</dt><dd>{% if asset.config_baseline %}<span class="tag is-light is-small">{{ asset.config_baseline }}</span>{% else %}<span class="has-text-grey-light">—</span>{% endif %}</dd>
+              <dt>Status</dt><dd>{% include "assets/_status_tag.html" with value=asset.status %}</dd>
+              <dt>Active</dt><dd>{{ asset.is_active|yesno:"Yes,No" }}</dd>
+              <dt>Tags</dt><dd>{% for t in asset.tags %}<span class="tag is-light is-small">{{ t }}</span> {% empty %}<span class="has-text-grey-light">—</span>{% endfor %}</dd>
+            </dl>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -171,7 +187,7 @@
       <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span>Events</div></div>
       <div class="card-content">
         <p class="is-size-7 has-text-grey">Lifecycle events are tracked in the Events portal and linked via <code>AssetEvent</code>.</p>
-        <a href="{% url 'event_index' %}?asset={{ asset.id }}" class="button is-small is-light is-fullwidth mt-2">Open Events →</a>
+        <a href="{% url 'event_index' %}?asset_sn={{ asset.serial_number|urlencode }}" class="button is-small is-light is-fullwidth mt-2">Open Events →</a>
       </div>
     </div>
   </div>

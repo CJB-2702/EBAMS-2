@@ -161,6 +161,7 @@
         </div>
 
         {# Mirrors of the window fields above, so the availability column can be computed without submitting the reservation form itself. #}
+        <input type="hidden" name="only_available_submitted" value="1">
         <input type="hidden" name="scheduled_start" id="picker-start-mirror" value="{{ form.scheduled_start|default:'' }}">
         <input type="hidden" name="scheduled_end" id="picker-end-mirror" value="{{ form.scheduled_end|default:'' }}">
 

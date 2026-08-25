@@ -1,0 +1,118 @@
+{% extends "inventory/topography/base_topography.html" %}
+{# ── Overrides base_topography's unconditional nav_warehouses so the create ── #}
+{# ── page highlights its own sidebar entry, and editing still highlights the list. ── #}
+{% block nav_warehouses %}{% if warehouse %}is-active{% endif %}{% endblock %}
+{% block nav_warehouse_create %}{% if not warehouse %}is-active{% endif %}{% endblock %}
+{% block title %}{% if warehouse %}Edit {{ warehouse.name }}{% else %}New warehouse{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_warehouse_index' %}">Warehouses</a></li>
+{% if warehouse %}<li><a href="{% url 'inventory_warehouse_detail' pk=warehouse.pk %}">{{ warehouse.name }}</a></li>{% endif %}
+<li class="is-active"><a href="#" aria-current="page">{% if warehouse %}Edit{% else %}New{% endif %}</a></li>
+{% endblock %}
+
+{% block topography_content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">store</span></div>
+      <div>
+        <h1 class="page-title">{% if warehouse %}Edit warehouse{% else %}New warehouse{% endif %}</h1>
+        <p class="page-subtitle">{% if warehouse %}{{ warehouse.code }}{% else %}A new warehouse is created with its protected Intake Room.{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Warehouse details</div></div>
+  <div class="card-content">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+
+      <div class="field">
+        <label class="label is-small" for="wh-name">Name <span class="has-text-danger">*</span></label>
+        <div class="control"><input class="input is-small" id="wh-name" name="name" value="{{ values.name }}" required></div>
+      </div>
+
+      <div class="field">
+        <label class="label is-small" for="wh-code">Code <span class="has-text-danger">*</span></label>
+        <div class="control"><input class="input is-small is-family-monospace" id="wh-code" name="code" value="{{ values.code }}" required></div>
+        <p class="help">Unique short code, e.g. <span class="is-family-monospace">LAX-01</span>.</p>
+      </div>
+
+      <div class="field">
+        <label class="label is-small" for="wh-division">Division <span class="has-text-danger">*</span></label>
+        <div class="control">
+          <div class="select is-small is-fullwidth">
+            {# ── Division is fixed after creation: moving a warehouse between divisions would ── #}
+            {# ── silently re-scope every stock row underneath it. ── #}
+            <select id="wh-division" name="division_id" {% if warehouse %}disabled{% endif %} required>
+              <option value="">Select a division…</option>
+              {% for division in divisions %}
+              <option value="{{ division.pk }}" {% if division.pk == selected_division_id %}selected{% endif %}>{{ division.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        {% if warehouse %}<p class="help">Division cannot be changed after creation.</p>{% endif %}
+      </div>
+
+      <div class="field">
+        <label class="label is-small" for="wh-address">Address / notes</label>
+        <div class="control"><textarea class="textarea is-small" id="wh-address" name="address" rows="3">{{ values.address }}</textarea></div>
+      </div>
+
+      <div class="field">
+        <label class="label is-small">Data domains</label>
+        <div class="control">
+          {% if domains %}
+            {% for domain in domains %}
+            <label class="checkbox is-size-7 is-block">
+              <input type="checkbox" name="domain_ids" value="{{ domain.pk }}" {% if domain.pk in selected_domain_ids %}checked{% endif %}> {{ domain.name }}
+            </label>
+            {% endfor %}
+            <p class="help">Leave all unchecked to make this warehouse visible to every authenticated user.</p>
+          {% else %}
+            <p class="has-text-grey is-size-7">No domains defined.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="field is-grouped is-grouped-right mt-4">
+        <div class="control"><a class="button is-small" href="{% if warehouse %}{% url 'inventory_warehouse_detail' pk=warehouse.pk %}{% else %}{% url 'inventory_warehouse_index' %}{% endif %}">Cancel</a></div>
+        <div class="control"><button class="button is-small is-link" type="submit">{% if warehouse %}Save changes{% else %}Create warehouse{% endif %}</button></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Retirement card renders on edit only, and always renders there — never hidden. ── #}
+{% if warehouse %}
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Lifecycle</div></div>
+  <div class="card-content">
+    <p class="is-size-7 has-text-grey">
+      Warehouses are never deleted. Retiring one hides it from the default list and from
+      pickers; its rooms, locations, and stock history stay intact and it can be
+      reactivated at any time.
+    </p>
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      {% if warehouse.is_active %}
+      <input type="hidden" name="action" value="retire">
+      <button class="button is-small is-warning" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">archive</span></span><span>Retire warehouse</span>
+      </button>
+      {% else %}
+      <input type="hidden" name="action" value="reactivate">
+      <p class="is-size-7 mb-2"><span class="tag is-warning is-light is-small">Retired</span></p>
+      <button class="button is-small is-success" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">unarchive</span></span><span>Reactivate warehouse</span>
+      </button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

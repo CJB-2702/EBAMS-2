@@ -75,14 +75,21 @@ def asset_dashboard(request: HttpRequest) -> HttpResponse:
     cards = AssetMaintenanceDashboardBuilder.build_for_page(page_obj.object_list)
 
     fmt = request.GET.get("format", "").strip()
+    current_format = "condensed" if fmt == "condensed" else "comfortable"
+
     card_ctx = {
         "cards": cards,
         "page_obj": page_obj,
         "base_query": base_query,
+        "current_format": current_format,
     }
     if fmt == "htmx-asset-cards":
         return render(
             request, "maintenance/fragments/asset_dashboard_cards_page.html", card_ctx
+        )
+    if fmt == "htmx-asset-condensed":
+        return render(
+            request, "maintenance/fragments/asset_dashboard_condensed_page.html", card_ctx
         )
 
     return render(

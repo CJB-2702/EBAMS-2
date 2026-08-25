@@ -1,0 +1,162 @@
+{% comment %}
+The location picker, served for `?format=htmx-bin-search&b_demand=N`.
+
+Opened by the `+` on a demand's header, and the ONLY place a planned issuance
+is created — one demand routinely comes off more than one shelf, so several
+rows can be ticked at once and each becomes its own line.
+
+Same filter set as `/inventory/active-inventory/`, minus the part field: the
+part is LOCKED to the demand's own part and shown as a tag, not an input. The topography selects list only places actually holding that part, so
+every option in them can return rows.
+
+The form re-renders `#bin-search-results` only — the filter bar and the locked
+part header never flicker.
+{% endcomment %}
+{% if not demand %}
+  <p class="has-text-grey is-size-7 p-4">That demand is no longer on the plan.</p>
+{% else %}
+
+<div class="bin-search-locked">
+  <div>
+    <span class="tag is-link is-light">
+      <span class="icon is-small"><span class="material-icons" style="font-size:0.9rem;">lock</span></span>
+      <span class="is-family-monospace has-text-weight-semibold">{{ part.part_number }}</span>
+    </span>
+    <span class="has-text-grey is-size-7 ml-2">{{ part.name }}</span>
+  </div>
+  <div class="is-size-7">
+    <span class="has-text-grey">Demand #{{ demand.pk }} —</span>
+    {% if outstanding > 0 %}
+    <span class="has-text-weight-bold is-family-monospace">{{ outstanding|floatformat:3 }}</span>
+    <span class="has-text-grey">still to plan. A location holding more comes in capped at that.</span>
+    {% else %}
+    <span class="tag is-success is-light is-small">Already fully covered by this plan</span>
+    {% endif %}
+  </div>
+</div>
+
+<form id="bin-search-form"
+      hx-get="{% url 'inventory_issue_parts' %}"
+      hx-target="#bin-search-results"
+      hx-swap="innerHTML"
+      hx-trigger="change, keyup changed delay:350ms from:input[type=search], keyup changed delay:350ms from:input[type=number]"
+      hx-indicator="#bin-search-results">
+  <input type="hidden" name="format" value="htmx-bin-search-results">
+  <input type="hidden" name="b_demand" value="{{ demand.pk }}">
+
+  <div class="bin-search-filters">
+    <div class="columns is-multiline is-variable is-2 mb-0">
+      <div class="column is-3">
+        <label class="label is-small" for="bs-warehouse">Warehouse</label>
+        <div class="select is-small is-fullwidth">
+          <select id="bs-warehouse" name="b_warehouse_id">
+            <option value="">All warehouses</option>
+            {% for w in warehouses %}
+            <option value="{{ w.id }}" {% if filters.warehouse_id == w.id|stringformat:"s" %}selected{% endif %}>{{ w.code }} — {{ w.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-3">
+        <label class="label is-small" for="bs-room">Room</label>
+        <div class="select is-small is-fullwidth">
+          <select id="bs-room" name="b_room_id">
+            <option value="">All rooms</option>
+            {% for r in rooms %}
+            <option value="{{ r.id }}" {% if filters.room_id == r.id|stringformat:"s" %}selected{% endif %}>{{ r.warehouse.code }} / {{ r.room_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-3">
+        <label class="label is-small" for="bs-sloc">Storage location</label>
+        <div class="select is-small is-fullwidth">
+          <select id="bs-sloc" name="b_storage_location_id">
+            <option value="">All locations</option>
+            {% for s in storage_locations %}
+            <option value="{{ s.id }}" {% if filters.storage_location_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.display_code }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-3">
+        <label class="label is-small">Part</label>
+        <input class="input is-small is-family-monospace" type="text"
+               value="{{ part.part_number }}" readonly disabled
+               title="Locked to this demand's part.">
+      </div>
+
+      <div class="column is-3">
+        <label class="label is-small" for="bs-serial">Serial number</label>
+        <input id="bs-serial" class="input is-small is-family-monospace" type="search"
+               name="b_serial" value="{{ filters.serial }}"
+               placeholder="serial number…" autocomplete="off">
+      </div>
+
+      <div class="column is-3">
+        <label class="label is-small" for="bs-stock-status">Stock status</label>
+        <div class="select is-small is-fullwidth">
+          <select id="bs-stock-status" name="b_stock_status">
+            <option value="">All stock</option>
+            <option value="has_stock" {% if filters.stock_status == "has_stock" %}selected{% endif %}>Has stock (&gt;0)</option>
+            <option value="low_stock" {% if filters.stock_status == "low_stock" %}selected{% endif %}>Low stock (1–10)</option>
+            <option value="out_of_stock" {% if filters.stock_status == "out_of_stock" %}selected{% endif %}>Out of stock (≤0)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="column is-2">
+        <label class="label is-small" for="bs-stale">Stale (days)</label>
+        <input id="bs-stale" class="input is-small" type="number" min="0"
+               name="b_stale_days" value="{{ filters.stale_days }}"
+               placeholder="e.g. 30" autocomplete="off">
+      </div>
+
+      <div class="column is-2">
+        <label class="checkbox is-size-7" style="margin-top:1.75rem; display:block;">
+          <input type="checkbox" name="b_unassigned_only" {% if filters.unassigned_only %}checked{% endif %}> Unassigned only
+        </label>
+      </div>
+
+      <div class="column is-2 is-flex is-align-items-flex-end">
+        <button class="button is-small is-light is-fullwidth" type="button"
+                hx-get="{% url 'inventory_issue_parts' %}?format=htmx-bin-search-results&b_demand={{ demand.pk }}"
+                hx-target="#bin-search-results" hx-swap="innerHTML"
+                onclick="document.getElementById('bin-search-form').reset();"
+                title="Clear all filters">
+          <span class="icon"><span class="material-icons" aria-hidden="true">clear</span></span>
+          <span>Clear</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+
+{# ── The picks and the Add button share one form, so a tick and its ── #}
+{# ── quantity submit together. Only the inner table is swapped. ── #}
+<form method="post" action="{% url 'inventory_issue_parts' %}" class="bin-search-body">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="add_stock_lines">
+  <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+
+  <div id="bin-search-results" class="bin-search-scroll is-relative">
+    {% include "inventory/issues/components/_bin_search_results.html" %}
+  </div>
+
+  {% if can_issue %}
+  <div class="bin-search-foot">
+    <p class="has-text-grey is-size-7">
+      Each ticked location becomes its own line against demand #{{ demand.pk }}.
+      To change one afterwards, delete it from the plan and add it again.
+    </p>
+    <button class="button is-small is-link" type="submit">
+      <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+      <span>Add selected locations</span>
+    </button>
+  </div>
+  {% endif %}
+</form>
+{% endif %}

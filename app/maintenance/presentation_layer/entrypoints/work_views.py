@@ -23,11 +23,14 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_http_methods
 
+from app.assets.control_layer.asset_context import AssetContext
+from app.assets.presentation_layer.search.asset_search import build_meter_rows
 from app.events.models.details.maintenance import MaintenanceDetail
 from app.events.models.event import EventPriority, EventStatus
 from app.events.presentation_layer.tools.generic_cards import build_activity_card
@@ -45,9 +48,12 @@ from app.maintenance.models.blocker import (
     BlockerReason,
     MaintenanceBlocker,
 )
-from app.maintenance.models.proto_templates.proto_action_item import ProtoActionItem
 from app.maintenance.models.templates.template_action_item import TemplateActionItem
-from app.maintenance.models.templates.template_action_set import TemplateActionSet
+from app.maintenance.presentation_layer.tools.action_creator import (
+    CREATOR_TABS,
+    creator_tab_context,
+    normalize_tab,
+)
 from app.maintenance.presentation_layer.tools.maintenance_access import (
     accessible_domain_ids,
     is_in_domain,
@@ -123,6 +129,32 @@ def _required_notes(request: HttpRequest, message: str, *, field: str = "notes")
     return notes
 
 
+def _record_completion_meters(detail: MaintenanceDetail, request: HttpRequest) -> None:
+    """Meter readings taken from the completion dialog become the asset's
+    official readings, the same way a dispatcher's handover reading does
+    (MeterReadRecorder) — writes MeterHistory and moves Asset.meterN. A blank
+    field is left alone; only changed values are written (MeterManager). The
+    lowest-indexed reading recorded is kept on MaintenanceDetail.meter_reading
+    as the summary pointer, matching AssetReservation's convention."""
+    if not detail.asset_id:
+        return
+    readings = {
+        i: _float(request.POST.get(f"meter{i}"))
+        for i in (1, 2, 3, 4)
+    }
+    readings = {i: v for i, v in readings.items() if v is not None}
+    if not readings:
+        return
+    created = AssetContext(detail.asset_id, request.user).meters.record(
+        readings, source="maintenance_completion"
+    )
+    if created:
+        primary = min(created, key=lambda row: row.meter_index)
+        detail.meter_reading = primary
+        detail.updated_by = request.user
+        detail.save(update_fields=["meter_reading", "updated_by", "updated_at"])
+
+
 def _progress(actions) -> dict:
     """The work portal's status card numbers.
 
@@ -192,6 +224,22 @@ def _tool_rows(actions) -> dict[int, list]:
     return rows
 
 
+def _estimated_hours(action):
+    """The step's planned duration as hours, for prefilling billable hours.
+
+    Rounded to the quarter hour because that is the granularity the billable
+    inputs accept (step="0.25") — an unrounded 0.83 would trip the browser's
+    own step validation and silently refuse to submit the dialog. It is a
+    suggestion the technician edits when the work took longer.
+    """
+    minutes = action.estimated_duration_minutes
+    if not minutes:
+        return None
+    # A planned step is never worth zero hours — anything under 8 minutes
+    # would round to 0.0 and prefill a figure nobody meant.
+    return max(round(round((minutes / 60) * 4) / 4, 2), 0.25)
+
+
 def _attach_children(actions):
     """Hang the per-step parts and tools onto each action so the template does
     no dict indexing."""
@@ -199,6 +247,7 @@ def _attach_children(actions):
     for action in actions:
         action.demand_rows = demands.get(action.pk, [])
         action.tool_rows = tools.get(action.pk, [])
+        action.estimated_hours = _estimated_hours(action)
     return actions
 
 
@@ -207,28 +256,28 @@ def _attach_children(actions):
 # --------------------------------------------------------------------------- #
 
 
-@require_http_methods(["GET", "POST"])
-def maintenance_work(request: HttpRequest, pk: int) -> HttpResponse:
-    """Perform maintenance (legacy /maintenance-event/<id>/work)."""
-    detail = _detail_or_404(request, pk)
-
-    if request.method == "POST":
-        return _handle_work_post(request, detail)
-
-    if request.GET.get("format") == "htmx-part-search":
-        return _part_search_fragment(request)
-
+def _get_work_context(request: HttpRequest, pk: int, detail: MaintenanceDetail) -> dict:
     ctx = MaintenanceContext(pk)
     struct = MaintenanceDetailStruct.load(maintenance_detail_id=pk)
     actions = _attach_children(struct.actions)
     demand_rows = [(a, link) for a in actions for link in a.demand_rows]
-    # "Actual start" is when work genuinely began, which is the earliest step
-    # start_time — event_start is the PLANNED datetime and says nothing about
-    # whether anyone has picked the job up.
     step_starts = [a.start_time for a in actions if a.start_time]
 
-    context = {
-        "actual_start": min(step_starts) if step_starts else None,
+    actual_start = min(step_starts) if step_starts else None
+
+    return {
+        "actual_start": actual_start,
+        # Defaults for the settle dialogs' worked window. Rendered server-side
+        # rather than stamped by JS so the dialogs stay correct on a plain F5
+        # and agree with the project timezone the view parses them back in.
+        "settle_start_default": detail.event_start or actual_start,
+        "settle_end_default": timezone.now(),
+        # Statuses a settling verb may still be pressed from.
+        "open_statuses": [
+            EventStatus.PLANNED,
+            EventStatus.IN_PROGRESS,
+            EventStatus.BLOCKED,
+        ],
         "detail": detail,
         "struct": struct,
         "actions": actions,
@@ -244,7 +293,15 @@ def maintenance_work(request: HttpRequest, pk: int) -> HttpResponse:
         "active_blockers": struct.active_blockers,
         "limitation_records": struct.limitation_records,
         "active_limitations": struct.active_limitation_records,
+        # Meter fields the completion dialog offers, labeled and pre-filled from
+        # the asset's own model config — same convention as the dispatching
+        # handover flow. Empty when the event carries no asset.
+        "capturable_meters": build_meter_rows(detail.asset) if detail.asset_id else [],
         "completion_verdict": ctx.completion_verdict(),
+        # The "Mark complete" button opens the dialog where actual_billable_hours
+        # is entered, so the hours floor can't gate the button itself — only the
+        # steps/blockers/limitations checks that must be resolved elsewhere.
+        "completion_button_verdict": ctx.completion_verdict(require_billable_hours=False),
         "billable_hours_warning": ctx.billable_hours_manager.get_warning(),
         "calculated_hours": ctx.billable_hours_manager.calculated_hours,
         "blocker_priorities": BlockerPriority.choices,
@@ -257,8 +314,24 @@ def maintenance_work(request: HttpRequest, pk: int) -> HttpResponse:
         "activity_card": build_activity_card(detail, request.user),
     }
 
+
+@require_http_methods(["GET", "POST"])
+def maintenance_work(request: HttpRequest, pk: int) -> HttpResponse:
+    """Perform maintenance (legacy /maintenance-event/<id>/work)."""
+    detail = _detail_or_404(request, pk)
+
+    if request.method == "POST":
+        return _handle_work_post(request, detail)
+
+    if request.GET.get("format") == "htmx-part-search":
+        return _part_search_fragment(request)
+
+    context = _get_work_context(request, pk, detail)
+
     if request.GET.get("format") == "htmx-actions":
         return render(request, "maintenance/work/_action_list.html", context)
+    if request.GET.get("format") == "htmx-status-card":
+        return render(request, "maintenance/work/_status_card.html", context)
     return render(request, "maintenance/work/work.html", context)
 
 
@@ -281,8 +354,33 @@ def _handle_work_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
                 ctx.billable_hours_manager.set_actual_hours(
                     value=hours, actor=request.user
                 )
-            ctx.complete(actor=request.user, notes=request.POST.get("notes", ""))
+            _record_completion_meters(detail, request)
+            ctx.complete(
+                actor=request.user,
+                notes=request.POST.get("notes", ""),
+                start_time=_datetime(request.POST.get("start_time")),
+                end_time=_datetime(request.POST.get("end_time")),
+            )
             messages.success(request, "Event marked complete.")
+
+        elif action == "fail_event":
+            # Failure closes the job the same way completion does — same
+            # billable figure, same worked window — but is not gated by the
+            # completion policy: unfinished steps are the reason it failed.
+            hours = _float(request.POST.get("actual_billable_hours"))
+            if hours is not None:
+                ctx.billable_hours_manager.set_actual_hours(
+                    value=hours, actor=request.user
+                )
+            ctx.mark_failed(
+                actor=request.user,
+                notes=_required_notes(
+                    request, "A reason is required to fail this event."
+                ),
+                start_time=_datetime(request.POST.get("start_time")),
+                end_time=_datetime(request.POST.get("end_time")),
+            )
+            messages.warning(request, "Event marked failed.")
 
         elif action == "start_action":
             # Start is the one verb with no confirmation step (no modal, no
@@ -298,7 +396,10 @@ def _handle_work_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
                 actor=request.user,
                 billable_hours=_float(request.POST.get("billable_hours")),
                 notes=_required_notes(request, "Completion notes are required."),
+                start_time=_datetime(request.POST.get("start_time")),
+                end_time=_datetime(request.POST.get("end_time")),
             )
+            ctx.billable_hours_manager.auto_update_if_greater(actor=request.user)
             messages.success(request, "Step completed.")
 
         elif action == "skip_action":
@@ -313,6 +414,8 @@ def _handle_work_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
                 actor=request.user,
                 billable_hours=_float(request.POST.get("billable_hours")),
                 notes=_required_notes(request, "A reason is required to fail a step."),
+                start_time=_datetime(request.POST.get("start_time")),
+                end_time=_datetime(request.POST.get("end_time")),
             )
             messages.warning(request, "Step marked failed.")
 
@@ -494,6 +597,22 @@ def _handle_work_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
     except (ValueError, TypeError) as exc:
         messages.error(request, str(exc))
 
+    if request.headers.get("HX-Request"):
+        detail = _detail_or_404(request, detail.pk)
+        context = _get_work_context(request, detail.pk, detail)
+        # The action list is the hx-target of every form on this page; the
+        # status card is a sibling region these same forms never target
+        # directly, so it rides along as an out-of-band swap in the same
+        # response instead of depending on a second round trip triggered by
+        # an after-swap event.
+        action_list_html = render_to_string(
+            "maintenance/work/_action_list.html", context, request=request
+        )
+        status_card_oob_html = render_to_string(
+            "maintenance/work/_status_card_oob.html", context, request=request
+        )
+        return HttpResponse(action_list_html + status_card_oob_html)
+
     return redirect(target)
 
 
@@ -546,8 +665,8 @@ def maintenance_edit(request: HttpRequest, pk: int) -> HttpResponse:
     all_demands = [(a, link) for a in actions for link in a.demand_rows]
     all_tools = [(a, t) for a in actions for t in a.tool_rows]
 
-    creator_tab = request.GET.get("tab", "template_set")
-    creator_context = _creator_tab_context(request, detail, tab=creator_tab, q="")
+    creator_tab = normalize_tab(request.GET.get("tab"))
+    creator_context = _creator_context_for(request, detail, tab=creator_tab, q="")
 
     return render(
         request,
@@ -879,95 +998,30 @@ def _handle_edit_post(request: HttpRequest, detail: MaintenanceDetail) -> HttpRe
     return redirect(f"{target}?selected={selected}" if selected else target)
 
 
-#: Action Creator Portal tabs. The same five sources appear in the event edit
-#: portal and the template builder; only the POST target differs, so the tab
-#: bodies are one partial parameterised by `creator_url`.
-CREATOR_TABS = (
-    ("template_set", "From Template"),
-    ("template_action", "From Template Action"),
-    ("proto", "From Proto Action"),
-    ("current", "From Current Build"),
-    ("blank", "Blank Action"),
-)
-
-
-#: Unfiltered (no `q` typed) listings are capped tight — just enough to show
-#: the portal isn't empty and nudge toward the asset-scoped default, not a
-#: full browse (that's what typing into the search box is for).
-_CREATOR_DEFAULT_LIMIT = 2
-_CREATOR_SEARCH_LIMIT = 25
-
-
-def _creator_tab_context(request: HttpRequest, detail: MaintenanceDetail, *, tab: str, q: str) -> dict:
-    """The data for one Action Creator Portal tab body. Shared by the full
-    page GET (so the initially-active tab isn't empty on first load — a
-    regression the legacy page didn't have, since it always rendered
-    `template_set` server-side) and the htmx tab-switch fragment."""
-    domain_ids = accessible_domain_ids(request)
-    context: dict = {}
-    asset_model_id = detail.asset.model_id if detail.asset_id else None
-
-    if tab == "template_set":
-        qs = TemplateActionSet.objects.filter(
-            domain_id__in=domain_ids, deleted_at__isnull=True, is_active=True
-        ).annotate(action_count=Count("template_action_items")).prefetch_related(
-            "template_action_items"
-        )
-        if q:
-            qs = qs.filter(Q(task_name__icontains=q) | Q(description__icontains=q))
-            context["template_sets"] = qs.order_by("task_name")[:_CREATOR_SEARCH_LIMIT]
-        else:
-            scoped = qs
-            if asset_model_id:
-                scoped = qs.filter(
-                    Q(asset_models=asset_model_id) | Q(asset_class_id=detail.asset.asset_class_id)
-                ).distinct()
-            rows = list(scoped.order_by("task_name")[:_CREATOR_DEFAULT_LIMIT])
-            context["template_sets"] = rows
-            context["template_sets_asset_scoped"] = bool(asset_model_id) and bool(rows)
-
-    elif tab == "template_action":
-        qs = TemplateActionItem.objects.filter(
-            template_action_set__domain_id__in=domain_ids, deleted_at__isnull=True
-        ).select_related("template_action_set")
-        if q:
-            qs = qs.filter(Q(action_name__icontains=q) | Q(description__icontains=q))
-            context["template_actions"] = qs.order_by("action_name")[:_CREATOR_SEARCH_LIMIT]
-        else:
-            scoped = qs
-            if asset_model_id:
-                scoped = qs.filter(
-                    Q(template_action_set__asset_models=asset_model_id)
-                    | Q(template_action_set__asset_class_id=detail.asset.asset_class_id)
-                ).distinct()
-            context["template_actions"] = scoped.order_by("action_name")[:_CREATOR_DEFAULT_LIMIT]
-
-    elif tab == "proto":
-        qs = ProtoActionItem.objects.filter(
-            domain_id__in=domain_ids, deleted_at__isnull=True
-        )
-        if q:
-            qs = qs.filter(
-                Q(action_name__icontains=q)
-                | Q(description__icontains=q)
-                | Q(instructions__icontains=q)
-            )
-            context["proto_actions"] = qs.order_by("action_name")[:_CREATOR_SEARCH_LIMIT]
-        else:
-            context["proto_actions"] = qs.order_by("action_name")[:_CREATOR_DEFAULT_LIMIT]
-
-    elif tab == "current":
-        context["current_actions"] = detail.actions.filter(
-            deleted_at__isnull=True
-        ).order_by("sequence_order")
-
-    return context
+def _creator_context_for(request: HttpRequest, detail: MaintenanceDetail, *, tab: str, q: str) -> dict:
+    """This host's scope for the shared Action Creator Portal: the event's own
+    asset decides what the unfiltered listings default to, and "current" means
+    the steps already on this event."""
+    asset_model_ids = [detail.asset.model_id] if detail.asset_id else []
+    asset_class_id = detail.asset.asset_class_id if detail.asset_id else None
+    return creator_tab_context(
+        tab=tab,
+        q=q,
+        domain_ids=accessible_domain_ids(request),
+        asset_class_id=asset_class_id,
+        asset_model_ids=asset_model_ids,
+        current_actions=(
+            detail.actions.filter(deleted_at__isnull=True).order_by("sequence_order")
+            if tab == "current"
+            else None
+        ),
+    )
 
 
 def _action_creator_fragment(request: HttpRequest, detail: MaintenanceDetail) -> HttpResponse:
     """One canonical URL branching on `format=`, per the format= contract —
     not five fragment-only routes."""
-    tab = request.GET.get("tab", "template_set")
+    tab = normalize_tab(request.GET.get("tab"))
     q = request.GET.get("q", "").strip()
 
     context = {
@@ -977,7 +1031,7 @@ def _action_creator_fragment(request: HttpRequest, detail: MaintenanceDetail) ->
         "creator_url": reverse("maintenance_edit", kwargs={"pk": detail.pk}),
         "detail": detail,
     }
-    context.update(_creator_tab_context(request, detail, tab=tab, q=q))
+    context.update(_creator_context_for(request, detail, tab=tab, q=q))
     return render(request, "maintenance/work/_action_creator.html", context)
 
 

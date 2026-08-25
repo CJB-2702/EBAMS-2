@@ -12,6 +12,15 @@ class AssetClass(AuditFieldsMixin):
     is_active = models.BooleanField(default=True)
     restrict_to_domain_set = models.BooleanField(default=False)
 
+    # Meter labels are a class-level decision, not a per-model one: every model
+    # under a class shares the same meter semantics (all Light Vehicles track
+    # Miles on meter 1, not just some of them). Individual reading VALUES still
+    # live on Asset.meter1-4 — only the unit labels live here.
+    meter1_unit = models.CharField(max_length=100, null=True, blank=True)
+    meter2_unit = models.CharField(max_length=100, null=True, blank=True)
+    meter3_unit = models.CharField(max_length=100, null=True, blank=True)
+    meter4_unit = models.CharField(max_length=100, null=True, blank=True)
+
     domains = models.ManyToManyField(
         "administration.Domain",
         through="assets.AssetClassDomain",

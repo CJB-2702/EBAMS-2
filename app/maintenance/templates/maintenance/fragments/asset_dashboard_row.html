@@ -1,0 +1,67 @@
+{% comment %}
+One row in the condensed asset dashboard table. Expects `card` (AssetMaintenanceDashboardStruct).
+{% endcomment %}
+<tr>
+  <td>
+    <a href="{% url 'asset_detail' asset_id=card.asset.id %}" class="has-text-weight-bold">{{ card.asset.name }}</a>
+    <div class="is-family-monospace is-size-7 has-text-grey">{{ card.asset.serial_number }}</div>
+  </td>
+  <td>
+    <div>{{ card.asset.asset_class.name }}</div>
+    <div class="is-size-7 has-text-grey">{{ card.asset.model }}</div>
+  </td>
+  <td>
+    {{ card.asset.domain.name }}
+  </td>
+  <td>
+    {% if card.is_blocked %}
+      <span class="tag is-danger is-light"><span class="material-icons mr-1" style="font-size:0.85rem;">block</span>Blocked</span>
+    {% endif %}
+    {% if card.has_active_limitation %}
+      <span class="tag is-warning is-light"><span class="material-icons mr-1" style="font-size:0.85rem;">warning</span>Limited</span>
+    {% endif %}
+    {% if not card.is_blocked and not card.has_active_limitation %}
+      <span class="tag is-success is-light"><span class="material-icons mr-1" style="font-size:0.85rem;">check_circle</span>Healthy</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if card.next_planned_events %}
+      {% for event in card.next_planned_events %}
+        <div class="is-size-7">
+          <a href="{% url 'maintenance_detail' pk=event.pk %}">{{ event.title|default:"Untitled" }}</a>
+          <span class="has-text-grey is-family-monospace">({{ event.event_start|date:"Y-m-d H:i" }})</span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <span class="has-text-grey-light is-size-7">None</span>
+    {% endif %}
+  </td>
+  <td>
+    {% if card.active_blockers or card.active_limitation_records %}
+      {% for blocker in card.active_blockers %}
+        <div class="is-size-7 has-text-danger">
+          <span class="material-icons mr-1" style="font-size:0.8rem;vertical-align:middle;">block</span>
+          {{ blocker.get_reason_display|default:"Blocker" }}
+        </div>
+      {% endfor %}
+      {% for record in card.active_limitation_records %}
+        <div class="is-size-7 has-text-warning-dark">
+          <span class="material-icons mr-1" style="font-size:0.8rem;vertical-align:middle;">warning</span>
+          {{ record.status }}
+        </div>
+      {% endfor %}
+    {% else %}
+      <span class="has-text-grey-light is-size-7">None</span>
+    {% endif %}
+  </td>
+  <td class="has-text-right white-space-nowrap">
+    <div class="buttons is-right are-small mb-0">
+      <a href="{% url 'maintenance_index' %}?asset_sn={{ card.asset.serial_number }}" class="button is-light is-small" title="Maintenance History">
+        <span class="icon"><span class="material-icons" style="font-size:1rem;">history</span></span>
+      </a>
+      <a href="{% url 'asset_detail' asset_id=card.asset.id %}" class="button is-info is-light is-small" title="Asset Detail">
+        <span class="icon"><span class="material-icons" style="font-size:1rem;">open_in_new</span></span>
+      </a>
+    </div>
+  </td>
+</tr>

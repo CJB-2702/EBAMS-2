@@ -1,0 +1,163 @@
+<div class="card max-w-4xl mb-5" id="card-requirements" style="overflow: visible;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+      Skill, Capability, &amp; Modification Requirements
+    </div>
+  </div>
+  <div class="card-content" style="overflow: visible;">
+    {% if error_message_requirements %}
+    <div class="notification is-danger is-light p-2 mb-3 is-size-7">{{ error_message_requirements }}</div>
+    {% endif %}
+    <div class="columns is-variable is-4">
+
+      {# Skill Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">verified</span></span>
+          Skill Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.skill|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="skill">
+          <search-dropdown name="picked_id" placeholder="search skills…" class="mb-1"
+              hx-get="{% url 'dispatching_skill_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <div class="columns is-mobile is-variable is-1 mb-1">
+            <div class="column"><input class="input is-small" type="number" min="1" name="quantity" value="1" placeholder="Qty"></div>
+            <div class="column"><input class="input is-small" type="number" min="1" max="5" name="minimum_level" placeholder="Min lvl"></div>
+          </div>
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required"> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.skill %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.skill %}
+          <div class="card dispatching-req-tile is-skill">
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_requirement">
+              <input type="hidden" name="kind" value="skill">
+              <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove skill requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong><br>
+              <span class="has-text-grey-dark is-size-8">Qty: {{ row.quantity }}{% if row.minimum_level %} · Min L{{ row.minimum_level }}{% endif %}</span>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Capability Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">checklist</span></span>
+          Capability Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.capability|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="capability">
+          <search-dropdown name="picked_id" placeholder="search capabilities…" class="mb-1"
+              hx-get="{% url 'dispatching_capability_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required"> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.capability %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.capability %}
+          <div class="card dispatching-req-tile is-capability">
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_requirement">
+              <input type="hidden" name="kind" value="capability">
+              <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove capability requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if row.notes %}<div class="mt-2 has-text-grey-dark">{{ row.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+      {# Modification Requirements #}
+      <div class="column is-4">
+        <p class="label is-small">
+          <span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">build</span></span>
+          Modification Requirements <span class="tag is-light is-small ml-1">{{ requirement_rows.modification|length }}</span>
+        </p>
+        <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="mb-3">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_requirement">
+          <input type="hidden" name="kind" value="modification">
+          <search-dropdown name="picked_id" placeholder="search modifications…" class="mb-1"
+              hx-get="{% url 'defined_modification_index' %}?format=htmx-search-results" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          <input class="input is-small mb-1" type="text" name="notes" placeholder="Notes">
+          <div class="is-flex is-justify-content-space-between is-align-items-center">
+            <label class="checkbox is-size-7"><input type="checkbox" name="is_required"> Required</label>
+            <button type="submit" class="button is-small is-link">Add</button>
+          </div>
+        </form>
+        {% if requirement_rows.modification %}
+        <div class="dispatching-tile-list">
+          {% for row in requirement_rows.modification %}
+          <div class="card dispatching-req-tile is-modification">
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-requirements" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_requirement">
+              <input type="hidden" name="kind" value="modification">
+              <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove modification requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-3 pr-5 is-size-7">
+              <strong>{{ row.object.name|default:"(unknown)" }}</strong>
+              {% if row.is_required %}
+              <br><span class="tag is-danger is-light is-small mt-2">Required</span>
+              {% else %}
+              <br><span class="tag is-info is-light is-small mt-2">Preferred</span>
+              {% endif %}
+              {% if row.notes %}<div class="mt-2 has-text-grey-dark">{{ row.notes }}</div>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>

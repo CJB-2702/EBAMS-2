@@ -4,6 +4,8 @@ from app.parts.models.core.tool import Tool
 from app.parts.models.domain_scope.part_domain_access_mapping import (
     PartDomainAccessMapping,
 )
+from app.parts.models.reference.part_category import PartCategory
+from app.parts.models.reference.part_type import PartType
 from app.parts.models.search.alias import Alias, AliasAssociationType, AliasSource
 from app.parts.models.supply.part_manufacturer import PartManufacturer
 from app.parts.models.supply.supplier_item import SupplierItem
@@ -13,10 +15,12 @@ __all__ = [
     "AliasAssociationType",
     "AliasSource",
     "Part",
+    "PartCategory",
     "PartDomainAccessMapping",
     "PartManufacturer",
     "PartRevision",
     "PartRevisionStatus",
+    "PartType",
     "SupplierItem",
     "Tool",
 ]

@@ -280,9 +280,12 @@ collapsable-side-bar { min-width: 0; }
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
   background: var(--bulma-scheme-main);
   border: 1px solid var(--bulma-border-weak);
-  border-left: 4px solid var(--bulma-primary);
   padding: 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
+}
+.page-hero,
+.portal-hub-hero {
+  border-left: 4px solid var(--app-accent, var(--bulma-primary)) !important;
 }
 .page-hero .page-header {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
@@ -704,18 +707,89 @@ collapsable-side-bar { min-width: 0; }
 .portal-tab-chevron { font-size: 0.65rem; opacity: 0.5; margin-left: 0.1rem; }
 
 /* CSS-driven Portal Highlighting & Dampening */
+/* Events */
 .app-topnav[current-application-group="Events"] .app-portals.tabs li[data-group="Events"] button.portal-tab-btn,
 .app-topnav[data-current-application-group="Events"] .app-portals.tabs li[data-group="Events"] button.portal-tab-btn,
+/* Dispatching */
+.app-topnav[current-application-group="Dispatching"] .app-portals.tabs li[data-group="Dispatching"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Dispatching"] .app-portals.tabs li[data-group="Dispatching"] button.portal-tab-btn,
+/* Maintenance */
+.app-topnav[current-application-group="Maintenance"] .app-portals.tabs li[data-group="Maintenance"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Maintenance"] .app-portals.tabs li[data-group="Maintenance"] button.portal-tab-btn,
+/* Assets */
 .app-topnav[current-application-group="Assets"] .app-portals.tabs li[data-group="Assets"] button.portal-tab-btn,
 .app-topnav[data-current-application-group="Assets"] .app-portals.tabs li[data-group="Assets"] button.portal-tab-btn,
+/* Configuration */
+.app-topnav[current-application-group="Configuration"] .app-portals.tabs li[data-group="Configuration"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Configuration"] .app-portals.tabs li[data-group="Configuration"] button.portal-tab-btn,
+/* Parts */
 .app-topnav[current-application-group="Parts"] .app-portals.tabs li[data-group="Parts"] button.portal-tab-btn,
 .app-topnav[data-current-application-group="Parts"] .app-portals.tabs li[data-group="Parts"] button.portal-tab-btn,
+/* Procurement */
+.app-topnav[current-application-group="Procurement"] .app-portals.tabs li[data-group="Procurement"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Procurement"] .app-portals.tabs li[data-group="Procurement"] button.portal-tab-btn,
+/* Inventory */
+.app-topnav[current-application-group="Inventory"] .app-portals.tabs li[data-group="Inventory"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Inventory"] .app-portals.tabs li[data-group="Inventory"] button.portal-tab-btn,
+/* Administration */
 .app-topnav[current-application-group="Administration"] .app-portals.tabs li[data-group="Administration"] button.portal-tab-btn,
-.app-topnav[data-current-application-group="Administration"] .app-portals.tabs li[data-group="Administration"] button.portal-tab-btn {
+.app-topnav[data-current-application-group="Administration"] .app-portals.tabs li[data-group="Administration"] button.portal-tab-btn,
+/* Extensions */
+.app-topnav[current-application-group="Extensions"] .app-portals.tabs li[data-group="Extensions"] button.portal-tab-btn,
+.app-topnav[data-current-application-group="Extensions"] .app-portals.tabs li[data-group="Extensions"] button.portal-tab-btn {
   color: #fff !important;
-  border-bottom-color: var(--bulma-primary) !important;
+  border-bottom-color: var(--app-accent) !important;
   background: rgba(255,255,255,0.04) !important;
   opacity: 1 !important;
+}
+
+/* App-specific highlight colors */
+.app-topnav[current-application-group="Events"],
+.app-topnav[data-current-application-group="Events"] {
+  --app-accent: var(--app-color-events);
+}
+.app-topnav[current-application-group="Dispatching"],
+.app-topnav[data-current-application-group="Dispatching"] {
+  --app-accent: var(--app-color-dispatching);
+}
+.app-topnav[current-application-group="Maintenance"],
+.app-topnav[data-current-application-group="Maintenance"] {
+  --app-accent: var(--app-color-maintenance);
+}
+.app-topnav[current-application-group="Assets"],
+.app-topnav[data-current-application-group="Assets"] {
+  --app-accent: var(--app-color-assets);
+}
+.app-topnav[current-application-group="Configuration"],
+.app-topnav[data-current-application-group="Configuration"] {
+  --app-accent: var(--app-color-configuration);
+}
+.app-topnav[current-application-group="Parts"],
+.app-topnav[data-current-application-group="Parts"] {
+  --app-accent: var(--app-color-parts);
+}
+.app-topnav[current-application-group="Procurement"],
+.app-topnav[data-current-application-group="Procurement"] {
+  --app-accent: var(--app-color-procurement);
+}
+.app-topnav[current-application-group="Inventory"],
+.app-topnav[data-current-application-group="Inventory"] {
+  --app-accent: var(--app-color-inventory);
+}
+.app-topnav[current-application-group="Administration"],
+.app-topnav[data-current-application-group="Administration"] {
+  --app-accent: var(--app-color-administration);
+}
+.app-topnav[current-application-group="Extensions"],
+.app-topnav[data-current-application-group="Extensions"] {
+  --app-accent: var(--app-color-extensions);
+}
+
+.app-topnav[current-application-group] .app-portals.tabs li.is-active button.portal-tab-btn,
+.app-topnav[data-current-application-group] .app-portals.tabs li.is-active button.portal-tab-btn,
+.app-topnav[current-application-group] .app-portals.tabs li[data-group]:has(button:focus-visible) button.portal-tab-btn,
+.app-topnav[data-current-application-group] .app-portals.tabs li[data-group]:has(button:focus-visible) button.portal-tab-btn {
+  border-bottom-color: var(--app-accent) !important;
 }
 
 /* ── Top nav right ── */
@@ -732,6 +806,17 @@ collapsable-side-bar { min-width: 0; }
   color: rgba(255,255,255,0.85); cursor: pointer; font-size: 0.8rem;
 }
 .app-user-btn:hover { background: rgba(255,255,255,0.06); }
+/* Highlighted whenever any work queue underneath it is non-empty — the
+   button itself is the "you have something in progress" signal, since the
+   queues it opens (in the shelf below, id="user-menu-shelf" — the same
+   .portal-dropdown pattern every other topnav line uses) no longer sit in
+   the bar on their own. */
+.app-user-btn.has-active-sessions { color: #fff; background: rgba(255,255,255,0.05); }
+.app-user-session-dot {
+  width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--bulma-primary);
+  flex-shrink: 0;
+}
 .app-user-avatar {
   width: 1.75rem; height: 1.75rem; border-radius: 50%;
   background: var(--bulma-primary);
@@ -745,6 +830,101 @@ collapsable-side-bar { min-width: 0; }
   border-left: 1px solid rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.85); cursor: pointer; font-size: 0.8rem;
 }
+
+/* ── Session work-queue badges (issuance / purchasing). Always present, so a
+   user learns where to look; dimmed at zero rather than hidden, because a
+   control that appears only when non-empty is a control nobody finds. ── */
+.app-queue-btn {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0 0.7rem; height: 100%;
+  background: none; border: none;
+  border-left: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.45); cursor: pointer; font-size: 0.78rem;
+  anchor-name: --queue-anchor;
+}
+.app-queue-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.app-queue-btn .material-icons { font-size: 1rem; }
+.app-queue-btn.has-items { color: rgba(255,255,255,0.9); }
+.app-queue-count {
+  min-width: 1.25rem; padding: 0 0.3rem;
+  background: rgba(255,255,255,0.12);
+  font-size: 0.7rem; font-weight: 700; text-align: center;
+}
+.app-queue-btn.has-items .app-queue-count {
+  background: var(--bulma-primary); color: #fff;
+}
+/* Each badge anchors its own panel, so the two cannot land on top of
+   each other when both are opened in turn. */
+#queue-btn-issuance { anchor-name: --queue-anchor-issuance; }
+#queue-btn-purchasing { anchor-name: --queue-anchor-purchasing; }
+.queue-popover {
+  position: fixed; inset: auto;
+  position-area: bottom span-left;
+  position-try-fallbacks: flip-inline;
+  width: 24rem; max-width: 92vw;
+  max-height: 60vh; overflow-y: auto;
+  margin: 0.25rem 0 0 0; padding: 0;
+  background: var(--bulma-scheme-main);
+  border: 1px solid var(--bulma-border);
+  border-top: 3px solid var(--bulma-primary);
+  z-index: 40;
+}
+.queue-popover-issuance { position-anchor: --queue-anchor-issuance; }
+.queue-popover-purchasing { position-anchor: --queue-anchor-purchasing; }
+.queue-popover-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--bulma-border-weak);
+  background: var(--bulma-scheme-main-bis);
+}
+.queue-popover-title {
+  font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--bulma-text-weak); font-weight: 700;
+}
+.queue-popover-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--bulma-border-weak);
+  font-size: 0.78rem;
+}
+.queue-popover-row:last-of-type { border-bottom: none; }
+.queue-popover-row-main { flex: 1; min-width: 0; }
+.queue-popover-empty {
+  padding: 1.25rem 0.75rem; margin: 0;
+  text-align: center; font-size: 0.78rem; color: var(--bulma-text-weak);
+}
+.queue-popover-foot {
+  display: flex; gap: 0.5rem; padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--bulma-border);
+  background: var(--bulma-scheme-main-bis);
+}
+
+/* ── Bulk row selection + floating action bar (app/static/js/bulk_select.js).
+   The bar is fixed to the bottom of the viewport rather than sitting under the
+   table: a selection made at row 3 of 200 must stay actionable without
+   scrolling back down to find the button. ── */
+tr.is-bulk-selected > td {
+  background-color: var(--bulma-info-95, rgba(0,127,255,0.08)) !important;
+}
+.bulk-bar {
+  position: fixed;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  z-index: 25;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--bulma-scheme-invert);
+  border: 1px solid var(--bulma-border);
+  border-bottom: none;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.25);
+  max-width: calc(100vw - 2rem);
+  flex-wrap: wrap;
+}
+.bulk-bar[hidden] { display: none; }
+.bulk-bar-count {
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--bulma-scheme-main);
+}
+.bulk-bar form { display: inline-flex; margin: 0; }
 .app-logout-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
 /* ── Portal dropdown ── */
@@ -756,9 +936,25 @@ collapsable-side-bar { min-width: 0; }
   margin: 0;
   padding: 0.75rem 1.25rem;
   background: var(--bulma-scheme-invert);
-  border-bottom: 2px solid var(--bulma-primary);
+  border-bottom: 4px solid var(--bulma-primary);
   z-index: 30;
 }
+/* Each shelf gets its own accent var, used for its dropdown border and
+   sublink hover — always that shelf's own app color, regardless of which
+   application group is currently active. */
+.app-portals.tabs li[data-group="Events"] { --shelf-accent: var(--app-color-events); }
+.app-portals.tabs li[data-group="Dispatching"] { --shelf-accent: var(--app-color-dispatching); }
+.app-portals.tabs li[data-group="Maintenance"] { --shelf-accent: var(--app-color-maintenance); }
+.app-portals.tabs li[data-group="Assets"] { --shelf-accent: var(--app-color-assets); }
+.app-portals.tabs li[data-group="Configuration"] { --shelf-accent: var(--app-color-configuration); }
+.app-portals.tabs li[data-group="Parts"] { --shelf-accent: var(--app-color-parts); }
+.app-portals.tabs li[data-group="Procurement"] { --shelf-accent: var(--app-color-procurement); }
+.app-portals.tabs li[data-group="Inventory"] { --shelf-accent: var(--app-color-inventory); }
+.app-portals.tabs li[data-group="Administration"] { --shelf-accent: var(--app-color-administration); }
+.app-portals.tabs li[data-group="Extensions"] { --shelf-accent: var(--app-color-extensions); }
+
+.app-portals.tabs li .portal-dropdown { border-bottom-color: var(--shelf-accent); }
+
 .portal-dropdown-inner { display: flex; gap: 0.25rem; flex-wrap: wrap; }
 .portal-sublink {
   display: flex; align-items: center; gap: 0.35rem;
@@ -766,13 +962,15 @@ collapsable-side-bar { min-width: 0; }
   color: rgba(255,255,255,0.7);
   border: 1px solid rgba(255,255,255,0.1); cursor: pointer;
 }
-.portal-sublink:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.portal-sublink:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: var(--shelf-accent); }
 .portal-sublink.is-active { border-color: var(--bulma-primary); color: var(--bulma-primary); }
 .portal-sublink .icon { font-size: 0.85rem; opacity: 0.7; }
 .portal-dropdown-label {
   font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
   color: rgba(255,255,255,0.35); margin-bottom: 0.5rem;
+  transition: color 0.12s;
 }
+.portal-dropdown-label:hover { color: var(--shelf-accent); }
 
 /* ── Info popover: anchored above its trigger via CSS Anchor Positioning.
    Chrome/Edge 125+; unsupported browsers fall back to the UA default

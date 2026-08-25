@@ -1,0 +1,12 @@
+{% comment %}
+Result rows for <search-dropdown name="tool_id">. The component reads
+data-value off the clicked <li> and uses the li's text as the input label, so
+the value must be the tool id and the text must read like a tool.
+{% endcomment %}
+<ul>
+  {% for tool in tools %}
+  <li data-value="{{ tool.pk }}">{{ tool.name }}{% if tool.tool_type %} — {{ tool.tool_type }}{% endif %}</li>
+  {% empty %}
+  <li class="has-text-grey">No tools match.</li>
+  {% endfor %}
+</ul>

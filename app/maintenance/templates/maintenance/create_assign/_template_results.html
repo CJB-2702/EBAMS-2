@@ -1,7 +1,5 @@
-<ul>
-  {% for template in templates %}
-  <li data-value="{{ template.pk }}">{{ template.task_name }} ({{ template.action_count }} action{{ template.action_count|pluralize }})</li>
-  {% empty %}
-  <li class="has-text-grey">No templates match.</li>
-  {% endfor %}
-</ul>
+{% for template in templates %}
+<li data-value="{{ template.pk }}">{{ template.task_name }} ({{ template.action_count }} action{{ template.action_count|pluralize }})</li>
+{% empty %}
+<li class="has-text-grey">No templates match.</li>
+{% endfor %}

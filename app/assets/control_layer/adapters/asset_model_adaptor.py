@@ -1,22 +1,20 @@
 """AssetModelCreateAdaptor / AssetModelEditAdaptor — map an HTTP POST payload to
 AssetModel write input.
 
-The create form exposes identity, asset class, manufacturers, and meter units; the
-edit form adds the declared capability set. Type coercion (ids → int, blank →
-``None``) happens here at the boundary. The form does not expose the revision tree,
-so created models are always base models.
+The create form exposes identity, asset class, and manufacturers; the edit form
+adds the declared capability set. Type coercion (ids → int, blank → ``None``)
+happens here at the boundary. The form does not expose the revision tree, so
+created models are always base models.
 """
 
 from __future__ import annotations
-
-_METER_FIELDS = ("meter1_unit", "meter2_unit", "meter3_unit", "meter4_unit")
 
 
 class AssetModelCreateAdaptor:
     @staticmethod
     def from_post(post) -> dict:
         manufacturer_ids = _int_list(post, "manufacturers")
-        data = {
+        return {
             "model_name": (post.get("model_name") or "").strip(),
             "version": (post.get("version") or "").strip(),
             "version_rank": _to_int(post.get("version_rank")),
@@ -27,9 +25,6 @@ class AssetModelCreateAdaptor:
             "manufacturer_ids": manufacturer_ids,
             "primary_manufacturer_id": manufacturer_ids[0] if manufacturer_ids else None,
         }
-        for field in _METER_FIELDS:
-            data[field] = (post.get(field) or "").strip() or None
-        return data
 
 
 class AssetModelEditAdaptor:

@@ -26,14 +26,6 @@ _METADATA_FIELDS = (
     "version",
     "version_rank",
     "config_baselines",
-    "meter1_unit",
-    "meter2_unit",
-    "meter3_unit",
-    "meter4_unit",
-)
-# Meters coerce blank → None; identity strings (model_name, version) coerce blank → "".
-_NULLABLE_FIELDS = frozenset(
-    ("meter1_unit", "meter2_unit", "meter3_unit", "meter4_unit")
 )
 
 
@@ -85,7 +77,7 @@ class AssetModelContext:
         )
 
     def update(self, *, data: dict) -> "AssetModel":
-        """Apply identity/meter metadata, asset-class change (with propagation),
+        """Apply identity metadata, asset-class change (with propagation),
         and reconcile the linked manufacturer set."""
         m = self.model
         with transaction.atomic():
@@ -97,8 +89,6 @@ class AssetModelContext:
                         value = (value or "").strip()
                     elif field == "config_baselines":
                         value = list(value or [])
-                    elif field in _NULLABLE_FIELDS:
-                        value = (value or None)
                     setattr(m, field, value)
                     changed.append(field)
             if changed:

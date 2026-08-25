@@ -148,6 +148,19 @@ from JavaScript, because a JS-only gate fails the moment the page reloads.
   </form>
 </div>
 
+{% comment %}
+The purchasing queue, if the Buyer flagged anything from the demand list.
+Shown before card 2 because it is the answer to "what is this PO for".
+
+"Add all" posts through card 2's own `add_from_demands` handler with the
+queue's ids — one staging path, not a parallel one. It stays an explicit
+click rather than firing on vendor-save: this wizard's rule is that nothing
+enters the draft without the Buyer asking, and a queue is a shortcut to one
+click, not a licence to skip it.
+{% endcomment %}
+{% include "procurement/purchase_orders/components/_queued_purchasing_card.html" %}
+
+
 {% comment %} CARD 2 — Item selection. Enabled once a vendor exists. {% endcomment %}
 <div class="card {% if not has_vendor %}wizard-step-disabled{% endif %}">
   {% if not has_vendor %}

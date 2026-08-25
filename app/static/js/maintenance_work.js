@@ -59,6 +59,7 @@
       submitClass: "is-success",
       notesLabel: "Completion notes",
       billable: true,
+      recordTimes: true,
     },
     fail_action: {
       title: "Fail step",
@@ -66,6 +67,7 @@
       submitClass: "is-danger",
       notesLabel: "Reason for failure",
       billable: true,
+      recordTimes: true,
     },
     skip_action: {
       title: "Skip step",
@@ -73,6 +75,7 @@
       submitClass: "is-warning",
       notesLabel: "Reason for skipping",
       billable: false,
+      recordTimes: false,
     },
     block_action: {
       title: "Block step",
@@ -80,6 +83,7 @@
       submitClass: "is-warning",
       notesLabel: "Reason work is blocked",
       billable: false,
+      recordTimes: false,
     },
     reopen_action: {
       title: "Reopen step",
@@ -87,6 +91,7 @@
       submitClass: "is-info",
       notesLabel: "Reason for reopening",
       billable: false,
+      recordTimes: false,
     },
   };
 
@@ -135,8 +140,27 @@
     billableField.hidden = !config.billable;
     billableInput.disabled = !config.billable;
     if (config.billable) {
+      /* An hours figure already recorded on the step wins; otherwise fall
+         back to the step's estimated duration, so the common case is
+         "it took about as long as planned" and the technician only edits
+         when it did not. Tested against "" rather than truthiness: a
+         deliberately recorded 0 must not be replaced by the estimate. */
+      var recorded = data(button, "billable-hours");
       billableInput.value =
-        data(button, "billable-hours") || data(button, "expected-hours") || "";
+        recorded !== "" ? recorded : data(button, "expected-hours");
+    }
+
+    var timesField = $("action-status-times-field");
+    var startTimeInput = $("action-status-start-time");
+    var endTimeInput = $("action-status-end-time");
+    if (timesField && startTimeInput && endTimeInput) {
+      timesField.style.display = config.recordTimes ? "" : "none";
+      startTimeInput.disabled = !config.recordTimes;
+      endTimeInput.disabled = !config.recordTimes;
+      if (config.recordTimes) {
+        startTimeInput.value = data(button, "start-time") || nowLocal();
+        endTimeInput.value = nowLocal();
+      }
     }
 
     var submit = $("action-status-submit");

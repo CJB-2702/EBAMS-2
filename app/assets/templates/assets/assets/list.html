@@ -87,7 +87,74 @@
   </div>
 
   <div class="card">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assets ({{ assets|length }})</div></div>
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Assets ({{ assets|length }})</div>
+      <div class="is-flex is-align-items-center pr-3">
+        <div class="buttons has-addons are-small mb-0">
+          <a href="?format=condensed{% if q %}&q={{ q }}{% endif %}{% if domain %}&domain={{ domain }}{% endif %}{% if asset_class %}&asset_class={{ asset_class }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if model %}&model={{ model }}{% endif %}" class="button {% if format != 'large' %}is-link is-selected{% else %}is-light{% endif %}" title="Condensed Table View">
+            <span class="icon"><span class="material-icons" style="font-size:1rem;">table_rows</span></span><span>Condensed</span>
+          </a>
+          <a href="?format=large{% if q %}&q={{ q }}{% endif %}{% if domain %}&domain={{ domain }}{% endif %}{% if asset_class %}&asset_class={{ asset_class }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if model %}&model={{ model }}{% endif %}" class="button {% if format == 'large' %}is-link is-selected{% else %}is-light{% endif %}" title="Comfortable Card View">
+            <span class="icon"><span class="material-icons" style="font-size:1rem;">grid_view</span></span><span>Comfortable</span>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% if format == 'large' %}
+    <div class="card-content">
+      <div class="columns is-multiline">
+        {% for a in assets %}
+        <div class="column is-6">
+          <div class="card" style="height:100%;margin:0;display:flex;flex-direction:column;">
+            <div class="card-content" style="flex:1;">
+              <div class="is-flex" style="gap:1rem;align-items:flex-start;">
+                <div style="width:100px;height:100px;flex-shrink:0;">
+                  {% if a.primary_image %}
+                    <figure class="image" style="width:100px;height:100px;background:var(--bulma-background);border:1px solid var(--bulma-border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0;">
+                      <img src="{{ a.primary_image.file.file.url }}" alt="{{ a.name }}" style="max-width:100px;max-height:100px;object-fit:contain;">
+                    </figure>
+                  {% else %}
+                    <div style="width:100px;height:100px;background:var(--bulma-background);border:1px dashed var(--bulma-border);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--bulma-text-weak);">
+                      <span class="material-icons" style="font-size:2rem;">photo</span>
+                      <span class="is-size-7">No Image</span>
+                    </div>
+                  {% endif %}
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div class="is-flex is-justify-content-space-between is-align-items-flex-start">
+                    <div>
+                      <a href="{% url 'asset_detail' asset_id=a.id %}" class="has-text-weight-bold is-size-6">{{ a.name }}</a>
+                      {% if a.parent_asset_id %}<span class="tag is-light is-small ml-1">child</span>{% endif %}
+                      <p class="is-family-monospace is-size-7 has-text-grey">{{ a.serial_number }}</p>
+                    </div>
+                    <div>
+                      {% include "assets/_status_tag.html" with value=a.status %}
+                    </div>
+                  </div>
+                  <div class="tags mt-2 mb-1">
+                    <span class="tag is-light is-small"><span class="material-icons mr-1" style="font-size:0.9rem;">category</span>{{ a.asset_class.name }}</span>
+                    <span class="tag is-light is-small"><span class="material-icons mr-1" style="font-size:0.9rem;">directions_car</span>{{ a.model }}</span>
+                    <span class="tag is-light is-small"><span class="material-icons mr-1" style="font-size:0.9rem;">domain</span>{{ a.domain.name }}</span>
+                    {% if a.config_baseline %}<span class="tag is-info is-light is-small">{{ a.config_baseline }}</span>{% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <footer class="card-footer" style="background:var(--bulma-background);">
+              <a href="{% url 'asset_detail' asset_id=a.id %}" class="card-footer-item is-size-7"><span class="icon mr-1"><span class="material-icons" style="font-size:1rem;">visibility</span></span>View</a>
+              <a href="{% url 'asset_edit' asset_id=a.id %}" class="card-footer-item is-size-7"><span class="icon mr-1"><span class="material-icons" style="font-size:1rem;">edit</span></span>Edit</a>
+              <a href="{% url 'asset_images' asset_id=a.id %}" class="card-footer-item is-size-7"><span class="icon mr-1"><span class="material-icons" style="font-size:1rem;">photo_library</span></span>Images</a>
+            </footer>
+          </div>
+        </div>
+        {% empty %}
+        <div class="column is-12">
+          <p class="has-text-grey has-text-centered py-5">No assets match your filters.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
     <div class="card-content is-flush">
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead><tr><th>Name</th><th>Serial</th><th>Class</th><th>Model</th><th>Baseline</th><th>Manufacturer</th><th>Domain</th><th>Status</th><th>Capability</th><th class="has-text-right">Actions</th></tr></thead>
@@ -114,6 +181,7 @@
         </tbody>
       </table>
     </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

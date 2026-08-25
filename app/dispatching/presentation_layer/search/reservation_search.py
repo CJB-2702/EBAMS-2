@@ -150,7 +150,10 @@ def search_reservations(
             | Q(destination__icontains=q)
         )
     if asset:
-        qs = qs.filter(asset_id=asset)
+        if asset.isdigit():
+            qs = qs.filter(Q(asset_id=int(asset)) | Q(asset__serial_number__icontains=asset))
+        else:
+            qs = qs.filter(asset__serial_number__icontains=asset)
     if asset_class:
         qs = qs.filter(asset__asset_class_id=asset_class)
     if domain:

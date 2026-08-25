@@ -13,12 +13,13 @@
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   <script src="{% static 'web_components/info_popover.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
   <style>
     {% block extra_css %}{% endblock %}
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body style="--app-accent: var(--app-color-parts);">
 
 {% include "shared/topnav.html" with current_app_group="Parts" %}
 
@@ -34,6 +35,11 @@
       <p class="sidebar-section-label">Supply</p>
       <a href="{% url 'part_manufacturer_index' %}" class="sidebar-link {% block nav_manufacturers %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
       <a href="{% url 'supplier_items_hub' %}" class="sidebar-link {% block nav_supplier_items %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Supplier Items</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Part Associations</p>
+      <a href="{% url 'part_model_association_index' %}" class="sidebar-link {% block nav_part_model_assoc %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Part-Model Associations</a>
+      <a href="{% url 'part_class_association_index' %}" class="sidebar-link {% block nav_part_class_assoc %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Part-Class Associations</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Other Portals</p>
@@ -55,9 +61,9 @@
 
         {% if messages %}
           {% for message in messages %}
-            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+            <toast-alert type="{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" dismiss-delay="4000">
               {{ message }}
-            </div>
+            </toast-alert>
           {% endfor %}
         {% endif %}
 

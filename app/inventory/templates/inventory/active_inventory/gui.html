@@ -1,7 +1,9 @@
 {% extends "inventory/base.html" %}
-{% block title %}Inventory Locator{% endblock %}
+{% load static %}
+{% block title %}View Inventory GUI{% endblock %}
 {% block nav_active_inventory_gui %}is-active{% endblock %}
-{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Inventory Locator</a></li>{% endblock %}
+{% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">View Inventory GUI</a></li>{% endblock %}
+{% block extra_head %}<script defer src="{% static 'js/bulk_select.js' %}"></script>{% endblock %}
 
 {% comment %}
 Location-first stock browser. Picker on the left, matching stock on the right.
@@ -21,7 +23,7 @@ reproduces the view and every control here is a plain link.
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">location_on</span></div>
       <div>
-        <h1 class="page-title">Inventory Locator</h1>
+        <h1 class="page-title">View Inventory GUI</h1>
         <p class="page-subtitle">Pick a place on the left to see what is stored there.</p>
       </div>
     </div>
@@ -182,7 +184,7 @@ reproduces the view and every control here is a plain link.
 
   {# ── Right: stock matching the current selection ── #}
   <div class="column is-8">
-    <div class="card">
+    <div class="card" data-bulk-scope="stock" data-bulk-field="stock_ids">
       <div class="card-header"><div class="card-header-title">
         <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
         {# `page` is falsy when empty (Page.__len__ == 0), so key off the warehouse. #}
@@ -203,6 +205,9 @@ reproduces the view and every control here is a plain link.
           <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
             <thead>
               <tr>
+                <th style="width:2.5rem;">
+                  <input type="checkbox" data-bulk-all aria-label="Select all stock rows shown">
+                </th>
                 <th>Part</th><th>Warehouse</th><th>Room</th><th>Location</th><th>Serial</th>
                 <th class="has-text-right">On hand</th><th class="has-text-right">Allocated</th>
                 <th class="has-text-right">Available</th><th class="has-text-right">Avg cost</th>
@@ -213,13 +218,14 @@ reproduces the view and every control here is a plain link.
               {% for row in rows %}
               {% include "inventory/active_inventory/_row.html" %}
               {% empty %}
-              <tr><td colspan="11" class="has-text-grey has-text-centered py-5">
+              <tr><td colspan="12" class="has-text-grey has-text-centered py-5">
                 No stock in this location.
               </td></tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+
         {% endif %}
       </div>
 

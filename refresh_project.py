@@ -166,6 +166,7 @@ def seed_database():
 
     print("\n9. Running seed commands...")
     seed_commands = [
+        'seed_assets_dev',
         'seed_parts_dev',
         'seed_procurement_dev',
         'seed_inventory_dev',

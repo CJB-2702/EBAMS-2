@@ -65,7 +65,7 @@
             {% if action.status == "Not Started" %}
             {% comment %} Start is the only verb that fires straight away — no dialog,
                no notes. It also starts the event (see start_action). {% endcomment %}
-            <form method="post">
+            <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML">
               {% csrf_token %}
               <input type="hidden" name="action_id" value="{{ action.pk }}">
               <button class="button is-info" type="submit" name="action" value="start_action">
@@ -82,7 +82,9 @@
                     data-action-id="{{ action.pk }}"
                     data-action-name="{{ action.action_name }}"
                     data-current-status="{{ action.status }}"
-                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}">
+                    data-start-time="{{ action.start_time|date:'Y-m-d\TH:i' }}"
+                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}"
+                    data-expected-hours="{{ action.estimated_hours|default_if_none:'' }}">
               <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">check_circle</span></span><span>Complete</span>
             </button>
             <button class="button is-danger" type="button"
@@ -92,7 +94,9 @@
                     data-action-id="{{ action.pk }}"
                     data-action-name="{{ action.action_name }}"
                     data-current-status="{{ action.status }}"
-                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}">
+                    data-start-time="{{ action.start_time|date:'Y-m-d\TH:i' }}"
+                    data-billable-hours="{{ action.billable_hours|default_if_none:'' }}"
+                    data-expected-hours="{{ action.estimated_hours|default_if_none:'' }}">
               <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">cancel</span></span><span>Failed</span>
             </button>
             <button class="button is-warning" type="button"

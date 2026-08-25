@@ -180,7 +180,7 @@ def intake_create(request: HttpRequest) -> HttpResponse:
     
     selected_wh_id = _int(request.GET.get("warehouse_id")) or (warehouses[0].pk if warehouses else None)
     rooms = (
-        Room.objects.filter(warehouse_id=selected_wh_id, deleted_at__isnull=True).order_by("name")
+        Room.objects.filter(warehouse_id=selected_wh_id, deleted_at__isnull=True).order_by("room_name")
         if selected_wh_id
         else []
     )
@@ -696,7 +696,7 @@ def auto_intake_portal(request: HttpRequest) -> HttpResponse:
         warehouses_qs = warehouses_qs.filter(domains__id__in=domain_ids).distinct()
     warehouses = list(warehouses_qs.order_by("name"))
     selected_wh_id = _int(request.GET.get("warehouse_id")) or (warehouses[0].pk if warehouses else None)
-    rooms = Room.objects.filter(warehouse_id=selected_wh_id, deleted_at__isnull=True).order_by("name") if selected_wh_id else []
+    rooms = Room.objects.filter(warehouse_id=selected_wh_id, deleted_at__isnull=True).order_by("room_name") if selected_wh_id else []
     shipments = Shipment.objects.filter(deleted_at__isnull=True).order_by("-id")[:50]
 
     context = {

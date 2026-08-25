@@ -36,7 +36,7 @@ def search_asset_classes(
 
 
 def load_asset_class_detail(class_id: int) -> AssetClass | None:
-    return (
+    klass = (
         AssetClass.objects.prefetch_related(
             "domains", "capability_links__capability_definition"
         )
@@ -47,6 +47,16 @@ def load_asset_class_detail(class_id: int) -> AssetClass | None:
         .filter(id=class_id)
         .first()
     )
+    if klass is not None:
+        klass.meter_units = [
+            u
+            for u in (
+                klass.meter1_unit, klass.meter2_unit,
+                klass.meter3_unit, klass.meter4_unit,
+            )
+            if u
+        ]
+    return klass
 
 
 def list_categories() -> list[str]:

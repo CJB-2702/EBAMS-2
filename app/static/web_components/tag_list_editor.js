@@ -54,13 +54,29 @@
 
   class TagListEditor extends HTMLElement {
     connectedCallback() {
-      if (this._ready) return;
+      if (this._mounted) return;
       // Wait for light-DOM children (initial hidden inputs) to be parsed.
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => this._init(), { once: true });
+        document.addEventListener('DOMContentLoaded', () => this._tryInit(), { once: true });
       } else {
-        this._init();
+        this._tryInit();
       }
+    }
+
+    disconnectedCallback() {
+      this._observer?.disconnect();
+    }
+
+    _tryInit() {
+      if (this._mounted) return;
+      this._mounted = true;
+
+      if (!this._observer) {
+        this._observer = new MutationObserver(() => this._tryInit());
+        this._observer.observe(this, { childList: true, subtree: true });
+      }
+
+      this._init();
     }
 
     _init() {

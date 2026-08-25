@@ -96,7 +96,7 @@ def library_add_document(request: HttpRequest, model_id: int) -> HttpResponse:
     uploaded_files = request.FILES.getlist("file")
     if not uploaded_files:
         messages.error(request, "Choose at least one file to add.")
-        return _library_redirect(ctx.model.model_name)
+        return _redirect_after(request, ctx.model.model_name)
 
     caption = request.POST.get("caption", "").strip()
     added = 0
@@ -112,7 +112,7 @@ def library_add_document(request: HttpRequest, model_id: int) -> HttpResponse:
             request,
             f"{added} document{'' if added == 1 else 's'} added to the library.",
         )
-    return _library_redirect(ctx.model.model_name)
+    return _redirect_after(request, ctx.model.model_name)
 
 
 @require_http_methods(["POST"])
@@ -128,7 +128,7 @@ def library_remove_document(request: HttpRequest, model_id: int) -> HttpResponse
         messages.success(request, "Document removed from the library.")
     else:
         messages.error(request, "Document not found in this library section.")
-    return _library_redirect(ctx.model.model_name)
+    return _redirect_after(request, ctx.model.model_name)
 
 
 @require_http_methods(["POST"])
@@ -141,7 +141,7 @@ def library_add_image(request: HttpRequest, model_id: int) -> HttpResponse:
     uploaded_files = request.FILES.getlist("file")
     if not uploaded_files:
         messages.error(request, "Choose at least one image to add.")
-        return _library_redirect(ctx.model.model_name)
+        return _redirect_after(request, ctx.model.model_name)
 
     added = 0
     for uploaded in uploaded_files:
@@ -155,7 +155,7 @@ def library_add_image(request: HttpRequest, model_id: int) -> HttpResponse:
             request,
             f"{added} image{'' if added == 1 else 's'} added to the gallery.",
         )
-    return _library_redirect(ctx.model.model_name)
+    return _redirect_after(request, ctx.model.model_name)
 
 
 @require_http_methods(["POST"])
@@ -169,7 +169,7 @@ def library_remove_image(request: HttpRequest, model_id: int) -> HttpResponse:
         messages.success(request, "Image removed from the gallery.")
     else:
         messages.error(request, "Image not found in this gallery.")
-    return _library_redirect(ctx.model.model_name)
+    return _redirect_after(request, ctx.model.model_name)
 
 
 @require_http_methods(["POST"])
@@ -184,7 +184,7 @@ def library_set_primary_image(request: HttpRequest, model_id: int) -> HttpRespon
         messages.success(request, "Primary image updated.")
     except GalleryError as exc:
         messages.error(request, str(exc))
-    return _library_redirect(ctx.model.model_name)
+    return _redirect_after(request, ctx.model.model_name)
 
 
 @require_http_methods(["POST"])

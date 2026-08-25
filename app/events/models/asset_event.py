@@ -17,7 +17,7 @@ class AssetEvent(AuditFieldsMixin):
     )
     event = models.ForeignKey(
         "events.Event",
-        on_delete=models.PROTECT,
+        on_delete=models.CASCADE,
         related_name="asset_links",
     )
     role = models.CharField(max_length=50, null=True, blank=True)

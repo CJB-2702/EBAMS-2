@@ -49,8 +49,9 @@ def parts_hub(request: HttpRequest) -> HttpResponse:
         key: request.GET.get(key, "").strip()
         for key in ("part_number", "name", "description", "manufacturer", "revision_name")
     }
+    format_val = request.GET.get("format", "").strip()
     parts = search_parts(**filters)
-    return render(request, "parts/hub.html", {"parts": parts, **filters})
+    return render(request, "parts/hub.html", {"parts": parts, "format": format_val, **filters})
 
 
 @require_http_methods(["GET"])

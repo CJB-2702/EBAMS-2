@@ -88,3 +88,19 @@ class PartDemandNarrator:
     @classmethod
     def issuance_recorded(cls, *, net_issued_qty) -> str:
         return f"Issuance recorded. Net quantity now with the requester: {net_issued_qty}."
+
+    @classmethod
+    def issuance_handover(
+        cls, *, quantity, recipient_label: str, session_number: str, net_issued_qty
+    ) -> str:
+        """The journal line for one handover.
+
+        `PartDemand.issued_to` is last-taker-wins, so this row is where the
+        history of who collected what, when, and under which receipt actually
+        lives. Keep it self-contained: a reader of the demand's history should
+        not have to open the receipt to understand the entry.
+        """
+        return (
+            f"Issued {quantity} to {recipient_label} on receipt {session_number}. "
+            f"Net quantity now out: {net_issued_qty}."
+        )

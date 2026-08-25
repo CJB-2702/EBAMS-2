@@ -1,34 +1,109 @@
 {% extends "inventory/base.html" %}
-{% block title %}{{ room_location.display_code }} — Layout Builder{% endblock %}
+{% block title %}{{ room_location.display_code }} — Bins &amp; Layout{% endblock %}
 {% block nav_warehouses %}is-active{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'inventory_warehouse_index' %}">Warehouses</a></li>
 <li><a href="{% url 'inventory_room_detail' pk=room_location.room_id %}">{{ room_location.room.room_name }}</a></li>
 <li><a href="{% url 'inventory_room_location_detail' pk=room_location.pk %}">{{ room_location.display_code }}</a></li>
-<li class="is-active"><a href="#" aria-current="page">Layout builder</a></li>
+<li class="is-active"><a href="#" aria-current="page">Bins &amp; layout</a></li>
 {% endblock %}
 
 {% block content %}
 <div class="page-hero">
   <div class="page-header">
     <div class="page-header-title-wrap">
-      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">upload</span></div>
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">architecture</span></div>
       <div>
-        <h1 class="page-title">{{ room_location.display_code }} — Z-picker Layout Builder</h1>
-        <p class="page-subtitle">Upload the bin-layout SVG. Shapes must be labeled with the Z (atomic) coordinate (e.g. "0001").</p>
+        <h1 class="page-title">{{ room_location.display_code }} — Bins &amp; Layout</h1>
+        <p class="page-subtitle">Add and retire this location's bins, and upload the bin-layout SVG that draws them.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a class="button is-small is-link is-light" href="{% url 'inventory_room_location_detail' pk=room_location.pk %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">map</span></span><span>Z-picker</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{# ── Left: the bin layout as drawn. Right: the bins it addresses. ── #}
+<div class="columns">
+  <div class="column is-7">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">map</span></span>Current layout</div></div>
+      <div class="card-content">
+        {% if map_svg %}
+        <div class="svg-map-wrapper">{{ map_svg|safe }}</div>
+        {% else %}
+        <p class="has-text-grey is-size-7">No layout uploaded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="column is-5">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>Bins</div></div>
+      <div class="card-content">
+        {% if storage_locations %}
+        <table class="table is-fullwidth is-hoverable is-size-7">
+          <thead><tr><th>Z</th><th>Full code</th><th></th></tr></thead>
+          <tbody>
+            {% for entry in storage_locations %}
+            <tr>
+              <td class="is-family-monospace">{{ entry.location.atomic_coord }}</td>
+              <td class="is-family-monospace">{{ entry.location.display_code }}</td>
+              <td class="has-text-right">
+                {% if can_manage %}
+                  {% if entry.has_stock %}
+                  <button class="button is-small is-ghost" type="button" disabled title="Holds stock — move or issue it first">Retire</button>
+                  {% else %}
+                  <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="retire_bin">
+                    <input type="hidden" name="storage_location_id" value="{{ entry.location.pk }}">
+                    <button class="button is-small is-ghost has-text-danger" type="submit">Retire</button>
+                  </form>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="has-text-grey is-size-7">No bins yet.</p>
+        {% endif %}
+
+        {% if can_manage %}
+        <hr>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_bin">
+          <label class="label is-small" for="add-bin">Add a bin manually</label>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input is-small is-family-monospace" id="add-bin" name="atomic_coord" placeholder="e.g. 3" required>
+            </div>
+            <div class="control"><button class="button is-small is-link" type="submit">Add</button></div>
+          </div>
+          <p class="help">Zero-padded to four characters on save.</p>
+        </form>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
 
-<div class="card">
+<div class="card mt-4">
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">upload_file</span></span>Upload layout</div></div>
   <div class="card-content">
     {% if room_location.current_layout_id %}
-    <p class="is-size-7 has-text-grey">A layout is already uploaded. Uploading a new one replaces it — existing locations are never deleted, only reconciled below.</p>
+    <p class="is-size-7 has-text-grey">A layout is already uploaded. Uploading a new one replaces it — existing bins are never deleted, only reconciled below. An upload whose shapes drop a bin that still holds stock is <strong>rejected outright</strong>.</p>
     {% else %}
     <p class="is-size-7 has-text-grey">No layout uploaded yet.</p>
     {% endif %}
+    {% if can_manage %}
     <form method="post" enctype="multipart/form-data" class="mt-3">
       {% csrf_token %}
       <input type="hidden" name="action" value="upload">
@@ -43,9 +118,13 @@
         </div>
       </div>
     </form>
+    {% else %}
+    <p class="has-text-grey is-size-7 mt-3">You do not have permission to manage topography.</p>
+    {% endif %}
   </div>
 </div>
 
+{# ── Reconciliation card — always shown when a draft exists, per FD-23. ── #}
 {% if reconciliation %}
 <div class="card mt-4">
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Reconciliation</div></div>
@@ -77,9 +156,9 @@
       {% endif %}
     </form>
 
-    <p class="has-text-weight-semibold is-size-7 mt-3">Orphaned locations ({{ reconciliation.orphaned|length }})</p>
+    <p class="has-text-weight-semibold is-size-7 mt-3">Orphaned bins ({{ reconciliation.orphaned|length }})</p>
     {% if reconciliation.orphaned %}
-    <p class="is-size-7 has-text-grey">Existing storage locations with no matching shape in the new SVG. Kept, not deleted.</p>
+    <p class="is-size-7 has-text-grey">Existing bins with no matching shape in the new SVG. Kept, not deleted. None of these held stock — the upload would have been rejected if any did.</p>
     <p class="is-size-7 is-family-monospace">{{ reconciliation.orphaned|join:", " }}</p>
     {% else %}
     <p class="has-text-grey is-size-7">None.</p>

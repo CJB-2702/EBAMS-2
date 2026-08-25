@@ -133,6 +133,7 @@ def main() -> int:
         ):
             call_command("loaddata", label, verbosity=1)
 
+        call_command("seed_assets_dev", verbosity=1)
         call_command("seed_parts_dev", verbosity=1)
         call_command("seed_procurement_dev", verbosity=1)
 

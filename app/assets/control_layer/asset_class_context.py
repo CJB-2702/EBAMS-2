@@ -22,7 +22,19 @@ if TYPE_CHECKING:
 
     from app.assets.models import AssetClass
 
-_METADATA_FIELDS = ("name", "category", "description", "restrict_to_domain_set")
+_METADATA_FIELDS = (
+    "name",
+    "category",
+    "description",
+    "restrict_to_domain_set",
+    "meter1_unit",
+    "meter2_unit",
+    "meter3_unit",
+    "meter4_unit",
+)
+_NULLABLE_FIELDS = frozenset(
+    ("meter1_unit", "meter2_unit", "meter3_unit", "meter4_unit")
+)
 
 
 class AssetClassValidationError(Exception):
@@ -69,6 +81,8 @@ class AssetClassContext:
                     if field == "name":
                         value = (value or "").strip()
                     elif field in ("category", "description"):
+                        value = value or None
+                    elif field in _NULLABLE_FIELDS:
                         value = value or None
                     setattr(c, field, value)
                     changed.append(field)

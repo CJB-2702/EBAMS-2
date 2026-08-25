@@ -12,12 +12,13 @@
   <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
   <script defer src="{% static 'js/htmx.min.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
   <style>
     {% block extra_css %}{% endblock %}
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body style="--app-accent: var(--app-color-administration);">
 
 {# TOP NAV #}
 {% include "shared/topnav.html" with current_app_group="Administration" %}
@@ -73,9 +74,9 @@
 
         {% if messages %}
           {% for message in messages %}
-            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+            <toast-alert type="{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" dismiss-delay="4000">
               {{ message }}
-            </div>
+            </toast-alert>
           {% endfor %}
         {% endif %}
 

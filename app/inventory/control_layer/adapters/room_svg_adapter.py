@@ -25,6 +25,14 @@ from app.inventory.control_layer.errors import SvgUploadError
 _DISALLOWED_TAGS = ("script", "foreignObject")
 _EXTERNAL_REF_ATTRS = ("href", "xlink:href")
 
+#: Inkscape writes BOTH `xmlns=".../svg"` and `xmlns:svg=".../svg"` on its
+#: root element. lxml then re-serializes every element with the `svg:`
+#: prefix, and a browser parsing `<svg:svg>` in an HTML document does not
+#: resolve it to a real SVG element — the map renders as a flat strip of
+#: label text. Since every layout in this feature is Inkscape-authored, the
+#: prefix is stripped on the way through.
+_SVG_NAMESPACE_PREFIX = "svg"
+
 
 class RoomSvgAdapter:
     @classmethod
@@ -72,7 +80,19 @@ class RoomSvgAdapter:
                     if value and not value.startswith("#"):
                         del tag.attrs[attr]
 
+        cls._strip_svg_prefix(soup)
         return str(soup)
+
+    @classmethod
+    def _strip_svg_prefix(cls, soup: BeautifulSoup) -> None:
+        """Drops the redundant `svg:` prefix (and its now-unused namespace
+        declaration) so the serialized markup uses plain `<svg>`/`<rect>`
+        tag names an HTML parser understands."""
+        for tag in soup.find_all(True):
+            if tag.prefix == _SVG_NAMESPACE_PREFIX:
+                tag.prefix = None
+            if f"xmlns:{_SVG_NAMESPACE_PREFIX}" in tag.attrs:
+                del tag.attrs[f"xmlns:{_SVG_NAMESPACE_PREFIX}"]
 
     @classmethod
     def normalize_viewbox(cls, svg: str) -> str:
@@ -80,6 +100,7 @@ class RoomSvgAdapter:
         missing), sets `width=100%`/`height=auto`, and tags the root
         `<svg>` with the `room-svg-canvas` class for responsive scaling."""
         soup = BeautifulSoup(svg, "xml")
+        cls._strip_svg_prefix(soup)
         svg_node = soup.find("svg")
         if svg_node is None:
             return svg

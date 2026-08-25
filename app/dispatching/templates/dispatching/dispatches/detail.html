@@ -360,7 +360,7 @@
       <tbody>
         {% for res in struct.reservations %}
         <tr>
-          <td><a href="{% url 'dispatching_reservation_detail' res.pk %}"><strong>{{ res.asset.name }}</strong> ({{ res.asset.serial_number|default:res.asset.asset_tag }})</a></td>
+          <td><a href="{% url 'dispatching_reservation_detail' res.pk %}"><strong>{{ res.asset.name }}</strong> ({{ res.asset.serial_number }})</a></td>
           <td>{{ res.desired_start|date:"M d, H:i" }} – {{ res.desired_end|date:"M d, H:i" }}</td>
           <td><span class="tag is-success is-light">{{ res.get_reservation_status_display }}</span></td>
           <td>{{ res.accountable_person.get_full_name|default:res.accountable_person.username }}</td>

@@ -73,13 +73,15 @@ def load_model_detail(model_id: int) -> AssetModel | None:
         .first()
     )
     if model is not None:
+        # Meter labels live on the model's class now — shown here read-only so
+        # the model page still tells you what gets tracked, without owning it.
         model.meter_units = [
             u
             for u in (
-                model.meter1_unit,
-                model.meter2_unit,
-                model.meter3_unit,
-                model.meter4_unit,
+                model.asset_class.meter1_unit,
+                model.asset_class.meter2_unit,
+                model.asset_class.meter3_unit,
+                model.asset_class.meter4_unit,
             )
             if u
         ]

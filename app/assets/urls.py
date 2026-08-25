@@ -67,10 +67,6 @@ from app.assets.presentation_layer.entrypoints.manufacturers import (
     manufacturer_index,
 )
 from app.assets.presentation_layer.entrypoints.meter_history import meter_history_index
-from app.assets.presentation_layer.entrypoints.part_associations import (
-    part_class_association_index,
-    part_model_association_index,
-)
 from app.assets.presentation_layer.entrypoints.models import (
     model_create,
     model_detail,
@@ -178,10 +174,6 @@ urlpatterns = [
 
     # Asset Relationships (parent/child grouping)
     path("asset-relationships/", asset_relationships_index, name="asset_relationships_index"),
-
-    # Part Associations
-    path("part-associations/models/", part_model_association_index, name="part_model_association_index"),
-    path("part-associations/classes/", part_class_association_index, name="part_class_association_index"),
 
     # Asset Events Portal
     path("events/", lambda req: _events_portal(req, "asset_management"), name="asset_events_portal"),

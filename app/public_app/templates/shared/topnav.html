@@ -143,6 +143,36 @@
               </div>
             </div>
             <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Relationships</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'asset_relationships_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span> Asset Relationships</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <li role="tab" data-group="Configuration">
+        <button class="portal-tab-btn" commandfor="portal-configuration" command="toggle-popover">
+          <span class="portal-tab-icon"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span></span> Configuration <span class="portal-tab-chevron">&#9662;</span>
+        </button>
+        <div id="portal-configuration" popover="auto" class="portal-dropdown">
+          <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Configuration</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'configurations_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configurations Overview</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Configurations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'config_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
+                <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Defined Modifications</a>
+                <a href="{% url 'asset_configuration_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Capabilities</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'capability_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">stars</span></span> Capabilities Overview</a>
@@ -153,20 +183,16 @@
               </div>
             </div>
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Configurations</p>
+              <p class="portal-dropdown-label">Serialized Parts</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'configurations_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configurations Overview</a>
-                <a href="{% url 'config_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
-                <a href="{% url 'defined_modification_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Defined Modifications</a>
-                <a href="{% url 'asset_configuration_index' %}" class="portal-sublink"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
-                <a href="{% url 'asset_relationships_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span> Asset Relationships</a>
+                <a href="{% url 'serialized_part_template_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span> Part Templates</a>
+                <a href="{% url 'serialized_part_history_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span> Part History</a>
               </div>
             </div>
             <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Part Associations</p>
+              <p class="portal-dropdown-label">Serial Numbers</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'part_model_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Part-Model Associations</a>
-                <a href="{% url 'part_class_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Part-Class Associations</a>
+                <a href="{% url 'extension_serial_number_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates &amp; Tracking</a>
               </div>
             </div>
           </div>
@@ -192,6 +218,13 @@
               <div class="portal-dropdown-inner">
                 <a href="{% url 'part_manufacturer_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span> Manufacturers</a>
                 <a href="{% url 'supplier_items_hub' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">local_shipping</span></span> Supplier Items</a>
+              </div>
+            </div>
+            <div class="portal-dropdown-group">
+              <p class="portal-dropdown-label">Part Associations</p>
+              <div class="portal-dropdown-inner">
+                <a href="{% url 'part_model_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Part-Model Associations</a>
+                <a href="{% url 'part_class_association_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Part-Class Associations</a>
               </div>
             </div>
           </div>
@@ -250,9 +283,9 @@
             <div class="portal-dropdown-group">
               <p class="portal-dropdown-label">Operations</p>
               <div class="portal-dropdown-inner">
-                <a href="{% url 'inventory_putaway_worklist' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway Worklist</a>
+                <a href="{% url 'inventory_putaway_worklist' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Putaway Worklist</a>
                 <a href="{% url 'inventory_movements_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>
-                <a href="{% url 'inventory_issues_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</a>
+                <a href="{% url 'inventory_issues_index' %}" class="portal-sublink"><span class="icon">{% svg "putaway-icon" %}</span> Issue Parts</a>
                 <a href="{% url 'inventory_audit_session_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">checklist_rtl</span></span> Audits</a>
               </div>
             </div>
@@ -260,6 +293,9 @@
               <p class="portal-dropdown-label">Topography</p>
               <div class="portal-dropdown-inner">
                 <a href="{% url 'inventory_warehouse_index' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span> Warehouses</a>
+                {% if perms.inventory.can_manage_topography %}
+                <a href="{% url 'inventory_warehouse_create' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">add_business</span></span> New Warehouse</a>
+                {% endif %}
               </div>
             </div>
             <div class="portal-dropdown-group">
@@ -344,12 +380,6 @@
                 <a href="{% url 'extension_summary' 'emissions_info' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">co2</span></span> Emissions Specifications</a>
               </div>
             </div>
-            <div class="portal-dropdown-group">
-              <p class="portal-dropdown-label">Serial Numbers</p>
-              <div class="portal-dropdown-inner">
-                <a href="{% url 'extension_serial_number_templates' %}" class="portal-sublink"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates &amp; Tracking</a>
-              </div>
-            </div>
           </div>
         </div>
       </li>
@@ -357,10 +387,63 @@
   </div>
 
   <div class="app-topnav-right">
-    <button class="app-user-btn" type="button">
+    {# ── Active sessions (the work queues) live under the user button now, ── #}
+    {# ── as a full-width shelf — the same drop-down pattern every other ── #}
+    {# ── topnav line uses (.portal-dropdown), not a small anchored popover. ── #}
+    {# ── Counts come from the work_queues context processor; each queue ── #}
+    {# ── panel's contents still load lazily on first open, never on load. ── #}
+    <button class="app-user-btn {% if issuance_queue_count or purchasing_queue_count %}has-active-sessions{% endif %}"
+            type="button" id="user-menu-btn"
+            commandfor="user-menu-shelf" command="toggle-popover"
+            title="{% if issuance_queue_count or purchasing_queue_count %}You have active work queues{% else %}Account{% endif %}">
       <div class="app-user-avatar">{% if request.user.is_authenticated %}{{ request.user.username|slice:":2"|upper }}{% elif user.is_authenticated %}{{ user.username|slice:":2"|upper }}{% endif %}</div>
       <span>{% if request.user.is_authenticated %}{{ request.user.username }}{% else %}{{ user.username }}{% endif %}</span>
+      {% if issuance_queue_count or purchasing_queue_count %}
+      <span class="app-user-session-dot" aria-hidden="true"></span>
+      {% endif %}
     </button>
+
+    <div id="user-menu-shelf" popover="auto" class="portal-dropdown">
+      <div class="portal-dropdown-group-container" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        <div class="portal-dropdown-group">
+          <p class="portal-dropdown-label">Active sessions</p>
+          <div class="portal-dropdown-inner">
+            <button class="portal-sublink {% if issuance_queue_count %}is-active{% endif %}" type="button"
+                    id="queue-btn-issuance"
+                    commandfor="queue-panel-issuance" command="toggle-popover"
+                    title="Parts staged for issuance"
+                    hx-get="{% url 'inventory_issuance_queue_panel' %}"
+                    hx-target="#queue-panel-issuance"
+                    hx-swap="innerHTML"
+                    hx-trigger="click">
+              <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span>
+              Issuance
+              <span class="app-queue-count">{{ issuance_queue_count|default:0 }}</span>
+            </button>
+            <button class="portal-sublink {% if purchasing_queue_count %}is-active{% endif %}" type="button"
+                    id="queue-btn-purchasing"
+                    commandfor="queue-panel-purchasing" command="toggle-popover"
+                    title="Demands queued for purchasing"
+                    hx-get="{% url 'purchasing_queue_panel' %}"
+                    hx-target="#queue-panel-purchasing"
+                    hx-swap="innerHTML"
+                    hx-trigger="click">
+              <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span>
+              Purchasing
+              <span class="app-queue-count">{{ purchasing_queue_count|default:0 }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="queue-panel-issuance" popover="auto" class="queue-popover queue-popover-issuance">
+      <p class="queue-popover-empty">Loading…</p>
+    </div>
+    <div id="queue-panel-purchasing" popover="auto" class="queue-popover queue-popover-purchasing">
+      <p class="queue-popover-empty">Loading…</p>
+    </div>
+
     <form method="post" action="{% url 'public_logout' %}" style="display:flex; height:100%;">
       {% csrf_token %}
       <button class="app-logout-btn" type="submit" aria-label="Sign out" title="Sign out">⎋ Sign out</button>

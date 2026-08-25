@@ -293,6 +293,10 @@ too long to reasonably fit on one line.
 
 **Why:** Single-line `{# #}` comments are faster to scan, harder to accidentally break, and play well with git diffs. If you must write a longer comment, the `{% comment %}` block is explicitly designed for multi-line explanations and is unambiguous to the parser.
 
+## 7. Asset Search by Serial Number
+
+In UI-facing forms, search for assets based off of asset serial numbers.
+
 ---
 
 ## Project conventions worth knowing

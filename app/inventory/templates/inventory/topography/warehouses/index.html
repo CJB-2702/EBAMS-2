@@ -13,6 +13,13 @@
           <p class="page-subtitle">Stock-holding sites and their rooms.</p>
         </div>
       </div>
+      {% if can_manage %}
+      <div class="page-header-actions">
+        <a class="button is-small is-link" href="{% url 'inventory_warehouse_create' %}">
+          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New warehouse</span>
+        </a>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -21,24 +28,50 @@
   <div class="card">
     <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span>All warehouses</div></div>
     <div class="card-content">
+
+      {# ── Filters: retired warehouses stay reachable, since retirement is reversible. ── #}
+      <form method="get" class="field is-grouped is-grouped-multiline mb-4">
+        <div class="control">
+          <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Name or code">
+        </div>
+        <div class="control">
+          <div class="select is-small">
+            <select name="show">
+              <option value="active" {% if show == "active" %}selected{% endif %}>Active only</option>
+              <option value="inactive" {% if show == "inactive" %}selected{% endif %}>Retired only</option>
+              <option value="all" {% if show == "all" %}selected{% endif %}>All</option>
+            </select>
+          </div>
+        </div>
+        <div class="control">
+          <button class="button is-small" type="submit">Filter</button>
+        </div>
+      </form>
+
       {% if warehouses %}
       <table class="table is-fullwidth is-hoverable is-size-7">
         <thead>
-          <tr><th>Name</th><th>Code</th><th>Division</th><th>Active</th></tr>
+          <tr><th>Name</th><th>Code</th><th>Division</th><th class="has-text-right">Rooms</th><th>Status</th><th></th></tr>
         </thead>
         <tbody>
           {% for warehouse in warehouses %}
           <tr>
-            <td><a href="{% url 'inventory_warehouse_detail' pk=warehouse.pk %}">{{ warehouse.name }}</a></td>
+            <td><a class="has-text-link" href="{% url 'inventory_warehouse_detail' pk=warehouse.pk %}">{{ warehouse.name }}</a></td>
             <td class="is-family-monospace">{{ warehouse.code }}</td>
             <td>{{ warehouse.division.name }}</td>
-            <td>{% if warehouse.is_active %}<span class="tag is-success is-light is-small">Active</span>{% else %}<span class="tag is-light is-small">Inactive</span>{% endif %}</td>
+            <td class="has-text-right">{{ warehouse.room_count }}</td>
+            <td>{% if warehouse.is_active %}<span class="tag is-success is-light is-small">Active</span>{% else %}<span class="tag is-warning is-light is-small">Retired</span>{% endif %}</td>
+            <td class="has-text-right">
+              {% if can_manage %}
+              <a class="button is-small is-ghost" href="{% url 'inventory_warehouse_edit' pk=warehouse.pk %}">Edit</a>
+              {% endif %}
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
       {% else %}
-      <p class="has-text-grey is-size-7">No warehouses yet.</p>
+      <p class="has-text-grey is-size-7">No warehouses match this filter.</p>
       {% endif %}
     </div>
   </div>

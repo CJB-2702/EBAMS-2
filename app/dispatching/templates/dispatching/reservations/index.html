@@ -142,10 +142,10 @@
             <input class="input is-small" type="search" name="q" value="{{ q }}" placeholder="Title, asset, serial, origin…" autocomplete="off">
           </div>
           <div class="column is-3">
-            <label class="label is-small">Asset</label>
+            <label class="label is-small">Asset (Serial Number)</label>
             <div class="select is-small is-fullwidth"><select name="asset">
               <option value="">All assets</option>
-              {% for a in bookable_assets %}<option value="{{ a.id }}" {% if asset == a.id|stringformat:'s' %}selected{% endif %}>{{ a.name }}</option>{% endfor %}
+              {% for a in bookable_assets %}<option value="{{ a.id }}" {% if asset == a.id|stringformat:'s' or asset == a.serial_number %}selected{% endif %}>{% if a.serial_number %}{{ a.serial_number }} — {% endif %}{{ a.name }}</option>{% endfor %}
             </select></div>
           </div>
           <div class="column is-2">

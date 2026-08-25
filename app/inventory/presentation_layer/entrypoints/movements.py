@@ -87,7 +87,9 @@ def movement_portal(request: HttpRequest) -> HttpResponse:
             quantity = _decimal(request.POST.get("quantity")) or balance.quantity_on_hand
             if not warehouse_id:
                 raise InventoryValidationError(["Choose a destination warehouse."])
-            MovementContext.move(
+
+            original_quantity = balance.quantity_on_hand
+            movement = MovementContext.move(
                 active_inventory_id=balance.pk,
                 to_warehouse_id=warehouse_id,
                 to_storage_location_id=storage_location_id,
@@ -95,7 +97,30 @@ def movement_portal(request: HttpRequest) -> HttpResponse:
                 actor=request.user,
                 notes=request.POST.get("notes", ""),
             )
-            messages.success(request, "Stock moved.")
+
+            # Build message based on whether it's a full or partial move
+            if quantity == original_quantity:
+                # Full move
+                dest_location = movement.to_storage_location
+                if dest_location:
+                    msg = f"Stock moved to {dest_location.display_code}."
+                else:
+                    msg = f"Stock moved to {movement.to_room.room_name}."
+            else:
+                # Partial move
+                remaining_qty = original_quantity - quantity
+                dest_location = movement.to_storage_location
+                from_location = balance.storage_location
+
+                if dest_location:
+                    dest_name = dest_location.display_code
+                else:
+                    dest_name = movement.to_room.room_name
+
+                from_name = from_location.display_code if from_location else balance.room.room_name
+                msg = f"{quantity} stock moved to {dest_name}, {remaining_qty} stock remains at {from_name}."
+
+            messages.success(request, msg)
             return redirect(reverse("active_inventory_index"))
         except InventoryValidationError as exc:
             _report(request, exc)
@@ -158,18 +183,32 @@ def putaway_worklist(request: HttpRequest) -> HttpResponse:
         warehouse_id = _int_or_none(request.POST.get("warehouse_id", ""))
         moved = 0
         errors = []
+        moved_details = []
         for row_id in row_ids:
             try:
-                MovementContext.putaway(
+                balance = ActiveInventory.objects.select_related(
+                    "part", "storage_location"
+                ).get(pk=int(row_id))
+                movement = MovementContext.putaway(
                     active_inventory_id=int(row_id),
                     to_storage_location_id=sloc,
                     actor=request.user,
                 )
+                moved_details.append({
+                    "quantity": movement.quantity,
+                    "part_number": balance.part.part_number,
+                    "dest_location": movement.to_storage_location.display_code if movement.to_storage_location else "—",
+                })
                 moved += 1
             except Exception as exc:  # noqa: BLE001
                 errors.append(str(exc))
         if moved:
-            messages.success(request, f"Put away {moved} row(s).")
+            if moved == 1:
+                detail = moved_details[0]
+                msg = f"Put away {detail['quantity']} × {detail['part_number']} to {detail['dest_location']}."
+            else:
+                msg = f"Put away {moved} row(s)."
+            messages.success(request, msg)
         for error in errors:
             messages.error(request, error)
 
@@ -253,6 +292,11 @@ def putaway_worklist(request: HttpRequest) -> HttpResponse:
 # --------------------------------------------------------------------------- #
 # Movements ledger.
 # --------------------------------------------------------------------------- #
+
+
+@require_http_methods(["GET"])
+def bulk_movements_portal(request: HttpRequest) -> HttpResponse:
+    return render(request, f"{TEMPLATE_DIR}/bulk_coming_soon.html")
 
 
 @require_http_methods(["GET"])

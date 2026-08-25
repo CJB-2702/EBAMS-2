@@ -92,6 +92,7 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
     status = request.GET.get("status", "").strip()
     asset_id_raw = request.GET.get("asset_id", "").strip()
     asset_id = int(asset_id_raw) if asset_id_raw.isdigit() else None
+    asset_sn = request.GET.get("asset_sn", "").strip()
     priority = request.GET.get("priority", "").strip()
     maintenance_type = request.GET.get("maintenance_type", "").strip()
     work_order_reference = request.GET.get("work_order_reference", "").strip()
@@ -121,6 +122,7 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         domain_ids=domain_ids,
         status=status,
         asset_id=asset_id,
+        asset_sn=asset_sn,
         priority=priority,
         maintenance_type=maintenance_type,
         work_order_reference=work_order_reference,
@@ -139,12 +141,53 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         commented_by_id=commented_by_id,
     )
 
-    density = request.GET.get("format", "condensed")
-    if density not in ("condensed", "medium", "large"):
+    density = request.GET.get("density", "").strip()
+    if not density:
+        density = request.GET.get("format", "condensed").strip()
+    if density not in ("condensed", "comfortable", "large"):
         density = "condensed"
+
+    filter_params = []
+    for k, v in request.GET.items():
+        if k not in ("format", "density"):
+            filter_params.append((k, v))
+    from urllib.parse import urlencode
+    base_query = urlencode(filter_params)
 
     paginator = Paginator(qs, PAGE_SIZE)
     page = paginator.get_page(request.GET.get("page", "1"))
+
+    if density == "large":
+        from django.db.models import Prefetch, prefetch_related_objects
+        from app.maintenance.models.action import Action
+        from app.maintenance.models.blocker import MaintenanceBlocker
+        from app.maintenance.models.asset_limitation import AssetLimitationRecord
+
+        prefetch_related_objects(
+            page.object_list,
+            Prefetch(
+                "actions",
+                queryset=Action.objects.filter(deleted_at__isnull=True).order_by("sequence_order"),
+                to_attr="active_actions"
+            ),
+            Prefetch(
+                "blockers",
+                queryset=MaintenanceBlocker.objects.filter(deleted_at__isnull=True, end_date__isnull=True).order_by("-start_date"),
+                to_attr="active_blockers_list"
+            ),
+            Prefetch(
+                "limitation_records",
+                queryset=AssetLimitationRecord.objects.filter(deleted_at__isnull=True, end_time__isnull=True).order_by("-start_time"),
+                to_attr="active_limitation_records_list"
+            )
+        )
+        for event in page.object_list:
+            actions = getattr(event, "active_actions", [])
+            total = len(actions)
+            completed = sum(1 for a in actions if a.status == "Complete")
+            event.total_actions_count = total
+            event.completed_actions_count = completed
+            event.percent_complete = int((completed / total) * 100) if total > 0 else 0
 
     # The preview pane — never blank; auto-select first event if none chosen.
     selected = None
@@ -170,6 +213,7 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         "filters": {
             "status": status,
             "asset_id": asset_id_raw,
+            "asset_sn": asset_sn,
             "priority": priority,
             "maintenance_type": maintenance_type,
             "work_order_reference": work_order_reference,
@@ -201,6 +245,8 @@ def maintenance_index(request: HttpRequest) -> HttpResponse:
         "preview_mode": preview_mode,
         "selected": selected,
         "struct": struct,
+        "density": density,
+        "base_query": base_query,
     }
 
     results_template = (

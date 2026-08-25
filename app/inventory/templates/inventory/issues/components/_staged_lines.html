@@ -1,0 +1,164 @@
+{% comment %}
+The plan being built — the right-hand column of the workspace.
+
+GROUPED BY DEMAND, not a flat list. A demand legitimately owns several lines:
+the container ran dry and the remainder came off another shelf, or three
+specific serials were picked. A flat list would show those as unrelated rows
+and leave the clerk adding up quantities in their head to answer "am I done
+with this demand".
+
+A GROUP WITH NO LINES IS A REAL STATE and renders as one — the demand is on
+the plan, nothing has been picked for it yet. No bin-less line is fabricated
+to stand in for it.
+
+NOTHING IS EDITED IN PLACE. A line is one fact — this much, off this shelf —
+so there is no "change the bin" and no "retype the quantity": delete the line
+and add it again. Every line is created in the location picker behind the `+`
+on the demand's header, which is where the quantity is decided.
+{% endcomment %}
+<div class="card" id="receipt" style="height:100%;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">receipt_long</span></span>
+      Planned issuances from inventory
+      <span class="tag is-light ml-2">{{ draft_count }} line{{ draft_count|pluralize }}</span>
+    </div>
+    {% if groups and can_issue %}
+    <div class="card-header-icon">
+      <form method="post" action="{{ request.get_full_path }}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cancel_draft">
+        <button class="button is-small is-light" type="submit">
+          <span class="icon"><span class="material-icons" aria-hidden="true">delete_sweep</span></span>
+          <span>Clear</span>
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="receipt-scroll">
+    {% for g in groups %}
+    <div class="receipt-group {% if g.is_over %}is-over{% elif g.is_empty %}is-unready{% endif %}">
+      <div class="receipt-group-head">
+        <div>
+          <a href="{% url 'demand_detail' pk=g.demand.pk %}" class="has-text-weight-semibold">Demand #{{ g.demand.pk }}</a>
+          <span class="is-family-monospace ml-2">{{ g.part.part_number }}</span>
+          <span class="has-text-grey is-size-7 ml-1">{{ g.part.name }}</span>
+        </div>
+        <div class="receipt-group-tally is-size-7">
+          {# ── Planned against requested. NOT against "outstanding", which ── #}
+          {# ── read as "21 of 21" the moment a demand was fully planned. ── #}
+          <span class="has-text-weight-bold is-family-monospace">{{ g.staged|floatformat:3 }}</span>
+          <span class="has-text-grey">/ {{ g.requested|floatformat:3 }} requested</span>
+          {% if g.is_over %}
+          <span class="tag is-danger is-light is-small ml-1">Over by {{ g.over_by|floatformat:3 }}</span>
+          {% elif g.is_empty %}
+          <span class="tag is-warning is-light is-small ml-1">Nothing picked</span>
+          {% elif g.is_short %}
+          <span class="tag is-warning is-light is-small ml-1">Partial — {{ g.remaining|floatformat:3 }} left owed</span>
+          {% else %}
+          <span class="tag is-success is-light is-small ml-1">Completes it</span>
+          {% endif %}
+          {% if can_issue %}
+          {# ── The one way stock joins this demand: the part-locked ── #}
+          {# ── location picker, opened from the demand it belongs to. ── #}
+          <button type="button" class="button is-small is-link ml-2 bin-add-button"
+                  command="show-modal" commandfor="bin-search-dialog"
+                  hx-get="{% url 'inventory_issue_parts' %}?format=htmx-bin-search&b_demand={{ g.demand.pk }}"
+                  hx-target="#bin-search-dialog-body" hx-swap="innerHTML"
+                  title="Add an inventory location to demand #{{ g.demand.pk }}"
+                  aria-label="Add an inventory location to demand {{ g.demand.pk }}">
+            <span class="icon"><span class="material-icons" style="font-size:1rem;">add</span></span>
+          </button>
+          {# ── Drops the demand AND every planned issuance under it — the ── #}
+          {# ── lines have no meaning without the demand they answer. ── #}
+          <form method="post" action="{{ request.get_full_path }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_demand">
+            <input type="hidden" name="demand_id" value="{{ g.demand.pk }}">
+            <button class="button is-small is-light" type="submit"
+                    title="Remove demand #{{ g.demand.pk }} and its {{ g.lines|length }} planned issuance{{ g.lines|length|pluralize }}"
+                    aria-label="Remove demand {{ g.demand.pk }} from the plan">
+              <span class="icon"><span class="material-icons" style="font-size:1rem;">close</span></span>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+      {% for line in g.lines %}
+      <div class="receipt-line receipt-line--{{ line.status }}">
+        <div class="receipt-line-bin">
+          {% if line.balance %}
+            <div class="has-text-weight-semibold">{{ line.balance.storage_location.display_code|default:"Unassigned" }}</div>
+            <div class="has-text-grey is-size-7">
+              {{ line.balance.room.warehouse.name }} &rsaquo; {{ line.balance.room.room_name }}
+              {% if line.balance.serial_number %}
+              <span class="tag is-info is-light is-small ml-1 is-family-monospace">{{ line.balance.serial_number }}</span>
+              {% endif %}
+            </div>
+          {% else %}
+            <span class="tag is-danger is-light is-small">That location is gone — remove this line</span>
+          {% endif %}
+        </div>
+
+        <div class="receipt-line-qty">
+          <span class="is-family-monospace has-text-weight-bold">{{ line.quantity_decimal|floatformat:3 }}</span>
+          {% if line.status == "short" %}
+          <p class="has-text-danger is-size-7">More than that location holds.</p>
+          {% endif %}
+        </div>
+
+        <div class="receipt-line-actions">
+          {% if can_issue %}
+          <form method="post" action="{{ request.get_full_path }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_line">
+            <input type="hidden" name="index" value="{{ line.index }}">
+            <button class="button is-small is-light" type="submit" aria-label="Remove line" title="Remove this line — re-add it from the + to change it">
+              <span class="icon"><span class="material-icons" style="font-size:1rem;">close</span></span>
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="receipt-line receipt-line--empty">
+        <p class="has-text-grey is-size-7">
+          No inventory location picked yet.
+          {% if can_issue %}Use the <span class="material-icons" style="font-size:0.9rem; vertical-align:text-bottom;">add</span> above to choose where this comes off the shelf.{% endif %}
+          This demand stays owed if the plan is committed without one.
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+    {% empty %}
+    <div class="has-text-centered has-text-grey py-6">
+      <span class="icon is-large"><span class="material-icons" style="font-size:2.5rem;">playlist_add</span></span>
+      <p class="mt-2">Nothing on the plan yet.</p>
+      <p class="is-size-7">Add demands from the search on the left.</p>
+    </div>
+    {% endfor %}
+
+    {# ── Lines whose demand vanished under the plan. Shown, not dropped, ── #}
+    {# ── so the clerk can see why it will not commit. ── #}
+    {% for line in draft %}
+      {% if line.status == "orphaned" %}
+      <div class="receipt-group is-over">
+        <div class="receipt-group-head">
+          <span class="has-text-danger">Line {{ line.index|add:1 }} — its demand no longer exists.</span>
+          {% if can_issue %}
+          <form method="post" action="{{ request.get_full_path }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="remove_line">
+            <input type="hidden" name="index" value="{{ line.index }}">
+            <button class="button is-small is-danger is-light" type="submit">Remove</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

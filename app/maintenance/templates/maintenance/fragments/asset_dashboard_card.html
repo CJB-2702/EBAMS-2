@@ -76,7 +76,7 @@ Styling: app/static/css/asset_dashboard.css.
     </div>
 
     <div class="ah-card-actions">
-      <a href="{% url 'maintenance_index' %}?asset_id={{ card.asset.id }}"><span class="material-icons" aria-hidden="true">history</span>Maintenance history</a>
+      <a href="{% url 'maintenance_index' %}?asset_sn={{ card.asset.serial_number }}"><span class="material-icons" aria-hidden="true">history</span>Maintenance history</a>
       <a href="{% url 'asset_detail' asset_id=card.asset.id %}"><span class="material-icons" aria-hidden="true">open_in_new</span>Asset detail</a>
     </div>
 

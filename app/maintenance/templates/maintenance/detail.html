@@ -7,7 +7,7 @@
 {% block extra_head %}<link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">{% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<div class="page-hero{% if detail.status == 'complete' %} is-hero-complete{% elif detail.status == 'failed' %} is-hero-failed{% endif %}">
   <div class="page-header">
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">build</span></div>
@@ -31,6 +31,15 @@
       </a>
     </div>
   </div>
+  {% if detail.status == 'complete' %}
+  <div class="hero-status-note is-complete">
+    <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Complete</span>
+  </div>
+  {% elif detail.status == 'failed' %}
+  <div class="hero-status-note is-failed">
+    <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Failed</span>
+  </div>
+  {% endif %}
 </div>
 
 {% comment %} ── Blocked / degraded banner ──────────────────────────────────
@@ -61,7 +70,7 @@
 </div>
 {% endif %}
 {% if active_limitations %}
-<div class="notification is-danger mb-4">
+<div class="notification is-limitation mb-4">
   <div class="is-flex is-align-items-flex-start">
     <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">warning</span></span>
     <div style="flex:1 1 auto; min-width:0;">

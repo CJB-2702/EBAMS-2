@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -26,14 +27,15 @@ from app.maintenance.control_layer.adapters.template_builder_session_adapter imp
 from app.maintenance.control_layer.template_maintenance_context import (
     TemplateMaintenanceContext,
 )
-from app.maintenance.models.templates.template_action_item import TemplateActionItem
 from app.maintenance.models.templates.template_action_set import TemplateActionSet
 from app.maintenance.models.proto_templates.proto_action_item import ProtoActionItem
-from app.maintenance.presentation_layer.search.proto_action_search import (
-    ProtoActionSearch,
-)
 from app.maintenance.presentation_layer.search.template_model_search import (
     models_for_class,
+)
+from app.maintenance.presentation_layer.tools.action_creator import (
+    CREATOR_TABS,
+    creator_tab_context,
+    normalize_tab,
 )
 from app.maintenance.presentation_layer.tools.maintenance_access import (
     accessible_domain_ids,
@@ -308,20 +310,21 @@ def template_builder(request: HttpRequest) -> HttpResponse:
         domain_id__in=user_domain_ids, deleted_at__isnull=True, is_active=True
     ).order_by("task_name")
 
-    # "Add step" card (Card 3): three sources, default is the library. Each
-    # keeps its own filter state in the querystring so hx-push-url makes the
-    # tab + filters shareable/refreshable, matching the PO create wizard's
-    # item-selection card.
-    step_source = request.GET.get("step_source", "library")
-    if step_source not in ("library", "maintenance", "new"):
-        step_source = "library"
-    pool_q = request.GET.get("pool_q", "").strip()
+    # The Add-step card is the shared Action Creator Portal — the same five
+    # sources and the same tab strip the event edit portal renders. Its source
+    # + filters live in the querystring so they stay shareable and F5-safe.
+    tab = normalize_tab(request.GET.get("tab"))
+    q = request.GET.get("q", "").strip()
     pool_model_id_raw = request.GET.get("pool_model_id", "").strip()
     pool_model_id = int(pool_model_id_raw) if pool_model_id_raw.isdigit() else None
-    source_template_id_raw = request.GET.get("source_template_id", "").strip()
-    source_template_id = (
-        int(source_template_id_raw) if source_template_id_raw.isdigit() else None
-    )
+
+    # Part/tool pickers on the step rows are search dropdowns against this same
+    # URL, per the format= contract.
+    fragment = request.GET.get("format", "")
+    if fragment == "htmx-part-search":
+        return _builder_part_search(request)
+    if fragment == "htmx-tool-search":
+        return _builder_tool_search(request)
 
     context = {
         "draft": adapter.draft,
@@ -333,24 +336,119 @@ def template_builder(request: HttpRequest) -> HttpResponse:
         "all_models": all_models,
         "models_available": models_available,
         "models_assigned": models_assigned,
-        "step_source": step_source,
-        "pool_q": pool_q,
+        "draft_actions": _draft_actions_for_display(adapter.draft),
+        # Action Creator Portal host contract — see _action_creator.html.
+        "tabs": CREATOR_TABS,
+        "tab": tab,
+        "q": q,
         "pool_model_id": pool_model_id,
-        "source_template_id": source_template_id,
+        "model_filter": all_models,
+        "creator_url": reverse("template_builder"),
+        "creator_post_url": reverse("template_builder_update"),
+        # Which step row was left open — carried across mutation redirects so
+        # adding a tool does not collapse the row you were working in.
+        "open_step": request.GET.get("open_step", ""),
     }
-
-    if step_source == "library":
-        context["library_pool"] = ProtoActionSearch.library_pool(
-            domain_ids=user_domain_ids, q=pool_q, used_on_model_id=pool_model_id
+    context.update(
+        creator_tab_context(
+            tab=tab,
+            q=q,
+            domain_ids=user_domain_ids,
+            asset_class_id=draft_asset_class_id,
+            asset_model_ids=draft_asset_model_ids,
+            used_on_model_id=pool_model_id,
+            current_actions=context["draft_actions"] if tab == "current" else None,
         )
-    elif step_source == "maintenance" and source_template_id:
-        context["source_template_actions"] = TemplateActionItem.objects.filter(
-            template_action_set_id=source_template_id,
-            template_action_set__domain_id__in=user_domain_ids,
-            deleted_at__isnull=True,
-        ).order_by("sequence_order")
+    )
+
+    if request.GET.get("format") == "htmx-creator":
+        return render(request, "maintenance/work/_action_creator.html", context)
 
     return render(request, "maintenance/template_builder.html", context)
+
+
+def _draft_actions_for_display(draft: dict) -> list:
+    """The draft's steps as render-ready rows.
+
+    The session dict stores ids; the page has to show names. Rather than let
+    the template index dicts (which it cannot do for a variable key anyway),
+    the labels are resolved here, and the rows carry the per-row flags the
+    step list needs — first/last for the reorder buttons, and a stable
+    child index for the remove forms.
+    """
+    actions = draft.get("actions", [])
+    total = len(actions)
+    rows = []
+    for index, action in enumerate(actions):
+        tools = [
+            {
+                "index": i,
+                "label": tool.get("tool_name") or f"tool #{tool.get('tool_id')}",
+                "quantity_required": tool.get("quantity_required", 1),
+                "specifications": tool.get("specifications", ""),
+            }
+            for i, tool in enumerate(action.get("tools", []))
+        ]
+        demands = [
+            {
+                "index": i,
+                "part_id": demand.get("part_id"),
+                "part_label": demand.get("part_label", ""),
+                "quantity_required": demand.get("quantity_required", 1),
+                "is_optional": demand.get("is_optional", False),
+            }
+            for i, demand in enumerate(action.get("part_demands", []))
+        ]
+        rows.append(
+            {
+                # `pk` so the shared creator partial's "From Current Build"
+                # source can address a draft row the same way it addresses a
+                # saved Action on the event edit portal.
+                "pk": action["temp_id"],
+                "temp_id": action["temp_id"],
+                "sequence_order": action.get("sequence_order", index + 1),
+                "action_name": action.get("action_name", ""),
+                "description": action.get("description", ""),
+                "instructions": action.get("instructions", ""),
+                "safety_notes": action.get("safety_notes", ""),
+                "estimated_duration_minutes": action.get("estimated_duration_minutes"),
+                "tools": tools,
+                "part_demands": demands,
+                "is_first": index == 0,
+                "is_last": index == total - 1,
+            }
+        )
+    return rows
+
+
+def _builder_part_search(request: HttpRequest) -> HttpResponse:
+    """Result rows for the step rows' <search-dropdown name="part_id">."""
+    from app.parts.models.core.part import Part
+
+    q = request.GET.get("q", "").strip()
+    parts = Part.objects.all()
+    if q:
+        parts = parts.filter(Q(part_number__icontains=q) | Q(name__icontains=q))
+    return render(
+        request,
+        "maintenance/part_demands/_part_search_results.html",
+        {"parts": parts.order_by("part_number")[:25]},
+    )
+
+
+def _builder_tool_search(request: HttpRequest) -> HttpResponse:
+    """Result rows for the step rows' <search-dropdown name="tool_id">."""
+    from app.parts.models.core.tool import Tool
+
+    q = request.GET.get("q", "").strip()
+    tools = Tool.objects.filter(is_active=True)
+    if q:
+        tools = tools.filter(Q(name__icontains=q) | Q(tool_type__icontains=q))
+    return render(
+        request,
+        "maintenance/templates/_tool_search_results.html",
+        {"tools": tools.order_by("name")[:25]},
+    )
 
 
 @require_http_methods(["POST"])
@@ -392,7 +490,10 @@ def template_builder_update(request: HttpRequest) -> HttpResponse:
                 int(v) for v in request.POST.getlist("asset_model_ids") if v.strip().isdigit()
             ]
             adapter.remove_asset_models(ids)
-        elif action == "add_action":
+        # The five Action Creator Portal verbs. Field names are the portal's,
+        # not this endpoint's — the partial is shared with the event edit
+        # portal and must post identically to both hosts.
+        elif action == "add_blank_action":
             duration_raw = request.POST.get("estimated_duration_minutes", "").strip()
             adapter.add_action(
                 action_name=request.POST.get("action_name", "").strip(),
@@ -402,17 +503,43 @@ def template_builder_update(request: HttpRequest) -> HttpResponse:
                 notes=request.POST.get("notes", ""),
                 estimated_duration_minutes=int(duration_raw) if duration_raw.isdigit() else None,
             )
-        elif action == "add_action_from_proto":
+        elif action == "add_from_proto":
             adapter.add_action_from_proto(
-                proto_action_item_id=int(request.POST.get("proto_action_item_id", 0))
+                proto_action_item_id=int(request.POST.get("proto_id", 0))
             )
-        elif action == "add_action_from_template_item":
+        elif action == "add_from_template_action":
             adapter.add_action_from_template_item(
-                template_action_item_id=int(request.POST.get("template_action_item_id", 0))
+                template_action_item_id=int(request.POST.get("template_action_id", 0))
+            )
+        elif action == "add_from_template_set":
+            added = adapter.add_actions_from_template_set(
+                template_action_set_id=int(request.POST.get("template_action_set_id", 0))
+            )
+            messages.success(
+                request, f"Added {len(added)} step{'' if len(added) == 1 else 's'} to the draft."
+            )
+        elif action == "duplicate_action":
+            adapter.duplicate_action(temp_id=request.POST.get("action_id", ""))
+        elif action == "update_action":
+            duration_raw = request.POST.get("estimated_duration_minutes", "").strip()
+            adapter.update_action(
+                temp_id=request.POST.get("temp_id", ""),
+                action_name=request.POST.get("action_name", "").strip(),
+                description=request.POST.get("description", ""),
+                instructions=request.POST.get("instructions", ""),
+                safety_notes=request.POST.get("safety_notes", ""),
+                estimated_duration_minutes=int(duration_raw) if duration_raw.isdigit() else None,
+            )
+        elif action == "move_action":
+            adapter.move_action(
+                temp_id=request.POST.get("temp_id", ""),
+                direction=request.POST.get("direction", ""),
             )
         elif action == "remove_action":
             adapter.remove_action(temp_id=request.POST.get("temp_id", ""))
         elif action == "add_tool":
+            if not request.POST.get("tool_id", "").strip().isdigit() and not request.POST.get("tool_name", "").strip():
+                raise ValueError("Pick a tool from the search box, or type an ad-hoc name.")
             adapter.add_tool(
                 temp_id=request.POST.get("temp_id", ""),
                 tool_id=(
@@ -432,9 +559,12 @@ def template_builder_update(request: HttpRequest) -> HttpResponse:
                 tool_index=int(request.POST.get("tool_index", -1)),
             )
         elif action == "add_part_demand":
+            part_id_raw = request.POST.get("part_id", "").strip()
+            if not part_id_raw.isdigit():
+                raise ValueError("Pick a part from the search box before adding it.")
             adapter.add_part_demand(
                 temp_id=request.POST.get("temp_id", ""),
-                part_id=int(request.POST.get("part_id", 0)),
+                part_id=int(part_id_raw),
                 quantity_required=float(request.POST.get("quantity_required", 1) or 1),
                 notes=request.POST.get("notes", ""),
                 is_optional=request.POST.get("is_optional") == "on",
@@ -452,14 +582,15 @@ def template_builder_update(request: HttpRequest) -> HttpResponse:
     except (ValueError, KeyError) as exc:
         messages.error(request, str(exc))
 
-    # Preserve the "Add step" card's tab + filter state across the mutation
-    # redirect — every row's form carries these along as hidden fields so a
-    # single Add doesn't bounce the Planner back to the library default.
+    # Preserve the creator's source + filter state, and which step row was
+    # open, across the mutation redirect — every form carries these along as
+    # hidden fields so one Add doesn't bounce the Planner back to the default
+    # source with every row collapsed.
     from urllib.parse import urlencode
 
     preserved = {
         key: request.POST[key]
-        for key in ("step_source", "pool_q", "pool_model_id", "source_template_id")
+        for key in ("tab", "q", "pool_model_id", "open_step")
         if request.POST.get(key)
     }
     url = reverse("template_builder")

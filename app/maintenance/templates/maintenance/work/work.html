@@ -11,11 +11,13 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">
 <script src="{% static 'web_components/search_dropdown.js' %}"></script>
-<script src="{% static 'js/maintenance_work.js' %}"></script>
+<script src="{% static 'web_components/app_specific/add_comment.js' %}"></script>
+<script src="{% static 'web_components/app_specific/comment_filter.js' %}"></script>
+<script src="{% static 'js/maintenance_work.js' %}?v={% now 'U' %}"></script>
 {% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<div class="page-hero{% if detail.status == 'complete' %} is-hero-complete{% elif detail.status == 'failed' %} is-hero-failed{% endif %}">
   <div class="page-header">
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">handyman</span></div>
@@ -32,6 +34,15 @@
       <a href="{% url 'maintenance_detail' pk=detail.pk %}" class="button is-small">Back to view</a>
     </div>
   </div>
+  {% if detail.status == 'complete' %}
+  <div class="hero-status-note is-complete">
+    <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Complete</span>
+  </div>
+  {% elif detail.status == 'failed' %}
+  <div class="hero-status-note is-failed">
+    <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Failed</span>
+  </div>
+  {% endif %}
 </div>
 
 {% comment %} ── Blocked / degraded banner ──────────────────────────────────
@@ -57,12 +68,21 @@
       </p>
       {% endfor %}
     </div>
-    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Resolve in work portal</a>
+    <button class="button is-small ml-3" type="button" style="flex:0 0 auto; white-space:nowrap;"
+            commandfor="blocker-resolve-dialog" command="show-modal"
+            onclick="prefillResolveBlocker(this)"
+            data-blocker-id="{{ active_blockers.0.pk }}"
+            data-reason="{{ active_blockers.0.reason }}"
+            data-priority="{{ active_blockers.0.get_priority_display }}"
+            data-start="{{ active_blockers.0.start_date|date:'Y-m-d\TH:i' }}"
+            data-hours-lost="{{ active_blockers.0.billable_hours_lost|default_if_none:'0' }}">
+      <span>Resolve</span>
+    </button>
   </div>
 </div>
 {% endif %}
 {% if active_limitations %}
-<div class="notification is-danger mb-4">
+<div class="notification is-limitation mb-4">
   <div class="is-flex is-align-items-flex-start">
     <span class="icon is-medium mr-3"><span class="material-icons" aria-hidden="true">warning</span></span>
     <div style="flex:1 1 auto; min-width:0;">
@@ -76,7 +96,15 @@
       </p>
       {% endfor %}
     </div>
-    <a href="{% url 'maintenance_work' pk=detail.pk %}" class="button is-small ml-3" style="flex:0 0 auto; white-space:nowrap;">Close in work portal</a>
+    <button class="button is-limitation is-small ml-3" type="button" style="flex:0 0 auto; white-space:nowrap;"
+            commandfor="limitation-close-dialog" command="show-modal"
+            onclick="prefillCloseLimitation(this)"
+            data-record-id="{{ active_limitations.0.pk }}"
+            data-description="{{ active_limitations.0.limitation_description }}"
+            data-status="{{ active_limitations.0.get_status_display }}"
+            data-start="{{ active_limitations.0.start_time|date:'Y-m-d\TH:i' }}">
+      <span>Close</span>
+    </button>
   </div>
 </div>
 {% endif %}
@@ -87,77 +115,12 @@
 
   {% comment %} ── Status card: progress on the left, the three verbs on the right ──
      There is deliberately no "Start event" button. Starting any step starts
-     the event (see start_action) — beginning work is one act, not two. {% endcomment %}
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Maintenance status</div>
-      <span class="card-header-icon">
-        <span class="tag
-          {% if detail.status == 'complete' %}is-success
-          {% elif detail.status == 'in_progress' %}is-info
-          {% elif detail.status == 'cancelled' %}is-danger
-          {% else %}is-light{% endif %}">{{ detail.get_status_display|default:"—" }}</span>
-      </span>
-    </div>
-    <div class="card-content">
-      <div class="columns is-variable is-4">
-        <div class="column is-6">
-          <div class="is-flex is-justify-content-space-between is-size-7">
-            <span>Completion progress</span><strong>{{ progress.percent }}%</strong>
-          </div>
-{% comment %} A stacked bar rather than <progress>, which can only carry one
-   colour. Green complete, red failed, grey skipped — every settled outcome
-   fills, because the bar measures how much of the job still needs a decision,
-   not how much of it succeeded. {% endcomment %}
-          <div class="progress-stack" role="img"
-               aria-label="{{ progress.in_progress }} in progress, {{ progress.complete }} complete, {{ progress.failed }} failed, {{ progress.skipped }} skipped, of {{ progress.total }} steps">
-            <div class="progress-stack-seg is-in-progress" style="width: {{ progress.percent_in_progress }}%;" title="{{ progress.in_progress }} in progress"></div>
-            <div class="progress-stack-seg is-complete" style="width: {{ progress.percent_complete }}%;" title="{{ progress.complete }} complete"></div>
-            <div class="progress-stack-seg is-failed" style="width: {{ progress.percent_failed }}%;" title="{{ progress.failed }} failed"></div>
-            <div class="progress-stack-seg is-skipped" style="width: {{ progress.percent_skipped }}%;" title="{{ progress.skipped }} skipped"></div>
-          </div>
-          <div class="columns is-mobile has-text-centered mt-2">
-            <div class="column"><p class="heading is-size-7 has-text-grey">Total</p><p class="title is-5">{{ progress.total }}</p></div>
-            <div class="column"><p class="heading is-size-7 has-text-grey">In progress</p><p class="title is-5">{{ progress.in_progress }}</p></div>
-            <div class="column"><p class="heading is-size-7 has-text-grey">Complete</p><p class="title is-5 has-text-success">{{ progress.complete }}</p></div>
-            <div class="column"><p class="heading is-size-7 has-text-grey">Failed</p><p class="title is-5 has-text-danger">{{ progress.failed }}</p></div>
-            <div class="column"><p class="heading is-size-7 has-text-grey">Skipped</p><p class="title is-5">{{ progress.skipped }}</p></div>
-          </div>
-        </div>
-
-        <div class="column is-6">
-          <button class="button is-success is-fullwidth mb-2" type="button"
-                  commandfor="event-complete-dialog" command="show-modal"
-                  {% if not completion_verdict.allowed %}disabled
-                  title="{% for reason in completion_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% endfor %}"{% endif %}>
-            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Mark complete</span>
-          </button>
-          {% if not completion_verdict.allowed %}
-          <p class="help has-text-warning">
-            {% for reason in completion_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% empty %}Completion is currently blocked.{% endfor %}
-          </p>
-          {% endif %}
-
-          {% comment %} Two different interruptions, deliberately two buttons: a blocker
-             stops the WORK, a limitation degrades the ASSET. {% endcomment %}
-          <div class="columns is-variable is-2 mt-2">
-            <div class="column is-6">
-              <button class="button is-warning is-fullwidth" type="button"
-                      commandfor="event-blocker-dialog" command="show-modal">
-                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">pause_circle</span></span><span>Place in blocked status</span>
-              </button>
-            </div>
-            <div class="column is-6">
-              <button class="button is-danger is-fullwidth" type="button"
-                      commandfor="event-limitation-dialog" command="show-modal"
-                      {% if active_limitations %}disabled title="Close the open limitation before adding another"{% endif %}>
-                <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span><span>Add capability limitation</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+     the event (see start_action) — beginning work is one act, not two.
+     Kept in sync with the action list via an out-of-band swap carried in the
+     same response as every action-list mutation (see _status_card_oob.html)
+     rather than a second, trigger-driven request. {% endcomment %}
+  <div id="status-card-region">
+    {% include "maintenance/work/_status_card.html" %}
   </div>
 
   <div class="columns is-variable is-4">
@@ -260,7 +223,7 @@
         </div>
       </div>
 
-      <div class="card mt-4{% if active_blockers %} blockers-card-active{% endif %}">
+      <div class="card mt-4 blockers-card-active">
         <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">pause_circle</span></span>Blockers ({{ active_blockers|length }} active)</div></div>
         <div class="card-content pb-0">
           <div class="blockers-list">
@@ -334,7 +297,7 @@
         </div>
       </div>
 
-      <div class="card mt-4{% if active_limitations %} limitations-card-active{% endif %}">
+      <div class="card mt-4 limitations-card-active">
         <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">warning</span></span>Capability limitations ({{ active_limitations|length }} active)</div></div>
         <div class="card-content pb-0">
           <div class="limitations-list">
@@ -377,7 +340,7 @@
 
               {% if not record.end_time %}
               <div class="limitation-actions">
-                <button class="button is-danger is-small" type="button"
+                <button class="button is-limitation is-small" type="button"
                         commandfor="limitation-close-dialog" command="show-modal"
                         onclick="prefillCloseLimitation(this)"
                         data-record-id="{{ record.pk }}"
@@ -411,12 +374,24 @@
             {% for action, link in demand_rows %}
             <div class="approval-card">
               <div class="approval-card-header">
-                <div class="approval-card-part">
-                  <p class="approval-part-number-line">
-                    <a href="{% url 'part_demand_detail' pk=link.part_demand.pk %}" class="approval-part-number">{{ link.part_demand.part.part_number }}</a>
-                  </p>
-                  <p class="approval-part-name">{{ link.part_demand.part.name|default:"—" }}</p>
-                  {% if link.part_demand.part.description %}<p class="approval-part-desc">{{ link.part_demand.part.description }}</p>{% endif %}
+                <div class="approval-card-part" style="display:flex; gap:0.75rem; align-items:flex-start;">
+                  {% if link.part_demand.part.primary_image %}
+                  <figure class="image" style="width:100px; height:100px; min-width:100px; min-height:100px; background:var(--bulma-background); border:1px solid var(--bulma-border); display:flex; align-items:center; justify-content:center; overflow:hidden; margin:0; flex-shrink:0;">
+                    <img src="{% url 'file_inline' file_id=link.part_demand.part.primary_image.file_id %}" alt="{{ link.part_demand.part.name }}" style="max-width:100px; max-height:100px; object-fit:contain;">
+                  </figure>
+                  {% else %}
+                  <div style="width:100px; height:100px; min-width:100px; min-height:100px; background:var(--bulma-background); border:1px dashed var(--bulma-border); display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--bulma-text-weak); flex-shrink:0;">
+                    <span class="icon is-medium"><span class="material-icons" style="font-size:1.75rem;">inventory_2</span></span>
+                    <span class="is-size-7 mt-1">No Image</span>
+                  </div>
+                  {% endif %}
+                  <div style="flex:1; min-width:0;">
+                    <p class="approval-part-number-line">
+                      <a href="{% url 'part_demand_detail' pk=link.part_demand.pk %}" class="approval-part-number">{{ link.part_demand.part.part_number }}</a>
+                    </p>
+                    <p class="approval-part-name">{{ link.part_demand.part.name|default:"—" }}</p>
+                    {% if link.part_demand.part.description %}<p class="approval-part-desc">{{ link.part_demand.part.description }}</p>{% endif %}
+                  </div>
                 </div>
               </div>
 
@@ -497,7 +472,7 @@
 
 {# ── Settle a step: complete / fail / skip / block / reopen ── #}
 <dialog id="action-status-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" id="action-status-verb" value="">
     <input type="hidden" name="action_id" id="action-status-id" value="">
@@ -517,6 +492,24 @@
         </div>
         <p class="help">A reason is recorded for every outcome. Edit the suggested text before submitting.</p>
       </div>
+      <div class="columns is-variable is-2" id="action-status-times-field" style="display: none;">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-status-start-time">Start time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="action-status-start-time" name="start_time" disabled>
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="action-status-end-time">Stop time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="action-status-end-time" name="end_time" disabled>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="field" id="action-status-billable-field" hidden>
         <label class="label is-small" for="action-status-billable">Billable hours</label>
         <div class="control">
@@ -535,7 +528,7 @@
 
 {# ── Edit a step ── #}
 <dialog id="action-edit-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="edit_action">
     <input type="hidden" name="action_id" id="action-edit-id" value="">
@@ -595,7 +588,7 @@
 
 {# ── Add a part demand mid-job ── #}
 <dialog id="action-part-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_part_demand">
     <input type="hidden" name="action_id" id="action-part-id" value="">
@@ -646,7 +639,7 @@
 
 {# ── Record qty issued ── #}
 <dialog id="demand-issue-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="issue_part_demand">
     <input type="hidden" name="demand_id" id="demand-issue-id" value="">
@@ -678,7 +671,7 @@
 
 {# ── Edit a part demand ── #}
 <dialog id="demand-update-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="update_part_demand">
     <input type="hidden" name="demand_id" id="demand-update-id" value="">
@@ -736,7 +729,7 @@
 
 {# ── Cancel a part demand (destructive: comment required) ── #}
 <dialog id="demand-cancel-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="cancel_part_demand">
     <input type="hidden" name="demand_id" id="demand-cancel-id" value="">
@@ -791,8 +784,11 @@
 </dialog>
 
 {# ── Complete the event ── #}
+{% comment %} Deliberately plain POST, no hx-post: closing the event is a
+   page-changing moment (status card, verb gating, activity feed all move at
+   once) so a full reload is preferable to swapping fragments. {% endcomment %}
 <dialog id="event-complete-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}">
     {% csrf_token %}
     <input type="hidden" name="action" value="complete_event">
     <header class="card-header">
@@ -802,8 +798,29 @@
     <div class="card-content">
       <p class="is-size-7 mb-3">
         {{ progress.complete }} of {{ progress.total }} steps complete,
-        {{ progress.skipped }} skipped. Closing the event stamps the end time now.
+        {{ progress.skipped }} skipped. The worked window below is recorded on the event —
+        adjust either end if the clock does not match what actually happened.
       </p>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-complete-start">Start time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="event-complete-start" name="start_time"
+                     value="{{ settle_start_default|date:'Y-m-d\TH:i' }}">
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-complete-end">Stop time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="event-complete-end" name="end_time"
+                     value="{{ settle_end_default|date:'Y-m-d\TH:i' }}">
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="field">
         <label class="label is-small" for="event-complete-notes">Completion notes</label>
         <div class="control"><textarea class="textarea is-small" id="event-complete-notes" name="notes" rows="3"></textarea></div>
@@ -816,6 +833,24 @@
                  placeholder="{{ calculated_hours|floatformat:2 }} calculated">
         </div>
       </div>
+      {% if capturable_meters %}
+      <div class="field">
+        <label class="label is-small">Meter readings</label>
+        <div class="columns is-multiline is-variable is-2 mb-0">
+          {% for m in capturable_meters %}
+          <div class="column is-6">
+            <label class="label is-small has-text-weight-normal">{{ m.unit }}</label>
+            <input class="input is-small" type="number" step="any" name="meter{{ m.index }}"
+                   value="{{ m.value|default_if_none:'' }}">
+          </div>
+          {% endfor %}
+        </div>
+        <p class="help is-size-7">
+          Pre-filled with the asset's most recent reading on record — adjust to record a new one.
+          Saving writes a meter-history entry and updates the asset.
+        </p>
+      </div>
+      {% endif %}
     </div>
     <footer class="card-footer custom-card-footer">
       <div class="card-footer-secondaries">
@@ -826,9 +861,71 @@
   </form>
 </dialog>
 
+{# ── Fail the event ── #}
+{# The job stopped without the work being achieved. Unlike completion this is #}
+{# NOT gated by the completion policy — unfinished steps are the reason. #}
+{% comment %} Deliberately plain POST, no hx-post — same reasoning as
+   event-complete-dialog above. {% endcomment %}
+<dialog id="event-fail-dialog" class="card modal-styled" style="padding: 0;">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="fail_event">
+    <header class="card-header">
+      <p class="card-header-title">Mark maintenance failed</p>
+      <button type="button" class="delete is-large" aria-label="close" commandfor="event-fail-dialog" command="close"></button>
+    </header>
+    <div class="card-content">
+      <p class="is-size-7 mb-3">
+        Failing closes the event with {{ progress.settled }} of {{ progress.total }} steps settled.
+        The worked window below is recorded on the event — adjust either end if the clock
+        does not match what actually happened.
+      </p>
+      <div class="columns is-variable is-2">
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-fail-start">Start time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="event-fail-start" name="start_time"
+                     value="{{ settle_start_default|date:'Y-m-d\TH:i' }}">
+            </div>
+          </div>
+        </div>
+        <div class="column is-6">
+          <div class="field">
+            <label class="label is-small" for="event-fail-end">Stop time</label>
+            <div class="control">
+              <input class="input is-small" type="datetime-local" id="event-fail-end" name="end_time"
+                     value="{{ settle_end_default|date:'Y-m-d\TH:i' }}">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-fail-notes">Reason for failure</label>
+        <div class="control"><textarea class="textarea is-small" id="event-fail-notes" name="notes" rows="3" required></textarea></div>
+        <p class="help">A reason is recorded for every outcome.</p>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="event-fail-hours">Recorded billable hours</label>
+        <div class="control">
+          <input class="input is-small" type="number" step="0.25" min="0" id="event-fail-hours"
+                 name="actual_billable_hours" value="{{ detail.actual_billable_hours|default_if_none:'' }}"
+                 placeholder="{{ calculated_hours|floatformat:2 }} calculated">
+        </div>
+      </div>
+    </div>
+    <footer class="card-footer custom-card-footer">
+      <div class="card-footer-secondaries">
+        <button type="button" class="button is-small is-light" commandfor="event-fail-dialog" command="close">Cancel</button>
+      </div>
+      <button type="submit" class="button card-footer-primary is-danger">Mark failed</button>
+    </footer>
+  </form>
+</dialog>
+
 {# ── Place the event in blocked status ── #}
 <dialog id="event-blocker-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_blocker">
     <header class="card-header">
@@ -916,7 +1013,7 @@
 
 {# ── Open a capability limitation ── #}
 <dialog id="event-limitation-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="add_limitation">
     <header class="card-header">
@@ -966,14 +1063,14 @@
       <div class="card-footer-secondaries">
         <button type="button" class="button is-small is-light" commandfor="event-limitation-dialog" command="close">Cancel</button>
       </div>
-      <button type="submit" class="button card-footer-primary is-danger">Open limitation</button>
+      <button type="submit" class="button card-footer-primary is-limitation">Open limitation</button>
     </footer>
   </form>
 </dialog>
 
 {% comment %} ── Resolve a blocker (reason required) ── {% endcomment %}
 <dialog id="blocker-resolve-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="end_blocker">
     <input type="hidden" name="blocker_id" id="blocker-resolve-id" value="">
@@ -1030,7 +1127,7 @@
 
 {% comment %} ── Close a capability limitation (reason required) ── {% endcomment %}
 <dialog id="limitation-close-dialog" class="card modal-styled" style="padding: 0;">
-  <form method="post">
+  <form method="post" action="{% url 'maintenance_work' pk=detail.pk %}" hx-post="{% url 'maintenance_work' pk=detail.pk %}" hx-target="#work-action-region" hx-swap="innerHTML" onsubmit="this.closest('dialog')?.close();">
     {% csrf_token %}
     <input type="hidden" name="action" value="close_limitation">
     <input type="hidden" name="record_id" id="limitation-close-id" value="">
@@ -1074,7 +1171,7 @@
       <div class="card-footer-secondaries">
         <button type="button" class="button is-small is-light" commandfor="limitation-close-dialog" command="close">Cancel</button>
       </div>
-      <button type="submit" class="button card-footer-primary is-danger">Close limitation</button>
+      <button type="submit" class="button card-footer-primary is-limitation">Close limitation</button>
     </footer>
   </form>
 </dialog>

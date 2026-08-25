@@ -33,12 +33,14 @@ from app.inventory.presentation_layer.entrypoints.intake import (
 from app.inventory.presentation_layer.entrypoints.issues import (
     issuance_location_portal,
     issuance_portal,
+    issuance_queue_panel,
     issue_detail,
     issue_session_detail,
     issues_index,
     pending_stock_adjustments_index,
 )
 from app.inventory.presentation_layer.entrypoints.movements import (
+    bulk_movements_portal,
     movement_detail,
     movement_portal,
     movements_index,
@@ -57,11 +59,14 @@ from app.inventory.presentation_layer.entrypoints.audits import (
 )
 from app.inventory.presentation_layer.entrypoints.topography import (
     room_detail,
+    room_edit,
     room_layout,
     room_location_detail,
     room_location_layout,
     storage_location_search,
+    warehouse_create,
     warehouse_detail,
+    warehouse_edit,
     warehouse_index,
 )
 
@@ -83,8 +88,11 @@ urlpatterns = [
     ),
     # Phase 3 — Warehouse/Room/RoomLocation topography + SVG spatial engine.
     path("warehouses/", warehouse_index, name="inventory_warehouse_index"),
+    path("warehouses/create/", warehouse_create, name="inventory_warehouse_create"),
     path("warehouse/<int:pk>/", warehouse_detail, name="inventory_warehouse_detail"),
+    path("warehouse/<int:pk>/edit/", warehouse_edit, name="inventory_warehouse_edit"),
     path("room/<int:pk>/", room_detail, name="inventory_room_detail"),
+    path("room/<int:pk>/edit/", room_edit, name="inventory_room_edit"),
     path("room/<int:pk>/layout/", room_layout, name="inventory_room_layout"),
     path(
         "room-location/<int:pk>/",
@@ -118,11 +126,19 @@ urlpatterns = [
     path("intake/<int:pk>/print/", intake_print, name="inventory_intake_print"),
     # Phase 6 — Part Movements, Putaway GUI & Issuance.
     path("movements/create/", movement_portal, name="inventory_movement_portal"),
+    path("movements/bulk/", bulk_movements_portal, name="inventory_bulk_movements_portal"),
     path("putaway/", putaway_worklist, name="inventory_putaway_worklist"),
     path("movements/", movements_index, name="inventory_movements_index"),
     path("movement/<int:pk>/", movement_detail, name="inventory_movement_detail"),
     path("issues/create/", issuance_portal, name="inventory_issuance_portal"),
     path("issue-parts/", issuance_portal, name="inventory_issue_parts"),
+    # Reachable from every page in the app (topnav badge), so it is its own
+    # route rather than a `format=` on the workspace above.
+    path(
+        "issuance-queue/panel/",
+        issuance_queue_panel,
+        name="inventory_issuance_queue_panel",
+    ),
     path(
         "issues/from-location/",
         issuance_location_portal,

@@ -1,0 +1,81 @@
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">fact_check</span></span>Maintenance status</div>
+    <span class="card-header-icon">
+      <span class="tag
+        {% if detail.status == 'complete' %}is-success
+        {% elif detail.status == 'in_progress' %}is-info
+        {% elif detail.status == 'cancelled' %}is-danger
+        {% else %}is-light{% endif %}">{{ detail.get_status_display|default:"—" }}</span>
+    </span>
+  </div>
+  <div class="card-content">
+    <div class="columns is-variable is-4">
+      <div class="column is-6">
+        <div class="is-flex is-justify-content-space-between is-size-7">
+          <span>Completion progress</span><strong>{{ progress.percent }}%</strong>
+        </div>
+        <div class="progress-stack" role="img"
+             aria-label="{{ progress.in_progress }} in progress, {{ progress.complete }} complete, {{ progress.failed }} failed, {{ progress.skipped }} skipped, of {{ progress.total }} steps">
+          <div class="progress-stack-seg is-in-progress" style="width: {{ progress.percent_in_progress }}%;" title="{{ progress.in_progress }} in progress"></div>
+          <div class="progress-stack-seg is-complete" style="width: {{ progress.percent_complete }}%;" title="{{ progress.complete }} complete"></div>
+          <div class="progress-stack-seg is-failed" style="width: {{ progress.percent_failed }}%;" title="{{ progress.failed }} failed"></div>
+          <div class="progress-stack-seg is-skipped" style="width: {{ progress.percent_skipped }}%;" title="{{ progress.skipped }} skipped"></div>
+        </div>
+        <div class="columns is-mobile has-text-centered mt-2">
+          <div class="column"><p class="heading is-size-7 has-text-grey">Total</p><p class="title is-5">{{ progress.total }}</p></div>
+          <div class="column"><p class="heading is-size-7 has-text-grey">In progress</p><p class="title is-5">{{ progress.in_progress }}</p></div>
+          <div class="column"><p class="heading is-size-7 has-text-grey">Complete</p><p class="title is-5 has-text-success">{{ progress.complete }}</p></div>
+          <div class="column"><p class="heading is-size-7 has-text-grey">Failed</p><p class="title is-5 has-text-danger">{{ progress.failed }}</p></div>
+          <div class="column"><p class="heading is-size-7 has-text-grey">Skipped</p><p class="title is-5">{{ progress.skipped }}</p></div>
+        </div>
+      </div>
+
+      <div class="column is-6">
+        <div class="columns is-variable is-2 mb-0">
+          <div class="column is-7">
+            <button class="button is-success is-fullwidth" type="button"
+                    commandfor="event-complete-dialog" command="show-modal"
+                    {% if detail.status not in open_statuses %}disabled
+                    title="This event is already closed. Use the edit portal to make further changes."
+                    {% elif not completion_button_verdict.allowed %}disabled
+                    title="{% for reason in completion_button_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% endfor %}"{% endif %}>
+              <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Mark complete</span>
+            </button>
+          </div>
+          <div class="column is-5">
+            {% comment %} Failing is never gated by the completion policy — unfinished
+               steps are the reason a job fails. {% endcomment %}
+            <button class="button is-danger is-fullwidth" type="button"
+                    commandfor="event-fail-dialog" command="show-modal"
+                    {% if detail.status not in open_statuses %}disabled
+                    title="This event is already closed."{% endif %}>
+              <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Mark failed</span>
+            </button>
+          </div>
+        </div>
+        {% if not completion_button_verdict.allowed %}
+        <p class="help has-text-warning">
+          {% for reason in completion_button_verdict.reasons %}{{ reason }}{% if not forloop.last %} · {% endif %}{% empty %}Completion is currently blocked.{% endfor %}
+        </p>
+        {% endif %}
+
+        <div class="columns is-variable is-2 mt-2">
+          <div class="column is-6">
+            <button class="button is-warning is-fullwidth" type="button"
+                    commandfor="event-blocker-dialog" command="show-modal">
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">pause_circle</span></span><span>Place in blocked status</span>
+            </button>
+          </div>
+          <div class="column is-6">
+            <button class="button is-limitation is-fullwidth" type="button"
+                    commandfor="event-limitation-dialog" command="show-modal"
+                    {% if active_limitations %}disabled title="Close the open limitation before adding another"{% endif %}>
+              <span class="icon"><span class="material-icons is-size-7" aria-hidden="true">warning</span></span><span>Add capability limitation</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

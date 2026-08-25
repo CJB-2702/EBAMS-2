@@ -49,8 +49,10 @@ class ActiveInventorySearch:
         storage_location_id: str = "",
         room_location_code: str = "",
         part_q: str = "",
+        part_id: int | None = None,
         part_number: str = "",
         part_name: str = "",
+        generic_q: str = "",
         serial: str = "",
         stock_status: str = "",
         low_stock_only: bool = False,
@@ -78,6 +80,11 @@ class ActiveInventorySearch:
             qs = qs.filter(
                 storage_location__room_location__display_code=room_location_code
             )
+        # Locked-part callers (the issuance bin search) pin the list to one
+        # part rather than text-matching it — the clerk must not be able to
+        # widen a demand's picker onto a different part.
+        if part_id:
+            qs = qs.filter(part_id=part_id)
         if part_q:
             qs = qs.filter(
                 Q(part__part_number__icontains=part_q) | Q(part__name__icontains=part_q)
@@ -88,6 +95,15 @@ class ActiveInventorySearch:
             qs = qs.filter(part__name__icontains=part_name)
         if serial:
             qs = qs.filter(serial_number__icontains=serial)
+        # The issuance workspace's one-box search: someone reading a label off
+        # a shelf has a part number OR a serial and should not have to know
+        # which box it belongs in.
+        if generic_q:
+            qs = qs.filter(
+                Q(part__part_number__icontains=generic_q)
+                | Q(part__name__icontains=generic_q)
+                | Q(serial_number__icontains=generic_q)
+            )
 
         # Stock status filters
         if stock_status == "has_stock" or has_stock_only:

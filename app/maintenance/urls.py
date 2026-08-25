@@ -80,6 +80,7 @@ urlpatterns = [
 
     # Create & assign
     path("create-assign", create_assign, name="create_assign"),
+    path("create", create_assign, name="maintenance_create"),
     path("unassigned", unassigned_events, name="unassigned_events"),
 
     # Actions (child collection of one event; single-action ops by their own id)
@@ -114,6 +115,8 @@ urlpatterns = [
     path("plans/create", plan_create, name="plan_create"),
     path("plan/<int:pk>", plan_detail, name="plan_detail"),
     path("plan/<int:pk>/edit", plan_edit, name="plan_edit"),
+    path("plan/<int:pk>/worklist", plan_worklist, name="plan_worklist"),
+    path("plan/<int:pk>/move-models", plan_move_asset_models, name="plan_move_asset_models"),
     path("events-portal", lambda req: _events_portal(req, "maintenance"), name="maintenance_events_portal"),
 ]
 

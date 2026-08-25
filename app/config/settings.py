@@ -47,6 +47,34 @@ def _env_list(name: str, default: list[str]) -> list[str]:
     return [p.strip() for p in raw.split(",") if p.strip()]
 
 
+#: SQLite is a single-writer database, and `runserver` is multi-threaded: an
+#: HTMX-heavy page has several requests in flight at once, and every one of
+#: them writes the session table. Without these three options the longest
+#: read-then-write transaction on the site — committing an issuance receipt —
+#: fails with "database is locked", and it fails INSTANTLY rather than waiting
+#: out `timeout`:
+#:
+#:   transaction_mode=IMMEDIATE  A DEFERRED transaction takes its write lock
+#:       late, when it first writes. If another connection took the lock in
+#:       between, SQLite cannot make this one wait — waiting would deadlock
+#:       two half-upgraded transactions — so it returns SQLITE_BUSY at once
+#:       and the busy timeout never applies. Taking the write lock up front
+#:       makes the wait legal, and therefore makes `timeout` mean something.
+#:   journal_mode=WAL            Readers stop blocking the writer at all.
+#:   timeout=30                  Queue behind a writer for 30s instead of 5.
+#:
+#: WAL is a property of the database file, set once and persistent.
+def _sqlite_options() -> dict:
+    return {
+        "timeout": 30,
+        "transaction_mode": "IMMEDIATE",
+        "init_command": (
+            "PRAGMA journal_mode=WAL;"
+            "PRAGMA synchronous=NORMAL;"
+        ),
+    }
+
+
 def _database_from_url(url: str) -> dict:
     parsed = urlparse(url)
     scheme = (parsed.scheme or "").lower()
@@ -68,6 +96,7 @@ def _database_from_url(url: str) -> dict:
         return {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": str(name),
+            "OPTIONS": _sqlite_options(),
         }
 
     if scheme in ("postgres", "postgresql"):
@@ -118,6 +147,7 @@ INSTALLED_APPS = [
     "app.inventory",
     "app.maintenance",
     "app.dispatching",
+    "app.configuration",
 ]
 
 AUTH_USER_MODEL = "administration.User"
@@ -154,6 +184,9 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # Topnav issuance/purchasing queue badges — session-only, no
+                # query. See app/public_app/context_processors.py.
+                "app.public_app.context_processors.work_queues",
             ],
         },
     },
@@ -173,6 +206,7 @@ else:
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": _sqlite_options(),
         }
     }
 

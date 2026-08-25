@@ -35,20 +35,24 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Sum
-from django.utils import timezone
 
-from app.administration.models import User
+from app.inventory.control_layer.factories.issue_session_number_factory import (
+    IssueSessionNumberFactory,
+)
 from app.inventory.control_layer.guards.issuance_guard import IssuanceValidator
 from app.inventory.control_layer.managers.stock_ledger_manager import StockLedgerManager
 from app.inventory.models import (
     ActiveInventory,
-    IssueSessionStatus,
+    IssueReason,
     IssueType,
     PartIssue,
     PartIssueSession,
 )
+from app.procurement.control_layer.narrators.part_demand_narrator import (
+    PartDemandNarrator,
+)
 from app.procurement.control_layer.part_demand_context import PartDemandContext
-from app.procurement.models import IssuanceState
+from app.procurement.models import IssuanceState, PartDemand
 
 
 class PartIssuanceOrchestrator:
@@ -67,6 +71,7 @@ class PartIssuanceOrchestrator:
         actor=None,
         notes: str = "",
         issued_at=None,
+        sync_demand: bool = True,
     ) -> PartIssue:
         """Hand material to a person, an asset, or (still, by default) a
         demand — Phase 6 (FD-5) extends the original demand-only seam with
@@ -80,6 +85,12 @@ class PartIssuanceOrchestrator:
           Issued                        normal terminal case, no return expected
           Partially Issued              some but not the full expected amount
           Issued Pending Reconciliation material expected to come back
+
+        `sync_demand=False` writes the PartIssue row and moves stock but
+        leaves the demand's issued_qty and axis alone — used ONLY by
+        `commit_session`, which writes every line for a demand and then syncs
+        that demand once. Any other caller passing it would reintroduce
+        exactly the silent drift this seam exists to prevent.
 
         `active_inventory_id`, when given, withdraws (positive quantity) or
         re-injects (negative quantity, i.e. a return) stock through
@@ -148,16 +159,73 @@ class PartIssuanceOrchestrator:
                 updated_by=actor,
             )
 
-            if demand_id is not None:
-                net = cls.net_issued_for_demand(demand_id=demand_id)
-                PartDemandContext(demand_id).record_issuance(
-                    net_issued_qty=net,
+            if demand_id is not None and sync_demand:
+                cls._sync_demand(
+                    demand_id=demand_id,
                     to_stage=to_stage,
                     actor=actor,
-                    commit=False,
+                    issued_to=issued_to,
                 )
 
         return issue
+
+    # ------------------------------------------------------------------ #
+    # The demand seam, split out so a session can write every line for a
+    # demand FIRST and then move that demand's axis exactly once.
+    # ------------------------------------------------------------------ #
+
+    @classmethod
+    def _sync_demand(
+        cls,
+        *,
+        demand_id: int,
+        to_stage: str,
+        actor=None,
+        issued_to=None,
+        journal_note: str = "",
+        net: Decimal | None = None,
+    ) -> Decimal:
+        """Push the demand's net issued quantity and axis into procurement.
+
+        MUST be called inside a transaction the caller already opened —
+        `commit=False` is passed through for exactly that reason.
+
+        Called ONCE PER DEMAND, not once per line. A receipt that draws the
+        same demand from two bins (the container ran dry mid-handover) would
+        otherwise write two journal rows and briefly park the demand in
+        Partially Issued on its way to Issued, which is a lie about what
+        happened: one handover, one entry.
+        """
+        if net is None:
+            net = cls.net_issued_for_demand(demand_id=demand_id)
+        PartDemandContext(demand_id).record_issuance(
+            net_issued_qty=net,
+            to_stage=to_stage,
+            actor=actor,
+            issued_to=issued_to,
+            notes=journal_note,
+            commit=False,
+        )
+        return net
+
+    @staticmethod
+    def resolve_issuance_stage(*, net_issued: Decimal, quantity_requested: Decimal) -> str:
+        """Which issuance stage a demand lands on given what is now out.
+
+        This is the portal supplying `to_stage`, NOT the demand auto-flipping
+        from its own quantities — D30/D36 forbid procurement inferring the
+        axis, and it still does not. The judgment is made here, by the caller,
+        and handed over.
+
+        Deliberately generous at the top end: issuing MORE than was asked for
+        still lands on Issued. Over-issue is a warning the portal raises before
+        submission, not a different state afterwards.
+        """
+        if net_issued <= 0:
+            return IssuanceState.NOT_ISSUED
+        if net_issued >= quantity_requested:
+            return IssuanceState.ISSUED
+        return IssuanceState.PARTIALLY_ISSUED
 
     @classmethod
     def commit_session(
@@ -165,71 +233,107 @@ class PartIssuanceOrchestrator:
         *,
         lines: list[dict],
         issued_by,
-        issued_to=None,
-        issued_to_asset_id: int | None = None,
-        issue_type: str = IssueType.FOR_PART_DEMAND,
-        issue_reason: str = "",
+        issued_to,
+        issue_reason: str = IssueReason.OTHER,
+        issue_reason_detail: str = "",
         notes: str = "",
         issued_at=None,
     ) -> PartIssueSession:
-        """Commit an entire active issuance session (staged draft queue) in a single
-        atomic database transaction.
+        """Commit a whole receipt — one handover, to one person, atomically.
 
-        Creates a PartIssueSession header record, then iterates over each staged line item
-        to generate corresponding PartIssue rows, withdraw stock balances, and update
-        associated PartDemand issuance states.
+        ONE RECIPIENT. `issued_to` is required and is stamped onto every line,
+        so a line can no longer carry a recipient that disagrees with the
+        receipt it sits on. The previous shape took a per-line `issued_to_id`
+        that silently beat the header's value, which made the portal's
+        recipient dropdown decorative.
+
+        A DEMAND MAY APPEAR ON SEVERAL LINES. Two bins for one demand is the
+        ordinary case when a container runs dry mid-handover, and serialised
+        parts always split — three serials is three lines of one unit each,
+        because `ActiveInventory` holds one row per serial. So the lines are
+        written first and each distinct demand is synced once afterwards, with
+        its stage resolved from the resulting net.
         """
         if not lines:
             raise ValueError("Cannot commit an empty issuance session.")
-
-        import uuid
+        if issued_to is None:
+            raise ValueError("An issuance session must name who received the material.")
 
         with transaction.atomic():
-            session_number = (
-                f"ISS-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-            )
             session = PartIssueSession.objects.create(
-                session_number=session_number,
-                issue_type=issue_type,
-                status=IssueSessionStatus.COMMITTED,
+                session_number=IssueSessionNumberFactory.next_number(issued_at=issued_at),
                 issued_by=issued_by,
                 issued_to=issued_to,
-                issued_to_asset_id=issued_to_asset_id,
-                issue_reason=issue_reason,
+                issue_reason=issue_reason or IssueReason.OTHER,
+                issue_reason_detail=issue_reason_detail,
                 notes=notes,
                 **({"issued_at": issued_at} if issued_at is not None else {}),
                 created_by=issued_by,
                 updated_by=issued_by,
             )
 
+            # Pass 1 — every line becomes a PartIssue row and moves stock. The
+            # demands are deliberately left untouched here.
+            quantity_by_demand: dict[int, Decimal] = {}
             for line in lines:
                 line_qty = Decimal(str(line["quantity"]))
-                line_issue_type = line.get("issue_type", issue_type)
                 line_demand_id = line.get("demand_id")
-                line_issued_to = (
-                    User.objects.get(pk=line["issued_to_id"])
-                    if line.get("issued_to_id")
-                    else issued_to
-                )
-                line_issued_to_asset_id = (
-                    line.get("issued_to_asset_id") or issued_to_asset_id
-                )
-                line_active_inventory_id = line.get("active_inventory_id")
-                line_notes = line.get("notes", "")
 
                 cls.issue(
                     session=session,
                     quantity=line_qty,
-                    issue_type=line_issue_type,
+                    issue_type=line.get("issue_type", IssueType.FOR_PART_DEMAND),
                     demand_id=line_demand_id,
-                    issued_to=line_issued_to,
-                    issued_to_asset_id=line_issued_to_asset_id,
-                    active_inventory_id=line_active_inventory_id,
-                    to_stage=IssuanceState.ISSUED,
+                    issued_to=issued_to,
+                    # Line grain, not header grain: the header is one person,
+                    # but the "Issue from Location" portal can point a single
+                    # grabbed line at an asset instead. The header lost its
+                    # `issued_to_asset` for exactly this reason — an asset is a
+                    # property of what was taken, not of who signed for it.
+                    issued_to_asset_id=line.get("issued_to_asset_id"),
+                    active_inventory_id=line.get("active_inventory_id"),
                     actor=issued_by,
-                    notes=line_notes,
+                    notes=line.get("notes", ""),
                     issued_at=issued_at,
+                    sync_demand=False,
                 )
+                if line_demand_id is not None:
+                    quantity_by_demand[line_demand_id] = (
+                        quantity_by_demand.get(line_demand_id, Decimal("0")) + line_qty
+                    )
+
+            # Pass 2 — one axis move and one journal row per demand.
+            if quantity_by_demand:
+                requested_by_demand = dict(
+                    PartDemand.objects.filter(pk__in=quantity_by_demand)
+                    .values_list("pk", "quantity_requested")
+                )
+                recipient_label = (
+                    issued_to.get_full_name() or issued_to.username
+                    if hasattr(issued_to, "username")
+                    else str(issued_to)
+                )
+                for demand_id, handed_over in quantity_by_demand.items():
+                    net = cls.net_issued_for_demand(demand_id=demand_id)
+                    stage = cls.resolve_issuance_stage(
+                        net_issued=net,
+                        quantity_requested=requested_by_demand.get(
+                            demand_id, Decimal("0")
+                        ),
+                    )
+                    cls._sync_demand(
+                        demand_id=demand_id,
+                        to_stage=stage,
+                        actor=issued_by,
+                        net=net,
+                        issued_to=issued_to,
+                        journal_note=PartDemandNarrator.issuance_handover(
+                            quantity=handed_over,
+                            recipient_label=recipient_label,
+                            session_number=session.session_number,
+                            net_issued_qty=net,
+                        ),
+                    )
 
         return session
 

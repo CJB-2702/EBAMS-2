@@ -4,13 +4,21 @@ The results card alone. Included directly by index.html on a full page load,
 and by _index_results.html (which adds the OOB metrics swap) on the htmx
 path. Keep the OOB block out of here — including it on a full page load
 duplicates the `demand-hero-metrics` id and renders the metrics table twice.
+
+The bulk-select scope wraps the table AND the floating bar (both must be
+inside it for bulk_select.js to find them from either end). Selection resets
+on every filter change by design — see that file's header.
 {% endcomment %}
-<div class="card" id="demand-results-container">
+<div class="card" id="demand-results-container"
+     data-bulk-scope="demands" data-bulk-field="demand_ids">
   <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Demands ({{ page.paginator.count }})</div></div>
   <div class="card-content is-flush">
     <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
       <thead>
         <tr>
+          <th style="width:2.5rem;">
+            <input type="checkbox" data-bulk-all aria-label="Select all demands on this page">
+          </th>
           <th>#</th><th>Part</th><th>Source</th><th>Event</th><th>Qty Req.</th><th>Priority</th><th>Needed By</th>
           <th>Demand</th><th>Purchasing</th><th>Shipment</th><th>Issuance</th><th></th>
         </tr>
@@ -18,6 +26,10 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
       <tbody>
         {% for d in demands %}
         <tr>
+          <td>
+            <input type="checkbox" data-bulk-check value="{{ d.pk }}"
+                   aria-label="Select demand {{ d.pk }}">
+          </td>
           <td><a href="{% url 'demand_detail' pk=d.pk %}">#{{ d.pk }}</a></td>
           <td>{{ d.part.part_number }} <span class="has-text-grey is-size-7">{{ d.part.name }}</span></td>
           <td><span class="tag is-light">{{ d.source }}</span></td>
@@ -42,7 +54,7 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="12" class="has-text-grey has-text-centered py-5">No demands match your filters.</td></tr>
+        <tr><td colspan="13" class="has-text-grey has-text-centered py-5">No demands match your filters.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -59,4 +71,27 @@ duplicates the `demand-hero-metrics` id and renders the metrics table twice.
     </nav>
   </div>
   {% endif %}
+
+  {# ── Bulk action bar. Hidden until something is checked, then fixed to the ── #}
+  {# ── viewport bottom so a selection stays actionable while scrolling. ── #}
+  <div class="bulk-bar" data-bulk-bar hidden>
+    <span class="bulk-bar-count"><span data-bulk-count>0</span> selected</span>
+    <form method="post" action="{% url 'demand_queue_for_issuance' %}" data-bulk-form>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="button is-small is-link" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span>
+        <span>Queue for Part Issuance</span>
+      </button>
+    </form>
+    <form method="post" action="{% url 'demand_queue_for_purchasing' %}" data-bulk-form>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="button is-small is-warning" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span>
+        <span>Queue for Purchasing</span>
+      </button>
+    </form>
+    <button type="button" class="button is-small is-light" data-bulk-clear>Clear</button>
+  </div>
 </div>

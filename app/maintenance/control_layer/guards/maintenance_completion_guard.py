@@ -52,7 +52,13 @@ class MaintenanceCompletionPolicy:
     """Policy: may this MaintenanceDetail be marked Complete right now?"""
 
     @classmethod
-    def check(cls, *, struct) -> CompletionVerdict:
+    def check(cls, *, struct, require_billable_hours: bool = True) -> CompletionVerdict:
+        """`require_billable_hours=False` drops the hours-floor check — used by
+        the UI to gate the "Mark complete" button on the steps/blockers/
+        limitations checks only, since the hours field is filled in from
+        inside the completion dialog the button opens. `complete()` always
+        calls with the default True, so the floor is still enforced at the
+        moment the event actually completes."""
         reasons: list[str] = []
 
         unfinished = [a for a in struct.actions if a.status not in TERMINAL_ACTION_STATUSES]
@@ -72,12 +78,13 @@ class MaintenanceCompletionPolicy:
                 f"{len(active_limitations)} asset limitation record(s) are still open."
             )
 
-        calculated_hours = sum(a.billable_hours or 0 for a in struct.actions)
-        actual_hours = struct.maintenance_detail.actual_billable_hours or 0
-        if actual_hours < calculated_hours:
-            reasons.append(
-                f"Actual billable hours ({actual_hours:.2f}) is less than the "
-                f"sum of the individual actions' billable hours ({calculated_hours:.2f})."
-            )
+        if require_billable_hours:
+            calculated_hours = sum(a.billable_hours or 0 for a in struct.actions)
+            actual_hours = struct.maintenance_detail.actual_billable_hours or 0
+            if actual_hours < calculated_hours:
+                reasons.append(
+                    f"Actual billable hours ({actual_hours:.2f}) is less than the "
+                    f"sum of the individual actions' billable hours ({calculated_hours:.2f})."
+                )
 
         return CompletionVerdict(allowed=not reasons, reasons=reasons)

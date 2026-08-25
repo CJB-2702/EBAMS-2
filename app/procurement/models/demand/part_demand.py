@@ -46,6 +46,22 @@ class PartDemand(AuditFieldsMixin, SoftDeleteMixin):
         null=True,
         blank=True,
     )
+    # Who physically took the material. Distinct from requested_by: a manager
+    # routinely raises a demand against themselves for an activity, then a
+    # member of staff walks up to the storeroom and receives the parts. Written
+    # by PartIssuanceOrchestrator at commit, LAST TAKER WINS — this is a
+    # current-state snapshot, not a log. A demand issued across several
+    # sessions (the container ran dry, the rest came later) ends up naming the
+    # most recent recipient; the history of who took what and when is read off
+    # the PartDemandUpdate journal, with the PartIssue rows as the line-grain
+    # detail.
+    issued_to = models.ForeignKey(
+        "administration.User",
+        on_delete=models.PROTECT,
+        related_name="demands_received",
+        null=True,
+        blank=True,
+    )
     expected_cost = models.DecimalField(
         max_digits=12, decimal_places=2, null=True, blank=True
     )

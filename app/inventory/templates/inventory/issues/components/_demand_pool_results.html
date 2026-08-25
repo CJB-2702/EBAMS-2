@@ -1,0 +1,98 @@
+{% comment %}
+Step 1 results — served on a full page load (included by create.html) and for
+`?format=htmx-demand-pool`. Identical either way, so there is only one shape to
+keep right.
+
+The `+` posts `add_demand` to the workspace's own canonical URL and carries the
+current querystring, so adding a demand does not silently reset the search the
+operator just built. It puts the DEMAND on the plan; a line is only created
+alongside it when exactly one location holds the part.
+{% endcomment %}
+<table class="table is-fullwidth is-hoverable is-size-7 pool-table" style="margin:0;">
+  <thead>
+    <tr>
+      <th>Demand</th>
+      <th>Part</th>
+      <th>Needed by</th>
+      <th class="has-text-right">Still owed</th>
+      <th>State</th>
+      <th style="width:4.5rem;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for d in demand_pool %}
+    <tr {% if d.pk in staged_demand_ids %}class="is-pool-staged"{% endif %}>
+      <td>
+        <a href="{% url 'demand_detail' pk=d.pk %}" class="has-text-weight-semibold">#{{ d.pk }}</a>
+        {% if d.event_id %}<div class="has-text-grey is-size-7">Event #{{ d.event_id }}</div>{% endif %}
+      </td>
+      <td>
+        <div class="is-family-monospace has-text-weight-semibold">{{ d.part.part_number }}</div>
+        <div class="has-text-grey">{{ d.part.name }}</div>
+      </td>
+      <td>{{ d.needed_by|date:"Y-m-d"|default:"—" }}</td>
+      <td class="has-text-right is-family-monospace has-text-weight-bold">
+        {{ d.unissued_qty|floatformat:3 }}
+      </td>
+      <td>
+        <span class="tag is-light is-small">{{ d.get_demand_state_display }}</span>
+        <div class="has-text-grey is-size-7">{{ d.get_priority_display }}</div>
+      </td>
+      <td class="has-text-right">
+        {# ── Already on the plan? Say so. The + stays live: it re-runs ── #}
+        {# ── the auto-pick for whatever is still outstanding. Extra ── #}
+        {# ── shelves are added from the + on the plan's own header. ── #}
+        {% if d.pk in staged_demand_ids %}
+          <span class="tag is-success is-light is-small mb-1">
+            <span class="icon"><span class="material-icons" style="font-size:0.9rem;">check</span></span>
+            <span>On plan</span>
+          </span>
+        {% endif %}
+        {% if can_issue %}
+          <form method="post" action="{{ request.get_full_path }}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_demand">
+            <input type="hidden" name="demand_ids" value="{{ d.pk }}">
+            {# ── A plus, not a labelled button: the column is one action ── #}
+            {# ── repeated down every row, and the row already says what ── #}
+            {# ── it is. The title carries the wording the label used to. ── #}
+            <button class="button is-small {% if d.pk in staged_demand_ids %}is-light{% else %}is-link{% endif %}" type="submit"
+                    title="{% if d.pk in staged_demand_ids %}Already on the plan — look again for an obvious location for demand #{{ d.pk }}{% else %}Add demand #{{ d.pk }} to the plan{% endif %}"
+                    aria-label="{% if d.pk in staged_demand_ids %}Re-check locations for demand {{ d.pk }}{% else %}Add demand {{ d.pk }} to the plan{% endif %}">
+              <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span>
+            </button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="has-text-centered has-text-grey py-5">
+        <span class="icon is-large"><span class="material-icons" style="font-size:2rem;">search_off</span></span>
+        <p class="mt-2">No demands match this search.</p>
+        <p class="is-size-7">
+          Parts are issued against demands here. If nothing exists for what the
+          person is asking for, it is raised in
+          <a href="{% url 'demand_index' %}">Procurement &rsaquo; Demands</a> first.
+        </p>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if demand_pool_page.paginator.num_pages > 1 %}
+<nav class="pagination is-small is-centered pool-pagination" role="navigation" aria-label="demand pool pagination">
+  <ul class="pagination-list">
+    {% for num in demand_pool_page.paginator.page_range %}
+    <li>
+      <button type="button" class="pagination-link {% if num == demand_pool_page.number %}is-current{% endif %}"
+              hx-get="{% url 'inventory_issue_parts' %}?format=htmx-demand-pool&d_page={{ num }}"
+              hx-include="#demand-pool-form"
+              hx-target="#demand-pool-region"
+              hx-swap="innerHTML">{{ num }}</button>
+    </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endif %}

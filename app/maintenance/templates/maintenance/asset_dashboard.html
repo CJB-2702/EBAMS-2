@@ -125,8 +125,59 @@
     </div>
   </div>
 
-  <div id="asset-dashboard-cards" class="ah-grid">
-    {% include "maintenance/fragments/asset_dashboard_cards_page.html" %}
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">
+        <span class="icon"><span class="material-icons" aria-hidden="true">dashboard</span></span>
+        <span>Assets Overview</span>
+        {% if page_obj.paginator.count %}
+          <span class="tag is-light is-rounded ml-2">{{ page_obj.paginator.count }}</span>
+        {% endif %}
+      </div>
+      <div class="is-flex is-align-items-center pr-3">
+        <div class="buttons has-addons are-small mb-0">
+          <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=condensed"
+             class="button {% if current_format == 'condensed' %}is-link is-selected{% else %}is-light{% endif %}"
+             title="Condensed Table View">
+            <span class="icon"><span class="material-icons" style="font-size:1rem;">table_rows</span></span>
+            <span>Condensed</span>
+          </a>
+          <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=comfortable"
+             class="button {% if current_format != 'condensed' %}is-link is-selected{% else %}is-light{% endif %}"
+             title="Comfortable Card View">
+            <span class="icon"><span class="material-icons" style="font-size:1rem;">grid_view</span></span>
+            <span>Comfortable</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {% if current_format == 'condensed' %}
+    <div class="card-content is-flush">
+      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Asset / Serial</th>
+            <th>Class &amp; Model</th>
+            <th>Domain</th>
+            <th>Health Status</th>
+            <th>Next Planned Maintenance</th>
+            <th>Active Blockers &amp; Limitations</th>
+            <th class="has-text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="asset-dashboard-rows">
+          {% include "maintenance/fragments/asset_dashboard_condensed_page.html" %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="card-content">
+      <div id="asset-dashboard-cards" class="ah-grid">
+        {% include "maintenance/fragments/asset_dashboard_cards_page.html" %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 
 </div>

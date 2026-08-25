@@ -35,6 +35,16 @@
       <div class="column is-12"><label class="label is-small">Description</label><textarea class="textarea is-small" name="description" rows="2">{{ klass.description|default:'' }}</textarea></div>
       <div class="column is-6"><label class="label is-small">Data Domains</label><div class="select is-small is-multiple is-fullwidth"><select name="domains" multiple size="3">{% for d in domains %}<option value="{{ d.id }}"{% if d.id in selected_domain_ids %} selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div></div>
       <div class="column is-6"><label class="checkbox is-small mt-5"><input type="checkbox" name="restrict_to_domain_set" {% if klass.restrict_to_domain_set %}checked{% endif %}> Restrict to domain set</label></div>
+
+      <div class="column is-12"><hr class="my-1"><label class="label is-small mb-2"><span class="icon-text"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">speed</span></span><span>Meter Units</span></span></label>
+        <p class="help is-size-7 mb-2">Every model and asset under this class shares these meters. Leave a slot blank to hide it everywhere.</p>
+        <div class="columns is-variable is-2 mb-0">
+          <div class="column"><input class="input is-small" name="meter1_unit" value="{{ klass.meter1_unit|default:'' }}" placeholder="Meter 1 (e.g. Miles)"></div>
+          <div class="column"><input class="input is-small" name="meter2_unit" value="{{ klass.meter2_unit|default:'' }}" placeholder="Meter 2 (e.g. Fuel)"></div>
+          <div class="column"><input class="input is-small" name="meter3_unit" value="{{ klass.meter3_unit|default:'' }}" placeholder="Meter 3"></div>
+          <div class="column"><input class="input is-small" name="meter4_unit" value="{{ klass.meter4_unit|default:'' }}" placeholder="Meter 4"></div>
+        </div>
+      </div>
     </div></div>
   </div>
 

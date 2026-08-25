@@ -49,6 +49,7 @@ class MaintenanceSearch:
         domain_ids,
         status: str = "",
         asset_id: int | None = None,
+        asset_sn: str = "",
         priority: str = "",
         maintenance_type: str = "",
         work_order_reference: str = "",
@@ -88,7 +89,12 @@ class MaintenanceSearch:
 
         if status:
             qs = qs.filter(status=status)
-        if asset_id:
+        if asset_sn:
+            qs = qs.filter(
+                Q(asset__serial_number__icontains=asset_sn)
+                | (Q(asset_id=int(asset_sn)) if asset_sn.isdigit() else Q(asset_id__in=[]))
+            )
+        elif asset_id:
             qs = qs.filter(asset_id=asset_id)
         if priority:
             qs = qs.filter(priority=priority)

@@ -1,0 +1,92 @@
+{% extends "inventory/base.html" %}
+{% block title %}Edit {{ room.room_name }}{% endblock %}
+{% block nav_warehouses %}is-active{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'inventory_warehouse_index' %}">Warehouses</a></li>
+<li><a href="{% url 'inventory_warehouse_detail' pk=room.warehouse_id %}">{{ room.warehouse.code }}</a></li>
+{% if room.is_active %}<li><a href="{% url 'inventory_room_detail' pk=room.pk %}">{{ room.room_name }}</a></li>{% endif %}
+<li class="is-active"><a href="#" aria-current="page">Edit {% if not room.is_active %}(retired){% endif %}</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">meeting_room</span></div>
+      <div>
+        <h1 class="page-title">Edit room</h1>
+        <p class="page-subtitle">{{ room.warehouse.code }} / {{ room.room_name }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>Room details</div></div>
+  <div class="card-content">
+    {% if room.is_intake_room %}
+    <p class="is-size-7 has-text-grey mb-3">
+      <span class="icon is-small"><span class="material-icons" style="font-size:1rem;">lock</span></span>
+      This is the warehouse's protected Intake Room. It cannot be renamed or retired.
+    </p>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="save">
+      <div class="field">
+        <label class="label is-small" for="room-name">Room name <span class="has-text-danger">*</span></label>
+        <div class="control"><input class="input is-small" id="room-name" name="room_name" value="{{ room.room_name }}" {% if not room.is_renamable %}readonly{% endif %} required></div>
+      </div>
+      <div class="field">
+        <label class="label is-small" for="room-desc">Description</label>
+        <div class="control"><textarea class="textarea is-small" id="room-desc" name="description" rows="3">{{ room.description }}</textarea></div>
+      </div>
+      <div class="field">
+        <label class="label is-small">Excluded data domains</label>
+        <div class="control">
+          {% if domains %}
+            {% for domain in domains %}
+            <label class="checkbox is-size-7 is-block">
+              <input type="checkbox" name="excluded_domain_ids" value="{{ domain.pk }}" {% if domain.pk in excluded_domain_ids %}checked{% endif %}> {{ domain.name }}
+            </label>
+            {% endfor %}
+            <p class="help">A room's effective scope is its warehouse's domains minus these exclusions.</p>
+          {% else %}
+            <p class="has-text-grey is-size-7">No domains defined.</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="field is-grouped is-grouped-right mt-4">
+        <div class="control"><a class="button is-small" href="{% if room.is_active %}{% url 'inventory_room_detail' pk=room.pk %}{% else %}{% url 'inventory_warehouse_detail' pk=room.warehouse_id %}{% endif %}">Cancel</a></div>
+        <div class="control"><button class="button is-small is-link" type="submit">Save changes</button></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">archive</span></span>Lifecycle</div></div>
+  <div class="card-content">
+    <p class="is-size-7 has-text-grey">
+      Rooms are never deleted. Retiring one is refused while it still holds active
+      locations or stock, and always refused for the protected Intake Room.
+      Retirement is reversible.
+    </p>
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      {% if room.is_active %}
+      <input type="hidden" name="action" value="retire">
+      <button class="button is-small is-warning" type="submit" {% if not room.is_deletable %}disabled{% endif %}>
+        <span class="icon"><span class="material-icons" aria-hidden="true">archive</span></span><span>Retire room</span>
+      </button>
+      {% else %}
+      <input type="hidden" name="action" value="reactivate">
+      <p class="is-size-7 mb-2"><span class="tag is-warning is-light is-small">Retired</span></p>
+      <button class="button is-small is-success" type="submit">
+        <span class="icon"><span class="material-icons" aria-hidden="true">unarchive</span></span><span>Reactivate room</span>
+      </button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

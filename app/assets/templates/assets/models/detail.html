@@ -20,15 +20,33 @@
 <div class="body-grid has-rail">
   <div>
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
-      <div class="card-content"><dl class="kv">
-        <dt>Model Name</dt><dd>{{ model.model_name }}</dd>
-        <dt>Version</dt><dd>{{ model.version|default:"—" }}{% if model.version_rank is not None %} <span class="tag is-light is-small">rank {{ model.version_rank }}</span>{% endif %}</dd>
-        <dt>Config Baselines</dt><dd>{% for b in model.config_baselines %}<span class="tag is-light is-small">{{ b }}</span> {% empty %}<span class="has-text-grey is-size-7">None.</span>{% endfor %}</dd>
-        <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=model.asset_class.id %}">{{ model.asset_class.name }}</a></dd>
-        <dt>Base Model</dt><dd>{% if model.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% else %}revision of {{ model.base_model.model_name }}{% endif %}</dd>
-        <dt>Meter Units</dt><dd>{% for u in model.meter_units %}<span class="tag is-light is-small">{{ u }}</span> {% empty %}—{% endfor %}</dd>
-        <dt>Active</dt><dd>{{ model.is_active|yesno:"Yes,No" }}</dd>
-      </dl></div>
+      <div class="card-content">
+        <div class="is-flex" style="gap:1.5rem;align-items:flex-start;">
+          <div style="width:200px;max-width:200px;flex-shrink:0;">
+            {% if model.primary_image %}
+              <figure class="image" style="width:200px;height:200px;background:var(--bulma-background);border:1px solid var(--bulma-border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0;">
+                <img src="{{ model.primary_image.file.file.url }}" alt="{{ model }}" style="max-width:200px;max-height:200px;object-fit:contain;">
+              </figure>
+            {% else %}
+              <div style="width:200px;height:200px;background:var(--bulma-background);border:1px dashed var(--bulma-border);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--bulma-text-weak);">
+                <span class="material-icons" style="font-size:3rem;">photo</span>
+                <span class="is-size-7 mt-1">No Hero Image</span>
+              </div>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <dl class="kv">
+              <dt>Model Name</dt><dd>{{ model.model_name }}</dd>
+              <dt>Version</dt><dd>{{ model.version|default:"—" }}{% if model.version_rank is not None %} <span class="tag is-light is-small">rank {{ model.version_rank }}</span>{% endif %}</dd>
+              <dt>Config Baselines</dt><dd>{% for b in model.config_baselines %}<span class="tag is-light is-small">{{ b }}</span> {% empty %}<span class="has-text-grey is-size-7">None.</span>{% endfor %}</dd>
+              <dt>Asset Class</dt><dd><a href="{% url 'class_detail' class_id=model.asset_class.id %}">{{ model.asset_class.name }}</a></dd>
+              <dt>Base Model</dt><dd>{% if model.is_base_model %}<span class="tag is-success is-light is-small">base</span>{% else %}revision of {{ model.base_model.model_name }}{% endif %}</dd>
+              <dt>Meter Units</dt><dd>{% for u in model.meter_units %}<span class="tag is-light is-small">{{ u }}</span> {% empty %}—{% endfor %}</dd>
+              <dt>Active</dt><dd>{{ model.is_active|yesno:"Yes,No" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>

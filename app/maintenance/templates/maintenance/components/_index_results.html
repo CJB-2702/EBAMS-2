@@ -1,75 +1,205 @@
 {% load static %}
 {% comment %} Status color mapping: complete/cancelled/failed/skipped = grey, in_progress = blue, blocked/planned = default {% endcomment %}
+<style>
+  /* Blocker & Limitation transparent row background styling */
+  .event-row-blocker {
+    background-color: rgba(241, 70, 104, 0.07) !important;
+  }
+  tr.event-row-blocker:hover {
+    background-color: rgba(241, 70, 104, 0.12) !important;
+  }
+  .event-row-limitation {
+    background-color: rgba(255, 221, 87, 0.12) !important;
+  }
+  tr.event-row-limitation:hover {
+    background-color: rgba(255, 221, 87, 0.18) !important;
+  }
+  
+  /* Cards border highlights */
+  div.card.event-row-blocker {
+    border-left: 4px solid #f14668 !important;
+  }
+  div.card.event-row-limitation {
+    border-left: 4px solid #ffdd57 !important;
+  }
+  
+  /* Utility classes */
+  .gap-1 {
+    gap: 0.25rem;
+  }
+  .gap-2 {
+    gap: 0.5rem;
+  }
+</style>
+
 <div class="card">
   <div class="card-header">
-    <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>Events ({{ page.paginator.count }})</div>
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">list</span></span>
+      Events ({{ page.paginator.count }})
+    </div>
   </div>
   <div class="card-content is-flush pb-3">
     {% if density == "large" %}
-      {% for event in events %}
-      <div class="card mb-3 depth-2">
-        <div class="card-content is-size-7">
-          <div class="is-flex is-justify-content-space-between">
-            <div>
-              <a href="{% url 'maintenance_detail' pk=event.pk %}"><strong>{{ event.title }}</strong></a>
-              <p class="has-text-grey">{{ event.get_maintenance_type_display|default:"—" }} · {{ event.asset|default:"No asset" }}</p>
+      <div class="p-3">
+        {% for event in events %}
+        <div class="card mb-3 depth-2 {% if event.has_active_blocker %}event-row-blocker{% elif event.has_active_limitation %}event-row-limitation{% endif %}">
+          <div class="card-content is-size-7">
+            <div class="is-flex is-justify-content-space-between is-align-items-start">
+              <div>
+                <a href="{% url 'maintenance_detail' pk=event.pk %}" class="is-size-6"><strong>{{ event.title }}</strong></a>
+                <p class="has-text-grey mt-1">{{ event.get_maintenance_type_display|default:"—" }} · {{ event.asset|default:"No asset" }}</p>
+              </div>
+              <div class="is-flex gap-1 is-align-items-center">
+                {% if event.status == "complete" %}<span class="tag is-dark">{{ event.get_status_display }}</span>
+                {% elif event.status == "in_progress" %}<span class="tag is-info">{{ event.get_status_display }}</span>
+                {% elif event.status == "cancelled" %}<span class="tag is-danger">{{ event.get_status_display }}</span>
+                {% else %}<span class="tag is-light">{{ event.get_status_display|default:"—" }}</span>{% endif %}
+                {% if event.priority %}<span class="tag is-light ml-1">{{ event.get_priority_display }}</span>{% endif %}
+              </div>
             </div>
-            <div>
+            <p class="has-text-grey mt-2">WO {{ event.work_order_reference|default:"—" }} · Starts {{ event.event_start|date:"Y-m-d H:i"|default:"—" }} · Assigned {{ event.assigned_user|default:"Unassigned" }}</p>
+            
+            {# Progress Bar #}
+            <div class="mt-3">
+              <div class="is-flex is-justify-content-space-between mb-1">
+                <span class="has-text-weight-semibold">Progress</span>
+                <span>{{ event.completed_actions_count }} / {{ event.total_actions_count }} actions ({{ event.percent_complete }}%)</span>
+              </div>
+              <progress class="progress {% if event.percent_complete == 100 %}is-success{% else %}is-link{% endif %}" value="{{ event.percent_complete }}" max="100" style="height: 0.5rem;"></progress>
+            </div>
+
+            {# Blockers Section #}
+            {% if event.active_blockers_list %}
+            <div class="message is-danger is-light mt-3 py-2 px-3">
+              <div class="message-header p-0" style="background: none; color: inherit; font-size: 0.75rem; border-bottom: none;">
+                <span class="has-text-weight-bold">Active Blockers</span>
+              </div>
+              <div class="message-body p-0 mt-1" style="border: none; font-size: 0.7rem;">
+                {% for blocker in event.active_blockers_list %}
+                <div class="mb-1">
+                  <span class="tag is-danger is-light is-small py-0 mr-1" style="height: 1.1rem; font-size: 0.65rem;">{{ blocker.get_priority_display }} Blocker</span>
+                  <strong>{{ blocker.reason }}</strong>: {{ blocker.notes }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            {# Limitations Section #}
+            {% if event.active_limitation_records_list %}
+            <div class="message is-warning is-light mt-3 py-2 px-3">
+              <div class="message-header p-0" style="background: none; color: inherit; font-size: 0.75rem; border-bottom: none;">
+                <span class="has-text-weight-bold">Active Limitations</span>
+              </div>
+              <div class="message-body p-0 mt-1" style="border: none; font-size: 0.7rem;">
+                {% for limit in event.active_limitation_records_list %}
+                <div class="mb-1">
+                  <span class="tag is-warning is-light is-small py-0 mr-1" style="height: 1.1rem; font-size: 0.65rem;">{{ limit.get_status_display }}</span>
+                  {{ limit.limitation_description }}
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            
+            {# Actions List #}
+            {% if event.active_actions %}
+            <div class="mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.05);">
+              <p class="has-text-weight-semibold mb-2">Actions:</p>
+              <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                {% for action in event.active_actions %}
+                <div class="is-flex is-justify-content-space-between is-align-items-center py-1 px-2" style="background: rgba(0,0,0,0.02); border-left: 3px solid {% if action.status == 'Complete' %}#48c774{% elif action.status == 'In Progress' %}#3298dc{% elif action.status == 'Blocked' %}#f14668{% else %}#dbdbdb{% endif %};">
+                  <span class="is-family-monospace" style="font-size: 0.7rem;">Seq {{ action.sequence_order }}: {{ action.action_name }}</span>
+                  <div>
+                    {% if action.status == "Complete" %}<span class="tag is-success is-light is-small py-0" style="height: 1.1rem; font-size: 0.65rem;">{{ action.status }}</span>
+                    {% elif action.status == "In Progress" %}<span class="tag is-info is-light is-small py-0" style="height: 1.1rem; font-size: 0.65rem;">{{ action.status }}</span>
+                    {% elif action.status == "Blocked" %}<span class="tag is-danger is-light is-small py-0" style="height: 1.1rem; font-size: 0.65rem;">{{ action.status }}</span>
+                    {% elif action.status == "Skipped" %}<span class="tag is-dark is-light is-small py-0" style="height: 1.1rem; font-size: 0.65rem;">{{ action.status }}</span>
+                    {% else %}<span class="tag is-light is-small py-0" style="height: 1.1rem; font-size: 0.65rem;">{{ action.status }}</span>{% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <p class="has-text-grey is-size-7 mt-3">No actions defined for this event.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No maintenance events match these filters.</p>
+        {% endfor %}
+      </div>
+      
+    {% elif density == "comfortable" %}
+      <div class="p-3">
+        {% for event in events %}
+        <div class="card mb-3 depth-2 {% if event.has_active_blocker %}event-row-blocker{% elif event.has_active_limitation %}event-row-limitation{% endif %}">
+          <div class="card-content is-size-7">
+            <div class="is-flex is-justify-content-space-between">
+              <div>
+                <a href="{% url 'maintenance_detail' pk=event.pk %}"><strong>{{ event.title }}</strong></a>
+                <p class="has-text-grey">{{ event.get_maintenance_type_display|default:"—" }} · {{ event.asset|default:"No asset" }}</p>
+              </div>
+              <div>
+                {% if event.status == "complete" %}<span class="tag is-dark">{{ event.get_status_display }}</span>
+                {% elif event.status == "in_progress" %}<span class="tag is-info">{{ event.get_status_display }}</span>
+                {% elif event.status == "cancelled" %}<span class="tag is-danger">{{ event.get_status_display }}</span>
+                {% else %}<span class="tag is-light">{{ event.get_status_display|default:"—" }}</span>{% endif %}
+                {% if event.priority %}<span class="tag is-light ml-1">{{ event.get_priority_display }}</span>{% endif %}
+              </div>
+            </div>
+            <p class="has-text-grey mt-2">WO {{ event.work_order_reference|default:"—" }} · Starts {{ event.event_start|date:"Y-m-d H:i"|default:"—" }} · Assigned {{ event.assigned_user|default:"Unassigned" }}</p>
+            <p class="has-text-grey mt-1">
+              Blocker: {% if event.has_active_blocker %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}
+              · Limitation: {% if event.has_active_limitation %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}
+            </p>
+          </div>
+        </div>
+        {% empty %}
+        <p class="has-text-grey is-size-7">No maintenance events match these filters.</p>
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <table class="table is-fullwidth is-size-7" style="margin:0;">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Asset</th>
+            <th>Work Order</th>
+            <th>Start</th>
+            <th>Assigned</th>
+            <th>Has Blocker</th>
+            <th>Has Limitation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in events %}
+          <tr class="{% if event.has_active_blocker %}event-row-blocker{% elif event.has_active_limitation %}event-row-limitation{% endif %}">
+            <td><a href="{% url 'maintenance_detail' pk=event.pk %}">{{ event.title }}</a></td>
+            <td>
               {% if event.status == "complete" %}<span class="tag is-dark">{{ event.get_status_display }}</span>
               {% elif event.status == "in_progress" %}<span class="tag is-info">{{ event.get_status_display }}</span>
               {% elif event.status == "cancelled" %}<span class="tag is-danger">{{ event.get_status_display }}</span>
               {% else %}<span class="tag is-light">{{ event.get_status_display|default:"—" }}</span>{% endif %}
-              {% if event.priority %}<span class="tag is-light ml-1">{{ event.get_priority_display }}</span>{% endif %}
-            </div>
-          </div>
-          <p class="has-text-grey mt-2">WO {{ event.work_order_reference|default:"—" }} · Starts {{ event.event_start|date:"Y-m-d H:i"|default:"—" }} · Assigned {{ event.assigned_user|default:"Unassigned" }}</p>
-          <p class="has-text-grey mt-1">
-            Blocker: {% if event.has_active_blocker %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}
-            · Limitation: {% if event.has_active_limitation %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}
-          </p>
-        </div>
-      </div>
-      {% empty %}
-      <p class="has-text-grey is-size-7 p-4">No maintenance events match these filters.</p>
-      {% endfor %}
-    {% else %}
-    <table class="table is-fullwidth is-size-7" style="margin:0;">
-      <thead>
-        <tr>
-          <th>Title</th>
-          <th>Status</th>
-          <th>Priority</th>
-          <th>Asset</th>
-          <th>Work Order</th>
-          <th>Start</th>
-          <th>Assigned</th>
-          <th>Has Blocker</th>
-          <th>Has Limitation</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for event in events %}
-        <tr>
-          <td><a href="{% url 'maintenance_detail' pk=event.pk %}">{{ event.title }}</a></td>
-          <td>
-            {% if event.status == "complete" %}<span class="tag is-dark">{{ event.get_status_display }}</span>
-            {% elif event.status == "in_progress" %}<span class="tag is-info">{{ event.get_status_display }}</span>
-            {% elif event.status == "cancelled" %}<span class="tag is-danger">{{ event.get_status_display }}</span>
-            {% else %}<span class="tag is-light">{{ event.get_status_display|default:"—" }}</span>{% endif %}
-          </td>
-          <td>{{ event.get_priority_display|default:"—" }}</td>
-          <td>{{ event.asset|default:"—" }}</td>
-          <td class="is-family-monospace">{{ event.work_order_reference|default:"—" }}</td>
-          <td>{{ event.event_start|date:"Y-m-d H:i"|default:"—" }}</td>
-          <td>{{ event.assigned_user|default:"Unassigned" }}</td>
-          <td>{% if event.has_active_blocker %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}</td>
-          <td>{% if event.has_active_limitation %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="9" class="has-text-grey has-text-centered py-4">No maintenance events match these filters.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </td>
+            <td>{{ event.get_priority_display|default:"—" }}</td>
+            <td>{{ event.asset|default:"—" }}</td>
+            <td class="is-family-monospace">{{ event.work_order_reference|default:"—" }}</td>
+            <td>{{ event.event_start|date:"Y-m-d H:i"|default:"—" }}</td>
+            <td>{{ event.assigned_user|default:"Unassigned" }}</td>
+            <td>{% if event.has_active_blocker %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}</td>
+            <td>{% if event.has_active_limitation %}<span class="tag is-danger is-light">true</span>{% else %}<span class="tag is-light">false</span>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9" class="has-text-grey has-text-centered py-4">No maintenance events match these filters.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     {% endif %}
   </div>
   {% if page.paginator.num_pages > 1 %}

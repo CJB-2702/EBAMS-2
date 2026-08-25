@@ -44,12 +44,19 @@ def search_assets(
 
     q = (q or "").strip()
     if q:
-        qs = (
+        matches = (
             qs.filter(name__icontains=q)
             | qs.filter(serial_number__icontains=q)
             | qs.filter(config_baseline__icontains=q)
+            # One box, both ways of naming an asset. A user hunting for a
+            # specific unit types its id or its model name with equal
+            # expectation of a hit, and making them pick the right field
+            # first is the kind of friction that gets a filter ignored.
+            | qs.filter(model__model_name__icontains=q)
         )
-        qs = qs.distinct()
+        if q.isdigit():
+            matches = matches | qs.filter(id=int(q))
+        qs = matches.distinct()
     if config_baseline:
         qs = qs.filter(config_baseline__icontains=config_baseline)
     if domain:
@@ -81,10 +88,14 @@ def load_asset_base(asset_id: int) -> Asset | None:
 
 
 def build_meter_rows(asset: Asset) -> list[SimpleNamespace]:
-    """Current meters as ``(index, unit, value)`` for indices the model defines a
-    unit for."""
-    model = asset.model
-    units = [model.meter1_unit, model.meter2_unit, model.meter3_unit, model.meter4_unit]
+    """Current meters as ``(index, unit, value)`` for indices the asset's class
+    defines a unit for. Labels live on AssetClass (every model under a class
+    shares the same meter semantics); the reading values stay on Asset."""
+    asset_class = asset.asset_class
+    units = [
+        asset_class.meter1_unit, asset_class.meter2_unit,
+        asset_class.meter3_unit, asset_class.meter4_unit,
+    ]
     values = [asset.meter1, asset.meter2, asset.meter3, asset.meter4]
     rows: list[SimpleNamespace] = []
     for index, (unit, value) in enumerate(zip(units, values), start=1):
@@ -94,13 +105,13 @@ def build_meter_rows(asset: Asset) -> list[SimpleNamespace]:
 
 
 def load_meter_history(asset: Asset) -> list[SimpleNamespace]:
-    """Meter-history rows for an asset, each annotated with its model unit."""
-    model = asset.model
+    """Meter-history rows for an asset, each annotated with its class's unit."""
+    asset_class = asset.asset_class
     units = {
-        1: model.meter1_unit,
-        2: model.meter2_unit,
-        3: model.meter3_unit,
-        4: model.meter4_unit,
+        1: asset_class.meter1_unit,
+        2: asset_class.meter2_unit,
+        3: asset_class.meter3_unit,
+        4: asset_class.meter4_unit,
     }
     rows = []
     for r in asset.meter_history.all():

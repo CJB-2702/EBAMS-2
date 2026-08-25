@@ -1,6 +1,8 @@
-{# Result rows for <search-dropdown name="new_part_id">. The component reads
-   data-value off the clicked <li> and uses the li's text as the input label,
-   so the value must be the part id and the text must read like a part. #}
+{% comment %}
+Result rows for <search-dropdown name="part_id">. The component reads
+data-value off the clicked <li> and uses the li's text as the input label, so
+the value must be the part id and the text must read like a part.
+{% endcomment %}
 <ul>
   {% for part in parts %}
   <li data-value="{{ part.pk }}">{{ part.part_number }} — {{ part.name }}</li>

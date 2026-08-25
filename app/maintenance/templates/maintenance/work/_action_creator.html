@@ -1,20 +1,28 @@
 {% comment %}
 The Action Creator Portal — five sources for one new step.
 
-The most reused composite in the legacy module: the same five tabs appear in
-the event edit portal, the template builder, and standalone. Only the POST
-target changes, so this partial takes `creator_url` and nothing else that is
-host-specific.
+The most reused composite in the maintenance module: the same five sources
+appear in the event edit portal and the template builder. Only the POST target
+changes, so this partial takes `creator_url` and nothing else host-specific.
 
-Tab switching is a GET against the host's own canonical URL with
-`format=htmx-creator`, per the format= contract — not five fragment routes.
-Without JS the tab links still work as plain full-page loads (F5 rule).
+Host contract:
+  creator_url       GET target — the host's own canonical URL.
+  creator_post_url  POST target; defaults to creator_url when the host handles
+                    its own mutations (the edit portal does; the builder posts
+                    to a separate session-mutation endpoint).
+  model_filter      optional iterable of AssetModels — when present the proto
+                    source grows a "used on model" filter.
+
+Source switching is a GET against `creator_url` with `format=htmx-creator`,
+per the format= contract — not five fragment routes. Without JS the tab links
+still work as plain full-page loads (F5 rule).
 {% endcomment %}
 <div class="card">
   <div class="card-header">
     <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">add_circle</span></span>Action creator portal</div>
   </div>
   <div class="card-content">
+
     <div class="tabs is-small is-boxed">
       <ul>
         {% for value, label in tabs %}
@@ -29,22 +37,42 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
     </div>
 
     {% if tab != "blank" and tab != "current" %}
-    <form class="mb-3"
-          hx-get="{{ creator_url }}?format=htmx-creator&amp;tab={{ tab }}"
-          hx-trigger="keyup changed delay:350ms from:input[type=search]"
+    <form class="mb-3 creator-filter-bar"
+          method="get" action="{{ creator_url }}"
+          hx-get="{{ creator_url }}?format=htmx-creator"
+          hx-trigger="keyup changed delay:350ms from:input[type=search], change from:select"
           hx-target="#action-creator-region"
           hx-swap="innerHTML">
-      <input class="input is-small" type="search" name="q" value="{{ q }}"
-             placeholder="filter by name, description{% if tab == 'proto' %}, or instructions{% endif %}…" autocomplete="off">
+      <input type="hidden" name="tab" value="{{ tab }}">
+      <div class="control is-expanded">
+        <input class="input is-small" type="search" name="q" value="{{ q }}"
+               placeholder="filter by name, description{% if tab == 'proto' %}, or instructions{% endif %}…" autocomplete="off">
+      </div>
+      {% if tab == "proto" and model_filter %}
+      {% comment %} The builder's "used on model" filter, available to every
+         host that hands over a model list. {% endcomment %}
+      <div class="select is-small">
+        <select name="pool_model_id" aria-label="Used on model">
+          <option value="">Any model</option>
+          {% for model in model_filter %}
+          <option value="{{ model.pk }}" {% if pool_model_id == model.pk %}selected{% endif %}>{{ model }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <noscript><button class="button is-small" type="submit">Filter</button></noscript>
     </form>
     {% endif %}
+
+    {% comment %} Every Add posts the live source + filter state back, so a
+       single Add never bounces the host to its default source. {% endcomment %}
 
     {# ── From a whole template action set ─────────────────────────────── #}
     {% if tab == "template_set" %}
     <p class="heading is-size-7 has-text-grey">Select individual actions or add an entire template.</p>
     {% if not q %}
       {% if template_sets_asset_scoped %}
-      <p class="help mb-2">Showing templates matching this event's asset model — search above to browse the full library.</p>
+      <p class="help mb-2">Showing templates matching this build's asset scope — search above to browse the full library.</p>
       {% else %}
       <p class="help mb-2">Showing the most recent templates in your domain — search above to browse the full library.</p>
       {% endif %}
@@ -72,8 +100,9 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
                 <p style="font-size: 0.75rem; color: var(--bulma-text-weak); margin: 0.25rem 0 0 0;">Est: {{ action.estimated_duration_minutes }}m</p>
                 {% endif %}
               </div>
-              <form method="post" style="display: inline; flex-shrink: 0;" action="{{ creator_url }}">
+              <form method="post" style="display: inline; flex-shrink: 0;" action="{{ creator_post_url|default:creator_url }}">
                 {% csrf_token %}
+                {% include "maintenance/work/_action_creator_state.html" %}
                 <input type="hidden" name="template_action_id" value="{{ action.pk }}">
                 <button class="button is-small is-link is-light" type="submit" name="action" value="add_from_template_action" title="Add this action">
                   <span class="icon"><span class="material-icons" style="font-size: 1rem;">add</span></span>
@@ -82,8 +111,9 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
             </div>
             {% endfor %}
           </div>
-          <form method="post" action="{{ creator_url }}" style="border-top: 1px solid var(--bulma-border-weak); padding-top: 0.75rem;">
+          <form method="post" action="{{ creator_post_url|default:creator_url }}" style="border-top: 1px solid var(--bulma-border-weak); padding-top: 0.75rem;">
             {% csrf_token %}
+            {% include "maintenance/work/_action_creator_state.html" %}
             <input type="hidden" name="template_action_set_id" value="{{ template.pk }}">
             <button class="button is-small is-info is-fullwidth" type="submit" name="action" value="add_from_template_set">Add all {{ template.action_count }} action{{ template.action_count|pluralize }}</button>
           </form>
@@ -105,9 +135,11 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
             <strong>{{ item.action_name }}</strong>
             <p class="has-text-grey">from {{ item.template_action_set.task_name }}</p>
           </td>
+          <td class="has-text-right is-family-monospace">{% if item.estimated_duration_minutes %}{{ item.estimated_duration_minutes }}m{% else %}—{% endif %}</td>
           <td class="has-text-right">
-            <form method="post" style="display:inline;" action="{{ creator_url }}">
+            <form method="post" style="display:inline;" action="{{ creator_post_url|default:creator_url }}">
               {% csrf_token %}
+              {% include "maintenance/work/_action_creator_state.html" %}
               <input type="hidden" name="template_action_id" value="{{ item.pk }}">
               <button class="button is-small is-link" type="submit" name="action" value="add_from_template_action">Add</button>
             </form>
@@ -133,9 +165,11 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
             <a href="{% url 'proto_detail' pk=proto.pk %}"><strong>{{ proto.action_name }}</strong></a>
             <p class="has-text-grey">{{ proto.description|default:"—" }}</p>
           </td>
+          <td class="has-text-right is-family-monospace">{% if proto.estimated_duration_minutes %}{{ proto.estimated_duration_minutes }}m{% else %}—{% endif %}</td>
           <td class="has-text-right">
-            <form method="post" style="display:inline;" action="{{ creator_url }}">
+            <form method="post" style="display:inline;" action="{{ creator_post_url|default:creator_url }}">
               {% csrf_token %}
+              {% include "maintenance/work/_action_creator_state.html" %}
               <input type="hidden" name="proto_id" value="{{ proto.pk }}">
               <button class="button is-small is-link" type="submit" name="action" value="add_from_proto">Add</button>
             </form>
@@ -147,17 +181,18 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
       </tbody>
     </table>
 
-    {# ── Clone a step already on this event ───────────────────────────── #}
+    {# ── Clone a step already on this build ───────────────────────────── #}
     {% elif tab == "current" %}
-    <p class="heading is-size-7 has-text-grey">Duplicate a step already on this event.</p>
+    <p class="heading is-size-7 has-text-grey">Duplicate a step already on this build.</p>
     <table class="table is-fullwidth is-size-7" style="margin:0;">
       <tbody>
         {% for item in current_actions %}
         <tr>
           <td><span class="tag is-dark is-family-monospace">#{{ item.sequence_order }}</span> {{ item.action_name }}</td>
           <td class="has-text-right">
-            <form method="post" style="display:inline;" action="{{ creator_url }}">
+            <form method="post" style="display:inline;" action="{{ creator_post_url|default:creator_url }}">
               {% csrf_token %}
+              {% include "maintenance/work/_action_creator_state.html" %}
               <input type="hidden" name="action_id" value="{{ item.pk }}">
               <button class="button is-small is-link" type="submit" name="action" value="duplicate_action">Duplicate</button>
             </form>
@@ -171,9 +206,10 @@ Without JS the tab links still work as plain full-page loads (F5 rule).
 
     {# ── Ad-hoc ───────────────────────────────────────────────────────── #}
     {% else %}
-    <p class="heading is-size-7 has-text-grey">Add an ad-hoc step that exists only on this event.</p>
-    <form method="post" action="{{ creator_url }}">
+    <p class="heading is-size-7 has-text-grey">Add an ad-hoc step that exists only on this build.</p>
+    <form method="post" action="{{ creator_post_url|default:creator_url }}">
       {% csrf_token %}
+      {% include "maintenance/work/_action_creator_state.html" %}
       <div class="columns is-variable is-3">
         <div class="column is-5">
           <label class="label is-small">Step name</label>

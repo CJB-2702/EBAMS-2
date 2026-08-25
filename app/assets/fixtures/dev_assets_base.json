@@ -1,1242 +1,1262 @@
 [
- {
-  "model": "assets.assetclass",
-  "pk": 1,
-  "fields": {
-   "name": "Forklift",
-   "description": "Powered industrial trucks for warehouse handling.",
-   "category": "Material Handling",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
+  {
+    "model": "assets.assetclass",
+    "pk": 1,
+    "fields": {
+      "name": "Forklift",
+      "description": "Powered industrial trucks for warehouse handling.",
+      "category": "Material Handling",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Hours",
+      "meter2_unit": "Fuel/Charge",
+      "meter3_unit": null,
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 2,
+    "fields": {
+      "name": "Excavator",
+      "description": "Tracked hydraulic digging machines.",
+      "category": "Heavy Equipment",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Engine Hours",
+      "meter2_unit": "Fuel",
+      "meter3_unit": null,
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 3,
+    "fields": {
+      "name": "Boom Lift",
+      "description": "Self-propelled aerial work platforms.",
+      "category": "Aerial",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Engine Hours",
+      "meter2_unit": "Fuel",
+      "meter3_unit": "Platform Hours",
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 1,
+    "fields": {
+      "name": "Lifting",
+      "code": "LIFT",
+      "description": "Capable of raising and lowering loads.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 2,
+    "fields": {
+      "name": "Towing",
+      "code": "TOW",
+      "description": "Capable of towing trailers or other equipment.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 3,
+    "fields": {
+      "name": "Aerial Work",
+      "code": "AERIAL",
+      "description": "Provides an elevated work platform for personnel.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 1,
+    "fields": {
+      "name": "Toyota Material Handling",
+      "code": "TMH",
+      "website": "https://www.toyota-forklifts.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 2,
+    "fields": {
+      "name": "Caterpillar",
+      "code": "CAT",
+      "website": "https://www.cat.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 3,
+    "fields": {
+      "name": "Genie (Terex)",
+      "code": "GEN",
+      "website": "https://www.genielift.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 4,
+    "fields": {
+      "name": "Hyster (Legacy)",
+      "code": "HYS",
+      "website": null,
+      "is_active": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 1,
+    "fields": {
+      "model_name": "8FGCU25",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Cushion Tire"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 2,
+    "fields": {
+      "model_name": "320 Excavator",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "GC Hydraulic"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 3,
+    "fields": {
+      "model_name": "Z-45",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Articulating Boom"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 1,
+    "fields": {
+      "model": 1,
+      "manufacturer": 1,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 2,
+    "fields": {
+      "model": 2,
+      "manufacturer": 2,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 3,
+    "fields": {
+      "model": 3,
+      "manufacturer": 3,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 1,
+    "fields": {
+      "asset_class": 1,
+      "capability_definition": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 2,
+    "fields": {
+      "asset_class": 2,
+      "capability_definition": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 3,
+    "fields": {
+      "asset_class": 3,
+      "capability_definition": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelcapability",
+    "pk": 1,
+    "fields": {
+      "model": 1,
+      "capability_definition": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelcapability",
+    "pk": 2,
+    "fields": {
+      "model": 3,
+      "capability_definition": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 1,
+    "fields": {
+      "name": "Cold Storage Kit",
+      "code": "CSK",
+      "description": "Insulation + heater package for freezer ops.",
+      "category": "Environmental",
+      "is_active": true,
+      "applicability_mode": "class_only",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 2,
+    "fields": {
+      "name": "GPS Telemetry",
+      "code": "GPS",
+      "description": "Fleet GPS + telemetry uplink.",
+      "category": "Electronics",
+      "is_active": true,
+      "applicability_mode": "unrestricted",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 3,
+    "fields": {
+      "name": "Boom Extension",
+      "code": "BOOM",
+      "description": "Extended reach boom section.",
+      "category": "Structural",
+      "is_active": true,
+      "applicability_mode": "strict",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modificationassetclass",
+    "pk": 1,
+    "fields": {
+      "defined_modification": 1,
+      "asset_class": 1,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modificationassetclass",
+    "pk": 2,
+    "fields": {
+      "defined_modification": 3,
+      "asset_class": 3,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modificationmodel",
+    "pk": 1,
+    "fields": {
+      "defined_modification": 3,
+      "model": 3,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 1,
+    "fields": {
+      "name": "Standard Forklift Build",
+      "revision": "A",
+      "description": "Baseline cold-chain forklift configuration.",
+      "model": 1,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 1,
+    "fields": {
+      "template": 1,
+      "defined_modification": 1,
+      "context_notes": "Required for freezer sites.",
+      "is_required": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 2,
+    "fields": {
+      "template": 1,
+      "defined_modification": 2,
+      "context_notes": null,
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 4,
+    "fields": {
+      "name": "Light Vehicle",
+      "description": "On-road cars and pickup trucks for fleet use.",
+      "category": "Fleet Vehicles",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Miles",
+      "meter2_unit": "Fuel",
+      "meter3_unit": "Engine Hours",
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 5,
+    "fields": {
+      "name": "Toyota Motor",
+      "code": "TMC",
+      "website": "https://www.toyota.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 6,
+    "fields": {
+      "name": "Ford",
+      "code": "FORD",
+      "website": "https://www.ford.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 4,
+    "fields": {
+      "model_name": "Corolla",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "LE Sedan"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 5,
+    "fields": {
+      "model_name": "F-150",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "XLT"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 6,
+    "fields": {
+      "model_name": "F-250",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Super Duty"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 4,
+    "fields": {
+      "model": 4,
+      "manufacturer": 5,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 5,
+    "fields": {
+      "model": 5,
+      "manufacturer": 6,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 6,
+    "fields": {
+      "model": 6,
+      "manufacturer": 6,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 4,
+    "fields": {
+      "asset_class": 4,
+      "capability_definition": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 2,
+    "fields": {
+      "name": "Heavy Excavator Build",
+      "revision": "A",
+      "description": "Baseline excavator configuration with telemetry.",
+      "model": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 3,
+    "fields": {
+      "name": "Boom Lift Standard",
+      "revision": "A",
+      "description": "Standard articulating boom lift build.",
+      "model": 3,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 3,
+    "fields": {
+      "template": 2,
+      "defined_modification": 2,
+      "context_notes": "Fleet telemetry uplink.",
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 4,
+    "fields": {
+      "template": 3,
+      "defined_modification": 3,
+      "context_notes": "Extended reach required for this build.",
+      "is_required": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 5,
+    "fields": {
+      "template": 3,
+      "defined_modification": 2,
+      "context_notes": null,
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatechild",
+    "pk": 1,
+    "fields": {
+      "parent_template": 2,
+      "child_model": 4,
+      "quantity": 1,
+      "is_required": false,
+      "child_configuration": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatechild",
+    "pk": 2,
+    "fields": {
+      "parent_template": 3,
+      "child_model": 1,
+      "quantity": 2,
+      "is_required": true,
+      "child_configuration": "Standard Forklift Build",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 5,
+    "fields": {
+      "name": "Trailer",
+      "description": "Towable cargo, utility, and equipment trailers.",
+      "category": "Fleet Vehicles",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": null,
+      "meter2_unit": null,
+      "meter3_unit": null,
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 6,
+    "fields": {
+      "name": "Watercraft",
+      "description": "Powered boats and watercraft for marine operations.",
+      "category": "Marine",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Engine Hours",
+      "meter2_unit": "Fuel",
+      "meter3_unit": null,
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.assetclass",
+    "pk": 7,
+    "fields": {
+      "name": "Diving Equipment",
+      "description": "SCUBA diving gear and breathing-gas life-support equipment.",
+      "category": "Safety Equipment",
+      "is_active": true,
+      "restrict_to_domain_set": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "meter1_unit": "Dive Hours",
+      "meter2_unit": "Dive Count",
+      "meter3_unit": null,
+      "meter4_unit": null
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 7,
+    "fields": {
+      "name": "Big Tex Trailers",
+      "code": "BIGTEX",
+      "website": "https://www.bigtextrailers.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 8,
+    "fields": {
+      "name": "Boston Whaler",
+      "code": "BW",
+      "website": "https://www.bostonwhaler.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 9,
+    "fields": {
+      "name": "Aqua Lung",
+      "code": "AQUA",
+      "website": "https://www.aqualung.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.manufacturer",
+    "pk": 10,
+    "fields": {
+      "name": "Catalina Cylinders",
+      "code": "CATCYL",
+      "website": "https://www.catalinacylinders.com",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 4,
+    "fields": {
+      "name": "Cargo Hauling",
+      "code": "HAUL",
+      "description": "Carries cargo or equipment loads over the road.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 5,
+    "fields": {
+      "name": "Flotation",
+      "code": "FLOAT",
+      "description": "Provides buoyancy and waterborne transport.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 6,
+    "fields": {
+      "name": "Air Supply",
+      "code": "AIR",
+      "description": "Stores and delivers compressed breathing gas.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.capabilitydefinition",
+    "pk": 7,
+    "fields": {
+      "name": "Life Support",
+      "code": "LIFE",
+      "description": "Sustains a diver underwater via regulated breathing gas.",
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 7,
+    "fields": {
+      "model_name": "35SA Trailer",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 5,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Single Axle Utility"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 8,
+    "fields": {
+      "model_name": "170 Montauk",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 6,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Center Console"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 9,
+    "fields": {
+      "model_name": "Pro HD Dive System",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 7,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "BCD Package"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.assetmodel",
+    "pk": 10,
+    "fields": {
+      "model_name": "S80 Rebreather",
+      "version": "",
+      "is_base_model": true,
+      "base_model": null,
+      "asset_class": 7,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1,
+      "config_baselines": [
+        "Aluminum 80 cu ft"
+      ],
+      "version_rank": null
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 7,
+    "fields": {
+      "model": 7,
+      "manufacturer": 7,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 8,
+    "fields": {
+      "model": 8,
+      "manufacturer": 8,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 9,
+    "fields": {
+      "model": 9,
+      "manufacturer": 9,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelmanufacturer",
+    "pk": 10,
+    "fields": {
+      "model": 10,
+      "manufacturer": 10,
+      "is_primary": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 5,
+    "fields": {
+      "asset_class": 5,
+      "capability_definition": 4,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 6,
+    "fields": {
+      "asset_class": 6,
+      "capability_definition": 5,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.assetclasscapability",
+    "pk": 7,
+    "fields": {
+      "asset_class": 7,
+      "capability_definition": 7,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelcapability",
+    "pk": 3,
+    "fields": {
+      "model": 8,
+      "capability_definition": 2,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modelcapability",
+    "pk": 4,
+    "fields": {
+      "model": 10,
+      "capability_definition": 6,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 4,
+    "fields": {
+      "name": "Trailer Brake Controller",
+      "code": "TBC",
+      "description": "Electric brake controller for towed trailers.",
+      "category": "Safety",
+      "is_active": true,
+      "applicability_mode": "class_only",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 5,
+    "fields": {
+      "name": "Marine VHF Radio",
+      "code": "VHF",
+      "description": "Fixed-mount marine VHF communications radio.",
+      "category": "Electronics",
+      "is_active": true,
+      "applicability_mode": "unrestricted",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.definedmodification",
+    "pk": 6,
+    "fields": {
+      "name": "Pony Bottle",
+      "code": "PONY",
+      "description": "Redundant emergency air supply for divers.",
+      "category": "Safety",
+      "is_active": true,
+      "applicability_mode": "class_only",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modificationassetclass",
+    "pk": 3,
+    "fields": {
+      "defined_modification": 4,
+      "asset_class": 5,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.modificationassetclass",
+    "pk": 4,
+    "fields": {
+      "defined_modification": 6,
+      "asset_class": 7,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 4,
+    "fields": {
+      "name": "Utility Trailer Build",
+      "revision": "A",
+      "description": "Standard single-axle utility trailer configuration.",
+      "model": 7,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 5,
+    "fields": {
+      "name": "Day Boat Package",
+      "revision": "A",
+      "description": "Center-console day boat build with comms and telemetry.",
+      "model": 8,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.configurationtemplate",
+    "pk": 6,
+    "fields": {
+      "name": "Recreational Dive Kit",
+      "revision": "A",
+      "description": "Single-tank recreational diving rig with redundant air.",
+      "model": 9,
+      "is_active": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 6,
+    "fields": {
+      "template": 4,
+      "defined_modification": 4,
+      "context_notes": "Required for highway towing.",
+      "is_required": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 7,
+    "fields": {
+      "template": 4,
+      "defined_modification": 2,
+      "context_notes": null,
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 8,
+    "fields": {
+      "template": 5,
+      "defined_modification": 5,
+      "context_notes": "Required marine comms.",
+      "is_required": true,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 9,
+    "fields": {
+      "template": 5,
+      "defined_modification": 2,
+      "context_notes": null,
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
+  },
+  {
+    "model": "assets.templatemodification",
+    "pk": 10,
+    "fields": {
+      "template": 6,
+      "defined_modification": 6,
+      "context_notes": "Recommended redundant air supply.",
+      "is_required": false,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "created_by": 1,
+      "updated_by": 1
+    }
   }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 2,
-  "fields": {
-   "name": "Excavator",
-   "description": "Tracked hydraulic digging machines.",
-   "category": "Heavy Equipment",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 3,
-  "fields": {
-   "name": "Boom Lift",
-   "description": "Self-propelled aerial work platforms.",
-   "category": "Aerial",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 1,
-  "fields": {
-   "name": "Lifting",
-   "code": "LIFT",
-   "description": "Capable of raising and lowering loads.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 2,
-  "fields": {
-   "name": "Towing",
-   "code": "TOW",
-   "description": "Capable of towing trailers or other equipment.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 3,
-  "fields": {
-   "name": "Aerial Work",
-   "code": "AERIAL",
-   "description": "Provides an elevated work platform for personnel.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 1,
-  "fields": {
-   "name": "Toyota Material Handling",
-   "code": "TMH",
-   "website": "https://www.toyota-forklifts.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 2,
-  "fields": {
-   "name": "Caterpillar",
-   "code": "CAT",
-   "website": "https://www.cat.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 3,
-  "fields": {
-   "name": "Genie (Terex)",
-   "code": "GEN",
-   "website": "https://www.genielift.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 4,
-  "fields": {
-   "name": "Hyster (Legacy)",
-   "code": "HYS",
-   "website": null,
-   "is_active": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 1,
-  "fields": {
-   "model_name": "8FGCU25",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 1,
-   "meter1_unit": "Hours",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Cushion Tire"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 2,
-  "fields": {
-   "model_name": "320",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 2,
-   "meter1_unit": "Hours",
-   "meter2_unit": "Km",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "GC Hydraulic"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 3,
-  "fields": {
-   "model_name": "Z-45",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 3,
-   "meter1_unit": "Hours",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Articulating Boom"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 1,
-  "fields": {
-   "model": 1,
-   "manufacturer": 1,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 2,
-  "fields": {
-   "model": 2,
-   "manufacturer": 2,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 3,
-  "fields": {
-   "model": 3,
-   "manufacturer": 3,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 1,
-  "fields": {
-   "asset_class": 1,
-   "capability_definition": 1,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 2,
-  "fields": {
-   "asset_class": 2,
-   "capability_definition": 2,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 3,
-  "fields": {
-   "asset_class": 3,
-   "capability_definition": 3,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelcapability",
-  "pk": 1,
-  "fields": {
-   "model": 1,
-   "capability_definition": 2,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelcapability",
-  "pk": 2,
-  "fields": {
-   "model": 3,
-   "capability_definition": 1,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 1,
-  "fields": {
-   "name": "Cold Storage Kit",
-   "code": "CSK",
-   "description": "Insulation + heater package for freezer ops.",
-   "category": "Environmental",
-   "is_active": true,
-   "applicability_mode": "class_only",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 2,
-  "fields": {
-   "name": "GPS Telemetry",
-   "code": "GPS",
-   "description": "Fleet GPS + telemetry uplink.",
-   "category": "Electronics",
-   "is_active": true,
-   "applicability_mode": "unrestricted",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 3,
-  "fields": {
-   "name": "Boom Extension",
-   "code": "BOOM",
-   "description": "Extended reach boom section.",
-   "category": "Structural",
-   "is_active": true,
-   "applicability_mode": "strict",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modificationassetclass",
-  "pk": 1,
-  "fields": {
-   "defined_modification": 1,
-   "asset_class": 1,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modificationassetclass",
-  "pk": 2,
-  "fields": {
-   "defined_modification": 3,
-   "asset_class": 3,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modificationmodel",
-  "pk": 1,
-  "fields": {
-   "defined_modification": 3,
-   "model": 3,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 1,
-  "fields": {
-   "name": "Standard Forklift Build",
-   "revision": "A",
-   "description": "Baseline cold-chain forklift configuration.",
-   "model": 1,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 1,
-  "fields": {
-   "template": 1,
-   "defined_modification": 1,
-   "context_notes": "Required for freezer sites.",
-   "is_required": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 2,
-  "fields": {
-   "template": 1,
-   "defined_modification": 2,
-   "context_notes": null,
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 4,
-  "fields": {
-   "name": "Light Vehicle",
-   "description": "On-road cars and pickup trucks for fleet use.",
-   "category": "Fleet Vehicles",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 5,
-  "fields": {
-   "name": "Toyota Motor",
-   "code": "TMC",
-   "website": "https://www.toyota.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 6,
-  "fields": {
-   "name": "Ford",
-   "code": "FORD",
-   "website": "https://www.ford.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 4,
-  "fields": {
-   "model_name": "Corolla",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 4,
-   "meter1_unit": "Miles",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "LE Sedan"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 5,
-  "fields": {
-   "model_name": "F-150",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 4,
-   "meter1_unit": "Miles",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "XLT"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 6,
-  "fields": {
-   "model_name": "F-250",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 4,
-   "meter1_unit": "Miles",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Super Duty"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 4,
-  "fields": {
-   "model": 4,
-   "manufacturer": 5,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 5,
-  "fields": {
-   "model": 5,
-   "manufacturer": 6,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 6,
-  "fields": {
-   "model": 6,
-   "manufacturer": 6,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 4,
-  "fields": {
-   "asset_class": 4,
-   "capability_definition": 2,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 2,
-  "fields": {
-   "name": "Heavy Excavator Build",
-   "revision": "A",
-   "description": "Baseline excavator configuration with telemetry.",
-   "model": 2,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 3,
-  "fields": {
-   "name": "Boom Lift Standard",
-   "revision": "A",
-   "description": "Standard articulating boom lift build.",
-   "model": 3,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 3,
-  "fields": {
-   "template": 2,
-   "defined_modification": 2,
-   "context_notes": "Fleet telemetry uplink.",
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 4,
-  "fields": {
-   "template": 3,
-   "defined_modification": 3,
-   "context_notes": "Extended reach required for this build.",
-   "is_required": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 5,
-  "fields": {
-   "template": 3,
-   "defined_modification": 2,
-   "context_notes": null,
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatechild",
-  "pk": 1,
-  "fields": {
-   "parent_template": 2,
-   "child_model": 4,
-   "quantity": 1,
-   "is_required": false,
-   "child_configuration": null,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatechild",
-  "pk": 2,
-  "fields": {
-   "parent_template": 3,
-   "child_model": 1,
-   "quantity": 2,
-   "is_required": true,
-   "child_configuration": "Standard Forklift Build",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 5,
-  "fields": {
-   "name": "Trailer",
-   "description": "Towable cargo, utility, and equipment trailers.",
-   "category": "Fleet Vehicles",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 6,
-  "fields": {
-   "name": "Watercraft",
-   "description": "Powered boats and watercraft for marine operations.",
-   "category": "Marine",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclass",
-  "pk": 7,
-  "fields": {
-   "name": "Diving Equipment",
-   "description": "SCUBA diving gear and breathing-gas life-support equipment.",
-   "category": "Safety Equipment",
-   "is_active": true,
-   "restrict_to_domain_set": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 7,
-  "fields": {
-   "name": "Big Tex Trailers",
-   "code": "BIGTEX",
-   "website": "https://www.bigtextrailers.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 8,
-  "fields": {
-   "name": "Boston Whaler",
-   "code": "BW",
-   "website": "https://www.bostonwhaler.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 9,
-  "fields": {
-   "name": "Aqua Lung",
-   "code": "AQUA",
-   "website": "https://www.aqualung.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.manufacturer",
-  "pk": 10,
-  "fields": {
-   "name": "Catalina Cylinders",
-   "code": "CATCYL",
-   "website": "https://www.catalinacylinders.com",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 4,
-  "fields": {
-   "name": "Cargo Hauling",
-   "code": "HAUL",
-   "description": "Carries cargo or equipment loads over the road.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 5,
-  "fields": {
-   "name": "Flotation",
-   "code": "FLOAT",
-   "description": "Provides buoyancy and waterborne transport.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 6,
-  "fields": {
-   "name": "Air Supply",
-   "code": "AIR",
-   "description": "Stores and delivers compressed breathing gas.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.capabilitydefinition",
-  "pk": 7,
-  "fields": {
-   "name": "Life Support",
-   "code": "LIFE",
-   "description": "Sustains a diver underwater via regulated breathing gas.",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 7,
-  "fields": {
-   "model_name": "35SA",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 5,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Single Axle Utility"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 8,
-  "fields": {
-   "model_name": "170 Montauk",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 6,
-   "meter1_unit": "Engine Hours",
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Center Console"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 9,
-  "fields": {
-   "model_name": "Pro HD",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 7,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "BCD Package"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.assetmodel",
-  "pk": 10,
-  "fields": {
-   "model_name": "S80",
-   "version": "",
-   "is_base_model": true,
-   "base_model": null,
-   "asset_class": 7,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1,
-   "config_baselines": [
-    "Aluminum 80 cu ft"
-   ],
-   "version_rank": null
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 7,
-  "fields": {
-   "model": 7,
-   "manufacturer": 7,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 8,
-  "fields": {
-   "model": 8,
-   "manufacturer": 8,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 9,
-  "fields": {
-   "model": 9,
-   "manufacturer": 9,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelmanufacturer",
-  "pk": 10,
-  "fields": {
-   "model": 10,
-   "manufacturer": 10,
-   "is_primary": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 5,
-  "fields": {
-   "asset_class": 5,
-   "capability_definition": 4,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 6,
-  "fields": {
-   "asset_class": 6,
-   "capability_definition": 5,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.assetclasscapability",
-  "pk": 7,
-  "fields": {
-   "asset_class": 7,
-   "capability_definition": 7,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelcapability",
-  "pk": 3,
-  "fields": {
-   "model": 8,
-   "capability_definition": 2,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modelcapability",
-  "pk": 4,
-  "fields": {
-   "model": 10,
-   "capability_definition": 6,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 4,
-  "fields": {
-   "name": "Trailer Brake Controller",
-   "code": "TBC",
-   "description": "Electric brake controller for towed trailers.",
-   "category": "Safety",
-   "is_active": true,
-   "applicability_mode": "class_only",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 5,
-  "fields": {
-   "name": "Marine VHF Radio",
-   "code": "VHF",
-   "description": "Fixed-mount marine VHF communications radio.",
-   "category": "Electronics",
-   "is_active": true,
-   "applicability_mode": "unrestricted",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.definedmodification",
-  "pk": 6,
-  "fields": {
-   "name": "Pony Bottle",
-   "code": "PONY",
-   "description": "Redundant emergency air supply for divers.",
-   "category": "Safety",
-   "is_active": true,
-   "applicability_mode": "class_only",
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modificationassetclass",
-  "pk": 3,
-  "fields": {
-   "defined_modification": 4,
-   "asset_class": 5,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.modificationassetclass",
-  "pk": 4,
-  "fields": {
-   "defined_modification": 6,
-   "asset_class": 7,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 4,
-  "fields": {
-   "name": "Utility Trailer Build",
-   "revision": "A",
-   "description": "Standard single-axle utility trailer configuration.",
-   "model": 7,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 5,
-  "fields": {
-   "name": "Day Boat Package",
-   "revision": "A",
-   "description": "Center-console day boat build with comms and telemetry.",
-   "model": 8,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.configurationtemplate",
-  "pk": 6,
-  "fields": {
-   "name": "Recreational Dive Kit",
-   "revision": "A",
-   "description": "Single-tank recreational diving rig with redundant air.",
-   "model": 9,
-   "is_active": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 6,
-  "fields": {
-   "template": 4,
-   "defined_modification": 4,
-   "context_notes": "Required for highway towing.",
-   "is_required": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 7,
-  "fields": {
-   "template": 4,
-   "defined_modification": 2,
-   "context_notes": null,
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 8,
-  "fields": {
-   "template": 5,
-   "defined_modification": 5,
-   "context_notes": "Required marine comms.",
-   "is_required": true,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 9,
-  "fields": {
-   "template": 5,
-   "defined_modification": 2,
-   "context_notes": null,
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- },
- {
-  "model": "assets.templatemodification",
-  "pk": 10,
-  "fields": {
-   "template": 6,
-   "defined_modification": 6,
-   "context_notes": "Recommended redundant air supply.",
-   "is_required": false,
-   "created_at": "2024-01-01T00:00:00Z",
-   "updated_at": "2024-01-01T00:00:00Z",
-   "created_by": 1,
-   "updated_by": 1
-  }
- }
 ]

@@ -28,6 +28,10 @@ from app.inventory.control_layer.factories.storage_location_factory import (
     StorageLocationFactory,
 )
 from app.inventory.control_layer.factories.warehouse_factory import WarehouseFactory
+from app.inventory.control_layer.guards.topography_guard import (
+    LayoutReconciliationPolicy,
+    RoomValidator,
+)
 from app.inventory.control_layer.managers.topography_manager import TopographyManager
 from app.inventory.control_layer.thread_domain import default_domain_id_for
 from app.inventory.models.topography.room import Room
@@ -84,6 +88,10 @@ class TopographyContext:
         excluded_domain_ids: list[int] | None = None,
         actor=None,
     ) -> Room:
+        RoomValidator.check_name_non_empty(room_name=room_name)
+        RoomValidator.check_name_unique(
+            warehouse_id=self.warehouse_id, room_name=room_name
+        )
         room = Room.objects.create(
             warehouse=self.warehouse,
             room_name=room_name,
@@ -97,6 +105,10 @@ class TopographyContext:
 
     def update_room(self, *, room: Room, room_name: str, description: str = "",
                      excluded_domain_ids: list[int] | None = None, actor=None) -> Room:
+        RoomValidator.check_name_non_empty(room_name=room_name)
+        RoomValidator.check_name_unique(
+            warehouse_id=room.warehouse_id, room_name=room_name, exclude_id=room.pk
+        )
         return TopographyManager.update_room(
             room=room,
             room_name=room_name,
@@ -107,6 +119,9 @@ class TopographyContext:
 
     def deactivate_room(self, *, room: Room, actor=None) -> Room:
         return TopographyManager.deactivate_room(room=room, actor=actor)
+
+    def reactivate_room(self, *, room: Room, actor=None) -> Room:
+        return TopographyManager.reactivate_room(room=room, actor=actor)
 
     # ------------------------------------------------------------------ #
     # Room locations (Tier 2 — XY)
@@ -190,6 +205,19 @@ class TopographyContext:
         )
         return self._warehouse
 
+    def reactivate_warehouse(self, *, actor=None) -> Warehouse:
+        self._warehouse = TopographyManager.reactivate_warehouse(
+            warehouse=self.warehouse, actor=actor
+        )
+        return self._warehouse
+
+    def deactivate_room_location(
+        self, *, room_location: RoomLocation, actor=None
+    ) -> RoomLocation:
+        return TopographyManager.deactivate_room_location(
+            room_location=room_location, actor=actor
+        )
+
     def deactivate_storage_location(
         self, *, storage_location: StorageLocation, actor=None
     ) -> StorageLocation:
@@ -228,7 +256,12 @@ class TopographyContext:
         gallery.add_image(sanitized_file)
 
     def upload_room_layout(
-        self, *, room_id: int, uploaded_file, actor=None
+        self,
+        *,
+        room_id: int,
+        uploaded_file,
+        actor=None,
+        allow_orphaned_stock: bool = False,
     ) -> SvgReconciliationStruct:
         room = Room.objects.get(pk=room_id)
         sanitized_svg = self._sanitize_upload(uploaded_file)
@@ -244,6 +277,13 @@ class TopographyContext:
         reconciliation = SvgReconciliationStruct.build(
             shape_codes=shape_codes, existing_codes=existing_codes
         )
+        # Reject before archiving: a layout that drops a stock-holding
+        # location must not become the room's `current_layout` even briefly.
+        LayoutReconciliationPolicy.check_room_orphans(
+            room=room,
+            orphaned_codes=reconciliation.orphaned,
+            allow_orphaned_stock=allow_orphaned_stock,
+        )
 
         self._archive_layout(
             owner=room, uploaded_file=uploaded_file, sanitized_svg=sanitized_svg, actor=actor
@@ -251,7 +291,12 @@ class TopographyContext:
         return reconciliation
 
     def upload_room_location_layout(
-        self, *, room_location_id: int, uploaded_file, actor=None
+        self,
+        *,
+        room_location_id: int,
+        uploaded_file,
+        actor=None,
+        allow_orphaned_stock: bool = False,
     ) -> SvgReconciliationStruct:
         room_location = RoomLocation.objects.get(pk=room_location_id)
         sanitized_svg = self._sanitize_upload(uploaded_file)
@@ -266,6 +311,11 @@ class TopographyContext:
         )
         reconciliation = SvgReconciliationStruct.build(
             shape_codes=shape_codes, existing_codes=existing_codes
+        )
+        LayoutReconciliationPolicy.check_room_location_orphans(
+            room_location=room_location,
+            orphaned_codes=reconciliation.orphaned,
+            allow_orphaned_stock=allow_orphaned_stock,
         )
 
         self._archive_layout(

@@ -1,0 +1,66 @@
+<div class="card max-w-4xl mb-5" id="card-materials" style="overflow: visible;">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+      Material Requirements &amp; Part Demands <span class="tag is-light ml-2">{{ material_rows|length }}</span>
+    </div>
+  </div>
+  <div class="card-content" style="overflow: visible;">
+    {% if error_message_materials %}
+    <div class="notification is-danger is-light p-2 mb-3 is-size-7">{{ error_message_materials }}</div>
+    {% endif %}
+    <p class="has-text-grey is-size-7 mb-3">Adding a material requirement here will raise a formal part demand linked to this dispatch upon creation.</p>
+    <div class="columns is-variable is-4">
+      <div class="column is-7">
+        <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+              hx-target="#card-materials" hx-swap="outerHTML" hx-include="#dispatch-create-main-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_material_requirement">
+          <div class="field">
+            <label class="label is-small">Part</label>
+            <search-dropdown name="part_id" placeholder="search parts…"
+                hx-get="{% url 'dispatching_material_pool_search' %}" hx-trigger="keyup changed delay:300ms, search, focus"></search-dropdown>
+          </div>
+          <div class="columns is-variable is-2">
+            <div class="column is-4">
+              <label class="label is-small">Quantity</label>
+              <input class="input is-small" type="number" step="any" min="0" name="quantity" placeholder="Qty" required>
+            </div>
+            <div class="column is-8">
+              <label class="label is-small">Notes</label>
+              <input class="input is-small" type="text" name="notes" placeholder="Notes">
+            </div>
+          </div>
+          <button type="submit" class="button is-small is-link mt-2">
+            <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add to Material List</span>
+          </button>
+        </form>
+      </div>
+      <div class="column is-5">
+        <p class="label is-small">Added Materials</p>
+        {% if material_rows %}
+        <div class="dispatching-material-list">
+          {% for row in material_rows %}
+          <div class="card dispatching-material-row">
+            <form method="post" action="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-post="{% url 'dispatching_dispatch_create' %}{% if template_rev %}?template={{ template_rev.template_id }}{% endif %}"
+                  hx-target="#card-materials" hx-swap="outerHTML" hx-include="#dispatch-create-main-form" class="dispatching-remove-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_material_requirement">
+              <input type="hidden" name="temp_id" value="{{ row.temp_id }}">
+              <button type="submit" class="dispatching-remove-btn" aria-label="Remove material requirement"><span class="material-icons" aria-hidden="true">close</span></button>
+            </form>
+            <div class="card-content p-2 pr-5 is-size-7">
+              <strong>{{ row.part.part_number|default:"(unknown)" }}</strong><br>
+              {{ row.part.name }}<br>
+              Qty {{ row.quantity }}{% if row.notes %} — {{ row.notes }}{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<p class="has-text-grey is-size-7">None.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>

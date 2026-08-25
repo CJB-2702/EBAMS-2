@@ -89,13 +89,18 @@ diverged" is noise.
           {% csrf_token %}
           <input type="hidden" name="action" value="advance_status">
           <div>
+            <p class="label is-small">Current status</p>
+            {% shipment_status_tag shipment.status %}
+          </div>
+          <span class="icon has-text-grey" style="margin-bottom:0.5rem;"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+          <div>
             <label class="label is-small" for="advance-to">Move to</label>
             {% comment %}
             Constrained to the CURRENTLY LEGAL next stage(s). Not a stepper,
             not jump-to-any-stage: a list offering illegal moves teaches
             people to expect a refusal.
             {% endcomment %}
-            <div class="select is-small"><select id="advance-to" name="to_status" required>
+            <div class="select"><select id="advance-to" name="to_status" required>
               {% for value, label in next_statuses %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}

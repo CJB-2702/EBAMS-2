@@ -1,0 +1,95 @@
+{% comment %}
+The queued for purchasing card. Served as a component in create.html, and via HTMX
+for format=htmx-queued-card and remove_from_queue POST actions.
+Includes an OOB swap for the topnav purchasing queue badge button.
+{% endcomment %}
+
+<button class="app-queue-btn {% if queued_demands %}has-items{% endif %}" type="button"
+        id="queue-btn-purchasing" hx-swap-oob="true"
+        commandfor="queue-panel-purchasing" command="toggle-popover"
+        title="Demands queued for purchasing"
+        hx-get="{% url 'purchasing_queue_panel' %}"
+        hx-target="#queue-panel-purchasing"
+        hx-swap="innerHTML"
+        hx-trigger="click">
+  <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span>
+  <span class="app-queue-label">Purchasing</span>
+  <span class="app-queue-count">{{ queued_demands|length }}</span>
+</button>
+
+<div class="card mb-4" id="queued-purchasing-card" style="border-left:3px solid var(--bulma-warning);">
+  <div class="card-header" style="cursor:pointer;"
+       hx-get="{% url 'purchase_order_create' %}?format=htmx-queued-card"
+       hx-target="#queued-purchasing-card"
+       hx-swap="outerHTML"
+       hx-trigger="click"
+       title="Click to refresh queue">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span>
+      Queued for purchasing
+      <span class="tag is-warning is-light ml-2">{{ queued_demands|length }}</span>
+      <span class="icon is-small has-text-grey-light ml-2" title="Refresh session card"><span class="material-icons" style="font-size:1rem;" aria-hidden="true">refresh</span></span>
+    </div>
+    {% if queued_demands %}
+      {% if has_vendor %}
+      <div class="card-header-icon" onclick="event.stopPropagation();">
+        <form method="post" action="{% url 'purchase_order_create' %}">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_from_demands">
+          <input type="hidden" name="from_queue" value="1">
+          {% for demand in queued_demands %}
+          <input type="hidden" name="demand_ids" value="{{ demand.pk }}">
+          {% endfor %}
+          <button class="button is-small is-warning" type="submit">
+            <span class="icon"><span class="material-icons" aria-hidden="true">playlist_add</span></span>
+            <span>Add all to this order</span>
+          </button>
+        </form>
+      </div>
+      {% else %}
+      <span class="tag is-small is-light mr-3" onclick="event.stopPropagation();">Pick a vendor to add these</span>
+      {% endif %}
+    {% endif %}
+  </div>
+  <div class="card-content is-flush">
+    {% if queued_demands %}
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Demand</th><th>Part</th><th>Priority</th><th>Needed by</th>
+          <th class="has-text-right">Outstanding</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for demand in queued_demands %}
+        <tr>
+          <td><a href="{% url 'demand_detail' pk=demand.pk %}">#{{ demand.pk }}</a></td>
+          <td>
+            <span class="is-family-monospace has-text-weight-semibold">{{ demand.part.part_number }}</span>
+            <span class="has-text-grey">{{ demand.part.name }}</span>
+          </td>
+          <td>{{ demand.get_priority_display }}</td>
+          <td>{{ demand.needed_by|date:"Y-m-d"|default:"—" }}</td>
+          <td class="has-text-right is-family-monospace">{{ demand.outstanding_qty|floatformat:3 }}</td>
+          <td class="has-text-right">
+            <form method="post" action="{% url 'purchase_order_create' %}"
+                  hx-post="{% url 'purchase_order_create' %}"
+                  hx-target="#queued-purchasing-card"
+                  hx-swap="outerHTML">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_from_queue">
+              <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+              <button class="button is-small is-light" type="submit" title="Remove from the purchasing queue">
+                <span class="icon"><span class="material-icons" style="font-size:1rem;">close</span></span>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="has-text-grey is-size-7 p-4">No demands currently in your purchasing queue.</p>
+    {% endif %}
+  </div>
+</div>

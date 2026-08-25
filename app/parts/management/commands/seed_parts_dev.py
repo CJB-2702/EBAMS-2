@@ -149,7 +149,7 @@ class Command(BaseCommand):
             self._seed_driver(key, spec, actor=actor, domain=domain)
 
         for part_number, name, part_type, category in LIGHT_PARTS:
-            self._seed_light_part(part_number, name, part_type, category, actor=actor)
+            self._seed_light_part(part_number, name, part_type, category, actor=actor, domain=domain)
 
         self.stdout.write(self.style.SUCCESS("Parts dev seed complete."))
 
@@ -216,13 +216,7 @@ class Command(BaseCommand):
             domain_id=domain.id,
             caption="Part specification",
         )
-        PartImageManager(part, actor).add(
-            SimpleUploadedFile(
-                f"{part.part_number}_model.png", _TINY_PNG, content_type="image/png"
-            ),
-            domain_id=domain.id,
-            caption="Model photo",
-        )
+        self._seed_part_image(part, actor, domain)
 
         # Manufacturers + supplier items (distinct MPNs).
         for mfr_name, mpn in spec["manufacturers"]:
@@ -259,7 +253,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"  Seeded driver part {part.part_number}."))
 
     def _seed_light_part(
-        self, part_number: str, name: str, part_type: str, category: str, *, actor
+        self, part_number: str, name: str, part_type: str, category: str, *, actor, domain: Domain
     ) -> None:
         part, created = self._get_or_create_part(part_number, name, part_type, category, actor)
         if not created:
@@ -269,7 +263,26 @@ class Command(BaseCommand):
             PartRevisionManager(part, actor).redline(
                 minor_name="1", summary="Minor field correction"
             )
+        self._seed_part_image(part, actor, domain)
         self.stdout.write(f"  Seeded light part {part.part_number}.")
+
+    def _seed_part_image(self, part: Part, actor, domain: Domain) -> None:
+        from pathlib import Path
+        from django.conf import settings
+        seed_dir = Path(settings.BASE_DIR) / "parts" / "fixtures" / "seed_images"
+        image_path = seed_dir / f"{part.part_number}.png"
+        if image_path.exists():
+            with open(image_path, "rb") as f:
+                uploaded = SimpleUploadedFile(
+                    f"{part.part_number}.png",
+                    f.read(),
+                    content_type="image/png",
+                )
+            PartImageManager(part, actor).add(
+                uploaded,
+                domain_id=domain.id,
+                caption=f"{part.name} Photo",
+            )
 
     @staticmethod
     def _get_or_create_part(

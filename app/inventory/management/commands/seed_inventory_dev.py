@@ -152,10 +152,10 @@ class Command(BaseCommand):
             numeric_prefix=False,
         )
 
-        self._seed_stock(actor=actor, warehouse=warehouse_a, warehouse_b=warehouse_b)
         self._seed_svg_demo_room(actor=actor, warehouse=warehouse_a)
         self._seed_6x4_grid_room(actor=actor, warehouse=warehouse_a)
         self._seed_aisle_shelf_room(actor=actor, warehouse=warehouse_a)
+        self._seed_stock(actor=actor, warehouse=warehouse_a, warehouse_b=warehouse_b)
         self._seed_intake_scenarios(
             actor=actor, warehouse=warehouse_a, domain=north_domains[0]
         )
@@ -286,12 +286,15 @@ class Command(BaseCommand):
             return
 
         intake_room = warehouse.rooms.get(is_intake_room=True)
-        racking_room = warehouse.rooms.get(room_name="Racking")
-        racking_locations = StorageLocation.objects.filter(
-            room_location__room=racking_room
+        # Located/demo stock lives in the Aisle & Rack Storage Room — it
+        # carries a real uploaded layout image (`aisle_shelf_room_layout.svg`),
+        # which makes it the room worth pointing a demo at.
+        stock_room = warehouse.rooms.get(room_name="Aisle & Rack Storage Room")
+        stock_locations = StorageLocation.objects.filter(
+            room_location__room=stock_room
         ).order_by("id")
-        first_location = racking_locations[0]
-        second_location = racking_locations[1]
+        first_location = stock_locations[0]
+        second_location = stock_locations[1]
 
         # Unassigned stock straight in the Intake Room.
         StockLedgerManager.inject(
@@ -307,7 +310,7 @@ class Command(BaseCommand):
         # Located stock at a real storage location.
         StockLedgerManager.inject(
             warehouse=warehouse,
-            room=racking_room,
+            room=stock_room,
             storage_location=first_location,
             part=parts[1],
             qty=Decimal("12"),
@@ -324,7 +327,7 @@ class Command(BaseCommand):
         for serial in ("SN-0001", "SN-0002", "SN-0003"):
             StockLedgerManager.inject(
                 warehouse=warehouse,
-                room=racking_room,
+                room=stock_room,
                 storage_location=second_location,
                 part=sn_part,
                 qty=Decimal("1"),
@@ -333,11 +336,11 @@ class Command(BaseCommand):
                 actor=actor,
             )
 
-        # One part present in two rooms (racking here, intake in warehouse B).
+        # One part present in two rooms (aisle/rack here, intake in warehouse B).
         shared_part = parts[3] if len(parts) > 3 else parts[0]
         StockLedgerManager.inject(
             warehouse=warehouse,
-            room=racking_room,
+            room=stock_room,
             storage_location=first_location,
             part=shared_part,
             qty=Decimal("8"),
@@ -728,11 +731,11 @@ class Command(BaseCommand):
             return
 
         intake_room = warehouse.rooms.get(is_intake_room=True)
-        racking_room = warehouse.rooms.get(room_name="Racking")
-        racking_locations = list(
-            StorageLocation.objects.filter(room_location__room=racking_room).order_by("id")
+        stock_room = warehouse.rooms.get(room_name="Aisle & Rack Storage Room")
+        stock_locations = list(
+            StorageLocation.objects.filter(room_location__room=stock_room).order_by("id")
         )
-        putaway_target_a, putaway_target_b = racking_locations[2], racking_locations[3]
+        putaway_target_a, putaway_target_b = stock_locations[2], stock_locations[3]
 
         # Putaway two unassigned Intake Room rows into real storage locations.
         unassigned_rows = list(
@@ -765,7 +768,7 @@ class Command(BaseCommand):
         located_row = ActiveInventory.objects.filter(
             warehouse=warehouse, storage_location=putaway_target_a
         ).first() or ActiveInventory.objects.filter(
-            warehouse=warehouse, room=racking_room, serial_number=""
+            warehouse=warehouse, room=stock_room, serial_number=""
         ).first()
         if located_row is not None and located_row.quantity_on_hand >= 2:
             demand = PartDemandFactory.create(
@@ -800,7 +803,7 @@ class Command(BaseCommand):
         # Direct-to-asset issue.
         asset = Asset.objects.filter(is_active=True).first()
         direct_asset_row = ActiveInventory.objects.filter(
-            warehouse=warehouse, room=racking_room, serial_number=""
+            warehouse=warehouse, room=stock_room, serial_number=""
         ).exclude(pk=getattr(located_row, "pk", None)).first()
         if asset is not None and direct_asset_row is not None and direct_asset_row.quantity_on_hand >= 1:
             PartIssuanceOrchestrator.issue(
@@ -814,7 +817,7 @@ class Command(BaseCommand):
 
         # Direct-to-user, serialized issue.
         serial_row = ActiveInventory.objects.filter(
-            warehouse=warehouse, room=racking_room
+            warehouse=warehouse, room=stock_room
         ).exclude(serial_number="").first()
         if serial_row is not None:
             PartIssuanceOrchestrator.issue(
@@ -837,19 +840,19 @@ class Command(BaseCommand):
         if len(parts) < 2:
             return
 
-        racking_room = warehouse.rooms.get(room_name="Racking")
-        
+        stock_room = warehouse.rooms.get(room_name="Aisle & Rack Storage Room")
+
         # Scenario 1: Completed Spot Check
         ctx1 = AuditSessionContext.start(
             warehouse_id=warehouse.pk,
-            room_id=racking_room.pk,
+            room_id=stock_room.pk,
             conducted_by=actor,
             session_type=AuditSessionType.SPOT_CHECK,
             notes="Phase 7 dev seed — completed spot check with a direct adjustment.",
             actor=actor,
         )
         # Find a row to adjust
-        row1 = ActiveInventory.objects.filter(room=racking_room).first()
+        row1 = ActiveInventory.objects.filter(room=stock_room).first()
         if row1:
             line = ctx1.record_line(
                 part_id=row1.part_id,
@@ -864,14 +867,14 @@ class Command(BaseCommand):
         # Scenario 2: Open Full Room Audit
         ctx2 = AuditSessionContext.start(
             warehouse_id=warehouse.pk,
-            room_id=racking_room.pk,
+            room_id=stock_room.pk,
             conducted_by=actor,
             session_type=AuditSessionType.FULL_ROOM_AUDIT,
             notes="Phase 7 dev seed — open full room audit with an unrecorded transfer pending.",
             actor=actor,
         )
         # Find a different row
-        row2 = ActiveInventory.objects.filter(room=racking_room).exclude(pk=row1.pk if row1 else 0).first()
+        row2 = ActiveInventory.objects.filter(room=stock_room).exclude(pk=row1.pk if row1 else 0).first()
         if row2:
             # Matched line
             ctx2.record_line(

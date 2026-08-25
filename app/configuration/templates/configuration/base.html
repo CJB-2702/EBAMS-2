@@ -1,0 +1,102 @@
+{% load static svg_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Configuration{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/carbon_colors.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.css' %}" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="{% static 'css/custom_bulma.dark.css' %}" media="(prefers-color-scheme: dark)">
+  <link rel="stylesheet" href="{% static 'css/color_overrides.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom_css.css' %}">
+  <script defer src="{% static 'js/htmx.min.js' %}"></script>
+  <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
+  <script src="{% static 'web_components/info_popover.js' %}"></script>
+  <script src="{% static 'web_components/list_box.js' %}"></script>
+  <script src="{% static 'web_components/dual_listbox.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
+  <script src="{% static 'web_components/tag_list_editor.js' %}"></script>
+  <style>
+    {% block extra_css %}{% endblock %}
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body style="--app-accent: var(--app-color-configuration);">
+
+{# TOP NAV #}
+{% include "shared/topnav.html" with current_app_group="Configuration" %}
+
+{# SHELL #}
+<div class="app-shell">
+  <collapsable-side-bar aria-label="Section navigation">
+    <nav
+      hx-boost="true"
+      hx-target="#configuration-main-content"
+      hx-select="#configuration-main-content"
+      hx-push-url="true"
+    >
+      <p class="sidebar-section-label">Configuration</p>
+      <a href="{% url 'configurations_index' %}" class="sidebar-link {% block nav_config_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configurations Overview</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Configurations</p>
+      <a href="{% url 'config_template_index' %}" class="sidebar-link {% block nav_config_templates %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
+      <a href="{% url 'defined_modification_index' %}" class="sidebar-link {% block nav_defined_modifications %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Defined Modifications</a>
+      <a href="{% url 'asset_configuration_index' %}" class="sidebar-link {% block nav_config_asset %}{% endblock %}"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Capabilities</p>
+      <a href="{% url 'capability_index' %}" class="sidebar-link {% block nav_cap_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">stars</span></span> Capabilities Overview</a>
+      <a href="{% url 'capability_definition_index' %}" class="sidebar-link {% block nav_cap_defs %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Definitions</a>
+      <a href="{% url 'class_capability_index' %}" class="sidebar-link {% block nav_cap_class %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> By Asset Class</a>
+      <a href="{% url 'model_capability_index' %}" class="sidebar-link {% block nav_cap_model %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> By Model</a>
+      <a href="{% url 'asset_capability_index' %}" class="sidebar-link {% block nav_cap_asset %}{% endblock %}"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Serialized Parts</p>
+      <a href="{% url 'serialized_part_template_index' %}" class="sidebar-link {% block nav_sp_templates %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">rule</span></span> Part Templates</a>
+      <a href="{% url 'serialized_part_history_index' %}" class="sidebar-link {% block nav_sp_history %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span> Part History</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Serial Numbers</p>
+      <a href="{% url 'extension_serial_number_templates' %}" class="sidebar-link {% block nav_serial_templates %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">qr_code</span></span> Serial Templates &amp; Tracking</a>
+
+      <div class="sidebar-divider"></div>
+      <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'asset_dashboard' %}" class="sidebar-link"><span class="icon">{% svg "asset-icon" %}</span> Assets</a>
+      <a href="{% url 'parts_hub' %}" class="sidebar-link"><span class="icon">{% svg "part-icon" %}</span> Parts</a>
+      <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
+      <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
+      <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
+    </nav>
+  </collapsable-side-bar>
+
+  <div class="app-scrollarea">
+    <div class="app-container">
+      <main id="configuration-main-content">
+        <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+          <ul>
+            <li><a href="{% url 'configurations_index' %}">Configuration</a></li>
+            {% block breadcrumb %}{% endblock %}
+          </ul>
+        </nav>
+
+        {% if messages %}
+          {% for message in messages %}
+            <toast-alert type="{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" dismiss-delay="4000">
+              {{ message }}
+            </toast-alert>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</div>
+
+{% include "csrf-htmx-required-snippet.html" %}
+{% block body_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,114 @@
+{% extends "adm_base.html" %}
+{% block title %}Create User{% endblock %}
+{% block breadcrumb %}
+<li><a href="{% url 'user_index' %}">Users</a></li>
+<li class="is-active"><a href="#" aria-current="page">Create</a></li>
+{% endblock %}
+{% block content %}
+
+<div class="page-hero">
+  <div class="page-header">
+    <div class="page-header-title-wrap">
+      <div class="page-header-icon"><span class="material-icons" aria-hidden="true">person_add</span></div>
+      <div>
+        <h1 class="page-title">Create User</h1>
+        <p class="page-subtitle">Add a new user account to the system.</p>
+      </div>
+    </div>
+    <div class="page-header-actions">
+      <a href="{% url 'user_index' %}" class="button is-small is-light" title="Back to users">
+        <span class="icon"><span class="material-icons" aria-hidden="true">arrow_back</span></span>
+        <span>Users</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="body-grid full-width">
+  <div class="card" style="max-width: 600px;">
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">edit</span></span>User Information</div>
+    </div>
+    <div class="card-content">
+      {% if errors %}
+      <div class="notification is-danger is-light mb-4">
+        <ul>
+          {% for error in errors %}
+          <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="field">
+          <label class="label">Username</label>
+          <div class="control">
+            <input class="input is-small" type="text" name="username" value="{{ username }}" placeholder="Username" required>
+          </div>
+          <p class="help is-size-7">Required. Unique identifier for the account.</p>
+        </div>
+
+        <div class="field">
+          <label class="label">Email Address</label>
+          <div class="control">
+            <input class="input is-small" type="email" name="email" value="{{ email }}" placeholder="Email address" autocomplete="off">
+          </div>
+          <p class="help is-size-7">Optional. Contact email for the user.</p>
+        </div>
+
+        <div class="columns is-multiline">
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">First Name</label>
+              <div class="control">
+                <input class="input is-small" type="text" name="first_name" value="{{ first_name }}" placeholder="First name" autocomplete="off">
+              </div>
+            </div>
+          </div>
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">Last Name</label>
+              <div class="control">
+                <input class="input is-small" type="text" name="last_name" value="{{ last_name }}" placeholder="Last name" autocomplete="off">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="columns is-multiline">
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">Password</label>
+              <div class="control">
+                <input class="input is-small" type="password" name="password" placeholder="Password" required autocomplete="new-password">
+              </div>
+              <p class="help is-size-7">Minimum 8 characters.</p>
+            </div>
+          </div>
+          <div class="column is-6">
+            <div class="field">
+              <label class="label">Confirm Password</label>
+              <div class="control">
+                <input class="input is-small" type="password" name="password_confirm" placeholder="Confirm password" required autocomplete="new-password">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons mt-4">
+          <button type="submit" class="button is-small is-info">
+            <span class="icon"><span class="material-icons" aria-hidden="true">check</span></span>
+            <span>Create User</span>
+          </button>
+          <a href="{% url 'user_index' %}" class="button is-small is-light">
+            <span class="icon"><span class="material-icons" aria-hidden="true">close</span></span>
+            <span>Cancel</span>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

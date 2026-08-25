@@ -24,13 +24,33 @@
 <div class="body-grid has-rail">
   <div>
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">info</span></span>Identity</div></div>
-      <div class="card-content"><dl class="kv">
-        <dt>Part Type</dt><dd>{{ part.part_type|default:"—" }}</dd>
-        <dt>Category</dt><dd>{{ part.category|default:"—" }}</dd>
-        <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=part.is_active|yesno:"Active,Inactive" %}</dd>
-        <dt>Domain Limited</dt><dd>{{ part.is_domain_limited|yesno:"Yes,No" }}</dd>
-        <dt>Description</dt><dd>{{ part.description|default:"—" }}</dd>
-      </dl></div>
+      <div class="card-content">
+        <div class="is-flex" style="gap:1.5rem;align-items:flex-start;">
+          <div style="width:200px;max-width:200px;flex-shrink:0;">
+            {% if part.primary_image %}
+              <figure class="image" style="width:200px;height:200px;background:var(--bulma-background);border:1px solid var(--bulma-border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0;">
+                <img src="{% url 'file_inline' file_id=part.primary_image.file_id %}" alt="{{ part.name }}" style="max-width:200px;max-height:200px;object-fit:contain;">
+              </figure>
+            {% else %}
+              <div style="width:200px;height:200px;background:var(--bulma-background);border:1px dashed var(--bulma-border);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--bulma-text-weak);">
+                <div style="width:4rem;height:4rem;">{% svg "part-icon" %}</div>
+                <span class="is-size-7 mt-2">No Image</span>
+              </div>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <dl class="kv">
+              <dt>Part Number</dt><dd class="is-family-monospace">{{ part.part_number }}</dd>
+              <dt>Name</dt><dd>{{ part.name }}</dd>
+              <dt>Part Type</dt><dd>{{ part.part_type|default:"—" }}</dd>
+              <dt>Category</dt><dd>{{ part.category|default:"—" }}</dd>
+              <dt>Active</dt><dd>{% include "assets/_status_tag.html" with value=part.is_active|yesno:"Active,Inactive" %}</dd>
+              <dt>Domain Limited</dt><dd>{{ part.is_domain_limited|yesno:"Yes,No" }}</dd>
+              <dt>Description</dt><dd>{{ part.description|default:"—" }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">history</span></span>Revision History</div>

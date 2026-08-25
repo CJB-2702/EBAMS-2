@@ -3,6 +3,29 @@
 {% block nav_issues %}is-active{% endblock %}
 {% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Issued Parts Ledger</a></li>{% endblock %}
 
+{% block extra_css %}
+/* ── Workflow chooser tiles ── */
+.workflow-tile {
+  display:flex; flex-direction:column; gap:0.4rem; height:100%;
+  padding:1rem;
+  border:1px solid var(--bulma-border);
+  border-left:3px solid var(--bulma-border);
+  background:var(--bulma-scheme-main-bis);
+  color:inherit;
+  transition:border-color 0.12s ease, background 0.12s ease;
+}
+a.workflow-tile:hover {
+  border-color:var(--bulma-link);
+  border-left-color:var(--bulma-link);
+  background:var(--bulma-scheme-main);
+}
+.workflow-tile.is-primary-tile { border-left-color:var(--bulma-primary); }
+.workflow-tile.is-planned { opacity:0.55; cursor:not-allowed; }
+.workflow-tile-icon .material-icons { font-size:1.6rem; color:var(--bulma-text-weak); }
+.workflow-tile-name { font-weight:600; }
+.workflow-tile-desc { font-size:0.8rem; color:var(--bulma-text-weak); }
+{% endblock %}
+
 {% block content %}
 <div class="page-hero">
   <div class="page-header">
@@ -15,13 +38,67 @@
     </div>
     <div class="page-header-actions">
       <a href="{% url 'inventory_issue_parts' %}" class="button is-primary is-small">
-        <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
-        <span>Issue Parts Workspace</span>
+        <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span>
+        <span>Bulk Issue from Demands</span>
       </a>
-      <a href="{% url 'inventory_issuance_location_portal' %}" class="button is-light is-small">
-        <span class="icon"><span class="material-icons" aria-hidden="true">place</span></span>
-        <span>Issue from Location</span>
-      </a>
+    </div>
+  </div>
+</div>
+
+{% comment %}
+The three issuance workflows, chosen once and visibly.
+
+They are separate portals, not modes: they differ in what the clerk walks up
+holding and what a finished session looks like. Presenting them as one link
+called "Issue Parts" is what let three workflows collect behind one screen —
+see docs/inventory/issuance_portal_separation.md.
+{% endcomment %}
+<div class="card mb-4" id="issuance-workflows">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">alt_route</span></span>
+      Start an issuance
+    </div>
+  </div>
+  <div class="card-content p-4">
+    <div class="columns is-variable is-3">
+
+      <div class="column is-4">
+        <a class="workflow-tile" href="{% url 'inventory_issuance_location_portal' %}">
+          <span class="workflow-tile-icon"><span class="material-icons" aria-hidden="true">place</span></span>
+          <span class="workflow-tile-name">Issue from Location</span>
+          <span class="workflow-tile-desc">
+            You know where it sits. Walk the map to the shelf, take the one part,
+            done. No queue to build.
+          </span>
+        </a>
+      </div>
+
+      <div class="column is-4">
+        <a class="workflow-tile is-primary-tile" href="{% url 'inventory_issue_parts' %}">
+          <span class="workflow-tile-icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span>
+          <span class="workflow-tile-name">Bulk Issue from Demands</span>
+          <span class="workflow-tile-desc">
+            Someone is at the counter with paperwork. Pick their demands, choose
+            the bins, hand it over on one receipt.
+          </span>
+        </a>
+      </div>
+
+      <div class="column is-4">
+        <span class="workflow-tile is-planned" aria-disabled="true">
+          <span class="workflow-tile-icon"><span class="material-icons" aria-hidden="true">call_split</span></span>
+          <span class="workflow-tile-name">
+            Bulk Issue from Inventory
+            <span class="tag is-warning is-light is-small ml-2">Planned</span>
+          </span>
+          <span class="workflow-tile-desc">
+            Shelves are going out today. Queue the stock rows, then find the
+            demands each one can satisfy and split it across them.
+          </span>
+        </span>
+      </div>
+
     </div>
   </div>
 </div>

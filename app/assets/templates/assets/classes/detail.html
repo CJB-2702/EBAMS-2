@@ -25,6 +25,9 @@
         <dt>Description</dt><dd>{{ klass.description|default:"—" }}</dd>
         <dt>Restrict to Domains</dt><dd>{{ klass.restrict_to_domain_set|yesno:"Yes,No" }}</dd>
         <dt>Active</dt><dd>{{ klass.is_active|yesno:"Yes,No" }}</dd>
+        <dt>Meter Units</dt><dd>
+          {% for u in klass.meter_units %}<span class="tag is-light is-small">{{ u }}</span> {% empty %}—{% endfor %}
+        </dd>
       </dl></div>
     </div>
     <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>Capabilities (declared)</div>

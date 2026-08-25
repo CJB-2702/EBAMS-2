@@ -53,6 +53,7 @@ class PartStruct:
             "category": p.category,
             "is_active": p.is_active,
             "is_domain_limited": p.is_domain_limited,
+            "primary_image": p.primary_image,
             "current_revision": (
                 {
                     "id": rev.id,

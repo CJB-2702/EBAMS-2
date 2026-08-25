@@ -1,4 +1,5 @@
 {% extends "inventory/base.html" %}
+{% load svg_tags %}
 {% block title %}Inventory{% endblock %}
 {% block nav_inventory_home %}is-active{% endblock %}
 {% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Inventory</a></li>{% endblock %}
@@ -47,7 +48,7 @@
     <div class="column is-4">
       <a href="{% url 'inventory_issues_index' %}" class="card" style="display:block; height:100%;">
         <div class="card-content">
-          <p class="title is-5"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</p>
+          <p class="title is-5"><span class="icon">{% svg "putaway-icon" %}</span> Issue Parts</p>
           <p class="subtitle is-7 has-text-grey">Issue parts to demands, assets, or users and record returns.</p>
         </div>
       </a>

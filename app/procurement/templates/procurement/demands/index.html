@@ -1,5 +1,7 @@
 {% extends "procurement/base.html" %}
+{% load static %}
 {% block title %}Demands{% endblock %}
+{% block extra_head %}<script defer src="{% static 'js/bulk_select.js' %}"></script>{% endblock %}
 {% block nav_demand_index %}is-active{% endblock %}
 {% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Demands</a></li>{% endblock %}
 

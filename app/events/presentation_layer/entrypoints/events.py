@@ -53,46 +53,64 @@ def event_index(request: HttpRequest) -> HttpResponse:
     from django.db.models import Q
 
     q = request.GET.get("q", "").strip()
-    status_filter = request.GET.get("status", "").strip()
-    type_filter = request.GET.get("event_type", "").strip()
-    asset_filter = (request.GET.get("asset", "") or request.GET.get("asset_id", "")).strip()
+    status_filters = [s.strip() for s in request.GET.getlist("status") if s.strip()]
+    if not status_filters and request.GET.get("status"):
+        status_filters = [s.strip() for s in request.GET.get("status").split(",") if s.strip()]
+
+    type_filters = [t.strip() for t in request.GET.getlist("event_type") if t.strip()]
+    if not type_filters and request.GET.get("event_type"):
+        type_filters = [t.strip() for t in request.GET.get("event_type").split(",") if t.strip()]
+
+    asset_sn_filter = (request.GET.get("asset_sn", "") or request.GET.get("asset", "") or request.GET.get("asset_id", "")).strip()
     domain_filter = (request.GET.get("domain", "") or request.GET.get("domain_id", "")).strip()
 
     qs = list_events_for_user(request.user)
     if q:
         qs = qs.filter(title__icontains=q)
-    if status_filter:
-        qs = qs.filter(status=status_filter)
-    if type_filter:
-        qs = qs.filter(event_type=type_filter)
+    if status_filters:
+        qs = qs.filter(status__in=status_filters)
+    if type_filters:
+        qs = qs.filter(event_type__in=type_filters)
     if domain_filter.isdigit():
         qs = qs.filter(domain_id=int(domain_filter))
 
     asset = None
-    if asset_filter.isdigit():
-        asset_id = int(asset_filter)
-        from app.assets.models import Asset, AssetEvent
-        from app.events.models.details import MaintenanceDetail
-
-        asset = Asset.objects.filter(pk=asset_id).first()
-        linked_event_ids = set(
-            AssetEvent.objects.filter(asset_id=asset_id).values_list("event_id", flat=True)
-        ) | set(
-            MaintenanceDetail.objects.filter(asset_id=asset_id).values_list("pk", flat=True)
+    if asset_sn_filter:
+        from app.assets.models import Asset
+        from app.events.control_layer.managers.asset_event_link_manager import (
+            AssetEventLinkManager,
         )
-        qs = qs.filter(pk__in=linked_event_ids)
+
+        matching_assets = Asset.objects.select_related("model").filter(
+            Q(serial_number__icontains=asset_sn_filter) | (Q(pk=int(asset_sn_filter)) if asset_sn_filter.isdigit() else Q(pk__in=[]))
+        )
+        asset = matching_assets.first()
+        matching_asset_ids = list(matching_assets.values_list("pk", flat=True))
+
+        if matching_asset_ids:
+            event_ids = set()
+            for aid in matching_asset_ids:
+                event_ids.update(AssetEventLinkManager.event_ids_for_asset(asset_id=aid))
+            qs = qs.filter(pk__in=event_ids)
+        else:
+            qs = qs.none()
 
     fmt = request.GET.get("format", "").strip()
 
     # Querystring carrying active filters so density switches & HTMX preserve state.
-    filter_params = {k: v for k, v in (
-        ("q", q),
-        ("status", status_filter),
-        ("event_type", type_filter),
-        ("domain", domain_filter),
-        ("asset", asset_filter),
-    ) if v}
-    base_query = urlencode(filter_params)
+    filter_tuples: list[tuple[str, str]] = []
+    if q:
+        filter_tuples.append(("q", q))
+    for s in status_filters:
+        filter_tuples.append(("status", s))
+    for t in type_filters:
+        filter_tuples.append(("event_type", t))
+    if domain_filter:
+        filter_tuples.append(("domain", domain_filter))
+    if asset_sn_filter:
+        filter_tuples.append(("asset_sn", asset_sn_filter))
+
+    base_query = urlencode(filter_tuples)
 
     user_domains = Domain.objects.filter(
         pk__in=request.user.get_all_domain_ids()
@@ -100,10 +118,13 @@ def event_index(request: HttpRequest) -> HttpResponse:
 
     shared = {
         "q": q,
-        "status_filter": status_filter,
-        "type_filter": type_filter,
+        "status_filters": status_filters,
+        "type_filters": type_filters,
+        "status_filter": status_filters[0] if status_filters else "",
+        "type_filter": type_filters[0] if type_filters else "",
         "domain_filter": domain_filter,
-        "asset_filter": asset_filter,
+        "asset_filter": asset_sn_filter,
+        "asset_sn_filter": asset_sn_filter,
         "asset": asset,
         "user_domains": user_domains,
         "base_query": base_query,

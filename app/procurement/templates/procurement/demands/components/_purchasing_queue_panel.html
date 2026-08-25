@@ -1,0 +1,67 @@
+{% comment %}
+Topnav purchasing-queue popover body. Served by `purchasing_queue_panel` for
+the lazy first open (GET) and each remove (POST). Same out-of-band badge swap
+as the issuance panel — see its sibling for why.
+
+Rows key on the demand's own pk rather than a list index, so a remove is safe
+regardless of what else changed the queue in another tab.
+{% endcomment %}
+<button class="portal-sublink {% if demands %}is-active{% endif %}" type="button"
+        id="queue-btn-purchasing" hx-swap-oob="true"
+        commandfor="queue-panel-purchasing" command="toggle-popover"
+        title="Demands queued for purchasing"
+        hx-get="{% url 'purchasing_queue_panel' %}"
+        hx-target="#queue-panel-purchasing"
+        hx-swap="innerHTML"
+        hx-trigger="click">
+  <span class="icon"><span class="material-icons" aria-hidden="true">shopping_cart</span></span>
+  Purchasing
+  <span class="app-queue-count">{{ demands|length }}</span>
+</button>
+
+<div class="queue-popover-head">
+  <span class="queue-popover-title">Queued for purchasing ({{ demands|length }})</span>
+  <button class="delete is-small" aria-label="close"
+          command="hide-popover" commandfor="queue-panel-purchasing"></button>
+</div>
+
+{% for demand in demands %}
+<div class="queue-popover-row">
+  <div class="queue-popover-row-main">
+    <div class="is-family-monospace has-text-weight-semibold">{{ demand.part.part_number }}</div>
+    <div class="has-text-grey is-size-7">
+      <a href="{% url 'demand_detail' pk=demand.pk %}">#{{ demand.pk }}</a>
+      · outstanding {{ demand.outstanding_qty|default:demand.quantity_requested }}
+      · {{ demand.get_priority_display }}
+    </div>
+  </div>
+  <form hx-post="{% url 'purchasing_queue_panel' %}"
+        hx-target="#queue-panel-purchasing" hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="remove">
+    <input type="hidden" name="demand_id" value="{{ demand.pk }}">
+    <button class="button is-small is-light" type="submit" aria-label="Remove from queue" title="Remove from queue">
+      <span class="icon"><span class="material-icons" style="font-size:1rem;">close</span></span>
+    </button>
+  </form>
+</div>
+{% empty %}
+<p class="queue-popover-empty">
+  Nothing queued. Select demands on the demand list and choose "Queue for Purchasing".
+</p>
+{% endfor %}
+
+<div class="queue-popover-foot">
+  <a href="{% url 'purchase_order_create' %}" class="button is-small is-link is-fullwidth">
+    <span class="icon"><span class="material-icons" aria-hidden="true">add_shopping_cart</span></span>
+    <span>Start a purchase order</span>
+  </a>
+  {% if demands %}
+  <form hx-post="{% url 'purchasing_queue_panel' %}"
+        hx-target="#queue-panel-purchasing" hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="clear">
+    <button class="button is-small is-light" type="submit">Clear</button>
+  </form>
+  {% endif %}
+</div>

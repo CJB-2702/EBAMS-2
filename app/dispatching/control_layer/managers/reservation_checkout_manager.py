@@ -110,7 +110,11 @@ class ReservationCheckoutManager:
         VerifierDistinctPolicy.check(
             verifier=self.actor, self_service_actor_id=self.reservation.user_checked_out_by_id
         )
-        self._transition(to_status=ReservationStatus.CHECKED_OUT)
+        if self.reservation.reservation_status != ReservationStatus.USER_RETURNED:
+            self._transition(to_status=ReservationStatus.CHECKED_OUT)
+            target_status = ReservationStatus.CHECKED_OUT
+        else:
+            target_status = ReservationStatus.USER_RETURNED
 
         reservation = self.reservation
         with transaction.atomic():
@@ -119,7 +123,7 @@ class ReservationCheckoutManager:
             reservation.dispatcher_checkout_notes = notes
             reservation.checkout_verified_by = self.actor
             reservation.checkout_verified_at = timezone.now()
-            reservation.reservation_status = ReservationStatus.CHECKED_OUT
+            reservation.reservation_status = target_status
             reservation.updated_by = self.actor
             reservation.save()
 

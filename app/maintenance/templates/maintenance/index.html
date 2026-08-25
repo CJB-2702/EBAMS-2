@@ -3,7 +3,14 @@
 {% block title %}Maintenance Events{% endblock %}
 {% block nav_maintenance_index %}is-active{% endblock %}
 {% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Events</a></li>{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/maintenance_filters.css' %}">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/maintenance_filters.css' %}">
+<style>
+  .gap-2 {
+    gap: 0.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-hero">
@@ -15,7 +22,28 @@
         <p class="page-subtitle">Scheduled, reactive, inspection, and preventive work across your domains.</p>
       </div>
     </div>
-    <div class="page-header-actions">
+    <div class="page-header-actions is-flex is-align-items-center gap-2">
+      <div class="buttons has-addons mb-0">
+        <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=condensed"
+           class="button is-small {% if density == 'condensed' %}is-link is-selected{% else %}is-light{% endif %}"
+           title="Table view">
+          <span class="icon"><span class="material-icons" aria-hidden="true">table_rows</span></span>
+          <span>Condensed</span>
+        </a>
+        <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=comfortable"
+           class="button is-small {% if density == 'comfortable' %}is-link is-selected{% else %}is-light{% endif %}"
+           title="Comfortable view">
+          <span class="icon"><span class="material-icons" aria-hidden="true">view_agenda</span></span>
+          <span>Comfortable</span>
+        </a>
+        <a href="?{{ base_query }}{% if base_query %}&{% endif %}format=large"
+           class="button is-small {% if density == 'large' %}is-link is-selected{% else %}is-light{% endif %}"
+           title="Large view with actions">
+          <span class="icon"><span class="material-icons" aria-hidden="true">view_day</span></span>
+          <span>Large</span>
+        </a>
+      </div>
+
       {% if preview_mode %}<a href="{% url 'maintenance_index' %}" class="button is-small">List view</a>{% else %}<a href="{% url 'maintenance_index' %}?preview=1" class="button is-small is-info">Preview</a>{% endif %}
       <a href="{% url 'create_assign' %}" class="button is-small is-link">
         <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>New Event</span>
@@ -41,6 +69,7 @@
             hx-indicator="#maintenance-results-region">
 
         <input type="hidden" name="preview" value="1">
+        <input type="hidden" name="density" value="{{ density }}">
 
         {# Global search #}
         <label class="mf-search">
@@ -101,7 +130,7 @@
 
         {# Enhanced filters (collapsible) — open by default if any filter is active #}
         <details class="mf-details"
-          {% if filters.asset_class or filters.model or filters.manufacturer or filters.domain or filters.maintenance_type or filters.action_title or filters.created_by or filters.assigned_to or filters.commented_by or filters.date_from or filters.date_to %}open{% endif %}>
+          {% if filters.asset_sn or filters.asset_id or filters.asset_class or filters.model or filters.manufacturer or filters.domain or filters.maintenance_type or filters.action_title or filters.created_by or filters.assigned_to or filters.commented_by or filters.date_from or filters.date_to %}open{% endif %}>
           <summary>
             <span class="material-icons" aria-hidden="true">chevron_right</span>
             Enhanced filters — asset, work type, people, and dates
@@ -110,6 +139,10 @@
           <div class="mf-sections">
             <div class="mf-section mf-section--asset">
               <p class="mf-section-title"><span class="material-icons" aria-hidden="true">precision_manufacturing</span>Asset</p>
+              <div class="mf-field">
+                <label>Asset Serial Number</label>
+                <input class="mf-text-input" type="search" name="asset_sn" value="{{ filters.asset_sn }}" placeholder="e.g. SN-402">
+              </div>
               <div class="mf-field">
                 <label>Asset class</label>
                 <select name="asset_class">
@@ -241,6 +274,8 @@
             hx-swap="innerHTML"
             hx-push-url="true"
             hx-indicator="#maintenance-results-region">
+
+        <input type="hidden" name="density" value="{{ density }}">
 
         {# Global search #}
         <label class="mf-search">

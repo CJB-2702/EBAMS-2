@@ -22,7 +22,7 @@
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body style="--app-accent: var(--app-color-assets);">
 
 {# TOP NAV #}
 {% include "shared/topnav.html" with current_app_group="Assets" %}
@@ -48,28 +48,12 @@
       <a href="{% url 'meter_history_index' %}" class="sidebar-link {% block nav_meters %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">speed</span></span> Meter History</a>
 
       <div class="sidebar-divider"></div>
-      <p class="sidebar-section-label">Capabilities</p>
-      <a href="{% url 'capability_index' %}" class="sidebar-link {% block nav_cap_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">stars</span></span> Capabilities Overview</a>
-      <a href="{% url 'capability_definition_index' %}" class="sidebar-link {% block nav_cap_defs %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span> Definitions</a>
-      <a href="{% url 'class_capability_index' %}" class="sidebar-link {% block nav_cap_class %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> By Asset Class</a>
-      <a href="{% url 'model_capability_index' %}" class="sidebar-link {% block nav_cap_model %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> By Model</a>
-      <a href="{% url 'asset_capability_index' %}" class="sidebar-link {% block nav_cap_asset %}{% endblock %}"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
-
-      <div class="sidebar-divider"></div>
-      <p class="sidebar-section-label">Configurations</p>
-      <a href="{% url 'configurations_index' %}" class="sidebar-link {% block nav_config_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configurations Overview</a>
-      <a href="{% url 'config_template_index' %}" class="sidebar-link {% block nav_templates %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">dashboard_customize</span></span> Templates</a>
-      <a href="{% url 'defined_modification_index' %}" class="sidebar-link {% block nav_mods %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">build</span></span> Defined Modifications</a>
-      <a href="{% url 'asset_configuration_index' %}" class="sidebar-link {% block nav_config_asset %}{% endblock %}"><span class="icon">{% svg "asset-icon" %}</span> By Asset</a>
+      <p class="sidebar-section-label">Relationships</p>
       <a href="{% url 'asset_relationships_index' %}" class="sidebar-link {% block nav_rel_index %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">account_tree</span></span> Asset Relationships</a>
 
       <div class="sidebar-divider"></div>
-      <p class="sidebar-section-label">Part Associations</p>
-      <a href="{% url 'part_model_association_index' %}" class="sidebar-link {% block nav_part_model_assoc %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span> Part-Model Associations</a>
-      <a href="{% url 'part_class_association_index' %}" class="sidebar-link {% block nav_part_class_assoc %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">category</span></span> Part-Class Associations</a>
-
-      <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Other Portals</p>
+      <a href="{% url 'configurations_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span> Configuration</a>
       <a href="{% url 'event_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">event</span></span> Events</a>
       <a href="{% url 'administration_index' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">settings</span></span> Administration</a>
       <a href="{% url 'public_home' %}" class="sidebar-link"><span class="icon"><span class="material-icons" aria-hidden="true">home</span></span> Home</a>
@@ -90,9 +74,9 @@
 
         {% if messages %}
           {% for message in messages %}
-            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+            <toast-alert type="{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" dismiss-delay="4000">
               {{ message }}
-            </div>
+            </toast-alert>
           {% endfor %}
         {% endif %}
 

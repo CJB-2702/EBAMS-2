@@ -6,8 +6,13 @@ mutations on warehouses, rooms, and storage locations happen after creation.
 from __future__ import annotations
 
 from app.inventory.control_layer.guards.room_guard import RoomPolicy
-from app.inventory.control_layer.guards.topography_guard import WarehouseValidator
+from app.inventory.control_layer.guards.topography_guard import (
+    RoomLocationPolicy,
+    StorageLocationPolicy,
+    WarehouseValidator,
+)
 from app.inventory.models.topography.room import Room
+from app.inventory.models.topography.room_location import RoomLocation
 from app.inventory.models.topography.storage_location import StorageLocation
 from app.inventory.models.topography.warehouse import Warehouse
 
@@ -42,6 +47,13 @@ class TopographyManager:
         return warehouse
 
     @classmethod
+    def reactivate_warehouse(cls, *, warehouse: Warehouse, actor=None) -> Warehouse:
+        warehouse.is_active = True
+        warehouse.updated_by = actor
+        warehouse.save(update_fields=["is_active", "updated_by", "updated_at"])
+        return warehouse
+
+    @classmethod
     def update_room(
         cls,
         *,
@@ -70,6 +82,13 @@ class TopographyManager:
         return room
 
     @classmethod
+    def reactivate_room(cls, *, room: Room, actor=None) -> Room:
+        room.is_active = True
+        room.updated_by = actor
+        room.save(update_fields=["is_active", "updated_by", "updated_at"])
+        return room
+
+    @classmethod
     def update_storage_location(
         cls,
         *,
@@ -86,6 +105,19 @@ class TopographyManager:
     def deactivate_storage_location(
         cls, *, storage_location: StorageLocation, actor=None
     ) -> StorageLocation:
+        """Retiring a bin is blocked while it holds stock — the legacy
+        designer's `remove_bin` inventory check, kept as a Policy."""
+        StorageLocationPolicy.check_deactivate(storage_location=storage_location)
         return cls.update_storage_location(
             storage_location=storage_location, is_active=False, actor=actor
         )
+
+    @classmethod
+    def deactivate_room_location(
+        cls, *, room_location: RoomLocation, actor=None
+    ) -> RoomLocation:
+        RoomLocationPolicy.check_deactivate(room_location=room_location)
+        room_location.is_active = False
+        room_location.updated_by = actor
+        room_location.save(update_fields=["is_active", "updated_by", "updated_at"])
+        return room_location

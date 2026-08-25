@@ -93,6 +93,7 @@ def _parse_meter_readings(post) -> dict[int, float]:
 
 @require_http_methods(["GET"])
 def asset_index(request: HttpRequest) -> HttpResponse:
+    format_param = request.GET.get("format", "condensed").strip()
     filters = {
         key: request.GET.get(key, "").strip()
         for key in (
@@ -101,10 +102,27 @@ def asset_index(request: HttpRequest) -> HttpResponse:
         )
     }
     assets = search_assets(**filters)
+
+    if format_param == "htmx-search-results":
+        results = []
+        for asset in assets[:50]:
+            detail = " · ".join(
+                filter(None, [str(asset.model) if asset.model_id else "", asset.serial_number])
+            )
+            detail_html = (
+                f' <span class="has-text-grey is-size-7">({detail})</span>' if detail else ""
+            )
+            results.append(
+                f'<li data-value="{asset.id}">#{asset.id} {asset.name}{detail_html}</li>'
+            )
+        if not results:
+            return HttpResponse('<li class="is-disabled">No matches.</li>')
+        return HttpResponse("\n".join(results))
+
     return render(
         request,
         "assets/assets/list.html",
-        {"assets": assets, **filters, **_form_choices()},
+        {"assets": assets, "format": format_param, **filters, **_form_choices()},
     )
 
 

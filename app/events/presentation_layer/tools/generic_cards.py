@@ -226,6 +226,14 @@ def build_activity_card(thread: "Event", user) -> dict:
     header_style = get_event_header_style(thread.event_type)
     origin_link = get_event_origin_link(thread, detail, asset_links)
 
+    unique_assets_dict = {}
+    if detail and hasattr(detail, "asset") and detail.asset:
+        unique_assets_dict[detail.asset.pk] = detail.asset
+    for link in asset_links:
+        if link.asset and link.asset.pk not in unique_assets_dict:
+            unique_assets_dict[link.asset.pk] = link.asset
+    all_associated_assets = list(unique_assets_dict.values())
+
     direct_attachments = [document_dict(a) for a in ctx.struct.standalone_attachments]
     comment_attachments = []
     for c_struct in ctx.struct.comments:
@@ -244,6 +252,7 @@ def build_activity_card(thread: "Event", user) -> dict:
         "detail": detail,
         "detail_template": detail_template,
         "asset_links": asset_links,
+        "all_associated_assets": all_associated_assets,
         "header_style": header_style,
         "origin_link": origin_link,
     }

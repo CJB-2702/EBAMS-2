@@ -79,7 +79,11 @@ from app.procurement.presentation_layer.search.open_demand_search import (
 from app.procurement.presentation_layer.search.purchase_order_search import (
     PurchaseOrderSearch,
 )
-from app.procurement.presentation_layer.tools import po_approval, po_wizard_draft as draft_tools
+from app.procurement.presentation_layer.tools import (
+    po_approval,
+    po_wizard_draft as draft_tools,
+    purchasing_queue,
+)
 from app.procurement.presentation_layer.tools import reallocation_draft
 from app.procurement.presentation_layer.tools.procurement_access import (
     accessible_domain_ids,
@@ -239,13 +243,27 @@ def purchase_order_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         return _wizard_post(request, domain_ids=domain_ids)
 
-    # The one fragment response this route serves: <li> rows for the part
-    # search-dropdown on the line-add form. Same canonical URL, `format=` query
-    # parameter — not a parallel route.
     if request.GET.get("format") == "htmx-part-results":
         return _part_search_results(request)
+    if request.GET.get("format") == "htmx-queued-card":
+        return _render_queued_card(request, domain_ids=domain_ids)
 
     return _wizard_render(request, domain_ids=domain_ids)
+
+
+def _render_queued_card(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse:
+    draft = draft_tools.load(request.session)
+    queued_demands = purchasing_queue.demands(request, domain_ids=domain_ids)
+    has_vendor = draft_tools.has_vendor(draft)
+    return render(
+        request,
+        "procurement/purchase_orders/components/_queued_purchasing_card.html",
+        {
+            "queued_demands": queued_demands,
+            "has_vendor": has_vendor,
+        },
+    )
+
 
 
 def _part_search_results(request: HttpRequest) -> HttpResponse:
@@ -317,6 +335,11 @@ def _wizard_render(request: HttpRequest, *, domain_ids: list[int]) -> HttpRespon
             "can_submit": draft_tools.can_submit(draft),
             "draft_total": _draft_total(draft),
             "cap_decision": _pop_cap_decision(request),
+            # Whatever the Buyer flagged from the demand list. Surfaced from
+            # the very first render — before a vendor exists — so the queue is
+            # visible at the point it explains what this PO is FOR, not only
+            # once the wizard is far enough along to consume it.
+            "queued_demands": purchasing_queue.demands(request, domain_ids=domain_ids),
         },
     )
 
@@ -427,6 +450,15 @@ def _draft_total(draft: dict) -> Decimal:
     return total
 
 
+def _allocated_demand_ids(draft: dict) -> list[int]:
+    """Every demand the draft currently claims, across all its lines."""
+    return [
+        int(allocation["demand_id"])
+        for line in (draft.get("lines") or [])
+        for allocation in (line.get("allocations") or [])
+    ]
+
+
 def _wizard_post(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse:
     action = request.POST.get("action", "")
     draft = draft_tools.load(request.session)
@@ -442,6 +474,17 @@ def _wizard_post(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse
         draft_tools.save(request.session, draft)
         return redirect(back)
 
+    if action == "remove_from_queue":
+        demand_id = _int(request.POST.get("demand_id"))
+        if demand_id and purchasing_queue.remove(request, demand_id=demand_id):
+            messages.info(
+                request, f"Demand #{demand_id} removed from the purchasing queue."
+            )
+        if request.headers.get("HX-Request"):
+            return _render_queued_card(request, domain_ids=domain_ids)
+        draft_tools.save(request.session, draft)
+        return redirect(back)
+
     if not draft_tools.has_vendor(draft):
         messages.error(request, "Pick a vendor and a buying domain first.")
         return redirect(back)
@@ -450,6 +493,16 @@ def _wizard_post(request: HttpRequest, *, domain_ids: list[int]) -> HttpResponse
         _wizard_add_unlinked_line(request, draft)
     elif action == "add_from_demands":
         _wizard_add_from_demands(request, draft, domain_ids=domain_ids)
+        # The "add all queued" button posts through this same handler with the
+        # queue's ids as `demand_ids` — no separate staging path to keep in
+        # step with this one. Only ids that actually landed as allocations are
+        # drained; anything the handler skipped (nothing outstanding, out of
+        # domain) stays queued with its warning still standing.
+        if request.POST.get("from_queue"):
+            purchasing_queue.remove_many(
+                request, demand_ids=_allocated_demand_ids(draft)
+            )
+
     elif action == "remove_line":
         if draft_tools.remove_line(draft, _int(request.POST.get("line_index")) or -1):
             messages.info(request, "Line removed from the draft.")

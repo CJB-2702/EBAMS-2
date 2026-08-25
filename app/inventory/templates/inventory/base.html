@@ -15,12 +15,13 @@
   <script defer src="{% static 'js/inventory_svg.js' %}"></script>
   <script src="{% static 'web_components/collapsable_side_bar.js' %}"></script>
   <script defer src="{% static 'web_components/search_dropdown.js' %}"></script>
+  <script src="{% static 'web_components/toast_alert.js' %}"></script>
   <style>
     {% block extra_css %}{% endblock %}
   </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body style="--app-accent: var(--app-color-inventory);">
 
 {% include "shared/topnav.html" with current_app_group="Inventory" %}
 
@@ -30,15 +31,20 @@
       <p class="sidebar-section-label">Inventory</p>
       <a href="{% url 'inventory_home' %}" class="sidebar-link {% block nav_inventory_home %}{% endblock %}"><span class="icon">{% svg "inventory-icon" %}</span> Overview</a>
       <a href="{% url 'active_inventory_index' %}" class="sidebar-link {% block nav_active_inventory %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">inventory</span></span> Active Inventory</a>
-      <a href="{% url 'active_inventory_gui' %}" class="sidebar-link {% block nav_active_inventory_gui %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">location_on</span></span> Inventory Locator</a>
+      <a href="{% url 'active_inventory_gui' %}" class="sidebar-link {% block nav_active_inventory_gui %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">location_on</span></span> View Inventory GUI</a>
       <a href="{% url 'inventory_intake_dashboard' %}" class="sidebar-link {% block nav_intake %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_to_inbox</span></span> Intake</a>
-      <a href="{% url 'inventory_putaway_worklist' %}" class="sidebar-link {% block nav_putaway %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">move_down</span></span> Putaway</a>
+      <a href="{% url 'inventory_putaway_worklist' %}" class="sidebar-link {% block nav_putaway %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Putaway</a>
       <a href="{% url 'inventory_movements_index' %}" class="sidebar-link {% block nav_movements %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span> Movements</a>
-      <a href="{% url 'inventory_issues_index' %}" class="sidebar-link {% block nav_issues %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span> Issue Parts</a>
+      <a href="{% url 'inventory_issues_index' %}" class="sidebar-link {% block nav_issues %}{% endblock %}"><span class="icon">{% svg "putaway-icon" %}</span> Issue Parts</a>
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Topography</p>
       <a href="{% url 'inventory_warehouse_index' %}" class="sidebar-link {% block nav_warehouses %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">store</span></span> Warehouses</a>
+      {# ── Gated, unlike every other nav entry: warehouse_create hard-403s ── #}
+      {# ── without can_manage_topography, so an ungated link would be a dead end. ── #}
+      {% if perms.inventory.can_manage_topography %}
+      <a href="{% url 'inventory_warehouse_create' %}" class="sidebar-link {% block nav_warehouse_create %}{% endblock %}"><span class="icon"><span class="material-icons" aria-hidden="true">add_business</span></span> New Warehouse</a>
+      {% endif %}
 
       <div class="sidebar-divider"></div>
       <p class="sidebar-section-label">Shipments</p>
@@ -64,9 +70,9 @@
 
         {% if messages %}
           {% for message in messages %}
-            <div class="notification {% if message.tags == 'error' %}is-danger{% elif message.tags == 'warning' %}is-warning{% elif message.tags == 'success' %}is-success{% else %}is-info{% endif %} is-light">
+            <toast-alert type="{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %}" dismiss-delay="4000">
               {{ message }}
-            </div>
+            </toast-alert>
           {% endfor %}
         {% endif %}
 

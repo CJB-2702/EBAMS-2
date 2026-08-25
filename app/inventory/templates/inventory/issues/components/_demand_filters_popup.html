@@ -1,0 +1,151 @@
+{% comment %}
+Step 1's filter popup — the FULL filter set from `demand_index`, kept off the
+page until asked for so the workspace leads with one search box instead of a
+sixteen-field wall.
+
+Lives INSIDE #demand-pool-form on purpose: a <dialog> shown with showModal()
+moves to the top layer but keeps its DOM position, so these fields stay
+form-associated and htmx ships them with every search. Nothing here needs its
+own submit — the form's `change` trigger re-runs the search live as each
+control is touched, which is why the footer only closes.
+
+Every field is `d_`-prefixed so it cannot collide with Step 2's `s_` set on
+this shared URL, and every value is re-read from `demand_filters` so a plain
+reload restores exactly what was applied.
+{% endcomment %}
+<dialog id="demand-filters-dialog" class="card modal-styled" style="padding:0; max-width:56rem; width:92vw;">
+  <header class="card-header">
+    <p class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">tune</span></span>
+      Filter part demands
+    </p>
+    <button type="button" class="delete is-large" aria-label="close"
+            command="close" commandfor="demand-filters-dialog"></button>
+  </header>
+  <div class="card-content">
+    <div class="columns is-multiline is-variable is-3">
+      <div class="column is-3">
+        <label class="label is-small">Demand State</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_demand_state">
+            <option value="">Open (Required + Approved)</option>
+            {% for value, label in demand_states %}
+            <option value="{{ value }}" {% if demand_filters.demand_state == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Priority</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_priority">
+            <option value="">Any</option>
+            {% for value, label in priorities %}
+            <option value="{{ value }}" {% if demand_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Purchasing</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_purchasing_state">
+            <option value="">Any</option>
+            {% for value, label in purchasing_states %}
+            <option value="{{ value }}" {% if demand_filters.purchasing_state == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Shipment</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_shipment_state">
+            <option value="">Any</option>
+            {% for value, label in shipment_states %}
+            <option value="{{ value }}" {% if demand_filters.shipment_state == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Issuance</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_issuance_state">
+            <option value="">Any</option>
+            {% for value, label in issuance_states %}
+            <option value="{{ value }}" {% if demand_filters.issuance_state == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Domain</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_domain_id">
+            <option value="">Any</option>
+            {% for d in domains %}
+            <option value="{{ d.id }}" {% if demand_filters.domain_id == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Source</label>
+        <div class="select is-small is-fullwidth">
+          <select name="d_source">
+            <option value="">Any</option>
+            {% for value, label in sources %}
+            <option value="{{ value }}" {% if demand_filters.source == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Event ID</label>
+        <input class="input is-small is-family-monospace" type="number" name="d_event_id"
+               value="{{ demand_filters.event_id }}" placeholder="Event ID…">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">PO Number</label>
+        <input class="input is-small" type="text" name="d_po_number"
+               value="{{ demand_filters.po_number }}" placeholder="PO-1002…">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Requested By</label>
+        <input class="input is-small" type="text" name="d_requested_by"
+               value="{{ demand_filters.requested_by }}" placeholder="username, name…">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Needed From</label>
+        <input class="input is-small" type="date" name="d_needed_by_from" value="{{ demand_filters.needed_by_from }}">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Needed To</label>
+        <input class="input is-small" type="date" name="d_needed_by_to" value="{{ demand_filters.needed_by_to }}">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Created From</label>
+        <input class="input is-small" type="date" name="d_created_from" value="{{ demand_filters.created_from }}">
+      </div>
+      <div class="column is-3">
+        <label class="label is-small">Created To</label>
+        <input class="input is-small" type="date" name="d_created_to" value="{{ demand_filters.created_to }}">
+      </div>
+    </div>
+    <p class="has-text-grey is-size-7">
+      Results update as you change these. Leaving Demand State on
+      <em>Open</em> restricts the pool to demands somebody is still waiting on.
+    </p>
+  </div>
+  <footer class="card-footer custom-card-footer">
+    <div class="card-footer-secondaries">
+      <a class="button is-small is-light" href="{% url 'inventory_issue_parts' %}">
+        <span class="icon"><span class="material-icons" aria-hidden="true">clear_all</span></span>
+        <span>Clear all filters</span>
+      </a>
+    </div>
+    <button type="button" class="button is-link card-footer-primary"
+            command="close" commandfor="demand-filters-dialog">Done</button>
+  </footer>
+</dialog>

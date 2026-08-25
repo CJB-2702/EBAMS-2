@@ -14,14 +14,12 @@
       <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
         <thead>
           <tr>
-            <th>Session #</th>
+            <th>Receipt #</th>
             <th>Date Issued</th>
-            <th>Type</th>
-            <th>Authorized By</th>
+            <th>Issued By</th>
             <th>Recipient</th>
-            <th>Target Asset</th>
             <th class="has-text-right">Lines</th>
-            <th>Status</th>
+            <th>Reason</th>
             <th class="has-text-right">Action</th>
           </tr>
         </thead>
@@ -34,13 +32,11 @@
               </a>
             </td>
             <td>{{ sess.issued_at|date:"Y-m-d H:i" }}</td>
-            <td><span class="tag is-small is-light">{{ sess.get_issue_type_display }}</span></td>
             <td>{{ sess.issued_by.username|default:"System" }}</td>
-            <td>{{ sess.issued_to.username|default:"—" }}</td>
-            <td>{{ sess.issued_to_asset.name|default:"—" }}</td>
+            <td>{{ sess.issued_to.get_full_name|default:sess.issued_to.username }}</td>
             <td class="has-text-right is-family-monospace">{{ sess.issues.count }}</td>
             <td>
-              <span class="tag is-small is-success is-light">{{ sess.get_status_display }}</span>
+              <span class="tag is-small is-light">{{ sess.get_issue_reason_display }}</span>
             </td>
             <td class="has-text-right">
               <a href="{% url 'inventory_issue_session_detail' pk=sess.pk %}" class="button is-xs is-info is-outlined">
@@ -50,7 +46,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="9" class="has-text-grey has-text-centered py-5">
+            <td colspan="7" class="has-text-grey has-text-centered py-5">
               No issue sessions match your filters.
             </td>
           </tr>

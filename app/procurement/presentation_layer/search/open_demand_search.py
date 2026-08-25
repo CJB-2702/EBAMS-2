@@ -157,7 +157,16 @@ class OpenDemandSearch:
                 deleted_at__isnull=True,
             )
             .select_related("part", "domain", "requested_by")
-            .annotate(outstanding_qty=F("quantity_requested") - F("purchased_qty"))
+            .annotate(
+                outstanding_qty=F("quantity_requested") - F("purchased_qty"),
+                # TWO DIFFERENT QUESTIONS, deliberately both annotated.
+                # outstanding_qty is a PURCHASING figure — how much still needs
+                # buying. unissued_qty is an ISSUANCE figure — how much the
+                # requester is still owed. A demand can be fully purchased and
+                # entirely unissued, so a screen that shows the wrong one tells
+                # a storeroom clerk the opposite of the truth.
+                unissued_qty=F("quantity_requested") - F("issued_qty"),
+            )
         )
 
         if part_id:
@@ -225,6 +234,8 @@ class OpenDemandSearch:
         requested_by: str = "",
         po_number: str = "",
         q: str = "",
+        generic_q: str = "",
+        demand_states=None,
     ) -> QuerySet[PartDemand]:
         """The demand_index page (part_demand_workflows.md §2.1) — one canonical
         list, not three: the Approver's queue is this with
@@ -238,15 +249,37 @@ class OpenDemandSearch:
         `pool`: a list that forgot the fence would leak cross-domain rows.
 
         Default sort is priority then needed_by (D44) — never "newest first".
+
+        `generic_q` is the issuance workspace's one-box search: the operator
+        holding a part in one hand and a work order in the other knows ONE of
+        a part number, a demand id, an event id, or a PO number, and should
+        not have to decide which field it belongs in first. Distinct from `q`,
+        which is the demand list's narrower part/notes text filter.
+
+        `demand_states` narrows to a SET (the issuance pool only cares about
+        Required/Approved), where `demand_state` narrows to exactly one. A
+        caller passing both gets the intersection, which is what the filter
+        popup overriding the pool's default should do.
         """
         qs = (
             PartDemand.objects.filter(
                 domain_id__in=domain_ids, deleted_at__isnull=True
             )
             .select_related("part", "domain", "requested_by")
-            .annotate(outstanding_qty=F("quantity_requested") - F("purchased_qty"))
+            .annotate(
+                outstanding_qty=F("quantity_requested") - F("purchased_qty"),
+                # TWO DIFFERENT QUESTIONS, deliberately both annotated.
+                # outstanding_qty is a PURCHASING figure — how much still needs
+                # buying. unissued_qty is an ISSUANCE figure — how much the
+                # requester is still owed. A demand can be fully purchased and
+                # entirely unissued, so a screen that shows the wrong one tells
+                # a storeroom clerk the opposite of the truth.
+                unissued_qty=F("quantity_requested") - F("issued_qty"),
+            )
         )
 
+        if demand_states:
+            qs = qs.filter(demand_state__in=demand_states)
         if demand_state:
             qs = qs.filter(demand_state=demand_state)
         if purchasing_state:
@@ -294,6 +327,22 @@ class OpenDemandSearch:
                 | Q(part__name__icontains=q)
                 | Q(notes__icontains=q)
             )
+        if generic_q:
+            # Numeric input is ambiguous on purpose — "1042" could be a demand
+            # id, an event id, or the numeric tail of a part number, so all
+            # three are tried rather than making the user pick a field first.
+            clause = (
+                Q(part__part_number__icontains=generic_q)
+                | Q(part__name__icontains=generic_q)
+                | Q(
+                    allocations__is_active=True,
+                    allocations__deleted_at__isnull=True,
+                    allocations__purchase_order_line__purchase_order__po_number__icontains=generic_q,
+                )
+            )
+            if generic_q.isdigit():
+                clause |= Q(pk=int(generic_q)) | Q(event_id=int(generic_q))
+            qs = qs.filter(clause).distinct()
 
         return qs.order_by(
             cls._priority_ordering(), F("needed_by").asc(nulls_last=True)

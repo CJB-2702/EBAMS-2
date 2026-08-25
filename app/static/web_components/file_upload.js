@@ -7,10 +7,12 @@
 
 class FileUpload extends HTMLElement {
   connectedCallback() {
-    // connectedCallback can fire more than once (e.g. HTMX moving the node). Only build once.
-    if (this._built) {
-      return;
-    }
+    if (this._built) return;
+    this._tryInit();
+  }
+
+  _tryInit() {
+    if (this._built) return;
     this._built = true;
 
     const name = this.getAttribute("name") || "file";

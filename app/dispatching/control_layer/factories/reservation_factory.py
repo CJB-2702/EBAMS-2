@@ -12,6 +12,9 @@ from django.db import transaction
 from app.dispatching.control_layer.narrators.reservation_narrator import ReservationNarrator
 from app.dispatching.models.enums import ReservationStatus
 from app.dispatching.models.reservations.asset_reservation import AssetReservation
+from app.events.control_layer.managers.asset_event_link_manager import (
+    AssetEventLinkManager,
+)
 from app.events.models.event import ActivityThreadType
 
 if TYPE_CHECKING:
@@ -67,6 +70,25 @@ class ReservationFactory:
                 created_by=actor,
                 updated_by=actor,
             )
+            # Two links, not one. The reservation is itself an Event (MTI), so
+            # it gets the asset link directly; the dispatch is a separate Event
+            # whose only claim on an asset comes through its reservations, so
+            # it gets one too. Without the second, a dispatch's assets are
+            # invisible to anything that does not already know AssetReservation
+            # exists — the whole point of the join table.
+            AssetEventLinkManager.link(
+                asset_id=asset_id,
+                event_id=reservation.pk,
+                role="reserved_unit",
+                actor=actor,
+            )
+            if dispatch_id is not None:
+                AssetEventLinkManager.link(
+                    asset_id=asset_id,
+                    event_id=dispatch_id,
+                    role="reserved_unit",
+                    actor=actor,
+                )
 
         from app.events.control_layer.event_context import EventContext
 

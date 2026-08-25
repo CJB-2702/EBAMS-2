@@ -1,6 +1,5 @@
 {% extends "assets/asset_base.html" %}
 {% block title %}Relationships — {{ asset.name }}{% endblock %}
-{% block nav_config_index %}{% endblock %}
 {% block breadcrumb %}
   <li><a href="{% url 'asset_relationships_index' %}">Asset Relationships</a></li>
   <li class="is-active"><a href="#" aria-current="page">{{ asset.name }} — Children</a></li>

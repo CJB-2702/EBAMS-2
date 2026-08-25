@@ -56,13 +56,260 @@
 </script>
 {% endif %}
 
-<form method="post" id="model-form" data-mode="{{ mode }}" class="body-grid full-width">{% csrf_token %}
+{% if mode == 'edit' %}
+<div class="body-grid has-rail">
+  <div>
+    <form method="post" id="model-form" data-mode="edit">{% csrf_token %}
+      <div class="card"><div class="card-header">
+        <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Model</div>
+        <div class="is-flex is-align-items-center" style="gap:0.5rem;">
+          <span id="model-dirty-flag" class="tag is-warning is-hidden"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">edit_note</span></span><span>Unsaved changes</span></span>
+          <button type="submit" id="model-save-btn" class="button is-small is-link" disabled><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button>
+          <a href="{% url 'model_detail' model_id=model.id %}" class="button is-small is-light">Cancel</a>
+        </div>
+      </div>
+        <div class="card-content"><div class="columns is-multiline">
+          <div class="column is-4"><label class="label is-small">Model Name</label><input class="input is-small" name="model_name" value="{{ model.model_name|default:'' }}"></div>
+          <div class="column is-2"><label class="label is-small">Version</label><input class="input is-small" name="version" value="{{ model.version|default:'' }}" placeholder="e.g. 2016, M5"></div>
+          <div class="column is-2"><label class="label is-small">Version Rank
+            <info-popover direction="top" hover="true">
+              <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span></detail>
+              <summary><p>Optional integer to order versions of this model line (older/base = lower). Drives display order where the version string can't sort meaningfully.</p></summary>
+            </info-popover>
+          </label><input class="input is-small" type="number" min="0" name="version_rank" value="{{ model.version_rank|default_if_none:'' }}" placeholder="e.g. 1"></div>
+          <div class="column is-4"><label class="label is-small">Accepted Config Baselines
+            <info-popover direction="top" hover="true">
+              <detail><span class="icon has-text-info"><span class="material-icons" aria-hidden="true">info</span></span></detail>
+              <summary><p>The acceptable trim/spec baselines for this model (e.g. <code>LE</code>, <code>EX</code>, <code>SE</code>). Type one and press Enter or Add; remove with the × on each chip. An asset built to this model picks one of these; the list is a soft UI guide, not part of the model's identity.</p></summary>
+            </info-popover>
+          </label>
+            <tag-list-editor name="config_baselines" placeholder="Add a baseline…" empty-text="No baselines yet.">
+              {% for b in model.config_baselines %}<input type="hidden" name="config_baselines" value="{{ b }}">{% endfor %}
+            </tag-list-editor>
+          </div>
+          <div class="column is-12"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+            <p class="help is-size-7">Meter units are set on the asset class, not the model — edit them there.</p>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="card mb-4"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturers</div></div>
+        <div class="card-content">
+          {% include "assets/models/_manufacturers_dlb_only.html" %}
+          <p class="help">Filter either side, then use the arrows to move manufacturers. Changes save immediately. The first linked manufacturer is treated as primary.</p>
+        </div>
+      </div>
+
+      <h2 class="title is-6 mt-4 mb-2">Capability Assignments</h2>
+      
+      {# LEFT Heavy Assignment Card Pair: Capabilities #}
+      <div class="columns is-variable is-4 mb-0" id="capability-assignment-row">
+        {# LEFT Card (2/3) — Available Capabilities #}
+        <div class="column is-8">
+          <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+            <div class="card-header">
+              <div class="card-header-title">
+                <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
+                Available Capabilities
+              </div>
+              <span class="is-size-7 has-text-grey"><span id="cap-avail-count">0</span> shown</span>
+            </div>
+            <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
+              <div class="control has-icons-left">
+                <input type="search" id="search-capabilities" class="input is-small" placeholder="Search capabilities by name or code…" autocomplete="off">
+                <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
+              </div>
+            </div>
+            <div class="cap-avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
+              <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+                <thead>
+                  <tr>
+                    <th style="width:2.5rem"><input type="checkbox" id="cap-avail-header-check" aria-label="Select all visible"></th>
+                    <th>Capability Name</th>
+                    <th>Code</th>
+                    <th style="width:2.5rem"></th>
+                  </tr>
+                </thead>
+                <tbody id="cap-avail-body">
+                  {% for cap in available_capabilities %}
+                  <tr class="cap-avail-row" data-id="{{ cap.id }}" data-name="{{ cap.name }}" data-code="{{ cap.code }}">
+                    <td><input type="checkbox" class="cap-avail-check" aria-label="Select {{ cap.name }}"></td>
+                    <td>{{ cap.name }}</td>
+                    <td class="is-family-monospace">{{ cap.code }}</td>
+                    <td><a href="{% url 'capability_definition_detail' definition_id=cap.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <footer class="card-footer custom-card-footer">
+              <div class="card-footer-secondaries pl-0 pr-3">
+                <button type="button" id="btn-cap-select-all" class="button is-small is-light">Select All</button>
+              </div>
+              <button type="button" id="btn-cap-assign" class="button is-link card-footer-primary">
+                <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
+                <span>Assign Selected</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+
+        {# RIGHT Card (1/3) — Assigned Capabilities #}
+        <div class="column">
+          <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
+            <div class="card-header">
+              <div class="card-header-title">
+                <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
+                Assigned Capabilities
+              </div>
+              <span class="is-size-7 has-text-grey"><span id="cap-assigned-count">0</span> applied</span>
+            </div>
+            <div style="flex:1;overflow-y:auto;min-height:0">
+              <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
+                <tbody id="cap-assigned-body">
+                  {% for cap in assigned_capabilities %}
+                  <tr class="cap-assigned-row" data-id="{{ cap.id }}" data-name="{{ cap.name }}" data-code="{{ cap.code }}">
+                    <td style="padding:0.65rem 0.75rem;vertical-align:middle">
+                      <input type="hidden" name="assigned_capabilities" value="{{ cap.id }}">
+                      <span>{{ cap.name }}</span>
+                      <span class="tag is-light is-small ml-1 is-family-monospace">{{ cap.code }}</span>
+                    </td>
+                    <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
+                      <a href="{% url 'capability_definition_detail' definition_id=cap.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size:1rem">open_in_new</span></span></a>
+                    </td>
+                    <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
+                      <input type="checkbox" class="cap-remove-check" aria-label="Remove {{ cap.name }}">
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr id="cap-assigned-empty">
+                    <td colspan="3" class="has-text-grey p-4 is-size-7">No capabilities assigned.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <footer class="card-footer" style="padding:0">
+              <button type="button" id="btn-cap-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
+                <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
+                <span>Remove Selected</span>
+              </button>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {# Rail Column: Image Gallery & Activity Thread #}
+  <div class="body-rail">
+    {# Model Hero & Image Gallery Card #}
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="card-header-title">
+          <span class="icon"><span class="material-icons" aria-hidden="true">photo_library</span></span>
+          <span>Model Image Gallery</span>
+        </div>
+      </div>
+      <div class="card-content">
+        {# Current Hero Image Preview #}
+        <label class="label is-small">Current Hero Picture</label>
+        <div class="mb-3">
+          {% if model.primary_image %}
+            <figure class="image" style="width:100%;height:160px;background:var(--bulma-background);border:1px solid var(--bulma-border);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0;">
+              <img src="{{ model.primary_image.file.file.url }}" alt="{{ model }}" style="max-width:100%;max-height:160px;object-fit:contain;">
+            </figure>
+          {% else %}
+            <div style="width:100%;height:120px;background:var(--bulma-background);border:1px dashed var(--bulma-border);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--bulma-text-weak);">
+              <span class="material-icons" style="font-size:2.5rem;">photo</span>
+              <span class="is-size-7 mt-1">No Hero Picture Selected</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {# Upload New Image Form #}
+        <label class="label is-small">Upload Image(s)</label>
+        <form method="post" action="{% url 'model_library_add_image' model_id=model.id %}" enctype="multipart/form-data" class="mb-4">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <div class="field">
+            <div class="file has-name is-small is-fullwidth">
+              <label class="file-label">
+                <input class="file-input" type="file" name="file" multiple accept="image/*" onchange="this.parentNode.querySelector('.file-name').textContent = this.files.length > 1 ? this.files.length + ' files selected' : (this.files[0] ? this.files[0].name : 'No file chosen')">
+                <span class="file-cta">
+                  <span class="file-icon"><span class="material-icons" style="font-size:1rem;">upload</span></span>
+                  <span class="file-label">Choose...</span>
+                </span>
+                <span class="file-name">No file chosen</span>
+              </label>
+            </div>
+          </div>
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input class="input is-small" type="text" name="caption" placeholder="Optional caption...">
+            </div>
+            <div class="control">
+              <button type="submit" class="button is-small is-link">Upload</button>
+            </div>
+          </div>
+        </form>
+
+        {# Gallery Images List & Primary Selection #}
+        <label class="label is-small mb-2">Gallery Images ({{ images|length }})</label>
+        {% if images %}
+          <div class="columns is-multiline is-mobile is-variable is-1">
+            {% for img in images %}
+            <div class="column is-6">
+              <div class="card depth-1 p-2" style="position:relative;margin:0;{% if img.id == primary_id %}border:2px solid var(--bulma-link);{% endif %}">
+                <figure class="image" style="width:100%;height:90px;background:var(--bulma-background);display:flex;align-items:center;justify-content:center;overflow:hidden;margin:0 0 0.5rem 0;">
+                  <img src="{{ img.file.file.url }}" alt="{{ img.caption|default:model }}" style="max-width:100%;max-height:90px;object-fit:contain;">
+                </figure>
+                {% if img.caption %}<p class="is-size-7 has-text-grey text-truncate mb-1" title="{{ img.caption }}">{{ img.caption }}</p>{% endif %}
+                <div class="is-flex is-justify-content-space-between is-align-items-center">
+                  {% if img.id == primary_id %}
+                    <span class="tag is-link is-small">Hero</span>
+                  {% else %}
+                    <form method="post" action="{% url 'model_library_set_primary_image' model_id=model.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <input type="hidden" name="attachment" value="{{ img.id }}">
+                      <button type="submit" class="button is-small is-light py-0 px-2" title="Set as Hero Picture" style="height:1.4rem;font-size:0.7rem;">
+                        <span class="icon"><span class="material-icons" style="font-size:0.85rem;">star</span></span><span>Primary</span>
+                      </button>
+                    </form>
+                  {% endif %}
+                  <form method="post" action="{% url 'model_library_remove_image' model_id=model.id %}" style="display:inline;" onsubmit="return confirm('Remove image from gallery?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <input type="hidden" name="attachment" value="{{ img.id }}">
+                    <button type="submit" class="button is-small is-danger is-light py-0 px-1" title="Remove image" style="height:1.4rem;font-size:0.7rem;">
+                      <span class="icon"><span class="material-icons" style="font-size:0.85rem;">delete</span></span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="is-size-7 has-text-grey">No gallery images uploaded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Activity Thread & Comments Card #}
+    {% url 'model_library_add_comment' model_id=model.id as add_model_comment_url %}
+    {% include "events/fragments/comments_card.html" with card=comments_card add_url=add_model_comment_url next=request.get_full_path %}
+  </div>
+</div>
+{% else %}
+{# Mode == 'create' #}
+<form method="post" id="model-form" data-mode="create" class="body-grid full-width">{% csrf_token %}
   <div class="card"><div class="card-header">
     <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">view_in_ar</span></span>Model</div>
     <div class="is-flex is-align-items-center" style="gap:0.5rem;">
-      <span id="model-dirty-flag" class="tag is-warning is-hidden"><span class="icon is-small"><span class="material-icons" aria-hidden="true" style="font-size:1rem;">edit_note</span></span><span>Unsaved changes</span></span>
-      <button type="submit" id="model-save-btn" class="button is-small is-link"{% if mode == 'edit' %} disabled{% endif %}><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button>
-      <a href="{% if mode == 'edit' %}{% url 'model_detail' model_id=model.id %}{% else %}{% url 'model_index' %}{% endif %}" class="button is-small is-light">Cancel</a>
+      <button type="submit" id="model-save-btn" class="button is-small is-link"><span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save</span></button>
+      <a href="{% url 'model_index' %}" class="button is-small is-light">Cancel</a>
     </div>
   </div>
     <div class="card-content"><div class="columns is-multiline">
@@ -84,25 +331,14 @@
           {% for b in model.config_baselines %}<input type="hidden" name="config_baselines" value="{{ b }}">{% endfor %}
         </tag-list-editor>
       </div>
-      <div class="column is-12"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div></div>
-
-      <div class="column is-12"><hr class="my-1"><label class="label is-small mb-2"><span class="icon-text"><span class="icon"><span class="material-icons" aria-hidden="true" style="font-size:1.1rem;">speed</span></span><span>Meter Units</span></span></label>
-        <div class="columns is-variable is-2 mb-0">
-          <div class="column"><input class="input is-small" name="meter1_unit" value="{{ model.meter1_unit|default:'' }}" placeholder="Meter 1 (e.g. Hours)"></div>
-          <div class="column"><input class="input is-small" name="meter2_unit" value="{{ model.meter2_unit|default:'' }}" placeholder="Meter 2"></div>
-          <div class="column"><input class="input is-small" name="meter3_unit" value="{{ model.meter3_unit|default:'' }}" placeholder="Meter 3"></div>
-          <div class="column"><input class="input is-small" name="meter4_unit" value="{{ model.meter4_unit|default:'' }}" placeholder="Meter 4"></div>
-        </div>
+      <div class="column is-12"><label class="label is-small">Asset Class</label><div class="select is-small is-fullwidth"><select name="asset_class">{% for c in classes %}<option value="{{ c.id }}" {% if model.asset_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+        <p class="help is-size-7">Meter units are set on the asset class, not the model — edit them there.</p>
       </div>
     </div></div>
   </div>
 
   <div class="card"><div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">business</span></span>Manufacturers</div></div>
     <div class="card-content">
-      {% if mode == 'edit' %}
-      {% include "assets/models/_manufacturers_dlb_only.html" %}
-      <p class="help">Filter either side, then use the arrows to move manufacturers. Changes save immediately. The first linked manufacturer is treated as primary.</p>
-      {% else %}
       <dual-list-box id="mfr-dlb">
         <list-box slot="left" id="mfr-available-lb" label="Available">
           <select id="mfr-available" slot="options" multiple aria-label="Available manufacturers">
@@ -120,111 +356,10 @@
         </list-box>
       </dual-list-box>
       <p class="help">Filter either side, then double-click or use the arrows to move manufacturers. The first linked manufacturer is treated as primary.</p>
-      {% endif %}
     </div>
   </div>
-
-  {% if mode == 'edit' %}
-  <h2 class="title is-6 mt-4 mb-2">Capability Assignments</h2>
-  
-  {# LEFT Heavy Assignment Card Pair: Capabilities #}
-  <div class="columns is-variable is-4" id="capability-assignment-row">
-    {# LEFT Card (2/3) — Available Capabilities #}
-    <div class="column is-8">
-      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>
-            Available Capabilities
-          </div>
-          <span class="is-size-7 has-text-grey"><span id="cap-avail-count">0</span> shown</span>
-        </div>
-        <div class="px-3 py-2" style="border-bottom:1px solid var(--bulma-border-weak);background:var(--bulma-scheme-main-bis)">
-          <div class="control has-icons-left">
-            <input type="search" id="search-capabilities" class="input is-small" placeholder="Search capabilities by name or code…" autocomplete="off">
-            <span class="icon is-small is-left"><span class="material-icons" aria-hidden="true" style="font-size:0.9rem">search</span></span>
-          </div>
-        </div>
-        <div class="cap-avail-scroll" style="flex:1;overflow-y:auto;min-height:0">
-          <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
-            <thead>
-              <tr>
-                <th style="width:2.5rem"><input type="checkbox" id="cap-avail-header-check" aria-label="Select all visible"></th>
-                <th>Capability Name</th>
-                <th>Code</th>
-                <th style="width:2.5rem"></th>
-              </tr>
-            </thead>
-            <tbody id="cap-avail-body">
-              {% for cap in available_capabilities %}
-              <tr class="cap-avail-row" data-id="{{ cap.id }}" data-name="{{ cap.name }}" data-code="{{ cap.code }}">
-                <td><input type="checkbox" class="cap-avail-check" aria-label="Select {{ cap.name }}"></td>
-                <td>{{ cap.name }}</td>
-                <td class="is-family-monospace">{{ cap.code }}</td>
-                <td><a href="{% url 'capability_definition_detail' definition_id=cap.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size: 1rem;">open_in_new</span></span></a></td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <footer class="card-footer custom-card-footer">
-          <div class="card-footer-secondaries pl-0 pr-3">
-            <button type="button" id="btn-cap-select-all" class="button is-small is-light">Select All</button>
-          </div>
-          <button type="button" id="btn-cap-assign" class="button is-link card-footer-primary">
-            <span class="icon"><span class="material-icons" aria-hidden="true">arrow_forward</span></span>
-            <span>Assign Selected</span>
-          </button>
-        </footer>
-      </div>
-    </div>
-
-    {# RIGHT Card (1/3) — Assigned Capabilities #}
-    <div class="column">
-      <div class="card" style="display:flex;flex-direction:column;height:450px;overflow:hidden">
-        <div class="card-header">
-          <div class="card-header-title">
-            <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span>
-            Assigned Capabilities
-          </div>
-          <span class="is-size-7 has-text-grey"><span id="cap-assigned-count">0</span> applied</span>
-        </div>
-        <div style="flex:1;overflow-y:auto;min-height:0">
-          <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0">
-            <tbody id="cap-assigned-body">
-              {% for cap in assigned_capabilities %}
-              <tr class="cap-assigned-row" data-id="{{ cap.id }}" data-name="{{ cap.name }}" data-code="{{ cap.code }}">
-                <td style="padding:0.65rem 0.75rem;vertical-align:middle">
-                  <input type="hidden" name="assigned_capabilities" value="{{ cap.id }}">
-                  <span>{{ cap.name }}</span>
-                  <span class="tag is-light is-small ml-1 is-family-monospace">{{ cap.code }}</span>
-                </td>
-                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle" class="has-text-centered">
-                  <a href="{% url 'capability_definition_detail' definition_id=cap.id %}" target="_blank" class="has-text-grey" title="View details"><span class="icon"><span class="material-icons" style="font-size:1rem">open_in_new</span></span></a>
-                </td>
-                <td style="width:2.5rem;padding:0.65rem 0.75rem;vertical-align:middle">
-                  <input type="checkbox" class="cap-remove-check" aria-label="Remove {{ cap.name }}">
-                </td>
-              </tr>
-              {% empty %}
-              <tr id="cap-assigned-empty">
-                <td colspan="3" class="has-text-grey p-4 is-size-7">No capabilities assigned.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <footer class="card-footer" style="padding:0">
-          <button type="button" id="btn-cap-remove" class="button is-danger is-light card-footer-primary" style="flex:1;border-radius:0">
-            <span class="icon"><span class="material-icons" aria-hidden="true">remove_circle_outline</span></span>
-            <span>Remove Selected</span>
-          </button>
-        </footer>
-      </div>
-    </div>
-  </div>
-  {% endif %}
 </form>
+{% endif %}
 {% endblock %}
 
 {% block body_scripts %}
@@ -380,9 +515,7 @@
 
 })();
 
-/* Manufacturers dual-listbox: client-side move between Available and Linked.
-   A <select multiple> only submits its *selected* options, so on submit we
-   select every option in the Linked box to post the full linked set. */
+/* Manufacturers dual-listbox: client-side move between Available and Linked. */
 (function () {
   var avail  = document.getElementById('mfr-available');
   var linked = document.getElementById('mfr-linked');
@@ -391,8 +524,6 @@
   function move(from, to) {
     Array.from(from.selectedOptions).forEach(function (o) {
       o.selected = false;
-      // Clear any filter-driven hidden state so the option is visible in its
-      // new list regardless of the destination's current search query.
       o.hidden = false;
       to.appendChild(o);
     });
@@ -412,10 +543,7 @@
   }
 })();
 
-/* Dirty tracking: watch every named field (model identity, meters, baselines,
-   manufacturers, capabilities). On edit, Save starts disabled and the "Unsaved
-   changes" flag is hidden; either flips on the first real change and back if the
-   user reverts to the original values. */
+/* Dirty tracking: watch every named field. */
 (function () {
   var form    = document.getElementById('model-form');
   var saveBtn = document.getElementById('model-save-btn');
@@ -443,14 +571,11 @@
   function refresh() {
     var dirty = editMode ? (signature() !== baseline) : true;
     saveBtn.disabled = !dirty;
-    // The "Unsaved changes" flag is an edit-mode affordance only.
     if (flag) flag.classList.toggle('is-hidden', !(editMode && dirty));
   }
 
   form.addEventListener('input', refresh);
   form.addEventListener('change', refresh);
-  // Widgets (tag chips, manufacturer moves) mutate the DOM instead of firing
-  // input/change on tracked fields — observe the subtree to catch those.
   new MutationObserver(refresh).observe(form, { subtree: true, childList: true });
 
   refresh();

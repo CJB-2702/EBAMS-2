@@ -1,0 +1,7 @@
+{% comment %} Out-of-band sibling of _status_card.html. Every action on the work
+   page targets #work-action-region; this rides along in the same response so
+   the status card (progress bar, verb-gating) stays in sync without a second
+   request. Must keep the same id as the wrapper in work.html. {% endcomment %}
+<div id="status-card-region" hx-swap-oob="true">
+  {% include "maintenance/work/_status_card.html" %}
+</div>

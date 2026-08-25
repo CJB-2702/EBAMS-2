@@ -1,0 +1,72 @@
+{% comment %}
+Summary — one progress bar per demand on the receipt.
+
+The bar answers the clerk's actual question, which is not "how much of this
+demand did previous receipts cover" but "will this demand be finished when I
+hit commit". So it stacks what is ALREADY issued together with what this
+receipt is about to hand over, against what was asked for.
+
+Renders even when the receipt is empty (project rule 5): an empty summary with
+its header visible says "checked, nothing here", where a hidden card just looks
+like the page failed to load.
+{% endcomment %}
+<div class="card mt-5" id="receipt-summary">
+  <div class="card-header">
+    <div class="card-header-title">
+      <span class="icon"><span class="material-icons" aria-hidden="true">donut_large</span></span>
+      Demand completion
+    </div>
+  </div>
+  <div class="card-content p-4">
+    {% if groups %}
+    <table class="table is-fullwidth is-size-7" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Demand</th>
+          <th>Part</th>
+          <th style="width:32%;">After this receipt</th>
+          <th class="has-text-right">Requested</th>
+          <th class="has-text-right">Already issued</th>
+          <th class="has-text-right">This receipt</th>
+          <th class="has-text-right">Outcome</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in groups %}
+        <tr>
+          <td><a href="{% url 'demand_detail' pk=g.demand.pk %}">#{{ g.demand.pk }}</a></td>
+          <td>
+            <div class="is-family-monospace">{{ g.part.part_number }}</div>
+            <div class="has-text-grey">{{ g.part.name }}</div>
+          </td>
+          <td>
+            <progress class="progress is-small {% if g.is_over %}is-danger{% elif g.is_exact %}is-success{% else %}is-warning{% endif %}"
+                      value="{{ g.pct_complete }}" max="100"
+                      aria-label="Completion for demand {{ g.demand.pk }}">{{ g.pct_complete }}%</progress>
+            <span class="has-text-grey">{{ g.pct_complete }}%</span>
+          </td>
+          <td class="has-text-right is-family-monospace">{{ g.requested|floatformat:3 }}</td>
+          <td class="has-text-right is-family-monospace">{{ g.already_issued|floatformat:3 }}</td>
+          <td class="has-text-right is-family-monospace has-text-weight-bold">{{ g.staged|floatformat:3 }}</td>
+          <td class="has-text-right">
+            {% if g.is_over %}
+              <span class="tag is-danger is-light is-small">Over by {{ g.over_by|floatformat:3 }}</span>
+            {% elif g.is_short %}
+              <span class="tag is-warning is-light is-small">Partially issued</span>
+            {% else %}
+              <span class="tag is-success is-light is-small">Issued</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="has-text-grey is-size-7 mt-3">
+      A demand left short stays <strong>Partially Issued</strong> and keeps its
+      remainder owed — finish it on a later receipt when the stock arrives.
+    </p>
+    {% else %}
+    <p class="has-text-grey is-size-7">No demands staged yet.</p>
+    {% endif %}
+  </div>
+</div>

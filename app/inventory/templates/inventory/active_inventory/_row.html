@@ -45,12 +45,12 @@
     {% endif %}
   </td>
   
-  <td class="has-text-right">
-    <a href="{% url 'inventory_movement_portal' %}?stock={{ row.pk }}" class="button is-small is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">sync_alt</span></span><span>Move</span>
+  <td class="has-text-right" style="white-space: nowrap;">
+    <a href="{% url 'inventory_movement_portal' %}?stock={{ row.pk }}" class="icon-button" title="Move stock" style="color: #3273dc;">
+      <span class="material-icons">sync_alt</span>
     </a>
-    <a href="{% url 'inventory_issuance_portal' %}?stock={{ row.pk }}" class="button is-small is-light">
-      <span class="icon"><span class="material-icons" aria-hidden="true">assignment_turned_in</span></span><span>Issue</span>
+    <a href="{% url 'inventory_issuance_portal' %}?stock={{ row.pk }}" class="icon-button" title="Issue stock" style="color: #48c774;">
+      <span class="material-icons">assignment_turned_in</span>
     </a>
   </td>
 </tr>

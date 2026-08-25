@@ -5,6 +5,7 @@ The `inventory` application handles physical topography, stock ledger mutation, 
 ## Sub-documents
 
 * [intake_portal_workflow.md](inventory/intake_portal_workflow.md) — the seven-page intake portal, the stock-posting vs paperwork-closure split, cross-session visibility, and the intake data model. **Proposed**, supersedes the single-page session detail surface.
+* [part_issuance_workflow.md](inventory/part_issuance_workflow.md) — demand-driven part issuance workflow kit, explicit location movement staging, demand-grouped movement queue, and atomic session execution. **Proposed**, supersedes automatic location-based queuing.
 * [tech_debt/intake_shipment_graph_closure.md](inventory/tech_debt/intake_shipment_graph_closure.md) — sessions sharing shipments couple transitively; reconciliation completeness is a connected-component property. **Deferred**, warning-only mitigation.
 
 ## Domain Scope
@@ -31,3 +32,25 @@ The frontend avoids Single Page Application state traps. Instead, it relies on H
 * `_row.html` / `_results_card.html` / `_lines_table.html` for atomic row rendering and live filtering without full page reloads.
 * Multi-step flows, such as Intake Sessions, are managed server-side via session state rather than client-side wizards.
 * Forms strictly adhere to `harness/UX_UI/form_style_guide.md`.
+
+## Storeroom Designer Port (legacy Flask → EBAMS-2)
+
+The legacy application's storeroom designer (`/inventory/storeroom/*`) is ported
+into the topography surface rather than rebuilt: legacy `Storeroom` is this app's
+`Room`, `Location` is `RoomLocation`, `Bin` is `StorageLocation`, and `Warehouse`
+is a genuinely new tier above all three. Three rules were tightened in the port
+and are enforced in exactly one place each:
+
+* **Nothing is hard-deleted.** Warehouses, rooms, XY locations, and bins all
+  retire via `is_active`, reversibly. The legacy cascading `db.session.delete()`
+  is not ported.
+* **A bin holding stock cannot be retired** (`StorageLocationPolicy`), nor can
+  the XY location above it (`RoomLocationPolicy`). Legacy checked only the
+  location tier and left bin deletion entirely unguarded.
+* **A replacement layout SVG that has no shape for a stock-holding location is
+  rejected outright** (`LayoutReconciliationPolicy`), before anything is
+  archived — `current_layout` is left pointing at the layout already in place.
+
+Full record, including the field-by-field schema comparison, route map, mermaid
+sequence diagrams, and old/new screenshots:
+[storeroom_designer_port/](inventory/storeroom_designer_port/README.md).

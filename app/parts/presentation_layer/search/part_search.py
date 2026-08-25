@@ -18,7 +18,11 @@ def search_parts(
     manufacturer: str = "",
     revision_name: str = "",
 ) -> QuerySet[Part]:
-    qs = Part.objects.prefetch_related("revisions").order_by("part_number")
+    qs = (
+        Part.objects.select_related("primary_image__file")
+        .prefetch_related("revisions")
+        .order_by("part_number")
+    )
 
     part_number = (part_number or "").strip()
     if part_number:

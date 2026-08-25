@@ -1,0 +1,123 @@
+{% load static %}
+
+<div class="ef-panel">
+  <div class="ef-panel-head">
+    <div class="ef-panel-head-title">
+      <span class="material-icons" aria-hidden="true">tune</span>
+      <h2>Filters</h2>
+    </div>
+    {% if status_filters or type_filters or q or domain_filter or asset_filter %}
+    <span class="tag is-info is-light is-small" style="font-weight:700;">
+      Active Filters
+    </span>
+    {% endif %}
+  </div>
+  <div class="ef-panel-body">
+    {% if asset %}
+    <div class="notification is-info is-light is-small py-2 px-3 mb-3 is-flex is-align-items-center is-justify-content-space-between">
+      <span class="is-size-7">
+        <span class="icon"><span class="material-icons" aria-hidden="true">link</span></span>
+        Showing events linked to asset <strong>{{ asset.name }}</strong>
+      </span>
+      <a href="{% url 'asset_detail' asset_id=asset.id %}" class="is-size-7">View asset →</a>
+    </div>
+    {% endif %}
+
+    <form method="get"
+          hx-get="{% url 'event_index' %}"
+          hx-target="#ev-main-content"
+          hx-select="#ev-main-content"
+          hx-swap="outerHTML"
+          hx-push-url="true"
+          hx-trigger="change, keyup delay:350ms from:input[type=search]">
+
+      {% if current_format and current_format != 'condensed' %}
+      <input type="hidden" name="format" value="{{ current_format }}">
+      {% endif %}
+
+      {# Top row: Global Search, Domain, Asset #}
+      <div class="ef-toprow">
+        <div class="ef-field">
+          <label class="ef-label" for="filter-q">
+            <span class="material-icons" aria-hidden="true" style="font-size:0.85rem;">search</span> Title / Keyword
+          </label>
+          <input class="ef-input" type="search" id="filter-q" name="q"
+            value="{{ q }}" placeholder="Search title…" autocomplete="off">
+        </div>
+
+        <div class="ef-field">
+          <label class="ef-label" for="filter-domain">
+            <span class="material-icons" aria-hidden="true" style="font-size:0.85rem;">domain</span> Domain
+          </label>
+          <div class="ef-select">
+            <select id="filter-domain" name="domain">
+              <option value="">All domains</option>
+              {% for dom in user_domains %}
+              <option value="{{ dom.id }}" {% if dom.id|slugify == domain_filter %}selected{% endif %}>{{ dom.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="ef-field">
+          <label class="ef-label" for="filter-asset">
+            <span class="material-icons" aria-hidden="true" style="font-size:0.85rem;">precision_manufacturing</span> Asset SN
+          </label>
+          <input class="ef-input" type="text" id="filter-asset" name="asset_sn"
+            value="{{ asset_sn_filter|default:asset_filter }}" placeholder="e.g. SN-402" autocomplete="off">
+        </div>
+      </div>
+
+      {# Status Multi-Select Chips #}
+      <div class="ef-section">
+        <div class="ef-section-head">
+          <span class="ef-label">
+            <span class="material-icons" aria-hidden="true" style="font-size:0.85rem;">flaky</span> Status (Multi-Select)
+          </span>
+        </div>
+        <div class="ef-chiprow" role="group" aria-label="Status filters">
+          {% for val, label in status_choices %}
+          <input class="ef-chip-input" type="checkbox" name="status" id="ef-status-{{ val }}" value="{{ val }}"
+                 {% if val in status_filters %}checked{% endif %}>
+          <label class="ef-chip" for="ef-status-{{ val }}" data-tone="{{ val }}">
+            <span class="material-icons" aria-hidden="true">check</span>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Event Type Multi-Select Chips #}
+      <div class="ef-section">
+        <div class="ef-section-head">
+          <span class="ef-label">
+            <span class="material-icons" aria-hidden="true" style="font-size:0.85rem;">category</span> Event Type (Multi-Select)
+          </span>
+        </div>
+        <div class="ef-chiprow" role="group" aria-label="Event Type filters">
+          {% for val, label in type_choices %}
+          <input class="ef-chip-input" type="checkbox" name="event_type" id="ef-type-{{ val }}" value="{{ val }}"
+                 {% if val in type_filters %}checked{% endif %}>
+          <label class="ef-chip" for="ef-type-{{ val }}" data-type="{{ val }}">
+            <span class="material-icons" aria-hidden="true">check</span>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Footer Actions #}
+      <div class="ef-actions">
+        <button class="ef-btn" type="submit">
+          <span class="material-icons" aria-hidden="true">search</span>
+          <span>Apply Filters</span>
+        </button>
+        <a href="{% url 'event_index' %}{% if current_format %}?format={{ current_format }}{% endif %}" class="ef-btn ef-btn--ghost">
+          <span class="material-icons" aria-hidden="true">clear</span>
+          <span>Clear All</span>
+        </a>
+      </div>
+
+    </form>
+  </div>
+</div>

@@ -47,7 +47,7 @@ class SearchDropdown extends HTMLElement {
           left: 0;
           right: 0;
           top: calc(100% + 2px);
-          z-index: 20;
+          z-index: 999;
           display: none;
           list-style: none;
           margin: 0;
@@ -106,9 +106,19 @@ class SearchDropdown extends HTMLElement {
   }
 
   connectedCallback() {
-    // Guard against re-running init (and re-stacking event listeners) if
-    // the browser ever calls connectedCallback again on an already-set-up
-    // instance (disconnect/reconnect without the node being recreated).
+    if (this._ready) return;
+    this._tryInit();
+    if (!this._ready) {
+      this._observer = new MutationObserver(() => this._tryInit());
+      this._observer.observe(this, { childList: true, subtree: true });
+    }
+  }
+
+  disconnectedCallback() {
+    this._observer?.disconnect();
+  }
+
+  _tryInit() {
     if (this._ready) return;
     this._ready = true;
 
@@ -138,7 +148,7 @@ class SearchDropdown extends HTMLElement {
     }
 
     if (!this.input.hasAttribute("hx-trigger")) {
-      this.input.setAttribute("hx-trigger", "keyup changed delay:350ms, search");
+      this.input.setAttribute("hx-trigger", "focus, keyup changed delay:350ms, search");
     }
 
     if (!this.input.hasAttribute("hx-target")) {

@@ -11,7 +11,7 @@
 {% block extra_head %}<link rel="stylesheet" href="{% static 'css/maintenance_event.css' %}">{% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<div class="page-hero{% if detail.status == 'complete' %} is-hero-complete{% elif detail.status == 'failed' %} is-hero-failed{% endif %}">
   <div class="page-header">
     <div class="page-header-title-wrap">
       <div class="page-header-icon"><span class="material-icons" aria-hidden="true">edit_note</span></div>
@@ -32,6 +32,15 @@
       </a>
     </div>
   </div>
+  {% if detail.status == 'complete' %}
+  <div class="hero-status-note is-complete">
+    <span class="icon"><span class="material-icons" aria-hidden="true">check_circle</span></span><span>Complete</span>
+  </div>
+  {% elif detail.status == 'failed' %}
+  <div class="hero-status-note is-failed">
+    <span class="icon"><span class="material-icons" aria-hidden="true">cancel</span></span><span>Failed</span>
+  </div>
+  {% endif %}
 </div>
 
 <div class="body-grid has-rail">

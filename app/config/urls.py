@@ -32,6 +32,7 @@ urlpatterns = [
     path('administration/', include('app.administration.urls')),
     path('events/', include('app.events.urls')),
     path('assets/', include('app.assets.urls')),
+    path('configuration/', include('app.configuration.urls')),
     path('detail_extensions/', include('app.detail_extensions.urls')),
     path('parts/', include('app.parts.urls')),
     path('procurement/', include('app.procurement.urls')),

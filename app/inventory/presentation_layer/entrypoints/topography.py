@@ -1,4 +1,4 @@
-"""Phase 3 — Warehouse/Room/RoomLocation topography pages and the three-tier
+"""Warehouse/Room/RoomLocation topography pages and the three-tier
 SVG spatial engine (FD-29): warehouse index/detail, the Room-tier spatial map
 + layout builder, and the RoomLocation-tier Z-picker + its own layout
 builder. Every drawer/map fragment is served off its own canonical detail
@@ -7,17 +7,32 @@ URL with a `format=` query parameter (FD-17) — no bespoke drawer routes.
 Row-level access: a Room/RoomLocation outside the user's effective data
 domains 404s (`RoomDomainPolicy.user_covers_room`), mirroring D5 elsewhere
 in the project.
+
+The storeroom-designer port (legacy `/inventory/storeroom/*`) lands here
+rather than as a new sub-app: legacy `Storeroom` is this app's `Room`,
+legacy `Location` is `RoomLocation`, legacy `Bin` is `StorageLocation`.
+The legacy `/build` page splits along the read/write seam already in
+place — the map lives on the detail route, every mutation lives on the
+`/layout/` builder route. Warehouses are never hard-deleted; `Retire`
+flips `is_active` and the index can list retired rows back.
 """
 
 from __future__ import annotations
 
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from app.inventory.control_layer.adapters.room_svg_adapter import RoomSvgAdapter
+from app.inventory.control_layer.adapters.topography_form_adaptor import (
+    RoomFormAdaptor,
+    RoomLocationFormAdaptor,
+    StorageLocationFormAdaptor,
+    WarehouseFormAdaptor,
+)
 from app.inventory.control_layer.constants import (
     ROOM_LOCATION_SVG_GROUP_LABEL,
     ROOM_SVG_GROUP_LABEL,
@@ -32,10 +47,15 @@ from app.inventory.models.topography.room import Room
 from app.inventory.models.topography.room_location import RoomLocation
 from app.inventory.models.topography.storage_location import StorageLocation
 from app.inventory.models.topography.warehouse import Warehouse
+from app.administration.models import Division, Domain
 from app.inventory.presentation_layer.search.active_inventory_search import (
     domain_visible_room_ids,
 )
-from app.inventory.presentation_layer.tools.inventory_access import accessible_domain_ids
+from app.inventory.presentation_layer.tools.inventory_access import (
+    accessible_domain_ids,
+    can_manage_topography,
+    require_manage_topography,
+)
 
 TEMPLATE_DIR = "inventory/topography"
 
@@ -84,13 +104,172 @@ def _stock_rows(*, storage_location_ids: list[int]) -> list[ActiveInventory]:
 
 @require_http_methods(["GET"])
 def warehouse_index(request: HttpRequest) -> HttpResponse:
-    warehouses = Warehouse.objects.filter(is_active=True).select_related("division").order_by("name")
-    return render(request, f"{TEMPLATE_DIR}/warehouses/index.html", {"warehouses": warehouses})
+    """`?show=active` (default) / `inactive` / `all`. Retired warehouses stay
+    listable because retirement is reversible — there is no hard delete."""
+    show = request.GET.get("show", "active")
+    qs = Warehouse.objects.select_related("division").order_by("name")
+    if show == "active":
+        qs = qs.filter(is_active=True)
+    elif show == "inactive":
+        qs = qs.filter(is_active=False)
+
+    q = request.GET.get("q", "").strip()
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
+
+    warehouses = list(qs.annotate(room_count=Count("rooms", distinct=True)))
+    return render(
+        request,
+        f"{TEMPLATE_DIR}/warehouses/index.html",
+        {
+            "warehouses": warehouses,
+            "show": show,
+            "q": q,
+            "can_manage": can_manage_topography(request),
+        },
+    )
 
 
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
+def warehouse_create(request: HttpRequest) -> HttpResponse:
+    require_manage_topography(request)
+
+    if request.method == "POST":
+        data = WarehouseFormAdaptor.from_post(request.POST)
+        try:
+            if not data["name"] or not data["code"] or not data["division_id"]:
+                raise InventoryValidationError(
+                    ["Name, code, and division are all required."]
+                )
+            context = TopographyContext.create_warehouse(
+                name=data["name"],
+                code=data["code"],
+                division_id=int(data["division_id"]),
+                address=data["address"],
+                domain_ids=[int(d) for d in data["domain_ids"]],
+                actor=request.user,
+            )
+        except InventoryValidationError as exc:
+            _report(request, exc)
+            return render(
+                request,
+                f"{TEMPLATE_DIR}/warehouses/form.html",
+                _warehouse_form_context(warehouse=None, data=data),
+            )
+        messages.success(
+            request,
+            f"Warehouse '{data['name']}' created with its protected Intake Room.",
+        )
+        return redirect(
+            reverse("inventory_warehouse_detail", kwargs={"pk": context.warehouse_id})
+        )
+
+    return render(
+        request,
+        f"{TEMPLATE_DIR}/warehouses/form.html",
+        _warehouse_form_context(warehouse=None, data=None),
+    )
+
+
+@require_http_methods(["GET", "POST"])
+def warehouse_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    """Edit, retire, and un-retire in one surface. `Retire` is a soft delete
+    (`is_active = False`) — the legacy designer's hard `db.session.delete()`
+    of a storeroom and its whole location/bin tree is deliberately not ported.
+    """
+    require_manage_topography(request)
+    warehouse = get_object_or_404(Warehouse, pk=pk)
+    context = TopographyContext(warehouse.pk)
+
+    if request.method == "POST":
+        action = request.POST.get("action", "save")
+        try:
+            if action == "retire":
+                context.deactivate_warehouse(actor=request.user)
+                messages.success(request, f"Warehouse '{warehouse.name}' retired.")
+                return redirect(reverse("inventory_warehouse_index"))
+            if action == "reactivate":
+                context.reactivate_warehouse(actor=request.user)
+                messages.success(request, f"Warehouse '{warehouse.name}' reactivated.")
+                return redirect(
+                    reverse("inventory_warehouse_detail", kwargs={"pk": warehouse.pk})
+                )
+
+            data = WarehouseFormAdaptor.from_post(request.POST)
+            if not data["name"] or not data["code"]:
+                raise InventoryValidationError(["Name and code are both required."])
+            context.update_warehouse(
+                name=data["name"],
+                code=data["code"],
+                address=data["address"],
+                domain_ids=[int(d) for d in data["domain_ids"]],
+                actor=request.user,
+            )
+        except InventoryValidationError as exc:
+            _report(request, exc)
+            return render(
+                request,
+                f"{TEMPLATE_DIR}/warehouses/form.html",
+                _warehouse_form_context(
+                    warehouse=warehouse, data=WarehouseFormAdaptor.from_post(request.POST)
+                ),
+            )
+        messages.success(request, f"Warehouse '{warehouse.name}' updated.")
+        return redirect(reverse("inventory_warehouse_detail", kwargs={"pk": warehouse.pk}))
+
+    return render(
+        request,
+        f"{TEMPLATE_DIR}/warehouses/form.html",
+        _warehouse_form_context(warehouse=warehouse, data=None),
+    )
+
+
+def _warehouse_form_context(*, warehouse: Warehouse | None, data: dict | None) -> dict:
+    """Re-renders the form with the operator's own POST values on failure,
+    rather than silently reverting to the stored row."""
+    if data is not None:
+        selected_domain_ids = [int(d) for d in data["domain_ids"]]
+        if data["division_id"]:
+            division_id = int(data["division_id"])
+        else:
+            division_id = warehouse.division_id if warehouse is not None else None
+        values = {
+            "name": data["name"],
+            "code": data["code"],
+            "address": data["address"],
+        }
+    elif warehouse is not None:
+        selected_domain_ids = list(warehouse.domains.values_list("id", flat=True))
+        division_id = warehouse.division_id
+        values = {
+            "name": warehouse.name,
+            "code": warehouse.code,
+            "address": warehouse.address,
+        }
+    else:
+        selected_domain_ids, division_id, values = [], None, {
+            "name": "", "code": "", "address": "",
+        }
+
+    return {
+        "warehouse": warehouse,
+        "values": values,
+        "divisions": Division.objects.order_by("name"),
+        "domains": Domain.objects.order_by("name"),
+        "selected_domain_ids": selected_domain_ids,
+        "selected_division_id": division_id,
+    }
+
+
+@require_http_methods(["GET", "POST"])
 def warehouse_detail(request: HttpRequest, pk: int) -> HttpResponse:
-    get_object_or_404(Warehouse.objects.filter(is_active=True), pk=pk)
+    """Retired warehouses still render here so they can be inspected and
+    un-retired; only the room-add form is hidden while retired."""
+    warehouse = get_object_or_404(Warehouse, pk=pk)
+
+    if request.method == "POST":
+        return _warehouse_detail_post(request, warehouse)
+
     struct = WarehouseStruct.load(warehouse_id=pk)
 
     layouts = {
@@ -99,8 +278,11 @@ def warehouse_detail(request: HttpRequest, pk: int) -> HttpResponse:
             [r.current_layout_id for r in struct.rooms if r.current_layout_id]
         )
     }
-    rooms = []
+    rooms, retired_rooms = [], []
     for room in struct.rooms:
+        if not room.is_active:
+            retired_rooms.append(room)
+            continue
         thumbnail_svg = None
         attachment = layouts.get(room.current_layout_id)
         if attachment is not None:
@@ -113,7 +295,93 @@ def warehouse_detail(request: HttpRequest, pk: int) -> HttpResponse:
     return render(
         request,
         f"{TEMPLATE_DIR}/warehouses/detail.html",
-        {"warehouse": struct, "rooms": rooms},
+        {
+            "warehouse": struct,
+            "rooms": rooms,
+            "retired_rooms": retired_rooms,
+            "can_manage": can_manage_topography(request),
+        },
+    )
+
+
+def _warehouse_detail_post(request: HttpRequest, warehouse: Warehouse) -> HttpResponse:
+    require_manage_topography(request)
+    back = reverse("inventory_warehouse_detail", kwargs={"pk": warehouse.pk})
+    context = TopographyContext(warehouse.pk)
+    try:
+        if request.POST.get("action") == "add_room":
+            data = RoomFormAdaptor.from_post(request.POST)
+            room = context.add_room(
+                room_name=data["room_name"],
+                description=data["description"],
+                excluded_domain_ids=[int(d) for d in data["excluded_domain_ids"]],
+                actor=request.user,
+            )
+            messages.success(request, f"Room '{room.room_name}' added.")
+            return redirect(reverse("inventory_room_layout", kwargs={"pk": room.pk}))
+        messages.error(request, "Unrecognised action.")
+    except InventoryValidationError as exc:
+        _report(request, exc)
+    return redirect(back)
+
+
+@require_http_methods(["GET", "POST"])
+def room_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    """Rename/describe a room, or retire it. `RoomPolicy` refuses both on the
+    protected Intake Room and refuses retirement while the room still holds
+    locations or stock."""
+    require_manage_topography(request)
+    room = get_object_or_404(Room.objects.select_related("warehouse"), pk=pk)
+    if not RoomDomainPolicy.user_covers_room(request.user, room):
+        raise Http404
+    context = TopographyContext(room.warehouse_id)
+
+    if request.method == "POST":
+        try:
+            action = request.POST.get("action", "save")
+            if action == "retire":
+                context.deactivate_room(room=room, actor=request.user)
+                messages.success(request, f"Room '{room.room_name}' retired.")
+                return redirect(
+                    reverse(
+                        "inventory_warehouse_detail", kwargs={"pk": room.warehouse_id}
+                    )
+                )
+            if action == "reactivate":
+                context.reactivate_room(room=room, actor=request.user)
+                messages.success(request, f"Room '{room.room_name}' reactivated.")
+                return redirect(
+                    reverse("inventory_room_detail", kwargs={"pk": room.pk})
+                )
+            data = RoomFormAdaptor.from_post(request.POST)
+            context.update_room(
+                room=room,
+                room_name=data["room_name"],
+                description=data["description"],
+                excluded_domain_ids=[int(d) for d in data["excluded_domain_ids"]],
+                actor=request.user,
+            )
+            messages.success(request, f"Room '{data['room_name']}' updated.")
+            if not room.is_active:
+                return redirect(
+                    reverse(
+                        "inventory_warehouse_detail", kwargs={"pk": room.warehouse_id}
+                    )
+                )
+            return redirect(reverse("inventory_room_detail", kwargs={"pk": room.pk}))
+        except InventoryValidationError as exc:
+            _report(request, exc)
+
+    return render(
+        request,
+        f"{TEMPLATE_DIR}/rooms/form.html",
+        {
+            "room": room,
+            "domains": Domain.objects.order_by("name"),
+            "excluded_domain_ids": list(
+                room.excluded_domains.values_list("id", flat=True)
+            ),
+        },
     )
 
 
@@ -170,6 +438,7 @@ def room_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "map_svg": map_svg,
             "loc_code": loc_code,
             "drawer": drawer_context,
+            "can_manage": can_manage_topography(request),
         },
     )
 
@@ -211,14 +480,38 @@ def room_layout(request: HttpRequest, pk: int) -> HttpResponse:
         return _room_layout_post(request, room, draft_key)
 
     struct = RoomStruct.load(room_id=pk)
+    map_svg = None
+    raw_svg = RoomSvgAdapter.read_svg_from_attachment(room.current_layout)
+    if raw_svg is not None:
+        map_svg = RoomSvgAdapter.normalize_viewbox(raw_svg)
+
     return render(
         request,
         f"{TEMPLATE_DIR}/rooms/layout.html",
-        {"room": struct, "reconciliation": request.session.get(draft_key)},
+        {
+            "room": struct,
+            "map_svg": map_svg,
+            "stocked_codes": _stocked_room_location_codes(room),
+            "reconciliation": request.session.get(draft_key),
+            "can_manage": can_manage_topography(request),
+        },
+    )
+
+
+def _stocked_room_location_codes(room: Room) -> set[str]:
+    """XY codes with at least one stock row underneath — the builder greys out
+    their Retire buttons instead of offering an action the guard will refuse."""
+    return set(
+        RoomLocation.objects.filter(
+            room=room, storage_locations__stock__isnull=False
+        )
+        .values_list("display_code", flat=True)
+        .distinct()
     )
 
 
 def _room_layout_post(request: HttpRequest, room: Room, draft_key: str) -> HttpResponse:
+    require_manage_topography(request)
     action = request.POST.get("action", "")
     back = reverse("inventory_room_layout", kwargs={"pk": room.pk})
     context = TopographyContext(room.warehouse_id)
@@ -245,6 +538,23 @@ def _room_layout_post(request: HttpRequest, room: Room, draft_key: str) -> HttpR
             request.session.pop(draft_key, None)
         elif action == "dismiss":
             request.session.pop(draft_key, None)
+        elif action == "add_location":
+            data = RoomLocationFormAdaptor.from_post(request.POST)
+            location = context.add_room_location(
+                room_id=room.pk,
+                major_coord=data["major_coord"],
+                minor_coord=data["minor_coord"],
+                actor=request.user,
+            )
+            messages.success(request, f"Location '{location.display_code}' added.")
+        elif action == "retire_location":
+            location = get_object_or_404(
+                RoomLocation, pk=request.POST.get("room_location_id"), room=room
+            )
+            context.deactivate_room_location(
+                room_location=location, actor=request.user
+            )
+            messages.success(request, f"Location '{location.display_code}' retired.")
         else:
             messages.error(request, "Unrecognised action.")
     except InventoryValidationError as exc:
@@ -301,6 +611,7 @@ def room_location_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "map_svg": map_svg,
             "loc_code": atomic_code,
             "drawer": drawer_context,
+            "can_manage": can_manage_topography(request),
         },
     )
 
@@ -335,18 +646,34 @@ def room_location_layout(request: HttpRequest, pk: int) -> HttpResponse:
     storage_locations = list(
         room_location.storage_locations.filter(is_active=True).order_by("atomic_coord")
     )
+    map_svg = None
+    raw_svg = RoomSvgAdapter.read_svg_from_attachment(room_location.current_layout)
+    if raw_svg is not None:
+        map_svg = RoomSvgAdapter.normalize_viewbox(raw_svg)
+
+    stocked_ids = set(
+        ActiveInventory.objects.filter(
+            storage_location__room_location=room_location
+        ).values_list("storage_location_id", flat=True)
+    )
     return render(
         request,
         f"{TEMPLATE_DIR}/room_locations/layout.html",
         {
             "room_location": room_location,
-            "storage_locations": storage_locations,
+            "storage_locations": [
+                {"location": loc, "has_stock": loc.pk in stocked_ids}
+                for loc in storage_locations
+            ],
+            "map_svg": map_svg,
             "reconciliation": request.session.get(draft_key),
+            "can_manage": can_manage_topography(request),
         },
     )
 
 
 def _room_location_layout_post(request: HttpRequest, room_location: RoomLocation, draft_key: str) -> HttpResponse:
+    require_manage_topography(request)
     action = request.POST.get("action", "")
     back = reverse("inventory_room_location_layout", kwargs={"pk": room_location.pk})
     context = TopographyContext(room_location.room.warehouse_id)
@@ -368,10 +695,28 @@ def _room_location_layout_post(request: HttpRequest, room_location: RoomLocation
             created = context.bulk_add_storage_locations(
                 room_location_id=room_location.pk, atomic_coords=selected, actor=request.user
             )
-            messages.success(request, f"Created {len(created)} location(s).")
+            messages.success(request, f"Created {len(created)} bin(s).")
             request.session.pop(draft_key, None)
         elif action == "dismiss":
             request.session.pop(draft_key, None)
+        elif action == "add_bin":
+            data = StorageLocationFormAdaptor.from_post(request.POST)
+            storage_location = context.add_storage_location(
+                room_location_id=room_location.pk,
+                atomic_coord=data["atomic_coord"],
+                actor=request.user,
+            )
+            messages.success(request, f"Bin '{storage_location.display_code}' added.")
+        elif action == "retire_bin":
+            storage_location = get_object_or_404(
+                StorageLocation,
+                pk=request.POST.get("storage_location_id"),
+                room_location=room_location,
+            )
+            context.deactivate_storage_location(
+                storage_location=storage_location, actor=request.user
+            )
+            messages.success(request, f"Bin '{storage_location.display_code}' retired.")
         else:
             messages.error(request, "Unrecognised action.")
     except InventoryValidationError as exc:

@@ -138,3 +138,42 @@ class RenderInteractiveSvgTests(SimpleTestCase):
             'hx-get="/inventory/movements/create/?stock=9&amp;warehouse_id=1&amp;room_id=8&amp;format=htmx-putaway-target&amp;loc=0005-0002"',
             rendered,
         )
+
+
+class InkscapeNamespacePrefixTests(SimpleTestCase):
+    """Inkscape declares the SVG namespace twice (`xmlns` and `xmlns:svg`),
+    which makes lxml re-serialize every element as `<svg:rect>` etc. A browser
+    parsing that inside an HTML document does not treat it as SVG, so the map
+    collapses to a strip of label text. Both the sanitize and the render paths
+    must emit unprefixed tag names."""
+
+    DOUBLE_DECLARED = """<?xml version="1.0"?>
+<svg width="100mm" height="50mm" viewBox="0 0 100 50"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:svg="http://www.w3.org/2000/svg"
+     xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+  <g inkscape:label="locations">
+    <rect inkscape:label="0001-0001" x="0" y="0" width="10" height="10" />
+  </g>
+</svg>"""
+
+    def test_sanitize_emits_unprefixed_tags(self):
+        out = RoomSvgAdapter.sanitize(self.DOUBLE_DECLARED)
+        self.assertNotIn("<svg:", out)
+        self.assertNotIn('xmlns:svg=', out)
+        self.assertIn("<svg ", out)
+
+    def test_normalize_viewbox_repairs_already_stored_prefixed_markup(self):
+        prefixed = RoomSvgAdapter.sanitize(self.DOUBLE_DECLARED)
+        # Simulate an attachment archived before the fix.
+        legacy = prefixed.replace("<svg ", "<svg:svg ").replace(
+            "</svg>", "</svg:svg>"
+        ).replace("<rect ", "<svg:rect ")
+        out = RoomSvgAdapter.normalize_viewbox(legacy)
+        self.assertNotIn("<svg:", out)
+
+    def test_shape_codes_still_extract_from_prefixed_source(self):
+        codes = RoomSvgAdapter.extract_shape_codes(
+            RoomSvgAdapter.sanitize(self.DOUBLE_DECLARED), group_label="locations"
+        )
+        self.assertEqual(codes, ["0001-0001"])

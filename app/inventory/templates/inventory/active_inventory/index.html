@@ -1,7 +1,29 @@
 {% extends "inventory/base.html" %}
+{% load static %}
 {% block title %}Active Inventory{% endblock %}
 {% block nav_active_inventory %}is-active{% endblock %}
 {% block breadcrumb %}<li class="is-active"><a href="#" aria-current="page">Active Inventory</a></li>{% endblock %}
+{% block extra_css %}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  background-color: rgba(0, 0, 0, 0.05);
+  margin-left: 0.25rem;
+}
+.icon-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+.icon-button .material-icons {
+  font-size: 20px;
+}
+{% endblock %}
 
 {% block content %}
 <div class="page-hero">

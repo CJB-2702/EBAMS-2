@@ -268,6 +268,10 @@ This keeps page layout stable and signals to the user that the section was check
 
 When investigating or working on a page with a known route/URL, trace the route to its endpoint view in the codebase and read all related template files (including layout inheritance and `{% include %}` components) directly from source code. Prefer source code inspection over capturing browser screenshots or dumping rendered page HTML.
 
+## 7. Asset Search by Serial Number
+
+In UI-facing forms, search for assets based off of asset serial numbers.
+
 ---
 
 ## Project conventions worth knowing

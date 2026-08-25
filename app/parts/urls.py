@@ -22,6 +22,10 @@ from app.parts.presentation_layer.entrypoints.parts import (
     part_set_primary_image,
     parts_hub,
 )
+from app.parts.presentation_layer.entrypoints.part_associations import (
+    part_class_association_index,
+    part_model_association_index,
+)
 from app.parts.presentation_layer.entrypoints.parts_bulk_upload import (
     part_bulk_upload,
 )
@@ -131,6 +135,10 @@ urlpatterns = [
         supplier_item_add_document,
         name="supplier_item_add_document",
     ),
+
+    # Part Associations
+    path("associations/models/", part_model_association_index, name="part_model_association_index"),
+    path("associations/classes/", part_class_association_index, name="part_class_association_index"),
 
     # Events Portal
     path("events/", lambda req: _events_portal(req, "inventory"), name="parts_events_portal"),

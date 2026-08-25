@@ -1,0 +1,28 @@
+{% comment %}
+`<li>` rows for the from-location portal's demand search-dropdown.
+
+ONLY `<li>` ELEMENTS — no `<ul>`, no wrapping div. The component supplies its
+own list and projects these into a slot; a wrapper breaks slot projection
+(harness/UX_UI/components/search_dropdown.md).
+
+Markup stays flat: a nested interactive child would steal the click the
+component's selection handler is listening for.
+{% endcomment %}
+{% for d in results %}
+<li data-value="{{ d.pk }}"
+    data-part-number="{{ d.part.part_number }}"
+    data-part-name="{{ d.part.name }}"
+    data-requester="{{ d.requested_by.get_full_name|default:d.requested_by.username|default:"—" }}"
+    data-needed-by="{{ d.needed_by|date:"Y-m-d"|default:"" }}"
+    data-owed="{{ d.unissued_qty|stringformat:"f" }}">
+  <span class="has-text-weight-semibold">#{{ d.pk }}</span>
+  <span class="is-family-monospace ml-1">{{ d.part.part_number }}</span>
+  <span class="has-text-grey is-size-7 ml-1">
+    · {{ d.unissued_qty|floatformat:3 }} still owed
+    · {{ d.requested_by.get_full_name|default:d.requested_by.username|default:"—" }}
+    {% if d.needed_by %}· needed {{ d.needed_by|date:"Y-m-d" }}{% endif %}
+  </span>
+</li>
+{% empty %}
+<li class="is-disabled">No open demands match.</li>
+{% endfor %}

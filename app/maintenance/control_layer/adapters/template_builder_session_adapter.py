@@ -12,6 +12,7 @@ rolls back (R2's atomic-cascade rule, applied to template authoring too).
 
 from __future__ import annotations
 
+import copy
 import uuid
 
 from django.db import transaction
@@ -35,6 +36,27 @@ def _blank_draft() -> dict:
         "revision_note": "",
         "actions": [],
     }
+
+
+def _tool_name(tool_id) -> str:
+    """Catalog name for a tool, for display inside the draft. Empty when the
+    row is ad-hoc (no catalog id) or the id no longer resolves."""
+    if not tool_id:
+        return ""
+    from app.parts.models.core.tool import Tool
+
+    return Tool.objects.filter(pk=tool_id).values_list("name", flat=True).first() or ""
+
+
+def _part_label(part_id) -> str:
+    if not part_id:
+        return ""
+    from app.parts.models.core.part import Part
+
+    part = Part.objects.filter(pk=part_id).values("part_number", "name").first()
+    if not part:
+        return ""
+    return f"{part['part_number']} — {part['name']}"
 
 
 class TemplateBuilderSessionAdapter:
@@ -80,22 +102,23 @@ class TemplateBuilderSessionAdapter:
                     "tools": [
                         {
                             "tool_id": tool.tool_id,
-                            "tool_name": tool.tool_name,
+                            "tool_name": tool.tool_name or (tool.tool.name if tool.tool_id else ""),
                             "quantity_required": tool.quantity_required,
                             "specifications": tool.specifications,
                             "notes": tool.notes,
                             "is_required": tool.is_required,
                         }
-                        for tool in item.template_action_tools.filter(deleted_at__isnull=True)
+                        for tool in item.template_action_tools.filter(deleted_at__isnull=True).select_related("tool")
                     ],
                     "part_demands": [
                         {
                             "part_id": demand.part_id,
+                            "part_label": str(demand.part) if demand.part_id else "",
                             "quantity_required": float(demand.quantity_required),
                             "notes": demand.notes,
                             "is_optional": demand.is_optional,
                         }
-                        for demand in item.template_part_demands.filter(deleted_at__isnull=True)
+                        for demand in item.template_part_demands.filter(deleted_at__isnull=True).select_related("part")
                     ],
                 }
             )
@@ -192,21 +215,22 @@ class TemplateBuilderSessionAdapter:
             estimated_duration_minutes=proto.estimated_duration_minutes,
             proto_action_item_id=proto.pk,
         )
-        for tool in proto.proto_action_tools.filter(deleted_at__isnull=True):
+        for tool in proto.proto_action_tools.filter(deleted_at__isnull=True).select_related("tool"):
             action["tools"].append(
                 {
                     "tool_id": tool.tool_id,
-                    "tool_name": tool.tool_name,
+                    "tool_name": tool.tool_name or (tool.tool.name if tool.tool_id else ""),
                     "quantity_required": tool.quantity_required,
                     "specifications": tool.specifications,
                     "notes": tool.notes,
                     "is_required": tool.is_required,
                 }
             )
-        for demand in proto.proto_part_demands.filter(deleted_at__isnull=True):
+        for demand in proto.proto_part_demands.filter(deleted_at__isnull=True).select_related("part"):
             action["part_demands"].append(
                 {
                     "part_id": demand.part_id,
+                    "part_label": str(demand.part) if demand.part_id else "",
                     "quantity_required": float(demand.quantity_required),
                     "notes": demand.notes,
                     "is_optional": demand.is_optional,
@@ -234,21 +258,22 @@ class TemplateBuilderSessionAdapter:
             estimated_duration_minutes=source.estimated_duration_minutes,
             proto_action_item_id=source.proto_action_item_id,
         )
-        for tool in source.template_action_tools.filter(deleted_at__isnull=True):
+        for tool in source.template_action_tools.filter(deleted_at__isnull=True).select_related("tool"):
             action["tools"].append(
                 {
                     "tool_id": tool.tool_id,
-                    "tool_name": tool.tool_name,
+                    "tool_name": tool.tool_name or (tool.tool.name if tool.tool_id else ""),
                     "quantity_required": tool.quantity_required,
                     "specifications": tool.specifications,
                     "notes": tool.notes,
                     "is_required": tool.is_required,
                 }
             )
-        for demand in source.template_part_demands.filter(deleted_at__isnull=True):
+        for demand in source.template_part_demands.filter(deleted_at__isnull=True).select_related("part"):
             action["part_demands"].append(
                 {
                     "part_id": demand.part_id,
+                    "part_label": str(demand.part) if demand.part_id else "",
                     "quantity_required": float(demand.quantity_required),
                     "notes": demand.notes,
                     "is_optional": demand.is_optional,
@@ -256,6 +281,55 @@ class TemplateBuilderSessionAdapter:
             )
         self._save()
         return action
+
+    def add_actions_from_template_set(self, *, template_action_set_id: int) -> list[dict]:
+        """Copy every step of a published template into this draft, in order.
+
+        The whole-template add the Action Creator Portal offers. Copies, like
+        add_action_from_template_item — the draft owns its steps outright and
+        keeps no link back to the set they came from.
+        """
+        source = TemplateActionSet.objects.get(
+            pk=template_action_set_id, deleted_at__isnull=True
+        )
+        items = source.template_action_items.filter(deleted_at__isnull=True).order_by(
+            "sequence_order"
+        )
+        return [
+            self.add_action_from_template_item(template_action_item_id=item.pk)
+            for item in items
+        ]
+
+    def duplicate_action(self, *, temp_id: str) -> dict:
+        """Clone a step already in this draft, appended at the end.
+
+        Deep-copies tools and part demands: the two steps are independent from
+        the moment the copy exists, so editing one must never move the other.
+        """
+        source = self._find_action(temp_id)
+        clone = copy.deepcopy(source)
+        clone["temp_id"] = uuid.uuid4().hex
+        clone["sequence_order"] = len(self.draft["actions"]) + 1
+        self.draft["actions"].append(clone)
+        self._save()
+        return clone
+
+    def move_action(self, *, temp_id: str, direction: str) -> None:
+        """Swap a step with its neighbour. A no-op at either end rather than an
+        error — the buttons are rendered disabled there, and a stale page
+        should not raise."""
+        actions = self.draft["actions"]
+        index = next(
+            (i for i, a in enumerate(actions) if a["temp_id"] == temp_id), None
+        )
+        if index is None:
+            raise ValueError(f"Draft action '{temp_id}' not found.")
+        target = index - 1 if direction == "up" else index + 1
+        if not 0 <= target < len(actions):
+            return
+        actions[index], actions[target] = actions[target], actions[index]
+        self._renumber_actions()
+        self._save()
 
     def update_action(self, *, temp_id: str, **fields) -> dict:
         action = self._find_action(temp_id)
@@ -288,7 +362,9 @@ class TemplateBuilderSessionAdapter:
         action = self._find_action(temp_id)
         tool = {
             "tool_id": fields.get("tool_id"),
-            "tool_name": fields.get("tool_name", ""),
+            # Resolved once, at add time, so the draft is self-describing:
+            # rendering a step must never need a join back to the catalog.
+            "tool_name": fields.get("tool_name", "") or _tool_name(fields.get("tool_id")),
             "quantity_required": fields.get("quantity_required", 1),
             "specifications": fields.get("specifications", ""),
             "notes": fields.get("notes", ""),
@@ -308,6 +384,7 @@ class TemplateBuilderSessionAdapter:
         action = self._find_action(temp_id)
         demand = {
             "part_id": fields["part_id"],
+            "part_label": fields.get("part_label", "") or _part_label(fields["part_id"]),
             "quantity_required": fields.get("quantity_required", 1),
             "notes": fields.get("notes", ""),
             "is_optional": fields.get("is_optional", False),

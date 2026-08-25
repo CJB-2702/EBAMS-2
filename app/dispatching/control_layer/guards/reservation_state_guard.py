@@ -25,12 +25,12 @@ RESERVATION_STATE_TRANSITIONS: dict[str, frozenset[str]] = {
         }
     ),
     ReservationStatus.USER_CHECKED_OUT: frozenset(
-        {ReservationStatus.CHECKED_OUT, ReservationStatus.CANCELLED}
+        {ReservationStatus.CHECKED_OUT, ReservationStatus.USER_RETURNED, ReservationStatus.CANCELLED}
     ),
     ReservationStatus.CHECKED_OUT: frozenset(
         {ReservationStatus.USER_RETURNED, ReservationStatus.RETURNED}
     ),
-    ReservationStatus.USER_RETURNED: frozenset({ReservationStatus.RETURNED}),
+    ReservationStatus.USER_RETURNED: frozenset({ReservationStatus.CHECKED_OUT, ReservationStatus.RETURNED}),
     ReservationStatus.RETURNED: frozenset(),
     ReservationStatus.CANCELLED: frozenset(),
     ReservationStatus.NO_SHOW: frozenset(),

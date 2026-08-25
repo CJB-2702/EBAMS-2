@@ -1,4 +1,4 @@
-"""User management: list / detail / edit (no create — Django auth.User is created elsewhere)."""
+"""User management: list / detail / edit / create."""
 
 from __future__ import annotations
 
@@ -74,6 +74,74 @@ def _parse_id_list(post, key: str) -> list[int]:
         except ValueError:
             continue
     return out
+
+
+@require_http_methods(["GET", "POST"])
+def user_create(request: HttpRequest) -> HttpResponse:
+    if not is_admin_actor(request.user):
+        return HttpResponseForbidden(
+            "Only Django superusers or members of the generic_admin group may access this page.",
+        )
+
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        password = request.POST.get("password", "")
+        password_confirm = request.POST.get("password_confirm", "")
+
+        errors = []
+        if not username:
+            errors.append("Username is required.")
+        elif User.objects.filter(username=username).exists():
+            errors.append("A user with this username already exists.")
+
+        if not password:
+            errors.append("Password is required.")
+        elif password != password_confirm:
+            errors.append("Passwords do not match.")
+        elif len(password) < 8:
+            errors.append("Password must be at least 8 characters long.")
+
+        if errors:
+            return render(
+                request,
+                "users/create.html",
+                {
+                    "username": username,
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "errors": errors,
+                },
+            )
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            messages.success(request, f"User '{username}' created successfully.")
+            return redirect(reverse("user_detail", kwargs={"user_id": user.pk}))
+        except Exception as e:
+            messages.error(request, f"Error creating user: {str(e)}")
+            return render(
+                request,
+                "users/create.html",
+                {
+                    "username": username,
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "errors": [str(e)],
+                },
+            )
+
+    return render(request, "users/create.html", {})
 
 
 @require_http_methods(["GET"])

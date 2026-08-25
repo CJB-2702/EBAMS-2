@@ -22,6 +22,7 @@ from django.db import transaction
 from app.procurement.control_layer.errors import TransitionRefused
 from app.procurement.control_layer.guards.part_demand_state_guard import (
     PartDemandTransitionStateMachine,
+    TransitionVerdict,
 )
 from app.procurement.control_layer.narrators.part_demand_narrator import (
     PartDemandNarrator,
@@ -56,22 +57,36 @@ class PartDemandStateManager:
         notes: str = "",
         is_system_generated: bool = False,
         raise_on_refusal: bool = True,
+        allow_same_stage: bool = False,
         commit: bool = True,
     ) -> TransitionResult:
         """Move one axis. Returns a result rather than a bare bool so callers
-        can distinguish "refused by a gate" from "nothing to do"."""
+        can distinguish "refused by a gate" from "nothing to do".
+
+        `allow_same_stage` records a RESTATEMENT: a real event that leaves the
+        axis where it already was, journalled with previous_stage == stage.
+        Normally the state machine refuses that as a no-op, and it is right to
+        — but a second partial handover against a demand already sitting in
+        Partially Issued is not a no-op, it is another set of parts crossing
+        the counter, and refusing it would make repeat partial issuance
+        impossible. Only a caller that knows an event actually happened may
+        pass it; it never bypasses a gate, only the same-stage check.
+        """
         field = DIMENSION_FIELDS.get(dimension)
         if field is None:
             raise ValueError(f"Unknown demand dimension: {dimension!r}")
 
         from_stage = getattr(demand, field)
 
-        verdict = PartDemandTransitionStateMachine.check(
-            demand=demand,
-            dimension=dimension,
-            from_stage=from_stage,
-            to_stage=to_stage,
-        )
+        if allow_same_stage and from_stage == to_stage:
+            verdict = TransitionVerdict(allowed=True)
+        else:
+            verdict = PartDemandTransitionStateMachine.check(
+                demand=demand,
+                dimension=dimension,
+                from_stage=from_stage,
+                to_stage=to_stage,
+            )
         if not verdict.allowed:
             if raise_on_refusal:
                 raise TransitionRefused([verdict.reason])

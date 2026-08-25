@@ -22,6 +22,7 @@ from django.utils.dateparse import parse_date, parse_datetime
 from django.views.decorators.http import require_http_methods
 
 from app.administration.models import Domain
+from app.inventory.presentation_layer.tools import issuance_draft
 from app.parts.models import Part
 from app.procurement.control_layer.adapters.part_demand_create_adaptor import (
     PartDemandCreateAdaptor,
@@ -52,6 +53,7 @@ from app.procurement.presentation_layer.search.open_demand_search import (
     ALLOCATABLE_DEMAND_STATE_CHOICES,
     OpenDemandSearch,
 )
+from app.procurement.presentation_layer.tools import purchasing_queue
 from app.procurement.presentation_layer.tools.procurement_access import (
     accessible_domain_ids,
     can_buy,
@@ -548,3 +550,102 @@ def _handle_save_fields(request: HttpRequest, ctx: PartDemandContext, demand: Pa
         serial_number_tracking_required=serial_tracking,
         actor=request.user,
     )
+
+
+# ====================================================================== #
+# Bulk queue actions (the demand list's floating action bar)
+# ====================================================================== #
+
+
+@require_http_methods(["POST"])
+def demand_queue_for_purchasing(request: HttpRequest) -> HttpResponse:
+    """Park the checked demands in the session purchasing queue.
+
+    Writes nothing to the database — the queue is a "deal with this later"
+    note to self, and the PO wizard is where it turns into draft lines.
+    """
+    added, skipped = purchasing_queue.add(
+        request,
+        demand_ids=request.POST.getlist("demand_ids"),
+        domain_ids=accessible_domain_ids(request),
+    )
+    if added:
+        messages.success(
+            request,
+            f"Queued {added} demand(s) for purchasing."
+            + (f" {skipped} skipped (already queued)." if skipped else ""),
+        )
+    else:
+        messages.warning(
+            request, "Nothing queued — those demands are already in your purchasing queue."
+        )
+    return _back_to_list(request)
+
+
+@require_http_methods(["POST"])
+def demand_queue_for_issuance(request: HttpRequest) -> HttpResponse:
+    """Stage the checked demands into the issuance draft.
+
+    Reaches across into inventory's draft tooling on purpose: the queue the
+    user is filling IS the issuance workspace's queue, and giving procurement
+    its own parallel copy would mean two lists that drift.
+    """
+    staged, paired, _ = issuance_draft.add_demand_lines(
+        request,
+        demand_ids=request.POST.getlist("demand_ids"),
+        domain_ids=accessible_domain_ids(request),
+    )
+    if staged:
+        unpaired = staged - paired
+        messages.success(
+            request,
+            f"Added {staged} demand(s) to the issuance plan."
+            + (
+                f" {unpaired} still need a location choosing there."
+                if unpaired
+                else " Each found a single obvious location."
+            ),
+        )
+    else:
+        messages.warning(
+            request, "Nothing staged — those demands are already in your issuance queue."
+        )
+    return _back_to_list(request)
+
+
+@require_http_methods(["GET", "POST"])
+def purchasing_queue_panel(request: HttpRequest) -> HttpResponse:
+    """The topnav purchasing badge's dropdown body — see its inventory twin,
+    `issuance_queue_panel`, for why this is its own route."""
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        if action == "remove":
+            purchasing_queue.remove(
+                request, demand_id=_int(request.POST.get("demand_id"))
+            )
+        elif action == "clear":
+            purchasing_queue.clear(request)
+
+    return render(
+        request,
+        "procurement/demands/components/_purchasing_queue_panel.html",
+        {
+            "demands": purchasing_queue.demands(
+                request, domain_ids=accessible_domain_ids(request)
+            )
+        },
+    )
+
+
+def _back_to_list(request: HttpRequest) -> HttpResponse:
+    """Return to the filtered list the bulk bar was fired from.
+
+    `next` is echoed back but never trusted — only a same-site relative path
+    is honoured, so this cannot be turned into an open redirect.
+    """
+    target = request.POST.get("next", "")
+    if not (target.startswith("/") and not target.startswith("//")):
+        target = reverse("demand_index")
+    response = redirect(target)
+    response.status_code = 303
+    return response

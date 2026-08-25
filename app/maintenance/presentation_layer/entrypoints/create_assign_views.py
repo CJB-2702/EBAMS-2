@@ -118,12 +118,31 @@ def _handle_create(request: HttpRequest, *, user_domain_ids) -> HttpResponse:
             request, "You may only create a maintenance event in a domain you are assigned to."
         )
         return redirect(reverse("create_assign"))
-    if not template_id:
-        messages.error(request, "Choose a procedure template.")
-        return redirect(reverse("create_assign"))
-
+    title = request.POST.get("title", "").strip()
     start_raw = request.POST.get("event_start", "").strip()
     technician = User.objects.filter(pk=technician_id).first() if technician_id else None
+
+    if not template_id:
+        if not title:
+            messages.error(request, "Choose a procedure template or provide a title.")
+            return redirect(reverse("create_assign"))
+        start_dt = parse_datetime(start_raw) if start_raw else timezone.now()
+        if start_dt and timezone.is_naive(start_dt):
+            start_dt = timezone.make_aware(start_dt)
+        detail = MaintenanceDetail.objects.create(
+            domain_id=domain_id,
+            asset_id=asset_id,
+            title=title,
+            maintenance_type=request.POST.get("maintenance_type", "").strip() or "corrective",
+            work_order_reference=request.POST.get("work_order_reference", "").strip(),
+            event_start=start_dt or timezone.now(),
+            priority=request.POST.get("priority", "").strip() or "medium",
+            assigned_user=technician,
+            assigned_by=request.user if technician else None,
+            created_by=request.user,
+            updated_by=request.user,
+        )
+        return redirect(reverse("maintenance_edit", kwargs={"pk": detail.pk}))
 
     try:
         detail = MaintenanceFactory.create_from_template(

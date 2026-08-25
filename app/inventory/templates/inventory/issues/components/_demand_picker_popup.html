@@ -1,0 +1,165 @@
+{% comment %}
+The popup demand picker — the search-dropdown's wide sibling.
+
+A UTILITY, not the primary path. Picking a demand is normally one keystroke in
+the dropdown; this exists for when the operator needs to see requester, need
+date, and outstanding quantity side by side before deciding, or needs to cut
+through a large open-demand pool with the same filter set as `demand_index`
+(procurement/demands/index.html).
+
+Selecting a row writes back into the `<search-dropdown>` through its public
+API (`value` + `value-label`) rather than swapping a hidden input, so the
+field's visible text and its submitted value cannot drift apart.
+
+Read-only browsing with a single-value pick is exactly what a modal is for
+(harness/UX_UI/design_patterns/modals.md) — nothing is assigned here, the
+receipt is still built on the page behind it. Picking stays single-row: the
+filters below narrow a list you choose ONE demand from, never a batch.
+
+Every filter field lives inline in this one dialog rather than behind a
+second "Filters" button — a dialog opening a dialog is a nested modal, which
+UX_UI/design_patterns/modals.md rules out.
+{% endcomment %}
+<form id="demand-picker-form"
+      hx-get="{% url 'inventory_issuance_location_portal' %}?format=htmx-demand-picker"
+      hx-target="#demand-picker-body" hx-swap="innerHTML"
+      hx-trigger="submit, change, keyup changed delay:400ms">
+  {% if part_id and not scope_all %}<input type="hidden" name="part_id" value="{{ part_id }}">{% endif %}
+  {% if scope_all %}<input type="hidden" name="scope" value="all">{% endif %}
+
+  <div class="demand-picker-bar">
+    <div class="control has-icons-left" style="flex:1; min-width:12rem;">
+      <input class="input is-small" type="search" name="q" value="{{ q }}"
+             autocomplete="off" placeholder="part #, demand #, event #, or PO #…"
+             aria-label="Search part demands">
+      <span class="icon is-small is-left">
+        <span class="material-icons" aria-hidden="true" style="font-size:0.9rem;">search</span>
+      </span>
+    </div>
+    {% if part_id %}
+    <a class="button is-small {% if scope_all %}is-light{% else %}is-info{% endif %}"
+       hx-get="{% url 'inventory_issuance_location_portal' %}?format=htmx-demand-picker&part_id={{ part_id }}"
+       hx-include="closest form" hx-vals='{"scope": "{% if scope_all %}{% else %}all{% endif %}"}'
+       hx-target="#demand-picker-body" hx-swap="innerHTML"
+       title="{% if scope_all %}Show only demands for this part{% else %}Show demands for every part{% endif %}">
+      <span class="icon"><span class="material-icons" aria-hidden="true">filter_alt</span></span>
+      <span>{% if scope_all %}All parts{% else %}This part only{% endif %}</span>
+    </a>
+    {% endif %}
+    {% if filters_active %}
+    <a class="button is-small is-light" href="#"
+       hx-get="{% url 'inventory_issuance_location_portal' %}?format=htmx-demand-picker{% if part_id and not scope_all %}&part_id={{ part_id }}{% endif %}{% if scope_all %}&scope=all{% endif %}"
+       hx-target="#demand-picker-body" hx-swap="innerHTML" title="Clear filters">
+      <span class="icon"><span class="material-icons" aria-hidden="true">clear_all</span></span>
+      <span>Clear filters</span>
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="columns is-multiline is-variable is-3 px-4 pb-2">
+    <div class="column is-3">
+      <label class="label is-small">Domain</label>
+      <div class="select is-small is-fullwidth">
+        <select name="domain_id">
+          <option value="">Any</option>
+          {% for d in domains %}
+          <option value="{{ d.id }}" {% if filters.domain_id == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Source</label>
+      <div class="select is-small is-fullwidth">
+        <select name="source">
+          <option value="">Any</option>
+          {% for value, label in sources %}
+          <option value="{{ value }}" {% if filters.source == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Event ID</label>
+      <input class="input is-small is-family-monospace" type="number" name="event_id"
+             value="{{ filters.event_id }}" placeholder="Event ID…">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">PO Number</label>
+      <input class="input is-small" type="search" name="po_number"
+             value="{{ filters.po_number }}" placeholder="PO-1002…">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Created By</label>
+      <input class="input is-small" type="search" name="requested_by"
+             value="{{ filters.requested_by }}" placeholder="username, name…">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Needed From</label>
+      <input class="input is-small" type="date" name="needed_by_from" value="{{ filters.needed_by_from }}">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Needed To</label>
+      <input class="input is-small" type="date" name="needed_by_to" value="{{ filters.needed_by_to }}">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Created From</label>
+      <input class="input is-small" type="datetime-local" name="created_from" value="{{ filters.created_from }}">
+    </div>
+    <div class="column is-3">
+      <label class="label is-small">Created To</label>
+      <input class="input is-small" type="datetime-local" name="created_to" value="{{ filters.created_to }}">
+    </div>
+  </div>
+
+<div class="demand-picker-scroll">
+  <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
+    <thead>
+      <tr>
+        <th>Demand</th>
+        <th>Part</th>
+        <th>Requested by</th>
+        <th>Needed by</th>
+        <th class="has-text-right">Still owed</th>
+        <th style="width:5rem;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in results %}
+      <tr>
+        <td class="has-text-weight-semibold">#{{ d.pk }}</td>
+        <td>
+          <div class="is-family-monospace">{{ d.part.part_number }}</div>
+          <div class="has-text-grey">{{ d.part.name }}</div>
+        </td>
+        <td>{{ d.requested_by.get_full_name|default:d.requested_by.username|default:"—" }}</td>
+        <td>{{ d.needed_by|date:"Y-m-d"|default:"—" }}</td>
+        <td class="has-text-right is-family-monospace has-text-weight-bold">
+          {{ d.unissued_qty|floatformat:3 }}
+        </td>
+        <td class="has-text-right">
+          <button type="button" class="button is-small is-link"
+                  data-pick-demand="{{ d.pk }}"
+                  data-pick-label="#{{ d.pk }} — {{ d.part.part_number }}"
+                  data-pick-part-number="{{ d.part.part_number }}"
+                  data-pick-part-name="{{ d.part.name }}"
+                  data-pick-requester="{{ d.requested_by.get_full_name|default:d.requested_by.username|default:"—" }}"
+                  data-pick-needed-by="{{ d.needed_by|date:"Y-m-d"|default:"" }}"
+                  data-pick-owed="{{ d.unissued_qty|stringformat:"f" }}">
+            <span>Select</span>
+          </button>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" class="has-text-centered has-text-grey py-5">
+          <span class="icon is-large"><span class="material-icons" style="font-size:2rem;">search_off</span></span>
+          <p class="mt-2">No open demands match.</p>
+          <p class="is-size-7">Demands are raised in Procurement before parts can be issued against them.</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</form>

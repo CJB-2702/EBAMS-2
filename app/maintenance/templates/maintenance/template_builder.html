@@ -1,6 +1,11 @@
 {% extends "maintenance/base.html" %}
+{% load static %}
 {% block title %}Template Builder{% endblock %}
 {% block nav_template_builder %}is-active{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/template_builder.css' %}">
+<script src="{% static 'web_components/search_dropdown.js' %}"></script>
+{% endblock %}
 {% block breadcrumb %}
 <li><a href="{% url 'template_index' %}">Templates</a></li>
 <li class="is-active"><a href="#" aria-current="page">Builder</a></li>
@@ -195,256 +200,232 @@
     </div>
   </div>
 
-  {# Card 3: Action steps #}
+  {% comment %}
+  Card 3: Action Steps — a list of collapsed rows, not a stack of cards.
+  A step with no tools and no parts costs one line; open one and it becomes a
+  work surface with its own edit form and two sub-cards. Reorder and remove
+  live on the collapsed row because they are decisions about the LIST, not
+  about the step's contents.
+  {% endcomment %}
   <div class="card mt-4">
-    <div class="card-header"><div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>3. Action Steps ({{ draft.actions|length }})</div></div>
-    <div class="card-content">
-      {% for action in draft.actions %}
-      <div class="card mb-3 depth-2">
-        <div class="card-content is-size-7">
-          <div class="is-flex is-justify-content-space-between">
-            <p><strong>{{ action.sequence_order }}. {{ action.action_name }}</strong></p>
-            <form method="post" action="{% url 'template_builder_update' %}">
-              {% csrf_token %}<input type="hidden" name="action" value="remove_action">
-              <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
-              <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">Remove</button>
-            </form>
-          </div>
-          {% if action.description %}<p class="has-text-grey">{{ action.description }}</p>{% endif %}
+    <div class="card-header">
+      <div class="card-header-title"><span class="icon"><span class="material-icons" aria-hidden="true">checklist</span></span>3. Action Steps <span class="tag is-light ml-2">{{ draft_actions|length }}</span></div>
+      {% if draft_actions %}
+      <span class="card-header-icon is-size-7 has-text-grey">Click a step to edit it, its tools, and its parts</span>
+      {% endif %}
+    </div>
+    <div class="card-content is-flush">
+      <div class="step-list">
+        {% for action in draft_actions %}
+        <details class="step-row" {% if open_step == action.temp_id %}open{% endif %}>
+          <summary class="step-summary">
+            <span class="step-seq is-family-monospace">{{ action.sequence_order }}</span>
+            <span class="step-identity">
+              <span class="step-name">{{ action.action_name|default:"(unnamed step)" }}</span>
+              {% if action.description %}<span class="step-desc">{{ action.description }}</span>{% endif %}
+            </span>
+            <span class="step-meta">
+              <span class="tag is-light" title="Estimated duration">{% if action.estimated_duration_minutes %}{{ action.estimated_duration_minutes }}m{% else %}—{% endif %}</span>
+              <span class="tag {% if action.tools %}is-info is-light{% else %}is-light has-text-grey{% endif %}" title="Tools">
+                <span class="icon is-small"><span class="material-icons" aria-hidden="true">build</span></span>{{ action.tools|length }}
+              </span>
+              <span class="tag {% if action.part_demands %}is-link is-light{% else %}is-light has-text-grey{% endif %}" title="Part demands">
+                <span class="icon is-small"><span class="material-icons" aria-hidden="true">inventory_2</span></span>{{ action.part_demands|length }}
+              </span>
+            </span>
+            {% comment %} These live inside the summary, so each stops its own
+               click from reaching the disclosure triangle. {% endcomment %}
+            <span class="step-row-actions" onclick="event.stopPropagation();">
+              <form method="post" action="{% url 'template_builder_update' %}">
+                {% csrf_token %}<input type="hidden" name="action" value="move_action">
+                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                <input type="hidden" name="direction" value="up">
+                {% include "maintenance/templates/_builder_state.html" %}
+                <button type="submit" class="button is-small is-ghost step-icon-button" title="Move up" {% if action.is_first %}disabled{% endif %}>
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true">arrow_upward</span></span>
+                </button>
+              </form>
+              <form method="post" action="{% url 'template_builder_update' %}">
+                {% csrf_token %}<input type="hidden" name="action" value="move_action">
+                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                <input type="hidden" name="direction" value="down">
+                {% include "maintenance/templates/_builder_state.html" %}
+                <button type="submit" class="button is-small is-ghost step-icon-button" title="Move down" {% if action.is_last %}disabled{% endif %}>
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true">arrow_downward</span></span>
+                </button>
+              </form>
+              <form method="post" action="{% url 'template_builder_update' %}">
+                {% csrf_token %}<input type="hidden" name="action" value="remove_action">
+                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                {% include "maintenance/templates/_builder_state.html" %}
+                <button type="submit" class="button is-small is-ghost step-icon-button has-text-danger" title="Remove step">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true">delete_outline</span></span>
+                </button>
+              </form>
+            </span>
+            <span class="step-chevron icon is-small"><span class="material-icons" aria-hidden="true">expand_more</span></span>
+          </summary>
 
-          <div class="columns mt-2">
-            <div class="column">
-              <p class="has-text-weight-semibold">Tools</p>
-              {% for tool in action.tools %}
-              <p>{{ tool.tool_name|default:tool.tool_id }} × {{ tool.quantity_required }}
-                <form method="post" action="{% url 'template_builder_update' %}" style="display:inline;">
-                  {% csrf_token %}<input type="hidden" name="action" value="remove_tool">
-                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
-                  <input type="hidden" name="tool_index" value="{{ forloop.counter0 }}">
-                  <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">×</button>
-                </form>
-              </p>
-              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
-              <form method="post" action="{% url 'template_builder_update' %}" class="mt-1">
-                {% csrf_token %}<input type="hidden" name="action" value="add_tool">
-                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
-                <div class="field has-addons">
-                  <div class="control is-expanded"><input class="input is-small" type="text" name="tool_name" placeholder="tool name…"></div>
-                  <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" name="quantity_required" value="1" min="1"></div>
-                  <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+          <div class="step-body">
+            {# ── The step's own fields ── #}
+            <form method="post" action="{% url 'template_builder_update' %}" class="step-edit-form">
+              {% csrf_token %}<input type="hidden" name="action" value="update_action">
+              <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+              {% include "maintenance/templates/_builder_state.html" %}
+              <div class="columns is-variable is-2 is-multiline">
+                <div class="column is-5">
+                  <div class="field">
+                    <label class="label is-small" for="name-{{ action.temp_id }}">Step name</label>
+                    <div class="control">
+                      <input class="input is-small" id="name-{{ action.temp_id }}" type="text" name="action_name" value="{{ action.action_name }}" required>
+                    </div>
+                  </div>
                 </div>
-              </form>
-            </div>
-            <div class="column">
-              <p class="has-text-weight-semibold">Part Demands</p>
-              {% for demand in action.part_demands %}
-              <p>part #{{ demand.part_id }} × {{ demand.quantity_required }}
-                <form method="post" action="{% url 'template_builder_update' %}" style="display:inline;">
-                  {% csrf_token %}<input type="hidden" name="action" value="remove_part_demand">
-                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
-                  <input type="hidden" name="demand_index" value="{{ forloop.counter0 }}">
-                  <button type="submit" class="button is-small is-danger is-light" style="max-width:5rem;">×</button>
-                </form>
-              </p>
-              {% empty %}<p class="has-text-grey">None.</p>{% endfor %}
-              <form method="post" action="{% url 'template_builder_update' %}" class="mt-1">
-                {% csrf_token %}<input type="hidden" name="action" value="add_part_demand">
-                <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
-                <div class="field has-addons">
-                  <div class="control"><input class="input is-small is-family-monospace" style="width:5rem;" type="number" name="part_id" placeholder="part id" required></div>
-                  <div class="control"><input class="input is-small is-family-monospace" style="width:4rem;" type="number" step="0.001" name="quantity_required" value="1"></div>
-                  <div class="control"><button type="submit" class="button is-small is-light">Add</button></div>
+                <div class="column is-2">
+                  <div class="field">
+                    <label class="label is-small" for="est-{{ action.temp_id }}">Est. minutes</label>
+                    <div class="control">
+                      <input class="input is-small is-family-monospace" id="est-{{ action.temp_id }}" type="number" min="0" step="1" name="estimated_duration_minutes" value="{{ action.estimated_duration_minutes|default_if_none:'' }}">
+                    </div>
+                  </div>
                 </div>
-              </form>
+                <div class="column is-5">
+                  <div class="field">
+                    <label class="label is-small" for="desc-{{ action.temp_id }}">Description</label>
+                    <div class="control">
+                      <input class="input is-small" id="desc-{{ action.temp_id }}" type="text" name="description" value="{{ action.description }}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <details class="step-advanced">
+                <summary class="is-size-7">Instructions &amp; safety notes</summary>
+                <div class="columns is-variable is-2 mt-2">
+                  <div class="column">
+                    <div class="field">
+                      <label class="label is-small" for="instr-{{ action.temp_id }}">Instructions</label>
+                      <div class="control">
+                        <textarea class="textarea is-small" id="instr-{{ action.temp_id }}" name="instructions" rows="3">{{ action.instructions }}</textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="column">
+                    <div class="field">
+                      <label class="label is-small" for="safety-{{ action.temp_id }}">Safety notes</label>
+                      <div class="control">
+                        <textarea class="textarea is-small" id="safety-{{ action.temp_id }}" name="safety_notes" rows="3">{{ action.safety_notes }}</textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </details>
+              <div class="step-edit-actions">
+                <button type="submit" class="button is-small is-link is-light">
+                  <span class="icon"><span class="material-icons" aria-hidden="true">save</span></span><span>Save step</span>
+                </button>
+              </div>
+            </form>
+
+            {# ── Tools and parts, side by side ── #}
+            <div class="step-subcards">
+
+              <section class="step-subcard">
+                <header class="step-subcard-header">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true">build</span></span>
+                  <span>Tools</span>
+                  <span class="tag is-light">{{ action.tools|length }}</span>
+                </header>
+                <ul class="step-item-list">
+                  {% for tool in action.tools %}
+                  <div class="step-item step-item-tool">
+                    <span class="step-item-id is-family-monospace">#{{ tool.index|add:1 }}</span>
+                    <span class="step-item-label">{{ tool.label }}</span>
+                    <span class="step-item-qty is-family-monospace">×{{ tool.quantity_required }}</span>
+                    <form method="post" action="{% url 'template_builder_update' %}" class="step-item-action">
+                      {% csrf_token %}<input type="hidden" name="action" value="remove_tool">
+                      <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                      <input type="hidden" name="tool_index" value="{{ tool.index }}">
+                      {% include "maintenance/templates/_builder_state.html" %}
+                      <button type="submit" class="button is-small is-ghost step-icon-button has-text-danger" title="Remove tool">
+                        <span class="icon is-small"><span class="material-icons" aria-hidden="true">close</span></span>
+                      </button>
+                    </form>
+                  </div>
+                  {% empty %}
+                  <div class="step-item is-empty has-text-grey is-size-7">No tools on this step.</div>
+                  {% endfor %}
+                </ul>
+                <form method="post" action="{% url 'template_builder_update' %}" class="step-add-row">
+                  {% csrf_token %}<input type="hidden" name="action" value="add_tool">
+                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                  {% include "maintenance/templates/_builder_state.html" %}
+                  <search-dropdown name="tool_id" placeholder="search tools…"
+                                   hx-get="{% url 'template_builder' %}?format=htmx-tool-search"></search-dropdown>
+                  <input class="input is-family-monospace" type="number" name="quantity_required" value="1" min="1" step="1" aria-label="Quantity">
+                  <button type="submit" class="button is-small is-link is-light" title="Add tool">
+                    <span class="icon is-small"><span class="material-icons" aria-hidden="true">add</span></span>
+                  </button>
+                </form>
+              </section>
+
+              <section class="step-subcard">
+                <header class="step-subcard-header">
+                  <span class="icon is-small"><span class="material-icons" aria-hidden="true">inventory_2</span></span>
+                  <span>Part Demands</span>
+                  <span class="tag is-light">{{ action.part_demands|length }}</span>
+                </header>
+                <ul class="step-item-list">
+                  {% for demand in action.part_demands %}
+                  <div class="step-item step-item-demand">
+                    <span class="step-item-id is-family-monospace">#{{ demand.index|add:1 }}</span>
+                    <span class="step-item-subid is-family-monospace">P{{ demand.part_id }}</span>
+                    <span class="step-item-label">{{ demand.part_label }}{% if demand.is_optional %} <span class="tag is-light is-size-7">optional</span>{% endif %}</span>
+                    <span class="step-item-qty is-family-monospace">×{{ demand.quantity_required|floatformat:"-3" }}</span>
+                    <form method="post" action="{% url 'template_builder_update' %}" class="step-item-action">
+                      {% csrf_token %}<input type="hidden" name="action" value="remove_part_demand">
+                      <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                      <input type="hidden" name="demand_index" value="{{ demand.index }}">
+                      {% include "maintenance/templates/_builder_state.html" %}
+                      <button type="submit" class="button is-small is-ghost step-icon-button has-text-danger" title="Remove part demand">
+                        <span class="icon is-small"><span class="material-icons" aria-hidden="true">close</span></span>
+                      </button>
+                    </form>
+                  </div>
+                  {% empty %}
+                  <div class="step-item is-empty has-text-grey is-size-7">No parts on this step.</div>
+                  {% endfor %}
+                </ul>
+                <form method="post" action="{% url 'template_builder_update' %}" class="step-add-row">
+                  {% csrf_token %}<input type="hidden" name="action" value="add_part_demand">
+                  <input type="hidden" name="temp_id" value="{{ action.temp_id }}">
+                  {% include "maintenance/templates/_builder_state.html" %}
+                  <search-dropdown name="part_id" placeholder="search parts…"
+                                   hx-get="{% url 'template_builder' %}?format=htmx-part-search"></search-dropdown>
+                  <input class="input is-family-monospace" type="number" name="quantity_required" value="1" min="0.001" step="0.001" aria-label="Quantity">
+                  <button type="submit" class="button is-small is-link is-light" title="Add part demand">
+                    <span class="icon is-small"><span class="material-icons" aria-hidden="true">add</span></span>
+                  </button>
+                </form>
+              </section>
+
             </div>
           </div>
-        </div>
+        </details>
+        {% empty %}
+        <p class="has-text-grey is-size-7 p-4">No action steps yet — add one from the card below.</p>
+        {% endfor %}
       </div>
-      {% empty %}
-      <p class="has-text-grey is-size-7">No action steps yet — add one below.</p>
-      {% endfor %}
     </div>
   </div>
 
-  {# Card 3: Add step — three sources, library is the default #}
-  <div class="card mt-4">
-    <div class="card-header is-multiselect">
-      <div class="card-header-multiselect">
-        <a href="{% url 'template_builder' %}?step_source=library"
-           class="button {% if step_source == 'library' %}is-primary{% else %}is-light{% endif %}"
-           aria-pressed="{% if step_source == 'library' %}true{% else %}false{% endif %}"
-           hx-get="{% url 'template_builder' %}?step_source=library"
-           hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
-          <span class="icon is-small"><span class="material-icons" aria-hidden="true">library_books</span></span>
-          <span>Action Library</span>
-        </a>
-        <a href="{% url 'template_builder' %}?step_source=maintenance"
-           class="button {% if step_source == 'maintenance' %}is-primary{% else %}is-light{% endif %}"
-           aria-pressed="{% if step_source == 'maintenance' %}true{% else %}false{% endif %}"
-           hx-get="{% url 'template_builder' %}?step_source=maintenance"
-           hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
-          <span class="icon is-small"><span class="material-icons" aria-hidden="true">content_copy</span></span>
-          <span>From Another Maintenance</span>
-        </a>
-        <a href="{% url 'template_builder' %}?step_source=new"
-           class="button {% if step_source == 'new' %}is-primary{% else %}is-light{% endif %}"
-           aria-pressed="{% if step_source == 'new' %}true{% else %}false{% endif %}"
-           hx-get="{% url 'template_builder' %}?step_source=new"
-           hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
-          <span class="icon is-small"><span class="material-icons" aria-hidden="true">add_circle</span></span>
-          <span>New Action</span>
-        </a>
-      </div>
-    </div>
-
-    {% if step_source == 'maintenance' %}
-    {% comment %}
-    "From Another Maintenance": pick an existing template, browse its steps,
-    copy any of them in — same as the library path, the copy is independent
-    of its source once added.
-    {% endcomment %}
-    <form method="get" action="{% url 'template_builder' %}" class="px-4 pt-4"
-          hx-get="{% url 'template_builder' %}"
-          hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
-      <input type="hidden" name="step_source" value="maintenance">
-      <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
-        <div style="flex:2;min-width:220px;">
-          <label class="label is-small" for="source-template">Maintenance template</label>
-          <div class="select is-small is-fullwidth"><select id="source-template" name="source_template_id">
-            <option value="">Choose a template…</option>
-            {% for t in existing_templates %}
-              <option value="{{ t.pk }}" {% if source_template_id == t.pk %}selected{% endif %}>{{ t.task_name }}</option>
-            {% endfor %}
-          </select></div>
-        </div>
-        <button type="submit" class="button is-small is-link">
-          <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-          <span>Load steps</span>
-        </button>
-      </div>
-    </form>
-
-    <div class="card-content is-flush" style="max-height:380px;overflow-y:auto;">
-      {% if not source_template_id %}
-      <p class="has-text-grey is-size-7 p-4">Pick a maintenance template above to browse its steps.</p>
-      {% else %}
-      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-        <thead><tr>
-          <th style="width:2.5rem;">#</th><th>Action Name</th>
-          <th class="has-text-right">Est. Duration (min)</th><th style="width:6rem;"></th>
-        </tr></thead>
-        <tbody>
-          {% for item in source_template_actions %}
-          <tr>
-            <td class="is-family-monospace">{{ item.sequence_order }}</td>
-            <td>{{ item.action_name }}{% if item.description %}<br><span class="has-text-grey">{{ item.description }}</span>{% endif %}</td>
-            <td class="has-text-right is-family-monospace">{{ item.estimated_duration_minutes|default:"—" }}</td>
-            <td>
-              <form method="post" action="{% url 'template_builder_update' %}">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_action_from_template_item">
-                <input type="hidden" name="template_action_item_id" value="{{ item.pk }}">
-                <input type="hidden" name="step_source" value="maintenance">
-                <input type="hidden" name="source_template_id" value="{{ source_template_id }}">
-                <button type="submit" class="button is-small is-link">Add</button>
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="has-text-grey has-text-centered py-4">This template has no steps.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% endif %}
-    </div>
-
-    {% elif step_source == 'new' %}
-    {% comment %} New Action: a blank step, unrelated to any library or template source. {% endcomment %}
-    <div class="card-content">
-      <form method="post" action="{% url 'template_builder_update' %}">
-        {% csrf_token %}<input type="hidden" name="action" value="add_action">
-        <input type="hidden" name="step_source" value="new">
-        <div class="columns is-variable is-2 is-multiline mb-0">
-          <div class="column is-5">
-            <label class="label is-small" for="new-action-name">Action name <span class="has-text-danger">*</span></label>
-            <input id="new-action-name" class="input is-small" type="text" name="action_name" placeholder="action name…" required>
-          </div>
-          <div class="column is-7">
-            <label class="label is-small" for="new-action-description">Description</label>
-            <input id="new-action-description" class="input is-small" type="text" name="description" placeholder="description…">
-          </div>
-        </div>
-        <button type="submit" class="button is-small is-link">
-          <span class="icon"><span class="material-icons" aria-hidden="true">add</span></span><span>Add Step</span>
-        </button>
-      </form>
-    </div>
-
-    {% else %}
-    {% comment %}
-    Action Library (default): the searchable proto-action pool, filterable by
-    free text and by "used on this asset model" — the latter joins through
-    the TemplateActionItems already built from each proto row, since
-    ProtoActionItem itself carries no model scope of its own.
-    {% endcomment %}
-    <form method="get" action="{% url 'template_builder' %}" class="px-4 pt-4"
-          hx-get="{% url 'template_builder' %}"
-          hx-target="#maintenance-main-content" hx-select="#maintenance-main-content" hx-push-url="true">
-      <input type="hidden" name="step_source" value="library">
-      <div class="is-flex is-align-items-flex-end" style="gap:0.5rem;flex-wrap:wrap;">
-        <div style="flex:2;min-width:200px;">
-          <label class="label is-small" for="pool-q">Search library</label>
-          <input id="pool-q" class="input is-small" type="search" name="pool_q" value="{{ pool_q }}" placeholder="action name, description…">
-        </div>
-        <div style="flex:1;min-width:180px;">
-          <label class="label is-small" for="pool-model">Used on model</label>
-          <div class="select is-small is-fullwidth"><select id="pool-model" name="pool_model_id">
-            <option value="">Any model</option>
-            {% for model in all_models %}
-              <option value="{{ model.pk }}" {% if pool_model_id == model.pk %}selected{% endif %}>{{ model }}</option>
-            {% endfor %}
-          </select></div>
-        </div>
-        <button type="submit" class="button is-small is-link">
-          <span class="icon"><span class="material-icons" aria-hidden="true">search</span></span>
-          <span>Filter</span>
-        </button>
-      </div>
-    </form>
-
-    <div class="card-content is-flush" style="max-height:380px;overflow-y:auto;">
-      <table class="table is-fullwidth is-hoverable is-size-7" style="margin:0;">
-        <thead><tr>
-          <th>Action Name</th><th>Domain</th>
-          <th class="has-text-right">Est. Duration (min)</th><th style="width:6rem;"></th>
-        </tr></thead>
-        <tbody>
-          {% for item in library_pool %}
-          <tr>
-            <td><a href="{% url 'proto_detail' pk=item.pk %}" target="_blank" rel="noopener">{{ item.action_name }}</a>{% if item.description %}<br><span class="has-text-grey">{{ item.description }}</span>{% endif %}</td>
-            <td>{{ item.domain.name }}</td>
-            <td class="has-text-right is-family-monospace">{{ item.estimated_duration_minutes|default:"—" }}</td>
-            <td>
-              <form method="post" action="{% url 'template_builder_update' %}">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_action_from_proto">
-                <input type="hidden" name="proto_action_item_id" value="{{ item.pk }}">
-                <input type="hidden" name="step_source" value="library">
-                <input type="hidden" name="pool_q" value="{{ pool_q }}">
-                <input type="hidden" name="pool_model_id" value="{{ pool_model_id|default:'' }}">
-                <button type="submit" class="button is-small is-link">Add</button>
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="4" class="has-text-grey has-text-centered py-4">
-            No library actions match these filters. <a href="{% url 'proto_create' %}" target="_blank" rel="noopener">Create one</a>?
-          </td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
+  {% comment %}
+  Card 4: Add a step — the shared Action Creator Portal, rendered exactly as
+  the event edit portal renders it, tab strip included. Everything
+  host-specific arrives through the context (creator_url, creator_post_url,
+  model_filter).
+  {% endcomment %}
+  <div class="mt-4" id="action-creator-region">
+    {% include "maintenance/work/_action_creator.html" %}
   </div>
 
   {# Card 4: Publish #}

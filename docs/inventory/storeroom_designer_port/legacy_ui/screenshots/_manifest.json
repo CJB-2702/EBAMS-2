@@ -1,0 +1,66 @@
+[
+  {
+    "slug": "00_storeroom_index",
+    "path": "/inventory/storeroom/index",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/index",
+    "title": "Storeroom Designer",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Back to Inventory |  STOREROOMS |  | Manage and organize your inventory storage locations |  |  Create New Storeroom | Storeroom Name * | Major Location * | Select a location... | LosAngelesOffice | SanDiegoHQ | Address/Notes |  Create Storeroom | main_storeroom |  LosAngelesOffice |  Los Angeles, CA |  ID: 1 |  7 Locations |  9 Bins |  Has Layout |  Created: 2026-08-09 08:42 |  Updated: 2026-08-09 08:42 |  View Summary |  Build & Manage |  Edit |  Delete | annex_storeroom |  SanDiegoHQ |  San Diego, CA |  ID: 2 |  0 Locations |  0 Bins |  Created: 2026-08-09 08:42 |  Updated: 2026-08-09 08:4"
+  },
+  {
+    "slug": "01_storeroom_create",
+    "path": "/inventory/storeroom/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/create",
+    "title": "Create Storeroom",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Create New Storeroom |  | Add a new physical storeroom location |  |  Cancel | Storeroom Name * | A descriptive name for this storeroom | Major Location * | Select a major location... | LosAngelesOffice | SanDiegoHQ | The facility where this storeroom is located | Address/Notes | Optional: physical address or descriptive notes | Storeroom Layout SVG (Optional) | Optional: Upload an SVG file with a 'locations' layer. Locations will be created automatically from labeled elements. |  Cancel |  Create Storeroom |  Next Steps |  | After creating the storeroom, you'll be a"
+  },
+  {
+    "slug": "02_storeroom_1_view",
+    "path": "/inventory/storeroom/1/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/1/view",
+    "title": "main_storeroom - Summary",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  main_storeroom |  |  LosAngelesOffice |  | Los Angeles, CA |  |  Build & Manage  Back to List | 7 |  | Locations |  | 9 |  | Total Bins |  | 0 |  | Inventory Items |  | location Viewer | 1-1 | 1-2 | 2-1 | 3-1 | 4-1 | 5-1 | 5-2 | locations | 1-1 |  9 bins | ID: 3 | 1-2 |  0 bins | ID: 7 | 2-1 |  0 bins | ID: 2 | 3-1 |  0 bins | ID: 6 | 4-1 |  0 bins | ID: 5 | 5-1 |  0 bins | ID: 4 | 5-2 |  0 bins | ID: 1 |  Locations | 1-1 | 1-1 | 1-2 | 1-3 | 3-1 | 3-3 | 3-2 | 2-1 | 2-3 | 2-2 | BINS | 1-1 | ID: 9 | 1-2 | ID: 8 | 1-3 | ID: 7 | 2-1 | ID: 6 | 2-2 | ID: 5 | 2-3 | ID: 4 | 3-1 | ID: 3 | 3-2 | ID: 2 | 3-3 | ID: 1 | 1-2 |  | No bin layout SVG uploaded yet |  | BINS |  | No bins found |  | 2-1 |  | No bin layout"
+  },
+  {
+    "slug": "03_storeroom_1_build",
+    "path": "/inventory/storeroom/1/build",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/1/build",
+    "title": "main_storeroom - Storeroom Designer",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  main_storeroom |  |  LosAngelesOffice |  |  View Processed SVG  View Raw SVG  View Summary  Edit Storeroom  Back to List | location Viewer | 1-1 | 1-2 | 2-1 | 3-1 | 4-1 | 5-1 | 5-2 | locations | 1-1 |  9 bins | ID: 3 | 1-2 |  0 bins | ID: 7 | 2-1 |  0 bins | ID: 2 | 3-1 |  0 bins | ID: 6 | 4-1 |  0 bins | ID: 5 | 5-1 |  0 bins | ID: 4 | 5-2 |  0 bins | ID: 1 | Add Location | Add Location | Delete Current locations and bins and upload new: | Upload |  Processed SVG |  Raw SVG |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "04_storeroom_1_build_loc3",
+    "path": "/inventory/storeroom/1/build?location_id=3",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/1/build?location_id=3",
+    "title": "main_storeroom - Storeroom Designer",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  main_storeroom |  |  LosAngelesOffice |  |  View Processed SVG  View Raw SVG  View Summary  Edit Storeroom  Back to List | location Viewer | 1-1 | 1-2 | 2-1 | 3-1 | 4-1 | 5-1 | 5-2 | locations | 1-1 |  9 bins | ID: 3 | 1-2 |  0 bins | ID: 7 | 2-1 |  0 bins | ID: 2 | 3-1 |  0 bins | ID: 6 | 4-1 |  0 bins | ID: 5 | 5-1 |  0 bins | ID: 4 | 5-2 |  0 bins | ID: 1 | Add Location | Add Location | Delete Current locations and bins and upload new: | Upload |  Processed SVG |  Raw SVG | Bin Viewer 1-1 | 1-1 | 1-2 | 1-3 | 3-1 | 3-3 | 3-2 | 2-1 | 2-3 | 2-2 | BINS | 1-1 | ID: 9 | 1-2 | ID: 8 | 1-3 | ID: 7 | 2-1 | ID: 6 | 2-2 | ID: 5 | 2-3 | ID: 4 | 3-1 | ID: 3 | 3-2 | ID:"
+  },
+  {
+    "slug": "05_storeroom_1_edit",
+    "path": "/inventory/storeroom/1/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/1/edit",
+    "title": "Edit main_storeroom",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  Edit Storeroom |  | main_storeroom |  |  Cancel | Storeroom Name * | A descriptive name for this storeroom | Major Location * | Select a major location... | LosAngelesOffice | SanDiegoHQ | The facility where this storeroom is located | Address/Notes | Optional: physical address or descriptive notes |  Cancel |  Save Changes |  Danger Zone |  | Delete this storeroom: This will permanently delete the storeroom, all its locations, and all bins. This action cannot be undone. |  |  Delete Storeroom |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "06_storeroom_2_view_no_svg",
+    "path": "/inventory/storeroom/2/view",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/2/view",
+    "title": "annex_storeroom - Summary",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  annex_storeroom |  |  SanDiegoHQ |  | San Diego, CA |  |  Build & Manage  Back to List | 0 |  | Locations |  | 0 |  | Total Bins |  | 0 |  | Inventory Items |  | location Viewer |  | No layout SVG uploaded yet |  | locations |  | No locations found |  |  Locations |  | No locations yet. Use \"Build & Manage\" to add locations and bins. |  | \u00a9 2024 Asset Management System |  | Help About"
+  },
+  {
+    "slug": "07_storeroom_2_build_no_svg",
+    "path": "/inventory/storeroom/2/build",
+    "status": 200,
+    "final_url": "http://127.0.0.1:5000/inventory/storeroom/2/build",
+    "title": "annex_storeroom - Storeroom Designer",
+    "excerpt": "EBAMS | Events | Dispatching | Maintenance | Inventory | Assets | Core | admin  |  annex_storeroom |  |  SanDiegoHQ |  |  View Summary  Edit Storeroom  Back to List | location Viewer |  | No layout SVG uploaded yet |  | locations |  | No locations found |  | Add Location | Add Location | Delete Current locations and bins and upload new: | Upload |  | \u00a9 2024 Asset Management System |  | Help About"
+  }
+]

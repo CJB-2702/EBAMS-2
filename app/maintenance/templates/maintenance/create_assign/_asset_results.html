@@ -1,7 +1,5 @@
-<ul>
-  {% for asset in assets %}
-  <li data-value="{{ asset.pk }}">{{ asset.name }}{% if asset.serial_number %} ({{ asset.serial_number }}){% endif %}</li>
-  {% empty %}
-  <li class="has-text-grey">No assets match.</li>
-  {% endfor %}
-</ul>
+{% for asset in assets %}
+<li data-value="{{ asset.pk }}">{{ asset.name }}{% if asset.serial_number %} ({{ asset.serial_number }}){% endif %}</li>
+{% empty %}
+<li class="has-text-grey">No assets match.</li>
+{% endfor %}

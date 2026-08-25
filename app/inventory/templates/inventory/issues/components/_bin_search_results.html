@@ -1,0 +1,92 @@
+{% comment %}
+The rows of the location picker — swapped on every filter change
+via `?format=htmx-bin-search-results`.
+
+COMFORTABLE, not condensed: the clerk is choosing where to physically walk and
+how much to take off each shelf, so each row carries the full location path,
+the serial, what is on hand, and a quantity box, with room to read them.
+
+A location already on the plan is shown DISABLED rather than hidden — "it is
+already on there" is the answer to "why can I not tick this one".
+
+Quantities arrive pre-capped at the demand: a location holding more than is
+still owed offers the DEMAND's number, not its own contents.
+{% endcomment %}
+<div class="htmx-indicator htmx-indicator-overlay" aria-hidden="true">
+  <div class="skeleton-block"></div>
+</div>
+
+<table class="table is-fullwidth is-hoverable bin-search-table">
+  <thead>
+    <tr>
+      <th style="width:3rem;"></th>
+      <th>Location</th>
+      <th>Serial</th>
+      <th class="has-text-right">On hand</th>
+      <th class="has-text-right">Available</th>
+      <th style="width:9rem;">Issue qty</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr class="{% if row.is_staged %}is-already-staged{% endif %}">
+      <td>
+        <input type="checkbox" name="active_inventory_ids" value="{{ row.balance.pk }}"
+               {% if row.is_staged or not can_issue %}disabled{% endif %}
+               aria-label="Add {{ row.balance.storage_location.display_code|default:'unassigned location' }}">
+      </td>
+      <td>
+        <div class="has-text-weight-semibold">
+          {{ row.balance.storage_location.display_code|default:"Unassigned" }}
+          {% if row.is_staged %}
+          <span class="tag is-info is-light is-small ml-2">Already on the plan</span>
+          {% endif %}
+        </div>
+        <div class="has-text-grey is-size-7">
+          {{ row.balance.room.warehouse.name }} &rsaquo; {{ row.balance.room.room_name }}
+        </div>
+      </td>
+      <td class="is-family-monospace">{{ row.balance.serial_number|default:"—" }}</td>
+      <td class="has-text-right is-family-monospace has-text-weight-bold">
+        {{ row.balance.quantity_on_hand|floatformat:3 }}
+        {% if row.covers_demand %}
+        <div class="has-text-grey is-size-7 has-text-weight-normal">covers it</div>
+        {% endif %}
+      </td>
+      <td class="has-text-right is-family-monospace">
+        {{ row.balance.quantity_available|default_if_none:"—"|floatformat:3 }}
+      </td>
+      <td>
+        <input class="input is-small has-text-right is-family-monospace"
+               type="number" step="0.001" min="0.001"
+               name="qty_{{ row.balance.pk }}" value="{{ row.suggested|floatformat:3 }}"
+               {% if row.balance.serial_number %}readonly title="A serial is one unit."{% endif %}
+               {% if row.is_staged or not can_issue %}disabled{% endif %}
+               aria-label="Quantity from {{ row.balance.storage_location.display_code|default:'unassigned location' }}">
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6" class="has-text-centered has-text-grey py-6">
+        <span class="icon is-large"><span class="material-icons" style="font-size:2rem;">inventory_2</span></span>
+        <p class="mt-2">No stock matches those filters.</p>
+        <p class="is-size-7">Clear the filters to see every location holding this part.</p>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page.has_other_pages %}
+<nav class="pagination is-small p-3" role="navigation" aria-label="pagination">
+  <button type="button" class="pagination-previous" {% if not page.has_previous %}disabled{% endif %}
+          {% if page.has_previous %}hx-get="{% url 'inventory_issue_parts' %}?format=htmx-bin-search-results&b_demand={{ demand.pk }}&b_page={{ page.previous_page_number }}"
+          hx-include="#bin-search-form" hx-target="#bin-search-results" hx-swap="innerHTML"{% endif %}>Previous</button>
+  <button type="button" class="pagination-next" {% if not page.has_next %}disabled{% endif %}
+          {% if page.has_next %}hx-get="{% url 'inventory_issue_parts' %}?format=htmx-bin-search-results&b_demand={{ demand.pk }}&b_page={{ page.next_page_number }}"
+          hx-include="#bin-search-form" hx-target="#bin-search-results" hx-swap="innerHTML"{% endif %}>Next</button>
+  <ul class="pagination-list">
+    <li><span class="pagination-link is-static">Page {{ page.number }} of {{ page.paginator.num_pages }}</span></li>
+  </ul>
+</nav>
+{% endif %}

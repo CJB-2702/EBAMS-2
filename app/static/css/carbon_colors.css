@@ -9,7 +9,7 @@
   --white: rgb(255, 255, 255);
 
   /* --- RED PALETTE --- */
-  --red-100: rgb(45, 67, 4);
+  --red-100: rgb(45, 7, 9);
   --red-90: rgb(82, 4, 8);
   --red-80: rgb(117, 14, 25);
   --red-70: rgb(162, 25, 31);
@@ -107,6 +107,18 @@
   /* --- ORANGE & YELLOW --- */
   --orange-40: rgb(255, 131, 43);
   --yellow-30: rgb(241, 194, 27);
+
+  /* --- APP COLORS --- */
+  --app-color-events: var(--blue-70);
+  --app-color-dispatching: var(--cyan-60);
+  --app-color-maintenance: var(--orange-40);
+  --app-color-assets: var(--teal-60);
+  --app-color-configuration: var(--gray-70);
+  --app-color-parts: var(--purple-70);
+  --app-color-procurement: var(--green-60);
+  --app-color-inventory: var(--magenta-70);
+  --app-color-administration: var(--red-70);
+  --app-color-extensions: var(--yellow-30);
 }
 
 /* --- AUTOMATIC CONTRAST UTILITY --- */

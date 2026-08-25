@@ -35,6 +35,19 @@ class FileBrowser extends HTMLElement {
 
   connectedCallback() {
     if (this._mounted) return;
+    this._tryInit();
+    if (!this._mounted) {
+      this._observer = new MutationObserver(() => this._tryInit());
+      this._observer.observe(this, { childList: true, subtree: true });
+    }
+  }
+
+  disconnectedCallback() {
+    this._observer?.disconnect();
+  }
+
+  _tryInit() {
+    if (this._mounted) return;
     this._mounted = true;
 
     this._items = this._readItems();

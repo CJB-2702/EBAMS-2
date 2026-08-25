@@ -177,13 +177,35 @@ blank box (CLAUDE.md rule #5).
     border-color: #3a3a3a !important;
   }
 }
+
+/* Blocker/Limitation styling */
+.event-row-blocker {
+  background-color: rgba(241, 70, 104, 0.08) !important;
+}
+.event-row-blocker:hover {
+  background-color: rgba(241, 70, 104, 0.12) !important;
+}
+.event-row-limitation {
+  background-color: rgba(255, 221, 87, 0.12) !important;
+}
+.event-row-limitation:hover {
+  background-color: rgba(255, 221, 87, 0.18) !important;
+}
+.event-list-item.is-selected-preview.event-row-blocker {
+  background-color: rgba(241, 70, 104, 0.15) !important;
+  border-left: 4px solid #f14668 !important;
+}
+.event-list-item.is-selected-preview.event-row-limitation {
+  background-color: rgba(255, 221, 87, 0.2) !important;
+  border-left: 4px solid #ffdd57 !important;
+}
 </style>
 
 <div class="columns is-variable is-4">
   <div class="column is-6">
     <div class="event-list">
       {% for e in events %}
-      <a class="event-list-item {% if selected and selected.pk == e.pk %}is-selected-preview{% endif %}"
+      <a class="event-list-item {% if selected and selected.pk == e.pk %}is-selected-preview{% endif %} {% if e.has_active_blocker %}event-row-blocker{% elif e.has_active_limitation %}event-row-limitation{% endif %}"
          hx-get="{% url 'maintenance_index' %}{% querystring selected=e.pk format='htmx-search-results' %}"
          hx-target="#maintenance-results-region"
          hx-swap="innerHTML"
